@@ -20,7 +20,7 @@ Static output lands in `dist/`. There is no backend: every number on the page co
 
 | File | What it holds |
 |---|---|
-| `data/hardware.json` | Each machine config: memory, bandwidth, usable memory, price, power draw. Current 2026 lineup plus the discontinued M4 / M3 Ultra machines (marked `generation: previous`, launch prices). |
+| `data/hardware.json` | Each machine config: memory, bandwidth, usable memory, price, power draw. Current 2026 Apple lineup, the discontinued M4 / M3 Ultra machines (marked `generation: previous`, launch prices), the NVIDIA DGX Spark, and AMD Strix Halo boxes (Framework Desktop, GMKtec EVO-X2, Beelink GTR9 Pro, Minisforum MS-S1 Max, HP Z2 Mini G1a). |
 | `data/models.json` | Each model × quant: GGUF size, architecture (for KV-cache), max context, capability ratings, cloud equivalent and OpenRouter price, frontier score and tier. |
 | `data/throughput.json` | Measured tokens/sec per model × hardware pair, with the source. Anything not listed is *estimated* from bandwidth and labelled as such. |
 | `data/defaults.json` | Usage default, electricity price, estimate efficiency factor, context options, the "data last checked" date. |
@@ -71,4 +71,5 @@ Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active param
 - Apple has not published power figures for the 2026 Macs; the previous chip's Apple figure is used as a labelled stand-in.
 - Mac Studio M5 Ultra 512GB has no price yet.
 - No measured tokens/sec exists for any 2026 Mac (they ship 22 September 2026); everything on them is estimated and labelled.
-- Gemma 4, Qwen3.6/3.8, Mistral Small 4 have no capability ratings yet (`unknown`).
+- Gemma 4, Qwen3.6/3.8, Mistral Small 4 have no capability ratings yet (`unknown`), though their frontier scores are in.
+- Strix Halo power draw is measured only on the Framework Desktop; other boxes use it as a labelled stand-in. Usable memory uses the Windows 75% split; Linux users can get ~110 GB.
