@@ -74,7 +74,7 @@ export function renderWaterline(o: WaterlineOptions): string {
   const id = o.id ?? 'wl';
   const g = waterlineGeometry(o);
 
-  const padL = showLabels ? 64 * s : 12 * s;
+  const padL = showLabels ? 14 * s : 12 * s;
   const padR = 18 * s;
   const padT = 18 * s;
   const padB = showLabels ? 30 * s : 12 * s;
@@ -122,7 +122,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       const yy = y(v);
       if (yy <= surfaceY + 2 || yy > bottomY) continue;
       parts.push(`<line x1="${padL}" x2="${padL + plotW}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--grid, rgba(255,255,255,0.10))" stroke-width="${s}"/>`);
-      parts.push(`<text x="${padL - 8 * s}" y="${(yy + 4 * s).toFixed(1)}" text-anchor="end" font-size="${11 * s}" fill="var(--axis-text, #5b6673)" style="font-variant-numeric: tabular-nums">${fmtUsd(v)}</text>`);
+      parts.push(`<text x="${padL + 7 * s}" y="${(yy - 4 * s).toFixed(1)}" text-anchor="start" font-size="${10.5 * s}" fill="var(--chart-ink, #b9d1e2)" opacity="0.85" style="font-variant-numeric: tabular-nums">${fmtUsd(v)}</text>`);
     }
   }
 
@@ -137,8 +137,8 @@ export function renderWaterline(o: WaterlineOptions): string {
 
   // the curve
   if (beX !== null) {
-    parts.push(`<line ${clip} x1="${x0}" y1="${y0}" x2="${beX.toFixed(1)}" y2="${surfaceY.toFixed(1)}" stroke="var(--curve-under, #8fc1ea)" stroke-width="${2.5 * s}" stroke-linecap="round"/>`);
-    parts.push(`<line ${clip} x1="${beX.toFixed(1)}" y1="${surfaceY.toFixed(1)}" x2="${x1}" y2="${y1.toFixed(1)}" stroke="var(--curve-above, #d97a1f)" stroke-width="${2.5 * s}" stroke-linecap="round"/>`);
+    parts.push(`<line ${clip} x1="${x0}" y1="${y0}" x2="${beX.toFixed(1)}" y2="${surfaceY.toFixed(1)}" stroke="var(--curve-under, #8fc1ea)" stroke-width="${3 * s}" stroke-linecap="round"/>`);
+    parts.push(`<line ${clip} x1="${beX.toFixed(1)}" y1="${surfaceY.toFixed(1)}" x2="${x1}" y2="${y1.toFixed(1)}" stroke="var(--curve-above, #d97a1f)" stroke-width="${3 * s}" stroke-linecap="round"/>`);
     parts.push(`<circle cx="${beX.toFixed(1)}" cy="${surfaceY.toFixed(1)}" r="${5 * s}" fill="var(--curve-above, #d97a1f)" stroke="var(--sky, #e8eef4)" stroke-width="${2 * s}"/>`);
     if (showLabels) {
       const label = `surfaces at ${labelDays(o.breakevenDays!)}`;
@@ -147,7 +147,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       parts.push(`<text x="${lx.toFixed(1)}" y="${(surfaceY - 10 * s).toFixed(1)}" text-anchor="${anchor}" font-size="${12 * s}" font-weight="600" fill="var(--ink, #1a1d21)">${label}</text>`);
     }
   } else {
-    parts.push(`<line ${clip} x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1.toFixed(1)}" stroke="var(--curve-under, #8fc1ea)" stroke-width="${2.5 * s}" stroke-linecap="round"/>`);
+    parts.push(`<line ${clip} x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1.toFixed(1)}" stroke="var(--curve-under, #8fc1ea)" stroke-width="${3 * s}" stroke-linecap="round"/>`);
     if (showLabels) {
       const msg = g.never ? 'never reaches the surface' : `surfaces at ${labelDays(o.breakevenDays!)} — off this chart`;
       parts.push(`<text x="${(padL + plotW - 10 * s).toFixed(1)}" y="${(Math.min(y1, bottomY - 8 * s) - 12 * s).toFixed(1)}" text-anchor="end" font-size="${12 * s}" font-weight="600" fill="var(--curve-under, #8fc1ea)">${msg}</text>`);
@@ -178,11 +178,11 @@ export function renderWaterline(o: WaterlineOptions): string {
   if (showLabels) {
     for (const t of niceTimeTicks(T)) {
       const tx = x(t.days);
-      parts.push(`<line x1="${tx.toFixed(1)}" x2="${tx.toFixed(1)}" y1="${bottomY}" y2="${bottomY + 5 * s}" stroke="var(--axis, #9aa4ae)" stroke-width="${s}"/>`);
-      parts.push(`<text x="${tx.toFixed(1)}" y="${(bottomY + 18 * s).toFixed(1)}" text-anchor="middle" font-size="${11 * s}" fill="var(--axis-text, #5b6673)" style="font-variant-numeric: tabular-nums">${t.label}</text>`);
+      parts.push(`<line x1="${tx.toFixed(1)}" x2="${tx.toFixed(1)}" y1="${bottomY}" y2="${bottomY + 5 * s}" stroke="var(--chart-ink, #b9d1e2)" stroke-opacity="0.45" stroke-width="${s}"/>`);
+      parts.push(`<text x="${tx.toFixed(1)}" y="${(bottomY + 18 * s).toFixed(1)}" text-anchor="middle" font-size="${10.5 * s}" fill="var(--chart-ink, #b9d1e2)" opacity="0.8" style="font-variant-numeric: tabular-nums">${t.label}</text>`);
     }
-    parts.push(`<text x="${padL}" y="${(bottomY + 18 * s).toFixed(1)}" text-anchor="start" font-size="${11 * s}" fill="var(--axis-text, #5b6673)">bought</text>`);
-    parts.push(`<text x="${padL - 8 * s}" y="${(surfaceY + (o.transparentBg ? -5 * s : 4 * s)).toFixed(1)}" text-anchor="end" font-size="${11 * s}" font-weight="600" fill="var(--axis-text, #5b6673)">surface</text>`);
+    parts.push(`<text x="${padL}" y="${(bottomY + 18 * s).toFixed(1)}" text-anchor="start" font-size="${10.5 * s}" fill="var(--chart-ink, #b9d1e2)" opacity="0.8">bought</text>`);
+    parts.push(`<text x="${(padL + plotW - 4 * s).toFixed(1)}" y="${(surfaceY + 13 * s).toFixed(1)}" text-anchor="end" font-size="${10 * s}" font-weight="600" letter-spacing="${0.5 * s}" fill="var(--chart-ink, #b9d1e2)" opacity="0.7">SURFACE</text>`);
   }
 
   parts.push('</svg>');

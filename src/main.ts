@@ -15,6 +15,15 @@ const u = data.defaults.usage;
 function update(patch: Partial<State> = {}) {
   state = { ...state, ...patch };
   view = renderAll(state, data);
+  const mv = document.querySelector('#minibar-verdict');
+  const mc = document.querySelector('#minibar-config');
+  if (mv) mv.textContent = view.verdict.headline;
+  if (mc) mc.textContent = view.configLine;
+  for (const el of document.querySelectorAll<HTMLInputElement>("input[type='range']")) {
+    const min = Number(el.min || 0);
+    const max = Number(el.max || 100);
+    el.style.setProperty('--pct', max === min ? '0%' : `${(((Number(el.value) - min) / (max - min)) * 100).toFixed(2)}%`);
+  }
   const qs = serializeState(state);
   // some embeds (sandboxed frames) refuse history writes; the page must still work
   try {
@@ -159,18 +168,63 @@ async function svgToPng(svg: string, w: number, h: number): Promise<Blob> {
   }
 }
 
-// the sticky controls panel sets the offset the sticky column and the scrollable list use
-const controls = document.querySelector<HTMLElement>('.controls')!;
-const syncControlsHeight = () => document.documentElement.style.setProperty('--controls-h', `${Math.round(controls.getBoundingClientRect().height)}px`);
-new ResizeObserver(() => { syncControlsHeight(); layoutNumberLine(); }).observe(controls);
-window.addEventListener('resize', () => { syncControlsHeight(); layoutNumberLine(); });
-syncControlsHeight();
+window.addEventListener('resize', () => layoutNumberLine());
 
 window.addEventListener('popstate', () => {
   state = parseState(location.search, data);
   usage.value = String(usageToSlider(state.usage, u.min_tokens_per_day, u.max_tokens_per_day));
   update();
 });
+
+/* ---- theme ---- */
+
+const THEME_KEY = 'sunkcost.theme';
+function applyTheme(t: 'light' | 'dark' | null) {
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+}
+try {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === 'light' || saved === 'dark') applyTheme(saved);
+} catch {
+  /* private mode; the OS setting still applies */
+}
+$('#theme-toggle').addEventListener('click', () => {
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const current = document.documentElement.getAttribute('data-theme') ?? (systemDark ? 'dark' : 'light');
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try {
+    localStorage.setItem(THEME_KEY, next);
+  } catch {
+    /* ignore */
+  }
+});
+
+/* ---- slider fill: WebKit cannot style the filled part of a track on its own ---- */
+
+const sliders = [...document.querySelectorAll<HTMLInputElement>("input[type='range']")];
+function paintSlider(el: HTMLInputElement) {
+  const min = Number(el.min || 0);
+  const max = Number(el.max || 100);
+  const pct = max === min ? 0 : ((Number(el.value) - min) / (max - min)) * 100;
+  el.style.setProperty('--pct', `${pct.toFixed(2)}%`);
+}
+for (const el of sliders) {
+  paintSlider(el);
+  el.addEventListener('input', () => paintSlider(el));
+}
+
+/* ---- the verdict follows you up the page on a phone ---- */
+
+const minibar = $('#minibar');
+const verdictPane = document.querySelector('#zone-breakeven')!;
+new IntersectionObserver(
+  ([entry]) => {
+    minibar.hidden = entry.isIntersecting || window.innerWidth >= 900;
+  },
+  { rootMargin: '-40% 0px 0px 0px' },
+).observe(verdictPane);
 
 $('#data-checked').textContent = data.defaults.data_last_checked;
 $('#efficiency-note').textContent = `${fmtNum(data.defaults.estimate.efficiency_dense * 100, 0)}% for dense models or ${fmtNum(data.defaults.estimate.efficiency_moe * 100, 0)}% for mixture-of-experts (calibrated on the measured pairs in the data)`;

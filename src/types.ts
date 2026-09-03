@@ -147,7 +147,7 @@ export interface Defaults {
   use_cases: { id: string; label: string; ratio: number; note?: string }[];
   frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
   frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string };
-  frontier_reference?: { name: string; score: number; score_alt?: number; url?: string }[];
+  frontier_reference?: { name: string; short?: string; score: number; score_alt?: number; url?: string }[];
   frontier_scale_max?: number;
   nearly_fits_ratio: number;
   waterline_max_years: number;

@@ -160,44 +160,51 @@
       "name": "Claude Haiku 4.5",
       "score": 30,
       "score_alt": 24,
-      "url": "https://artificialanalysis.ai/models/claude-4-5-haiku-reasoning"
+      "url": "https://artificialanalysis.ai/models/claude-4-5-haiku-reasoning",
+      "short": "Haiku 4.5"
     },
     {
       "name": "GPT-5.6 Luna",
       "score": 52,
       "score_alt": 27,
-      "url": "https://artificialanalysis.ai/models/gpt-5-6-luna"
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-luna",
+      "short": "Luna"
     },
     {
       "name": "Claude Sonnet 5",
       "score": 55,
       "score_alt": 43,
-      "url": "https://artificialanalysis.ai/models/claude-sonnet-5"
+      "url": "https://artificialanalysis.ai/models/claude-sonnet-5",
+      "short": "Sonnet 5"
     },
     {
       "name": "GPT-5.6 Terra",
       "score": 57,
       "score_alt": 35,
-      "url": "https://artificialanalysis.ai/models/gpt-5-6-terra"
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-terra",
+      "short": "Terra"
     },
     {
       "name": "GPT-5.6 Sol",
       "score": 61,
       "score_alt": 42,
-      "url": "https://artificialanalysis.ai/models/gpt-5-6-sol"
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-sol",
+      "short": "Sol"
     },
     {
       "name": "Claude Opus 5",
       "score": 63,
-      "url": "https://artificialanalysis.ai/models/claude-opus-5"
+      "url": "https://artificialanalysis.ai/models/claude-opus-5",
+      "short": "Opus 5"
     },
     {
       "name": "Claude Fable 5.1",
       "score": 66,
-      "url": "https://artificialanalysis.ai/models/claude-fable-5-1"
+      "url": "https://artificialanalysis.ai/models/claude-fable-5-1",
+      "short": "Fable 5.1"
     }
   ],
-  "frontier_reference_note": "Hosted lineups read from platform.claude.com/docs/en/models/overview and developers.openai.com/api/docs/models on 2026-09-03. score_alt is the non-reasoning figure where the index reports both.",
+  "frontier_reference_note": "Hosted lineups read from platform.claude.com/docs/en/models/overview and developers.openai.com/api/docs/models on 2026-09-03. score_alt is the non-reasoning figure where the index reports both. Short names on the scale are Anthropic's Claude models (Haiku, Sonnet, Opus, Fable) and OpenAI's GPT-5.6 models (Luna, Terra, Sol).",
   "frontier_scale_max": 70,
   "context_decay": {
     "model": "tokens_per_sec(context) = measured × (bytes_of_weights + kv_at_measured_context) / (bytes_of_weights + kv_at_your_context)",

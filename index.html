@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>How long until local AI pays for itself? — Sunk Cost</title>
   <meta name="description" content="Pick a Mac mini, Mac Studio, DGX Spark or Strix Halo box, see which open models fit and how fast they run, and how much usage it takes to break even against paying an API. It is willing to say: it doesn't." />
+  <meta name="theme-color" content="#f1f3f2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0b1014" media="(prefers-color-scheme: dark)" />
   <link rel="canonical" href="https://sunkcost.ai/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Sunk Cost" />
@@ -17,112 +19,145 @@
   <meta name="twitter:title" content="How long until local AI pays for itself? — Sunk Cost" />
   <meta name="twitter:image" content="https://sunkcost.ai/og/default.png" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="brand">Sunk Cost <span>· sunkcost.ai</span></div>
-    <div class="tagline">If you buy this machine to run local models, how long until it pays for itself, and what can it actually do?</div>
-    <div class="meta">Data checked <span id="data-checked"></span> · USD</div>
+  <a class="skip" href="#zone-breakeven">Skip to the break-even</a>
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="mark" aria-hidden="true"></span>
+      <span class="wordmark">Sunk Cost</span>
+      <span class="domain">sunkcost.ai</span>
+    </div>
+    <p class="topbar-line">If you buy a machine to run local models, how long until it pays for itself, and what can it actually do?</p>
+    <div class="topbar-end">
+      <span class="stamp">Data checked <span id="data-checked"></span></span>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch between light and dark" title="Switch theme">
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" class="i-sun"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 1.6v2.2M10 16.2v2.2M18.4 10h-2.2M3.8 10H1.6M15.9 4.1l-1.6 1.6M5.7 14.3l-1.6 1.6M15.9 15.9l-1.6-1.6M5.7 5.7L4.1 4.1"/></g></svg>
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" class="i-moon"><path d="M16.5 12.4A7 7 0 0 1 7.6 3.5a7 7 0 1 0 8.9 8.9Z" fill="currentColor"/></svg>
+      </button>
+    </div>
   </header>
 
-  <section class="controls" aria-labelledby="h-machine">
-    <div class="ctl-group ctl-machine">
-      <h2 class="zone" id="h-machine"><b>1.</b> Pick your machine</h2>
-      <div class="ctl-row">
-        <label class="field"><span>Device</span><select id="family" aria-label="Device family"></select></label>
-        <label class="field"><span>Chip / system</span><select id="chip" aria-label="Chip or system"></select></label>
-        <div class="field"><span class="field-label">Memory · price</span><div id="configs" class="configs" role="radiogroup" aria-label="Memory configurations"></div></div>
-        <label class="field"><span>What you paid</span>
-          <span class="price-input"><b>$</b><input type="number" id="price" min="1" step="1" inputmode="numeric" aria-describedby="price-note" /></span>
-        </label>
-      </div>
-      <div id="price-note" class="small muted"></div>
-      <div id="hw-status" class="small muted"></div>
-    </div>
-
-    <div class="ctl-group ctl-usage">
-      <h2 class="zone"><b>2.</b> How you'd use it</h2>
-      <div class="ctl-row">
-        <label class="field"><span>Mostly for</span><select id="usecase" aria-label="Use case"></select></label>
-        <label class="field grow" for="usage"><span>Tokens a day</span>
-          <input type="range" id="usage" aria-describedby="usage-readout" />
-          <div class="readout" id="usage-readout" aria-live="polite"></div>
-        </label>
-        <label class="field grow" for="ctxslider"><span>Context window you want</span>
-          <input type="range" id="ctxslider" aria-describedby="ctx-readout" />
-          <div class="readout" id="ctx-readout" aria-live="polite"></div>
-        </label>
-      </div>
-      <div id="ratio-custom" class="ctl-row" hidden>
-        <label class="field grow" for="ratio"><span>Custom input:output ratio</span>
-          <input type="range" id="ratio" step="0.25" aria-describedby="ratio-readout" />
-          <div class="readout" id="ratio-readout" aria-live="polite"></div>
-        </label>
-      </div>
-      <details class="advanced">
-        <summary>More assumptions</summary>
-        <div class="ctl-row">
-          <label class="field"><span>Electricity, $ per kWh</span><input type="number" id="kwh" min="0" step="0.01" /></label>
-          <label class="field"><span>API speed, tokens/sec</span><input type="number" id="cloud-tps" min="1" step="5" /></label>
-          <p class="muted small" id="kwh-note"></p>
+  <div class="app">
+    <aside class="config" aria-label="Configuration">
+      <section class="card" aria-labelledby="h-machine">
+        <h2 class="card-title" id="h-machine"><span class="step">1</span> Your machine</h2>
+        <div class="card-body stack">
+          <div class="row-2">
+            <label class="field"><span class="label">Device</span>
+              <span class="select"><select id="family" aria-label="Device family"></select></span>
+            </label>
+            <label class="field"><span class="label">Chip or system</span>
+              <span class="select"><select id="chip" aria-label="Chip or system"></select></span>
+            </label>
+          </div>
+          <div class="field">
+            <span class="label">Memory</span>
+            <div id="configs" class="segmented" role="radiogroup" aria-label="Memory configurations"></div>
+          </div>
+          <label class="field"><span class="label">What you paid <span class="label-hint">optional</span></span>
+            <span class="money"><b aria-hidden="true">$</b><input type="number" id="price" min="1" step="1" inputmode="numeric" aria-describedby="price-note" /></span>
+          </label>
+          <p class="note" id="price-note"></p>
+          <p class="note dim" id="hw-status"></p>
         </div>
-        <p class="muted small">Where no measurement exists, local speed is estimated as memory bandwidth ÷ bytes read per token × <span id="efficiency-note"></span>, and labelled as such. API speed only affects the time comparison.</p>
-      </details>
-    </div>
-  </section>
+      </section>
 
-  <main class="layout">
-    <section id="zone-fits" class="col-left" aria-labelledby="h-fits">
-      <div class="list-head">
-        <h2 class="zone" id="h-fits"><b>3.</b> See what fits</h2>
-        <div class="list-controls">
-          <label class="field inline"><span>Show</span><select id="model-family" aria-label="Filter by model family"></select></label>
-          <label class="field inline"><span>Sort</span><select id="model-sort" aria-label="Sort models"></select></label>
+      <section class="card" aria-labelledby="h-usage">
+        <h2 class="card-title" id="h-usage"><span class="step">2</span> How you'd use it</h2>
+        <div class="card-body stack">
+          <label class="field"><span class="label">Mostly for</span>
+            <span class="select"><select id="usecase" aria-label="Use case"></select></span>
+          </label>
+          <div class="field" id="ratio-custom" hidden>
+            <label class="label" for="ratio">Custom input to output ratio</label>
+            <input type="range" id="ratio" step="0.25" aria-describedby="ratio-readout" />
+            <p class="readout" id="ratio-readout" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label class="label" for="usage">Tokens a day</label>
+            <input type="range" id="usage" aria-describedby="usage-readout" />
+            <p class="readout" id="usage-readout" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label class="label" for="ctxslider">Context window you want</label>
+            <input type="range" id="ctxslider" aria-describedby="ctx-readout" />
+            <p class="readout" id="ctx-readout" aria-live="polite"></p>
+          </div>
+          <details class="disclose">
+            <summary>Assumptions you can change</summary>
+            <div class="stack tight">
+              <div class="row-2">
+                <label class="field"><span class="label">Electricity, $/kWh</span><input class="input" type="number" id="kwh" min="0" step="0.01" /></label>
+                <label class="field"><span class="label">API speed, tok/s</span><input class="input" type="number" id="cloud-tps" min="1" step="5" /></label>
+              </div>
+              <p class="note dim" id="kwh-note"></p>
+              <p class="note dim">Where nothing has been measured, local speed is estimated as memory bandwidth ÷ bytes read per token × <span id="efficiency-note"></span>, and labelled as such. API speed only affects the time comparison.</p>
+            </div>
+          </details>
         </div>
-      </div>
-      <div class="legend" aria-hidden="true">
-        <span><i class="dot dot-green"></i> good</span>
-        <span><i class="dot dot-amber"></i> usable</span>
-        <span><i class="dot dot-red"></i> don't</span>
-        <span><i class="dot dot-unknown"></i> not rated</span>
-        <span>· summarise, translate, coding, reasoning, agentic</span>
-      </div>
-      <div id="models" class="model-list" role="radiogroup" aria-label="Models that fit" tabindex="0"></div>
-      <p class="muted small">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If you think one is wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
-    </section>
+      </section>
+    </aside>
 
-    <section id="zone-breakeven" class="col-right" aria-labelledby="h-breakeven">
-      <h2 class="zone" id="h-breakeven"><b>4.</b> See the break-even</h2>
-      <div class="hero" id="hero">
-        <div class="hero-water">
-          <div id="waterline"></div>
-          <div id="verdict"></div>
-          <div class="actions">
-            <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
-            <button class="btn" id="download-card" type="button">Download card</button>
-            <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
+    <main class="results">
+      <section id="zone-fits" class="pane pane-models" aria-labelledby="h-fits">
+        <header class="pane-head">
+          <h2 class="pane-title" id="h-fits"><span class="step">3</span> What fits</h2>
+          <div class="pane-tools">
+            <span class="select select-sm"><select id="model-family" aria-label="Filter by model family"></select></span>
+            <span class="select select-sm"><select id="model-sort" aria-label="Sort models"></select></span>
+          </div>
+        </header>
+        <p class="legend" id="fit-summary"></p>
+        <div id="models" class="model-list" role="radiogroup" aria-label="Models that fit" tabindex="0"></div>
+        <p class="note dim pane-foot">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If one looks wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
+      </section>
+
+      <section id="zone-breakeven" class="pane pane-verdict" aria-labelledby="h-breakeven">
+        <header class="pane-head">
+          <h2 class="pane-title" id="h-breakeven"><span class="step">4</span> The break-even</h2>
+        </header>
+
+        <div class="hero" id="hero">
+          <div class="hero-water">
+            <div id="waterline"></div>
+            <div id="verdict"></div>
+            <div class="actions">
+              <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
+              <button class="btn" id="download-card" type="button">Download card</button>
+              <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
+            </div>
+          </div>
+          <div class="hero-body stack">
+            <div class="figures" id="figures"></div>
+            <div id="smarts"></div>
+            <div id="time-cost"></div>
+            <details class="disclose">
+              <summary>How this is calculated</summary>
+              <div id="math"></div>
+            </details>
+            <section class="fineprint">
+              <h3>The small print that isn't small</h3>
+              <ul id="small-print"></ul>
+            </section>
           </div>
         </div>
-        <div class="hero-body">
-        <div class="figures" id="figures"></div>
-        <div id="smarts"></div>
-        <div id="time-cost"></div>
-        <details class="how">
-          <summary>How this is calculated</summary>
-          <div id="math"></div>
-        </details>
-        <div class="small-print">
-          <h3>The small print that isn't small</h3>
-          <ul id="small-print"></ul>
-        </div>
-      </div>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
+  </div>
 
-  <footer class="site-footer">
-    <p>Every number on this page comes from a field in a JSON file or from the formula shown above. Nothing is fetched live. API prices are the cheapest active OpenRouter endpoint on the date checked; hardware prices are the maker's US list price, or the launch price for discontinued machines. Where a figure is unknown it says so.</p>
-    <p>Sunk Cost is not a review site and has no affiliate links. It exists to interrupt a purchase, not to sell one.</p>
+  <div class="minibar" id="minibar" hidden>
+    <div class="minibar-text"><b id="minibar-verdict"></b><span id="minibar-config"></span></div>
+    <a class="btn btn-primary btn-sm" href="#zone-breakeven">See it</a>
+  </div>
+
+  <footer class="footer">
+    <p>Every number here comes from a field in a JSON file or from the formula shown on the page. Nothing is fetched live. API prices are the cheapest active OpenRouter endpoint on the date checked; hardware prices are the maker's US list price, or the launch price for discontinued machines. Where a figure is unknown, it says so.</p>
+    <p>Sunk Cost is not a review site and carries no affiliate links. It exists to interrupt a purchase, not to sell one.</p>
   </footer>
 
   <script type="module" src="/src/main.ts"></script>
