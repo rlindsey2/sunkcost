@@ -51,6 +51,12 @@ Context cost: every generated token reads the weights *and* the whole KV cache, 
 
 Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active parameters only for MoE). Efficiency is 0.75 for dense models and 0.3 for MoE on Apple Silicon (0.65 on DGX Spark), calibrated against the measured pairs in `throughput.json` and explained in `defaults.json`.
 
+## Design
+
+The palette comes from bathymetric charts: paper at the surface, graduated blues descending to the abyss, and one warm accent held back for the moment the curve breaks through. Instrument Sans carries the interface and the verdict; IBM Plex Mono carries every figure, so numbers do not jitter as sliders move.
+
+Layout is a three-column app shell on wide screens (configuration, model list, verdict), two columns on laptops, and a single column on phones with a persistent bar that keeps the verdict in reach while you scroll. Both themes are real: tokens define light on `:root`, dark under `prefers-color-scheme` and under `[data-theme]` so the toggle wins either way. Every text-on-background pair was measured against WCAG AA and the neutral ramp darkened until it passed.
+
 ## What the page shows
 
 - **Machine picker**: device family, chip or system (current lineup and discontinued previous generation), memory tier with price, and a **What you paid** box that overrides the list price. Useful for a machine bought at launch, second-hand or on sale, and it is the only way to price the configurations with no published list price. It clears when you switch machines, since a price you paid for one box says nothing about another.
