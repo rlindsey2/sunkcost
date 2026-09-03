@@ -1,0 +1,867 @@
+[
+  {
+    "id": "llama-3.1-8b-q4",
+    "display_name": "Llama 3.1 8B Instruct",
+    "params_b": 8.03,
+    "active_params_b": 8.03,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 4.92,
+    "kv_cache_gb_per_8k": 1.074,
+    "architecture": {
+      "n_layers": 32,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "amber",
+      "everyday_coding": "amber",
+      "complex_reasoning": "red",
+      "agentic": "red"
+    },
+    "capability_note": "Fine for summaries and light chat. Don’t trust it with maths or multi-step tool use.",
+    "cloud_equivalent": {
+      "name": "Llama 3.1 8B Instruct",
+      "input_price_per_mtok": 0.02,
+      "output_price_per_mtok": 0.04,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/meta-llama/llama-3.1-8b-instruct",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Llama 3.1 Community License",
+    "sources": [
+      "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+      "https://huggingface.co/unsloth/Llama-3.1-8B-Instruct/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "llama-3.1-8b-q8",
+    "display_name": "Llama 3.1 8B Instruct",
+    "params_b": 8.03,
+    "active_params_b": 8.03,
+    "quantisation": "Q8_0",
+    "weights_gb": 8.54,
+    "kv_cache_gb_per_8k": 1.074,
+    "architecture": {
+      "n_layers": 32,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "amber",
+      "everyday_coding": "amber",
+      "complex_reasoning": "red",
+      "agentic": "red"
+    },
+    "capability_note": "Same model at higher precision. Marginal quality gain; twice the memory.",
+    "cloud_equivalent": {
+      "name": "Llama 3.1 8B Instruct",
+      "input_price_per_mtok": 0.02,
+      "output_price_per_mtok": 0.04,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/meta-llama/llama-3.1-8b-instruct",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Llama 3.1 Community License",
+    "sources": [
+      "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"
+    ]
+  },
+  {
+    "id": "qwen3-8b-q4",
+    "display_name": "Qwen3 8B",
+    "params_b": 8.19,
+    "active_params_b": 8.19,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 5.03,
+    "kv_cache_gb_per_8k": 1.208,
+    "architecture": {
+      "n_layers": 36,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "amber",
+      "everyday_coding": "amber",
+      "complex_reasoning": "red",
+      "agentic": "red"
+    },
+    "capability_note": "Quick and competent on short tasks. Reasoning mode helps a little and costs a lot of tokens.",
+    "cloud_equivalent": {
+      "name": "Qwen3 8B",
+      "input_price_per_mtok": 0.117,
+      "output_price_per_mtok": 0.455,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-8b",
+      "is_exact_match": true,
+      "checked": "2026-09-03",
+      "note": "Single provider on OpenRouter; price is fragile."
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/bartowski/Qwen_Qwen3-8B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-8B/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "qwen3-14b-q4",
+    "display_name": "Qwen3 14B",
+    "params_b": 14.77,
+    "active_params_b": 14.77,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 9.0,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "amber",
+      "complex_reasoning": "amber",
+      "agentic": "red"
+    },
+    "capability_note": "The sweet spot for a 24 GB machine. Everyday coding help is usable; long agent loops drift.",
+    "cloud_equivalent": {
+      "name": "Qwen3 14B",
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.22,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-14b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/bartowski/Qwen_Qwen3-14B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-14B/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "qwen3-32b-q4",
+    "display_name": "Qwen3 32B",
+    "params_b": 32.76,
+    "active_params_b": 32.76,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 19.76,
+    "kv_cache_gb_per_8k": 2.147,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Strong for day-to-day coding help. Slips on long multi-step chains.",
+    "cloud_equivalent": {
+      "name": "Qwen3 32B",
+      "input_price_per_mtok": 0.08,
+      "output_price_per_mtok": 0.28,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-32b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/bartowski/Qwen_Qwen3-32B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-32B/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "qwen3-32b-q8",
+    "display_name": "Qwen3 32B",
+    "params_b": 32.76,
+    "active_params_b": 32.76,
+    "quantisation": "Q8_0",
+    "weights_gb": 34.82,
+    "kv_cache_gb_per_8k": 2.147,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Near-lossless precision. Only worth it if you have the memory to spare; it halves your speed.",
+    "cloud_equivalent": {
+      "name": "Qwen3 32B",
+      "input_price_per_mtok": 0.08,
+      "output_price_per_mtok": 0.28,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-32b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/bartowski/Qwen_Qwen3-32B-GGUF"
+    ]
+  },
+  {
+    "id": "qwen3-30b-a3b-2507-q4",
+    "display_name": "Qwen3 30B-A3B Instruct 2507",
+    "params_b": 30.53,
+    "active_params_b": 3.3,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 18.56,
+    "kv_cache_gb_per_8k": 0.805,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 4,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Fast because only 3.3B parameters are active per token. Quality close to the dense 32B on everyday tasks.",
+    "cloud_equivalent": {
+      "name": "Qwen3 30B-A3B Instruct 2507",
+      "input_price_per_mtok": 0.048,
+      "output_price_per_mtok": 0.193,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-30b-a3b-instruct-2507",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "qwen3-coder-30b-a3b-q4",
+    "display_name": "Qwen3-Coder 30B-A3B",
+    "params_b": 30.53,
+    "active_params_b": 3.3,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 18.56,
+    "kv_cache_gb_per_8k": 0.805,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 4,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "amber",
+      "translation": "amber",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Built for coding and agentic coding loops. The best local option at this size for Claude Code-style tooling.",
+    "cloud_equivalent": {
+      "name": "Qwen3-Coder 30B-A3B",
+      "input_price_per_mtok": 0.07,
+      "output_price_per_mtok": 0.27,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-coder-30b-a3b-instruct",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "qwen3-235b-a22b-2507-q4",
+    "display_name": "Qwen3 235B-A22B Instruct 2507",
+    "params_b": 235.09,
+    "active_params_b": 22,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 142.15,
+    "kv_cache_gb_per_8k": 1.577,
+    "architecture": {
+      "n_layers": 94,
+      "n_kv_heads": 4,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "green",
+      "complex_reasoning": "green",
+      "agentic": "amber"
+    },
+    "capability_note": "The closest thing to a frontier model that fits in 256 GB. Needs an Ultra-class Mac.",
+    "cloud_equivalent": {
+      "name": "Qwen3 235B-A22B 2507",
+      "input_price_per_mtok": 0.0875,
+      "output_price_per_mtok": 0.35,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3-235b-a22b-2507",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Qwen3-235B-A22B-Instruct-2507-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "gemma-3-12b-q4",
+    "display_name": "Gemma 3 12B it",
+    "params_b": 12.19,
+    "active_params_b": 12.19,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 7.3,
+    "kv_cache_gb_per_8k": 0.872,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 8,
+      "head_dim": 256,
+      "full_attention_layers": 8,
+      "sliding_window_layers": 40,
+      "sliding_window": 1024,
+      "note": "5 of every 6 layers use a 1024-token sliding window, so the KV cache barely grows with context."
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "amber",
+      "complex_reasoning": "red",
+      "agentic": "red"
+    },
+    "capability_note": "Strong multilingual for its size and light on KV cache. Not a coding model.",
+    "cloud_equivalent": {
+      "name": "Gemma 3 12B it",
+      "input_price_per_mtok": 0.05,
+      "output_price_per_mtok": 0.15,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-3-12b-it",
+      "is_exact_match": true,
+      "checked": "2026-09-03",
+      "note": "Single provider on OpenRouter; price is fragile."
+    },
+    "license": "Gemma Terms of Use",
+    "sources": [
+      "https://huggingface.co/bartowski/google_gemma-3-12b-it-GGUF",
+      "https://huggingface.co/unsloth/gemma-3-12b-it/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "gemma-3-27b-q4",
+    "display_name": "Gemma 3 27B it",
+    "params_b": 27.43,
+    "active_params_b": 27.43,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 16.55,
+    "kv_cache_gb_per_8k": 1.107,
+    "architecture": {
+      "n_layers": 62,
+      "n_kv_heads": 16,
+      "head_dim": 128,
+      "full_attention_layers": 10,
+      "sliding_window_layers": 52,
+      "sliding_window": 1024,
+      "note": "5 of every 6 layers use a 1024-token sliding window."
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "amber",
+      "complex_reasoning": "amber",
+      "agentic": "red"
+    },
+    "capability_note": "Good writer and translator. Coding is serviceable; tool use is not its thing.",
+    "cloud_equivalent": {
+      "name": "Gemma 3 27B it",
+      "input_price_per_mtok": 0.08,
+      "output_price_per_mtok": 0.45,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-3-27b-it",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Gemma Terms of Use",
+    "sources": [
+      "https://huggingface.co/bartowski/google_gemma-3-27b-it-GGUF",
+      "https://huggingface.co/unsloth/gemma-3-27b-it/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "mistral-small-3.2-24b-q4",
+    "display_name": "Mistral Small 3.2 24B Instruct",
+    "params_b": 24.01,
+    "active_params_b": 24.01,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 14.33,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "amber",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Well-rounded, follows instructions tightly, decent function calling. Nothing exceptional.",
+    "cloud_equivalent": {
+      "name": "Mistral Small 3.2 24B",
+      "input_price_per_mtok": 0.075,
+      "output_price_per_mtok": 0.2,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/mistralai/mistral-small-3.2-24b-instruct",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF",
+      "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "deepseek-r1-distill-qwen-32b-q4",
+    "display_name": "DeepSeek-R1-Distill-Qwen-32B",
+    "params_b": 32.76,
+    "active_params_b": 32.76,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 19.85,
+    "kv_cache_gb_per_8k": 2.147,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "amber",
+      "translation": "amber",
+      "everyday_coding": "amber",
+      "complex_reasoning": "green",
+      "agentic": "red"
+    },
+    "capability_note": "Thinks out loud at length, which eats your tokens/sec budget. Good at maths, poor at tool use.",
+    "cloud_equivalent": {
+      "name": "DeepSeek-R1-Distill-Llama-70B",
+      "input_price_per_mtok": 0.8,
+      "output_price_per_mtok": 0.8,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b",
+      "is_exact_match": false,
+      "checked": "2026-09-03",
+      "note": "The Qwen-32B distill has no active OpenRouter endpoint; the Llama-70B distill (single provider) is the nearest hosted model in the family."
+    },
+    "license": "MIT",
+    "sources": [
+      "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF",
+      "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "deepseek-r1-distill-llama-70b-q4",
+    "display_name": "DeepSeek-R1-Distill-Llama-70B",
+    "params_b": 70.55,
+    "active_params_b": 70.55,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 42.52,
+    "kv_cache_gb_per_8k": 2.684,
+    "architecture": {
+      "n_layers": 80,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "amber",
+      "translation": "amber",
+      "everyday_coding": "amber",
+      "complex_reasoning": "green",
+      "agentic": "red"
+    },
+    "capability_note": "Strong maths and reasoning for an open model, but slow and verbose. Not for agents.",
+    "cloud_equivalent": {
+      "name": "DeepSeek-R1-Distill-Llama-70B",
+      "input_price_per_mtok": 0.8,
+      "output_price_per_mtok": 0.8,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b",
+      "is_exact_match": true,
+      "checked": "2026-09-03",
+      "note": "Single provider on OpenRouter; price is fragile."
+    },
+    "license": "MIT",
+    "sources": [
+      "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF",
+      "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "llama-3.3-70b-q4",
+    "display_name": "Llama 3.3 70B Instruct",
+    "params_b": 70.55,
+    "active_params_b": 70.55,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 42.52,
+    "kv_cache_gb_per_8k": 2.684,
+    "architecture": {
+      "n_layers": 80,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "A solid generalist. Slower than the 30B MoE models for similar everyday quality.",
+    "cloud_equivalent": {
+      "name": "Llama 3.3 70B Instruct",
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.32,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/meta-llama/llama-3.3-70b-instruct",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Llama 3.3 Community License",
+    "sources": [
+      "https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF",
+      "https://huggingface.co/unsloth/Llama-3.3-70B-Instruct/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "gpt-oss-20b-mxfp4",
+    "display_name": "gpt-oss-20b",
+    "params_b": 20.91,
+    "active_params_b": 3.6,
+    "quantisation": "MXFP4",
+    "weights_gb": 12.11,
+    "kv_cache_gb_per_8k": 0.204,
+    "architecture": {
+      "n_layers": 24,
+      "n_kv_heads": 8,
+      "head_dim": 64,
+      "full_attention_layers": 12,
+      "sliding_window_layers": 12,
+      "sliding_window": 128,
+      "note": "Half the layers use a 128-token sliding window; KV cache is tiny."
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "amber",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Punchy for 12 GB, with adjustable reasoning effort. High effort is slow; low effort is shallow.",
+    "cloud_equivalent": {
+      "name": "gpt-oss-20b",
+      "input_price_per_mtok": 0.02,
+      "output_price_per_mtok": 0.1,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/openai/gpt-oss-20b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF",
+      "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "gpt-oss-120b-mxfp4",
+    "display_name": "gpt-oss-120b",
+    "params_b": 116.83,
+    "active_params_b": 5.1,
+    "quantisation": "MXFP4",
+    "weights_gb": 63.39,
+    "kv_cache_gb_per_8k": 0.307,
+    "architecture": {
+      "n_layers": 36,
+      "n_kv_heads": 8,
+      "head_dim": 64,
+      "full_attention_layers": 18,
+      "sliding_window_layers": 18,
+      "sliding_window": 128,
+      "note": "Half the layers use a 128-token sliding window; KV cache is tiny."
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "amber",
+      "everyday_coding": "green",
+      "complex_reasoning": "green",
+      "agentic": "amber"
+    },
+    "capability_note": "The best reasoning per gigabyte on this list. Needs about 64 GB and rewards it.",
+    "cloud_equivalent": {
+      "name": "gpt-oss-120b",
+      "input_price_per_mtok": 0.03,
+      "output_price_per_mtok": 0.17,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/openai/gpt-oss-120b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF",
+      "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "glm-4.5-air-q4",
+    "display_name": "GLM-4.5-Air",
+    "params_b": 110.47,
+    "active_params_b": 12,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 72.98,
+    "kv_cache_gb_per_8k": 1.544,
+    "architecture": {
+      "n_layers": 46,
+      "n_kv_heads": 8,
+      "head_dim": 128
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "green",
+      "complex_reasoning": "amber",
+      "agentic": "green"
+    },
+    "capability_note": "Built for agentic coding; unusually good tool use for a model this size. Needs 96 GB or more.",
+    "cloud_equivalent": {
+      "name": "GLM-4.5-Air",
+      "input_price_per_mtok": 0.13,
+      "output_price_per_mtok": 0.85,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/z-ai/glm-4.5-air",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "MIT",
+    "sources": [
+      "https://huggingface.co/unsloth/GLM-4.5-Air-GGUF",
+      "https://huggingface.co/zai-org/GLM-4.5-Air/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "llama-4-scout-q4",
+    "display_name": "Llama 4 Scout 17B-16E",
+    "params_b": 108.64,
+    "active_params_b": 17,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 65.36,
+    "kv_cache_gb_per_8k": 1.611,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 12,
+      "sliding_window_layers": 36,
+      "sliding_window": 8192,
+      "note": "36 of 48 layers use chunked attention with an 8192-token chunk; modelled here as a sliding window."
+    },
+    "capabilities": {
+      "summarisation": "green",
+      "translation": "green",
+      "everyday_coding": "amber",
+      "complex_reasoning": "amber",
+      "agentic": "amber"
+    },
+    "capability_note": "Enormous context on paper. Reception on quality-for-size was mixed; the 30B MoEs are usually the better buy.",
+    "cloud_equivalent": {
+      "name": "Llama 4 Scout",
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.3,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/meta-llama/llama-4-scout",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Llama 4 Community License",
+    "sources": [
+      "https://huggingface.co/unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF",
+      "https://huggingface.co/unsloth/Llama-4-Scout-17B-16E-Instruct/raw/main/config.json"
+    ]
+  },
+  {
+    "id": "gemma-4-31b-q4",
+    "display_name": "Gemma 4 31B it",
+    "params_b": 31.27,
+    "active_params_b": 31.27,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 19.6,
+    "kv_cache_gb_per_8k": 2.181,
+    "architecture": {
+      "n_layers": 60,
+      "n_kv_heads": 16,
+      "head_dim": 256,
+      "full_attention_layers": 10,
+      "sliding_window_layers": 50,
+      "sliding_window": 1024,
+      "note": "5 of every 6 layers use a 1024-token sliding window."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Sizes and prices are current.",
+    "cloud_equivalent": {
+      "name": "Gemma 4 31B it",
+      "input_price_per_mtok": 0.09,
+      "output_price_per_mtok": 0.34,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-4-31b-it",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/bartowski/google_gemma-4-31b-it-GGUF",
+      "https://huggingface.co/google/gemma-4-31b-it/raw/main/config.json"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3.6-35b-a3b-q4",
+    "display_name": "Qwen3.6 35B-A3B",
+    "params_b": 35.95,
+    "active_params_b": 3,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 22.13,
+    "kv_cache_gb_per_8k": 0.168,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 10,
+      "sliding_window_layers": 0,
+      "note": "Hybrid: 30 linear-attention layers keep a fixed state; only the 10 full-attention layers hold a growing KV cache."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Sizes and prices are current.",
+    "cloud_equivalent": {
+      "name": "Qwen3.6 35B-A3B",
+      "input_price_per_mtok": 0.05,
+      "output_price_per_mtok": 0.7,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3.8-27b-q4",
+    "display_name": "Qwen3.8 27B",
+    "params_b": 27.78,
+    "active_params_b": 27.78,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 16.46,
+    "kv_cache_gb_per_8k": 0.537,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 0,
+      "note": "Hybrid: 48 linear-attention layers; only 16 full-attention layers hold a growing KV cache."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Sizes and prices are current.",
+    "cloud_equivalent": {
+      "name": "Qwen3.8 27B",
+      "input_price_per_mtok": 0.32,
+      "output_price_per_mtok": 2.5,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.8-27b",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "mistral-small-4-119b-q4",
+    "display_name": "Mistral Small 4 (119B-2603)",
+    "params_b": 119.4,
+    "active_params_b": 6,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 73.77,
+    "kv_cache_gb_per_8k": 4.832,
+    "architecture": {
+      "n_layers": 36,
+      "n_kv_heads": 32,
+      "head_dim": 128,
+      "note": "No grouped-query attention (32 KV heads), so the KV cache is large."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Despite the name it is a 119B MoE.",
+    "cloud_equivalent": {
+      "name": "Mistral Small 4",
+      "input_price_per_mtok": 0.15,
+      "output_price_per_mtok": 0.6,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/mistralai/mistral-small-2603",
+      "is_exact_match": true,
+      "checked": "2026-09-03"
+    },
+    "license": "Apache 2.0",
+    "sources": [
+      "https://huggingface.co/unsloth/Mistral-Small-4-119B-2603-GGUF",
+      "https://huggingface.co/mistralai/Mistral-Small-4-119B-2603/raw/main/config.json"
+    ],
+    "TODO": "Capability ratings needed; active-parameter count (6B) is from Mistral's announcement, not the config."
+  }
+]

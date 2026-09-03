@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+# generated at build time from data/*.json
+public/og/*.png
+public/og/*.svg
+public/routes.json

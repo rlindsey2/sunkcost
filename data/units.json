@@ -1,0 +1,119 @@
+{
+  "_comment": "Absurd human units for the verdict line. Break-even tokens are converted to counts of these. Word counts are public figures; tokens are derived at the stated tokens_per_word so the conversion is traceable. Add units freely: each needs a singular, a plural, and either 'tokens' directly or 'words'.",
+  "tokens_per_word": 1.3,
+  "tokens_per_word_note": "Rough English average for modern BPE tokenisers; OpenAI's rule of thumb is ~0.75 words per token.",
+  "units": [
+    {
+      "id": "shakespeare",
+      "singular": "complete works of Shakespeare",
+      "plural": "complete works of Shakespeare",
+      "words": 884647,
+      "source": "Open Source Shakespeare word count of the complete works."
+    },
+    {
+      "id": "war-and-peace",
+      "singular": "copy of War and Peace",
+      "plural": "copies of War and Peace",
+      "words": 587287,
+      "source": "Commonly cited word count of the English translation."
+    },
+    {
+      "id": "lotr",
+      "singular": "reading of The Lord of the Rings",
+      "plural": "readings of The Lord of the Rings",
+      "words": 481103,
+      "source": "Commonly cited word count of the trilogy (excluding appendices)."
+    },
+    {
+      "id": "harry-potter",
+      "singular": "Harry Potter series",
+      "plural": "Harry Potter series",
+      "words": 1084170,
+      "source": "Commonly cited total word count of the seven books."
+    },
+    {
+      "id": "bible",
+      "singular": "King James Bible",
+      "plural": "King James Bibles",
+      "words": 783137,
+      "source": "Commonly cited word count of the KJV."
+    },
+    {
+      "id": "moby-dick",
+      "singular": "copy of Moby-Dick",
+      "plural": "copies of Moby-Dick",
+      "words": 209117,
+      "source": "Project Gutenberg text word count."
+    },
+    {
+      "id": "novel",
+      "singular": "average novel",
+      "plural": "average novels",
+      "words": 90000,
+      "source": "Typical adult-fiction manuscript length."
+    },
+    {
+      "id": "phd-thesis",
+      "singular": "PhD thesis",
+      "plural": "PhD theses",
+      "words": 80000,
+      "source": "Typical UK humanities thesis limit."
+    },
+    {
+      "id": "wikipedia-en",
+      "singular": "English Wikipedia",
+      "plural": "English Wikipedias",
+      "words": 4900000000,
+      "source": "Wikipedia:Size of Wikipedia, article text, order-of-magnitude."
+    },
+    {
+      "id": "hamlet",
+      "singular": "Hamlet",
+      "plural": "Hamlets",
+      "words": 30557,
+      "source": "Open Source Shakespeare."
+    },
+    {
+      "id": "us-tax-code",
+      "singular": "US Internal Revenue Code",
+      "plural": "US Internal Revenue Codes",
+      "words": 2600000,
+      "source": "Tax Foundation estimate of the statute text (not regulations)."
+    },
+    {
+      "id": "encyclopaedia-britannica",
+      "singular": "printed Encyclopaedia Britannica",
+      "plural": "printed Encyclopaedia Britannicas",
+      "words": 44000000,
+      "source": "Commonly cited figure for the 15th edition."
+    },
+    {
+      "id": "gettysburg",
+      "singular": "Gettysburg Address",
+      "plural": "Gettysburg Addresses",
+      "words": 272,
+      "source": "Bliss copy."
+    },
+    {
+      "id": "terms-of-service",
+      "singular": "reading of the iTunes terms of service",
+      "plural": "readings of the iTunes terms of service",
+      "words": 20000,
+      "source": "Commonly cited approximate length."
+    },
+    {
+      "id": "lifetime-of-speech",
+      "singular": "lifetime of one person's speech",
+      "plural": "lifetimes of one person's speech",
+      "words": 860000000,
+      "source": "Commonly cited estimate that a person speaks about 860 million words in a lifetime."
+    },
+    {
+      "id": "congressional-record",
+      "singular": "year of the Congressional Record",
+      "plural": "years of the Congressional Record",
+      "words": 30000000,
+      "source": "Order-of-magnitude: roughly 30,000 pages a year at about 1,000 words a page."
+    }
+  ]
+}

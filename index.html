@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How long until local AI pays for itself? — Sunk Cost</title>
+  <meta name="description" content="Pick a Mac mini, Mac Studio or DGX Spark, see which open models fit and how fast they run, and how much usage it takes to break even against paying an API. It is willing to say: it doesn't." />
+  <link rel="canonical" href="https://sunkcost.ai/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Sunk Cost" />
+  <meta property="og:title" content="How long until local AI pays for itself? — Sunk Cost" />
+  <meta property="og:description" content="Which open models fit your machine, how fast they run, and how many tokens it takes to pay back the hardware against an API. Honest enough to say never." />
+  <meta property="og:image" content="https://sunkcost.ai/og/default.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How long until local AI pays for itself? — Sunk Cost" />
+  <meta name="twitter:image" content="https://sunkcost.ai/og/default.png" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <div class="brand">Sunk Cost <span>· sunkcost.ai</span></div>
+      <div class="tagline">If you buy this machine to run local models, how long until it pays for itself, and what can it actually do?</div>
+    </div>
+    <div class="meta">Data last checked <span id="data-checked"></span> · all prices USD</div>
+  </header>
+
+  <main class="layout">
+    <div class="col-left">
+      <section id="zone-machine" aria-labelledby="h-machine">
+        <h2 class="zone" id="h-machine"><b>1.</b> Pick your machine</h2>
+        <label class="field"><span>Device</span>
+          <select id="family" aria-label="Device family"></select>
+        </label>
+        <div class="field-label">Memory, with the price of the cheapest configuration that has it</div>
+        <div id="configs"></div>
+        <div id="hw-status"></div>
+
+        <div style="margin-top:18px">
+          <label class="field" for="usage"><span>How much you would use it</span>
+            <input type="range" id="usage" aria-describedby="usage-readout" />
+          </label>
+          <div class="readout" id="usage-readout" aria-live="polite"></div>
+        </div>
+        <div style="margin-top:12px">
+          <label class="field" for="ratio"><span>Input to output ratio</span>
+            <input type="range" id="ratio" step="1" aria-describedby="ratio-readout" />
+          </label>
+          <div class="readout" id="ratio-readout" aria-live="polite"></div>
+        </div>
+
+        <details class="advanced">
+          <summary>Assumptions you can change</summary>
+          <div class="grid">
+            <label class="field"><span>Context length for the memory check</span><select id="ctx"></select></label>
+            <label class="field"><span>Electricity, $ per kWh</span><input type="number" id="kwh" min="0" step="0.01" /></label>
+            <label class="field"><span>API speed, tokens/sec</span><input type="number" id="cloud-tps" min="1" step="5" /></label>
+          </div>
+          <p class="muted small" id="kwh-note" style="margin-top:8px"></p>
+          <p class="muted small">Where no measurement exists, local speed is estimated as memory bandwidth ÷ bytes read per token × <span id="efficiency-note"></span>, and labelled as such. API speed only affects the time comparison.</p>
+        </details>
+      </section>
+
+      <section id="zone-fits" aria-labelledby="h-fits">
+        <h2 class="zone" id="h-fits"><b>2.</b> See what fits</h2>
+        <div class="legend" aria-hidden="true">
+          <span><i class="dot dot-green"></i> good</span>
+          <span><i class="dot dot-amber"></i> usable</span>
+          <span><i class="dot dot-red"></i> don't</span>
+          <span><i class="dot dot-unknown"></i> not rated</span>
+          <span>· dots: summarise, translate, coding, reasoning, agentic</span>
+        </div>
+        <div id="models" role="radiogroup" aria-label="Models that fit"></div>
+        <p class="muted small">Ratings are a judgement call informed by public benchmarks, coarse on purpose. If you think one is wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
+      </section>
+    </div>
+
+    <div class="col-right">
+      <section id="zone-breakeven" aria-labelledby="h-breakeven">
+        <h2 class="zone" id="h-breakeven"><b>3.</b> See the break-even</h2>
+        <div class="hero">
+          <div id="waterline"></div>
+          <div id="verdict"></div>
+          <div class="actions">
+            <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
+            <button class="btn" id="download-card" type="button">Download card</button>
+            <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
+          </div>
+          <div class="figures" id="figures"></div>
+          <div id="time-cost"></div>
+          <details class="how">
+            <summary>How this is calculated</summary>
+            <div id="math"></div>
+          </details>
+          <div class="small-print">
+            <h3>The small print that isn't small</h3>
+            <ul id="small-print"></ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Every number on this page comes from a field in a JSON file or from the formula shown above. Nothing is fetched live. Prices are the cheapest active OpenRouter endpoint on the date checked; hardware prices are the maker's US list price, or the launch price for discontinued machines. Where a figure is unknown it says so.</p>
+    <p>Sunk Cost is not a review site and has no affiliate links. It exists to interrupt a purchase, not to sell one.</p>
+  </footer>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

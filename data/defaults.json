@@ -1,0 +1,71 @@
+{
+  "_comment": "Global assumptions. Every value here is shown in the UI and editable where it makes sense. Edit freely; the validate script checks types.",
+  "data_last_checked": "2026-09-03",
+  "site_url": "https://sunkcost.ai",
+  "repo_url": null,
+  "repo_url_TODO": "Set to the public GitHub URL once the repo is pushed; the corrections link uses it.",
+  "usage": {
+    "default_tokens_per_day": 500000,
+    "min_tokens_per_day": 10000,
+    "max_tokens_per_day": 20000000,
+    "default_input_to_output_ratio": 4,
+    "min_input_to_output_ratio": 1,
+    "max_input_to_output_ratio": 20,
+    "labels": [
+      {
+        "up_to": 50000,
+        "label": "a few chats a day"
+      },
+      {
+        "up_to": 200000,
+        "label": "light assistant use"
+      },
+      {
+        "up_to": 1000000,
+        "label": "a moderate coding-assistant day"
+      },
+      {
+        "up_to": 4000000,
+        "label": "heavy coding with an agent"
+      },
+      {
+        "up_to": 20000001,
+        "label": "agents running most of the day"
+      }
+    ]
+  },
+  "electricity": {
+    "default_price_per_kwh_usd": 0.17,
+    "country": "United States",
+    "source": "US EIA average residential retail price, ~17 cents/kWh in 2025. TODO: confirm the latest monthly figure at eia.gov/electricity/monthly and update.",
+    "source_url": "https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a"
+  },
+  "cloud": {
+    "default_tokens_per_sec": 80,
+    "note": "Typical hosted decode speed for mid-size open models on OpenRouter. Editable; it only affects the time-cost comparison, not the money."
+  },
+  "estimate": {
+    "efficiency_dense": 0.75,
+    "efficiency_moe": 0.3,
+    "note": "When no measurement exists, tokens/sec is estimated as memory_bandwidth ÷ bytes read per token × an efficiency factor. Dense: 0.75, calibrated on measured pairs in throughput.json (Qwen3 32B Q4 reaches 82% of the ceiling on M3 Ultra and 77% on DGX Spark; Qwen2.5-Coder 32B 80% on M4 Max; small 7-8B models manage 55-60%, so estimates for them run high). MoE: 0.3, because small active-parameter models are limited by routing and kernel overhead rather than bandwidth on Apple Silicon (Qwen3 30B-A3B measures 30% of the ceiling on M4 Max and 23% on M3 Ultra). A hardware entry can override the MoE factor with estimate_efficiency_moe (DGX Spark measures 65%). Measured figures always take precedence and the UI says which you are looking at.",
+    "sources": [
+      "https://zeux.io/2024/03/15/llm-inference-sol/",
+      "https://github.com/ggml-org/llama.cpp/discussions/4167",
+      "data/throughput.json"
+    ]
+  },
+  "context": {
+    "default_tokens": 32768,
+    "options": [
+      8192,
+      16384,
+      32768,
+      65536,
+      131072
+    ]
+  },
+  "nearly_fits_ratio": 1.4,
+  "waterline_max_years": 10,
+  "typical_task_output_tokens": 1000,
+  "default_hardware_id": "mac-studio-m5-max-64"
+}
