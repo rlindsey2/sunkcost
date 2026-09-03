@@ -68,6 +68,17 @@ Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active param
 
 ## Sharing a preview
 
+Live preview: **https://sunkcost-preview.netlify.app**
+
+To redeploy after a change:
+
+```bash
+SITE_URL=https://sunkcost-preview.netlify.app npm run build:preview
+netlify deploy --prod --dir=dist --site sunkcost-preview
+```
+
+The site was created through the Netlify API rather than the build hooks, so there is no git integration; deploys are manual uploads of `dist`. Note that this Netlify account defaults new sites to team-login protection (`sso_login`), which had to be turned off on this site for the link to be publicly viewable.
+
 `npm run build:single` inlines the CSS and JS into `dist/sunkcost-standalone.html` — one file, no build step, no server. Open it from disk, email it, or publish it anywhere that takes a single HTML file. The site itself is plain static files in `dist/`, so any static host works: drag the folder onto Netlify Drop, `wrangler pages deploy dist`, or push and enable GitHub Pages.
 
 ## Phase 2 (structure only)
