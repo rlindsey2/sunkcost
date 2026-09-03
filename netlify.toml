@@ -1,0 +1,20 @@
+# Static site: everything is built ahead of time, there is no backend.
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# The whole app is one page; every configuration is a query string on it.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/og/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

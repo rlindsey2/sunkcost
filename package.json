@@ -13,7 +13,8 @@
     "build:routes": "tsx scripts/build-routes.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build:single": "npm run build && tsx scripts/build-artifact.ts"
+    "build:single": "npm run build && tsx scripts/build-artifact.ts",
+    "build:preview": "npm run build && tsx scripts/set-site-url.ts"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
