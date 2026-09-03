@@ -1,5 +1,5 @@
 import { data } from './data';
-import { layoutNumberLine, renderAll, shareUrl } from './render';
+import { drawWaterline, layoutNumberLine, renderAll, shareUrl } from './render';
 import { parseState, serializeState, sliderToUsage, usageToSlider, type State } from './state';
 import { renderOgCard, ogFigures, OG_WIDTH, OG_HEIGHT } from './og';
 import { fmtDuration, fmtNum } from './format';
@@ -168,6 +168,15 @@ async function svgToPng(svg: string, w: number, h: number): Promise<Blob> {
   }
 }
 
+// the chart is drawn at the panel's real pixel size, so it must follow it
+const heroWater = document.querySelector('#hero-water');
+if (heroWater) {
+  let frame = 0;
+  new ResizeObserver(() => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => drawWaterline(data, view));
+  }).observe(heroWater);
+}
 window.addEventListener('resize', () => layoutNumberLine());
 
 window.addEventListener('popstate', () => {

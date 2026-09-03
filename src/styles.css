@@ -54,6 +54,9 @@
   --axis-text: var(--muted);
   --water-text: #cfe0ee;
   --chart-ink: #bcd4e6;
+  --sky-horizon: #eef4f8;
+  --water-mid: #123f60;
+  --surface-ink: #2f6890;
 
   --sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -102,6 +105,9 @@
     --curve-under: #8fc2e8;
     --grid: rgba(255, 255, 255, 0.12);
     --chart-ink: #b6cfe2;
+    --sky-horizon: #3a5266;
+    --water-mid: #0d3550;
+    --surface-ink: #a8cde9;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 26px -20px rgba(0, 0, 0, 0.9);
     --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.55), 0 18px 44px -26px rgba(0, 0, 0, 0.95);
   }
@@ -142,6 +148,9 @@
   --curve-under: #8fc2e8;
   --grid: rgba(255, 255, 255, 0.12);
   --chart-ink: #b6cfe2;
+  --sky-horizon: #3a5266;
+  --water-mid: #0d3550;
+  --surface-ink: #a8cde9;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 26px -20px rgba(0, 0, 0, 0.9);
   --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.55), 0 18px 44px -26px rgba(0, 0, 0, 0.95);
 }
@@ -423,24 +432,26 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
   box-shadow: var(--shadow-lift); overflow: hidden;
 }
 .hero-water {
-  padding: 12px 18px 18px;
-  background:
-    linear-gradient(180deg,
-      var(--sky) 0 38%,
-      color-mix(in srgb, var(--water-top) calc(58% + var(--depth) * 42%), var(--w-2)) 60%,
-      var(--water-deep) 100%);
-  color: #eaf2fa;
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  min-height: clamp(380px, 46vh, 520px);
+  background: var(--water-deep);
+  color: #eef5fb;
 }
-#waterline svg { width: 100%; height: auto; display: block; }
-#waterline.is-empty { min-height: 130px; }
-
+.hero-chart { position: absolute; inset: 0; z-index: 0; }
+.hero-chart svg { display: block; width: 100%; height: 100%; }
+.hero-content { position: relative; z-index: 1; padding: 0 18px 18px; }
+.hero-content::before {
+  content: ''; position: absolute; inset: -56px -18px -18px; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, transparent 0, color-mix(in srgb, var(--water-deep) 55%, transparent) 38%, color-mix(in srgb, var(--water-deep) 82%, transparent) 100%);
+}
 .verdict-headline {
-  font-size: clamp(27px, 3.3vw, 38px); line-height: 1.05; letter-spacing: -0.032em;
-  margin-top: 14px; color: #fff; text-wrap: balance;
+  font-size: clamp(28px, 3.4vw, 40px); line-height: 1.03; letter-spacing: -0.034em;
+  color: #fff; text-wrap: balance; text-shadow: 0 1px 18px rgba(3, 12, 20, 0.55);
 }
 .hero.is-never .verdict-headline { color: var(--accent-2); }
-.verdict-sub { font-size: 14.5px; margin-top: 6px; color: var(--water-text); }
-.verdict-config { font-size: 12px; margin-top: 3px; color: rgba(207, 224, 238, 0.66); }
+.verdict-sub { font-size: 14.5px; margin-top: 7px; color: var(--water-text); text-shadow: 0 1px 10px rgba(3, 12, 20, 0.5); }
+.verdict-config { font-size: 12px; margin-top: 4px; color: rgba(207, 224, 238, 0.68); text-shadow: 0 1px 10px rgba(3, 12, 20, 0.5); }
 .verdict-unknown { font-size: 21px; color: var(--water-text); }
 .caution {
   margin-top: 11px; padding: 8px 11px; font-size: 12.5px; line-height: 1.45;

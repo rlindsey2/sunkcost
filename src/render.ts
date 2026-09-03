@@ -238,27 +238,52 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
 
 function renderVerdict(state: State, data: Dataset, view: View) {
   const c = view.calc;
-  const wl = $('#waterline');
-  if (c && view.price != null) {
-    wl.innerHTML = renderWaterline({ devicePriceUsd: view.price, dailySaving: c.dailySaving, breakevenDays: c.breakevenDays, maxYears: data.defaults.waterline_max_years, width: 800, height: 250, markerDays: 365.25 });
-    wl.classList.remove('is-empty');
-  } else {
-    wl.innerHTML = '';
-    wl.classList.add('is-empty');
-  }
-  // how deep the panel reads: the longer you are under, the darker the water
-  const depth = c?.breakevenDays == null ? 1 : Math.min(1, Math.log10(Math.max(1, c.breakevenDays / 30)) / 2.4);
-  $('#hero').style.setProperty('--depth', depth.toFixed(3));
-  $('#hero').classList.toggle('is-never', view.verdict.kind === 'never');
   const cap = view.capacity;
   const caution = cap.capped && view.model
-    ? `<div class="caution">You asked for ${formatUsageShort(cap.requested)} tokens a day. ${esc(view.model.display_name)} on this machine can only get through <b class="num">${formatUsageShort(cap.maxTokensPerDay!)}</b> a day at ${fmtNum(view.throughput?.tokensPerSec, 0)} tok/s, generating 24 hours non-stop, so that is what the break-even uses. The rest would still be going to an API.</div>`
+    ? `<div class="caution">You asked for ${formatUsageShort(cap.requested)} tokens a day. ${esc(view.model.display_name)} on this machine can only get through <b class="num">${formatUsageShort(cap.maxTokensPerDay!)}</b> a day at ${fmtNum(view.throughput?.tokensPerSec, 0)} tok/s, generating around the clock, so that is what the break-even uses. The rest would still go to an API.</div>`
     : '';
   $('#verdict').innerHTML = `<h2 class="verdict-headline verdict-${view.verdict.kind}">${esc(view.verdict.headline)}</h2>
     ${view.verdict.sub ? `<p class="verdict-sub">${esc(view.verdict.sub)}</p>` : ''}
-    <p class="verdict-config muted">${esc(view.configLine)} · ${esc(view.usageLine)}</p>${caution}`;
-  const url = shareUrl(state);
-  $<HTMLAnchorElement>('#share-x').href = `https://twitter.com/intent/tweet?${new URLSearchParams({ text: shareText(view), url }).toString()}`;
+    <p class="verdict-config">${esc(view.configLine)} · ${esc(view.usageLine)}</p>${caution}`;
+
+  // the depth of the water tracks how long you are under it
+  const depth = c?.breakevenDays == null ? 1 : Math.min(1, Math.log10(Math.max(1, c.breakevenDays / 30)) / 2.4);
+  $('#hero').style.setProperty('--depth', depth.toFixed(3));
+  $('#hero').classList.toggle('is-never', view.verdict.kind === 'never');
+
+  drawWaterline(data, view);
+
+  $<HTMLAnchorElement>('#share-x').href = `https://twitter.com/intent/tweet?${new URLSearchParams({ text: shareText(view), url: shareUrl(state) }).toString()}`;
+}
+
+/**
+ * The chart is the ground of the card, not a widget on it: it is measured to
+ * the panel and drawn edge to edge, with the plot confined to the band above
+ * the verdict so the text always sits on open water.
+ */
+export function drawWaterline(data: Dataset, view: View) {
+  const wl = $('#waterline');
+  const c = view.calc;
+  if (!c || view.price == null) {
+    wl.innerHTML = '';
+    wl.classList.add('is-empty');
+    return;
+  }
+  wl.classList.remove('is-empty');
+  const box = $('#hero-water').getBoundingClientRect();
+  const content = document.querySelector('.hero-content')?.getBoundingClientRect().height ?? 120;
+  const width = Math.round(box.width) || 460;
+  const height = Math.round(box.height) || 340;
+  wl.innerHTML = renderWaterline({
+    devicePriceUsd: view.price,
+    dailySaving: c.dailySaving,
+    breakevenDays: c.breakevenDays,
+    maxYears: data.defaults.waterline_max_years,
+    width,
+    height,
+    plotHeight: Math.max(170, height - content - 4),
+    markerDays: 365.25,
+  });
 }
 
 export function shareUrl(state: State): string {

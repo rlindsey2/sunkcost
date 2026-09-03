@@ -55,6 +55,8 @@ Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active param
 
 The palette comes from bathymetric charts: paper at the surface, graduated blues descending to the abyss, and one warm accent held back for the moment the curve breaks through. Instrument Sans carries the interface and the verdict; IBM Plex Mono carries every figure, so numbers do not jitter as sliders move.
 
+The break-even card is one body of water rather than a chart in a box. The sky, the surface and the deep run edge to edge, and the verdict is written on the water itself, so the picture and the number are a single object you can screenshot. The window always frames the whole climb: the curve rises from the purchase to the moment it breaks the surface, however far away that is, and the time axis carries the scale. Only when it never pays back does the window fall back to a fixed span, and the flat line is the message.
+
 Layout is a three-column app shell on wide screens (configuration, model list, verdict), two columns on laptops, and a single column on phones with a persistent bar that keeps the verdict in reach while you scroll. Both themes are real: tokens define light on `:root`, dark under `prefers-color-scheme` and under `[data-theme]` so the toggle wins either way. Every text-on-background pair was measured against WCAG AA and the neutral ramp darkened until it passed.
 
 ## What the page shows

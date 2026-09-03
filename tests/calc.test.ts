@@ -109,18 +109,26 @@ describe('state', () => {
 });
 
 describe('waterline', () => {
-  it('marks never / off-chart / on-chart', () => {
-    expect(waterlineGeometry({ devicePriceUsd: 1000, dailySaving: -1, breakevenDays: null, maxYears: 10 }).never).toBe(true);
-    expect(waterlineGeometry({ devicePriceUsd: 1000, dailySaving: 0.1, breakevenDays: 10000, maxYears: 10 }).surfacesOffChart).toBe(true);
-    const g = waterlineGeometry({ devicePriceUsd: 1000, dailySaving: 5, breakevenDays: 200, maxYears: 10 });
-    expect(g.surfacesOnChart).toBe(true);
-    expect(g.horizonDays).toBeCloseTo(290, 0);
+  it('frames the whole climb whenever there is one', () => {
+    // never pays back: fall back to the fixed span, and the flat line is the point
+    const never = waterlineGeometry({ devicePriceUsd: 1000, dailySaving: -1, breakevenDays: null, maxYears: 10 });
+    expect(never.never).toBe(true);
+    expect(never.surfacesOnChart).toBe(false);
+    expect(never.horizonDays).toBeCloseTo(3652.5, 0);
+    // a payback centuries out still surfaces on the chart; the axis carries the scale
+    const far = waterlineGeometry({ devicePriceUsd: 1000, dailySaving: 0.1, breakevenDays: 10000, maxYears: 10 });
+    expect(far.surfacesOnChart).toBe(true);
+    expect(far.horizonDays).toBeCloseTo(11600, 0);
+    const near = waterlineGeometry({ devicePriceUsd: 1000, dailySaving: 5, breakevenDays: 200, maxYears: 10 });
+    expect(near.surfacesOnChart).toBe(true);
+    expect(near.horizonDays).toBeCloseTo(232, 0);
   });
   it('renders valid-looking SVG with a surface line', () => {
     const svg = renderWaterline({ devicePriceUsd: 2699, dailySaving: 2, breakevenDays: 1349.5, maxYears: 10, markerDays: 365.25 });
     expect(svg.startsWith('<svg')).toBe(true);
     expect(svg).toContain('surfaces at 3.7 yrs');
     expect(svg).toContain('underwater');
+    expect(svg).toContain('BREAK EVEN');
     expect(svg.endsWith('</svg>')).toBe(true);
   });
 });

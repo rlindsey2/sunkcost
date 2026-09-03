@@ -3,7 +3,7 @@
  * config, the verdict and the plain figures beneath. Used by scripts/build-og.ts
  * at build time and by the in-page "download card" button.
  */
-import { renderWaterline, waterlineGeometry } from './waterline';
+import { renderWaterline } from './waterline';
 import { esc, fmtUsd, fmtNum } from './format';
 
 export interface OgCardInput {
@@ -21,73 +21,67 @@ export interface OgCardInput {
   fontFamily?: string;
 }
 
-/** where the surface line lands inside the chart, so the card's gradient can match it */
-function surfaceOffsetInChart(i: OgCardInput, height: number, scale: number): number {
-  const padT = 18 * scale;
-  const padB = 30 * scale;
-  const plotH = height - padT - padB;
-  const price = i.devicePriceUsd;
-  const g = waterlineGeometry({ devicePriceUsd: price, dailySaving: i.dailySaving, breakevenDays: i.breakevenDays, maxYears: i.maxYears });
-  const endValue = -price + i.dailySaving * g.horizonDays;
-  const yMinVal = Math.min(-price * 1.06, endValue * 1.06);
-  const yMaxVal = g.surfacesOnChart ? Math.max(endValue * 1.15, price * 0.25) : price * 0.28;
-  return padT + ((yMaxVal - 0) / (yMaxVal - yMinVal)) * plotH;
-}
-
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
+/** height of the light strip at the foot of the card that carries the figures */
+const FIGURES_H = 158;
+
 export function renderOgCard(i: OgCardInput): string {
   const font = i.fontFamily ?? '"IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif';
-  const waterH = 430;
+  const headerH = 72;
+  const waterH = OG_HEIGHT - FIGURES_H - headerH;
+  const verdictSize = i.verdict.length > 34 ? 50 : 60;
+  const textBlockH = 34 + verdictSize + (i.subLine ? 34 : 0) + 34;
+
   const wl = renderWaterline({
     devicePriceUsd: i.devicePriceUsd,
     dailySaving: i.dailySaving,
     breakevenDays: i.breakevenDays,
     maxYears: i.maxYears,
-    width: OG_WIDTH - 120,
-    height: 214,
-    scale: 1.3,
+    width: OG_WIDTH,
+    height: waterH,
+    plotHeight: waterH - textBlockH,
+    scale: 1.5,
     fontFamily: font,
     showLabels: true,
     markerDays: 365.25,
-    transparentBg: true,
     id: 'og',
-  }).replace(/var\(--[a-z-]+, ([^)]+)\)/g, '$1');
+  })
+    // the card is a picture, not a themed page, so resolve the tokens to the light palette
+    .replace(/var\(--sky, [^)]*\)/g, '#dbe8f1')
+    .replace(/var\(--sky-horizon, var\(--sky, [^)]*\)\)/g, '#eef4f8')
+    .replace(/var\(--water-top, [^)]*\)/g, '#1f5479')
+    .replace(/var\(--water-mid, [^)]*\)/g, '#123f60')
+    .replace(/var\(--water-deep, [^)]*\)/g, '#05121e')
+    .replace(/var\(--surface-ink, [^)]*\)/g, '#2f6890')
+    .replace(/var\(--[a-z-]+, ([^)]+)\)/g, '$1');
 
   const figs = i.figures
     .map((f, idx) => {
-      const x = 60 + idx * ((OG_WIDTH - 120) / i.figures.length);
-      return `<text x="${x}" y="${waterH + 62}" font-size="17" fill="#5b6673">${esc(f.label)}</text>
-<text x="${x}" y="${waterH + 94}" font-size="26" font-weight="600" fill="#1a1d21" style="font-variant-numeric: tabular-nums">${esc(f.value)}</text>`;
+      const x = 56 + idx * ((OG_WIDTH - 112) / i.figures.length);
+      return `<text x="${x}" y="${headerH + waterH + 58}" font-size="18" fill="#4f5e68">${esc(f.label)}</text>
+<text x="${x}" y="${headerH + waterH + 96}" font-size="30" font-weight="600" fill="#0e1720" letter-spacing="-0.5" style="font-variant-numeric: tabular-nums">${esc(f.value)}</text>`;
     })
     .join('\n');
 
-  // the chart's surface line sits 18 * scale from its top plus the sky share of the plot;
-  // the panel gradient breaks at the same y so water reads as one body
-  const chartTop = 62;
-  const surfaceY = chartTop + surfaceOffsetInChart(i, 214, 1.3);
-  const surfaceFrac = surfaceY / waterH;
-  const verdictSize = i.verdict.length > 34 ? 44 : 54;
   const never = /never/i.test(i.verdict);
+  const textTop = headerH + waterH - textBlockH + 34;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${OG_WIDTH}" height="${OG_HEIGHT}" viewBox="0 0 ${OG_WIDTH} ${OG_HEIGHT}" font-family='${font}'>
-<defs>
-  <linearGradient id="og-panel" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#eef3f8"/>
-    <stop offset="${(surfaceFrac - 0.002).toFixed(4)}" stop-color="#e2ebf3"/>
-    <stop offset="${surfaceFrac.toFixed(4)}" stop-color="#2a6296"/>
-    <stop offset="1" stop-color="#071a2e"/>
-  </linearGradient>
-</defs>
-<rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="#f6f7f5"/>
-<rect width="${OG_WIDTH}" height="${waterH}" fill="url(#og-panel)"/>
-<text x="60" y="46" font-size="18" font-weight="700" fill="#1a1d21" letter-spacing="0.4">${esc(i.siteName ?? 'Sunk Cost')}</text>
-<text x="${OG_WIDTH - 60}" y="46" font-size="15" text-anchor="end" fill="#5b6673">sunkcost.ai${i.dataChecked ? ` · data checked ${esc(i.dataChecked)}` : ''}</text>
-<g transform="translate(60, 62)">${wl}</g>
-<text x="60" y="${waterH - 62}" font-size="${verdictSize}" font-weight="700" fill="${never ? '#ffd9a8' : '#ffffff'}" letter-spacing="-1">${esc(i.verdict)}</text>
-<text x="60" y="${waterH - 32}" font-size="21" fill="#d5e4f2">${esc(i.configLine)} · ${esc(i.usageLine)}</text>
-${i.subLine ? `<text x="60" y="${waterH - 6}" font-size="19" fill="rgba(213,228,242,0.78)">${esc(i.subLine)}</text>` : ''}
+<rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="#f2f4f3"/>
+<g transform="translate(0, ${headerH})">${wl}</g>
+<rect x="0" y="${headerH + waterH - textBlockH - 24}" width="${OG_WIDTH}" height="${textBlockH + 24}" fill="url(#og-scrim)"/>
+<defs><linearGradient id="og-scrim" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#05121e" stop-opacity="0"/>
+  <stop offset="0.45" stop-color="#05121e" stop-opacity="0.55"/>
+  <stop offset="1" stop-color="#05121e" stop-opacity="0.85"/>
+</linearGradient></defs>
+<text x="56" y="44" font-size="20" font-weight="700" fill="#0e1720" letter-spacing="0.2">${esc(i.siteName ?? 'Sunk Cost')}</text>
+<text x="${OG_WIDTH - 56}" y="44" font-size="16" text-anchor="end" fill="#4f5e68">sunkcost.ai${i.dataChecked ? ` · data checked ${esc(i.dataChecked)}` : ''}</text>
+<text x="56" y="${textTop + verdictSize * 0.78}" font-size="${verdictSize}" font-weight="700" fill="${never ? '#f0a75a' : '#ffffff'}" letter-spacing="-1.6">${esc(i.verdict)}</text>
+<text x="56" y="${textTop + verdictSize * 0.78 + 34}" font-size="22" fill="#cfe0ee">${esc(i.configLine)} · ${esc(i.usageLine)}</text>
+${i.subLine ? `<text x="56" y="${textTop + verdictSize * 0.78 + 64}" font-size="20" fill="rgba(207,224,238,0.8)">${esc(i.subLine)}</text>` : ''}
 ${figs}
 </svg>`;
 }
