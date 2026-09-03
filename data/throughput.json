@@ -8,7 +8,8 @@
     "source_url": "https://github.com/ggml-org/llama.cpp/blob/master/benches/dgx-spark/dgx-spark.md",
     "quant": "MXFP4",
     "runtime": "llama.cpp CUDA",
-    "notes": "tg32 at empty context; 61.65 tok/s with 32k tokens of context"
+    "notes": "tg32 at empty context; 61.65 tok/s with 32k tokens of context",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-120b-mxfp4",
@@ -19,7 +20,8 @@
     "source_url": "https://github.com/ggml-org/llama.cpp/blob/master/benches/dgx-spark/dgx-spark.md",
     "quant": "MXFP4",
     "runtime": "llama.cpp CUDA",
-    "notes": "tg32 at empty context; 42.76 tok/s with 32k tokens of context"
+    "notes": "tg32 at empty context; 42.76 tok/s with 32k tokens of context",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -30,7 +32,8 @@
     "source_url": "https://github.com/DandinPower/llama.cpp_bench/blob/main/dgx_spark/report.md",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp CUDA",
-    "notes": "decode at 512 context; 83.8 at 2048"
+    "notes": "decode at 512 context; 83.8 at 2048",
+    "measured_at_context": 512
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -41,7 +44,8 @@
     "source_url": "https://github.com/DandinPower/llama.cpp_bench/blob/main/dgx_spark/report.md",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp CUDA",
-    "notes": "measured on Qwen3 30B-A3B, an identical architecture; ggml-org measured the Coder at Q8_0 at 61.06 tok/s"
+    "notes": "measured on Qwen3 30B-A3B, an identical architecture; ggml-org measured the Coder at Q8_0 at 61.06 tok/s",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-32b-q4",
@@ -52,7 +56,8 @@
     "source_url": "https://github.com/DandinPower/llama.cpp_bench/blob/main/dgx_spark/report.md",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp CUDA",
-    "notes": "decode at 512 context; 10.5 at 2048"
+    "notes": "decode at 512 context; 10.5 at 2048",
+    "measured_at_context": 512
   },
   {
     "model_id": "qwen3-8b-q4",
@@ -63,7 +68,8 @@
     "source_url": "https://github.com/DandinPower/llama.cpp_bench/blob/main/dgx_spark/report.md",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp CUDA",
-    "notes": "decode at 512 context"
+    "notes": "decode at 512 context",
+    "measured_at_context": 512
   },
   {
     "model_id": "glm-4.5-air-q4",
@@ -74,7 +80,8 @@
     "source_url": "https://jetsonhacks.com/wp-content/uploads/2025/10/spark-llamacpp-bench.html",
     "quant": "Q4_K",
     "runtime": "llama.cpp CUDA",
-    "notes": "13.19 tok/s with 32k tokens of context"
+    "notes": "13.19 tok/s with 32k tokens of context",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-32b-q4",
@@ -85,7 +92,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "Q8 20.11 tok/s; MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "Q8 20.11 tok/s; MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-32b-q8",
@@ -96,7 +104,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-14b-q4",
@@ -107,7 +116,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-8b-q4",
@@ -118,7 +128,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -129,7 +140,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "measured on the original Qwen3 30B-A3B, same architecture; MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "measured on the original Qwen3 30B-A3B, same architecture; MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -140,7 +152,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "measured on Qwen3 30B-A3B, same architecture; MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "measured on Qwen3 30B-A3B, same architecture; MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "gemma-3-27b-q4",
@@ -151,7 +164,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-qwen-32b-q4",
@@ -162,7 +176,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-llama-70b-q4",
@@ -173,7 +188,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-4-scout-q4",
@@ -184,7 +200,8 @@
     "source_url": "https://forums.macrumors.com/threads/mac-studio-m3-ultra-96gb-28-60-llm-performance.2456559/",
     "quant": "4-bit MLX",
     "runtime": "LM Studio (MLX)",
-    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp"
+    "notes": "MLX 4-bit, not GGUF Q4_K_M, so expect slightly lower with llama.cpp",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-235b-a22b-2507-q4",
@@ -195,7 +212,8 @@
     "source_url": "https://www.macstories.net/notes/notes-on-early-mac-studio-ai-benchmarks-with-qwen3-235b-a22b-and-qwen2-5-vl-72b/",
     "quant": "4-bit GGUF",
     "runtime": "LM Studio (llama.cpp)",
-    "notes": "original Qwen3 235B-A22B, same architecture; MLX 4-bit reached 24 tok/s"
+    "notes": "original Qwen3 235B-A22B, same architecture; MLX 4-bit reached 24 tok/s",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-20b-mxfp4",
@@ -206,7 +224,8 @@
     "source_url": "https://github.com/geerlingguy/ai-benchmarks",
     "quant": "MXFP4",
     "runtime": "Ollama",
-    "notes": "227 W measured during the run"
+    "notes": "227 W measured during the run",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.3-70b-q4",
@@ -217,7 +236,8 @@
     "source_url": "https://github.com/geerlingguy/ai-benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": "measured on Llama 3.1 70B, identical architecture; 243 W during the run"
+    "notes": "measured on Llama 3.1 70B, identical architecture; 243 W during the run",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-llama-70b-q4",
@@ -228,7 +248,8 @@
     "source_url": "https://hostbor.com/mac-studio-m3-ultra-tested/",
     "quant": "Q4",
     "runtime": "Ollama",
-    "notes": ""
+    "notes": "",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-qwen-32b-q4",
@@ -239,7 +260,8 @@
     "source_url": "https://hostbor.com/mac-studio-m3-ultra-tested/",
     "quant": "Q4",
     "runtime": "Ollama",
-    "notes": ""
+    "notes": "",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-20b-mxfp4",
@@ -250,7 +272,8 @@
     "source_url": "https://github.com/geerlingguy/ai-benchmarks",
     "quant": "MXFP4",
     "runtime": "Ollama",
-    "notes": "measured on the 512GB config; same chip"
+    "notes": "measured on the 512GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.3-70b-q4",
@@ -261,7 +284,8 @@
     "source_url": "https://github.com/geerlingguy/ai-benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": "measured on Llama 3.1 70B on the 512GB config; same chip and architecture"
+    "notes": "measured on Llama 3.1 70B on the 512GB config; same chip and architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-235b-a22b-2507-q4",
@@ -272,7 +296,8 @@
     "source_url": "https://www.macstories.net/notes/notes-on-early-mac-studio-ai-benchmarks-with-qwen3-235b-a22b-and-qwen2-5-vl-72b/",
     "quant": "4-bit GGUF",
     "runtime": "LM Studio (llama.cpp)",
-    "notes": "measured on the 512GB config; same chip"
+    "notes": "measured on the 512GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-qwen-32b-q4",
@@ -283,7 +308,8 @@
     "source_url": "https://hostbor.com/mac-studio-m3-ultra-tested/",
     "quant": "Q4",
     "runtime": "Ollama",
-    "notes": "measured on the 512GB config; same chip"
+    "notes": "measured on the 512GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -294,7 +320,8 @@
     "source_url": "https://homelabcraft.com/posts/local-llm-benchmarks-mac-studio/",
     "quant": "4-bit GGUF",
     "runtime": "Ollama",
-    "notes": "original Qwen3 30B-A3B; MLX 4-bit reached 113 tok/s"
+    "notes": "original Qwen3 30B-A3B; MLX 4-bit reached 113 tok/s",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -305,7 +332,8 @@
     "source_url": "https://homelabcraft.com/posts/local-llm-benchmarks-mac-studio/",
     "quant": "4-bit GGUF",
     "runtime": "Ollama",
-    "notes": "measured on Qwen3 30B-A3B, same architecture"
+    "notes": "measured on Qwen3 30B-A3B, same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -316,7 +344,8 @@
     "source_url": "https://homelabcraft.com/posts/local-llm-benchmarks-mac-studio/",
     "quant": "4-bit GGUF",
     "runtime": "Ollama",
-    "notes": "measured on the 64GB config; same 40-core chip"
+    "notes": "measured on the 64GB config; same 40-core chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -327,7 +356,8 @@
     "source_url": "https://homelabcraft.com/posts/local-llm-benchmarks-mac-studio/",
     "quant": "4-bit GGUF",
     "runtime": "Ollama",
-    "notes": "measured on Qwen3 30B-A3B on the 64GB config; same chip"
+    "notes": "measured on Qwen3 30B-A3B on the 64GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -338,7 +368,8 @@
     "source_url": "https://homelabcraft.com/posts/local-llm-benchmarks-mac-studio/",
     "quant": "4-bit GGUF",
     "runtime": "Ollama",
-    "notes": "measured on the 64GB config; same 40-core chip"
+    "notes": "measured on the 64GB config; same 40-core chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -349,7 +380,8 @@
     "source_url": "https://homelabcraft.com/posts/local-llm-benchmarks-mac-studio/",
     "quant": "4-bit GGUF",
     "runtime": "Ollama",
-    "notes": "measured on Qwen3 30B-A3B on the 64GB config; same chip"
+    "notes": "measured on Qwen3 30B-A3B on the 64GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -360,7 +392,8 @@
     "source_url": "https://www.heyuan110.com/posts/ai/2026-04-14-mac-apple-silicon-ai-workstation/",
     "quant": "Q4_K_M",
     "runtime": "Ollama 0.4.x",
-    "notes": "~500-token prompt, 200 generated tokens"
+    "notes": "~500-token prompt, 200 generated tokens",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -371,7 +404,8 @@
     "source_url": "https://www.heyuan110.com/posts/ai/2026-04-14-mac-apple-silicon-ai-workstation/",
     "quant": "Q4_K_M",
     "runtime": "Ollama 0.4.x",
-    "notes": "measured on the 48GB config; same chip"
+    "notes": "measured on the 48GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -382,7 +416,8 @@
     "source_url": "https://www.heyuan110.com/posts/ai/2026-04-14-mac-apple-silicon-ai-workstation/",
     "quant": "Q4_K_M",
     "runtime": "Ollama 0.4.x",
-    "notes": "measured on the 48GB config; same chip"
+    "notes": "measured on the 48GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-qwen-32b-q4",
@@ -393,7 +428,8 @@
     "source_url": "https://like2byte.com/mac-mini-m4-deepseek-r1-ai-benchmarks/",
     "quant": "4-bit",
     "runtime": "Ollama",
-    "notes": "LM Studio MLX reached 14 tok/s"
+    "notes": "LM Studio MLX reached 14 tok/s",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -404,7 +440,8 @@
     "source_url": "https://macyou.co/benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama 0.31.2",
-    "notes": "3 runs, 512 tokens generated"
+    "notes": "3 runs, 512 tokens generated",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-8b-q4",
@@ -415,7 +452,8 @@
     "source_url": "https://halfpennymac.com/qwen3-llama3-m4-mac-mini-benchmark",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": ""
+    "notes": "",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -426,7 +464,8 @@
     "source_url": "https://macyou.co/benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama 0.31.2",
-    "notes": "measured on the 16GB config; same chip"
+    "notes": "measured on the 16GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-8b-q4",
@@ -437,7 +476,8 @@
     "source_url": "https://halfpennymac.com/qwen3-llama3-m4-mac-mini-benchmark",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": "measured on the 16GB config; same chip"
+    "notes": "measured on the 16GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -448,7 +488,8 @@
     "source_url": "https://macyou.co/benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama 0.31.2",
-    "notes": "measured on the 16GB config; same chip"
+    "notes": "measured on the 16GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-8b-q4",
@@ -459,7 +500,8 @@
     "source_url": "https://halfpennymac.com/qwen3-llama3-m4-mac-mini-benchmark",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": "measured on the 16GB config; same chip"
+    "notes": "measured on the 16GB config; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-120b-mxfp4",
@@ -470,7 +512,8 @@
     "source_url": "https://github.com/lhl/strix-halo-testing",
     "quant": "MXFP4",
     "runtime": "llama.cpp Vulkan AMDVLK",
-    "notes": "tg32; ROCm+rocWMMA 46.56; LM Studio 45 (ServeTheHome)"
+    "notes": "tg32; ROCm+rocWMMA 46.56; LM Studio 45 (ServeTheHome)",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-20b-mxfp4",
@@ -481,7 +524,8 @@
     "source_url": "https://forum.level1techs.com/t/strix-halo-llm-inference-notes/249466",
     "quant": "MXFP4",
     "runtime": "llama.cpp Vulkan",
-    "notes": "llama-bench tg; ROCm 49.29"
+    "notes": "llama-bench tg; ROCm 49.29",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -492,7 +536,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp Vulkan, flash attention",
-    "notes": "original Qwen3 30B-A3B, same architecture; other Strix Halo boxes report 85-100 with newer builds"
+    "notes": "original Qwen3 30B-A3B, same architecture; other Strix Halo boxes report 85-100 with newer builds",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -503,7 +548,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp Vulkan, flash attention",
-    "notes": "measured on Qwen3 30B-A3B, same architecture"
+    "notes": "measured on Qwen3 30B-A3B, same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.3-70b-q4",
@@ -514,7 +560,8 @@
     "source_url": "https://github.com/geerlingguy/ai-benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": "measured on Llama 3.1 70B, identical architecture; 133 W during the run"
+    "notes": "measured on Llama 3.1 70B, identical architecture; 133 W during the run",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-llama-70b-q4",
@@ -525,7 +572,8 @@
     "source_url": "https://github.com/geerlingguy/ai-benchmarks",
     "quant": "Q4_K_M",
     "runtime": "Ollama",
-    "notes": "measured on Llama 3.1 70B, identical architecture"
+    "notes": "measured on Llama 3.1 70B, identical architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -536,7 +584,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "i1-Q4_K_M",
     "runtime": "llama.cpp HIP hipBLASLt",
-    "notes": "measured on Shisa V2 8B, a Llama 3.1 8B fine-tune with the same architecture"
+    "notes": "measured on Shisa V2 8B, a Llama 3.1 8B fine-tune with the same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "mistral-small-3.2-24b-q4",
@@ -547,7 +596,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp HIP hipBLASLt",
-    "notes": "measured on Mistral Small 3.1 24B, same architecture"
+    "notes": "measured on Mistral Small 3.1 24B, same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-4-scout-q4",
@@ -558,7 +608,8 @@
     "source_url": "https://llm-tracker.info/AMD-Strix-Halo-(Ryzen-AI-Max+-395)-GPU-Performance",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp Vulkan",
-    "notes": "needs the Linux GTT pool raised to ~110 GB; HIP backend hung"
+    "notes": "needs the Linux GTT pool raised to ~110 GB; HIP backend hung",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-20b-mxfp4",
@@ -569,7 +620,8 @@
     "source_url": "https://forum.level1techs.com/t/strix-halo-llm-inference-notes/249466",
     "quant": "MXFP4",
     "runtime": "llama.cpp Vulkan",
-    "notes": "measured on the 128 GB board; same chip"
+    "notes": "measured on the 128 GB board; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -580,7 +632,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp Vulkan",
-    "notes": "measured on the 128 GB board; same chip and architecture"
+    "notes": "measured on the 128 GB board; same chip and architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -591,7 +644,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp Vulkan",
-    "notes": "measured on Qwen3 30B-A3B on the 128 GB board; same chip"
+    "notes": "measured on Qwen3 30B-A3B on the 128 GB board; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.1-8b-q4",
@@ -602,7 +656,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "i1-Q4_K_M",
     "runtime": "llama.cpp HIP",
-    "notes": "Shisa V2 8B on the 128 GB board; same chip"
+    "notes": "Shisa V2 8B on the 128 GB board; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "mistral-small-3.2-24b-q4",
@@ -613,7 +668,8 @@
     "source_url": "https://community.frame.work/t/amd-strix-halo-ryzen-ai-max-395-gpu-llm-performance-tests/72521",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp HIP",
-    "notes": "Mistral Small 3.1 on the 128 GB board; same chip"
+    "notes": "Mistral Small 3.1 on the 128 GB board; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -624,7 +680,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp ROCm 7.0 / Vulkan",
-    "notes": "original Qwen3 30B-A3B, same architecture"
+    "notes": "original Qwen3 30B-A3B, same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.3-70b-q4",
@@ -635,7 +692,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp ROCm 7.0 / Vulkan",
-    "notes": "measured on Llama 3.1 70B, identical architecture"
+    "notes": "measured on Llama 3.1 70B, identical architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-llama-70b-q4",
@@ -646,7 +704,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp",
-    "notes": "measured on Llama 3.1 70B, identical architecture"
+    "notes": "measured on Llama 3.1 70B, identical architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -657,7 +716,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp ROCm 7.0 / Vulkan",
-    "notes": "original Qwen3 30B-A3B, same architecture"
+    "notes": "original Qwen3 30B-A3B, same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-3.3-70b-q4",
@@ -668,7 +728,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp ROCm 7.0 / Vulkan",
-    "notes": "measured on Llama 3.1 70B, identical architecture"
+    "notes": "measured on Llama 3.1 70B, identical architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "deepseek-r1-distill-llama-70b-q4",
@@ -679,7 +740,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp",
-    "notes": "measured on Llama 3.1 70B, identical architecture"
+    "notes": "measured on Llama 3.1 70B, identical architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-120b-mxfp4",
@@ -690,7 +752,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M GGUF",
     "runtime": "llama.cpp llama-server, ROCm 7.0",
-    "notes": "includes serving overhead"
+    "notes": "includes serving overhead",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-120b-mxfp4",
@@ -701,7 +764,8 @@
     "source_url": "https://github.com/hogeheer499-commits/strix-halo-guide",
     "quant": "MXFP4",
     "runtime": "llama.cpp Vulkan RADV b9049",
-    "notes": "tg128 at empty context"
+    "notes": "tg128 at empty context",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -712,7 +776,8 @@
     "source_url": "https://github.com/hogeheer499-commits/strix-halo-guide",
     "quant": "UD-Q4_K_XL",
     "runtime": "llama.cpp Vulkan RADV",
-    "notes": "tg128"
+    "notes": "tg128",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -723,7 +788,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp",
-    "notes": "measured on Qwen3 30B-A3B, same architecture"
+    "notes": "measured on Qwen3 30B-A3B, same architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "llama-4-scout-q4",
@@ -734,7 +800,8 @@
     "source_url": "https://github.com/hogeheer499-commits/strix-halo-guide",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp Vulkan RADV b8933",
-    "notes": ""
+    "notes": "",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-30b-a3b-2507-q4",
@@ -745,7 +812,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp",
-    "notes": "measured on 128 GB units; same chip and architecture"
+    "notes": "measured on 128 GB units; same chip and architecture",
+    "measured_at_context": 0
   },
   {
     "model_id": "qwen3-coder-30b-a3b-q4",
@@ -756,7 +824,8 @@
     "source_url": "https://github.com/visorcraft/strix-halo-llm-perf",
     "quant": "Q4_K_M",
     "runtime": "llama.cpp",
-    "notes": "measured on Qwen3 30B-A3B on 128 GB units; same chip"
+    "notes": "measured on Qwen3 30B-A3B on 128 GB units; same chip",
+    "measured_at_context": 0
   },
   {
     "model_id": "gpt-oss-120b-mxfp4",
@@ -767,6 +836,7 @@
     "source_url": "https://www.storagereview.com/review/hp-z2-mini-g1a-review-running-gpt-oss-120b-without-a-discrete-gpu",
     "quant": "MXFP4",
     "runtime": "LM Studio, ROCm llama.cpp backend",
-    "notes": ""
+    "notes": "",
+    "measured_at_context": 0
   }
 ]

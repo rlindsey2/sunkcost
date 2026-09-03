@@ -10,7 +10,7 @@ import { defaultState, serializeState } from '../src/state';
 import type { Dataset } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
-const data: Dataset = { hardware: read('hardware.json'), models: read('models.json'), throughput: read('throughput.json'), defaults: read('defaults.json'), units: read('units.json') };
+const data: Dataset = { hardware: read('hardware.json'), models: read('models.json'), throughput: read('throughput.json'), defaults: read('defaults.json') };
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -38,7 +38,7 @@ for (const hw of data.hardware) {
     description: `Can a ${label} run local LLMs? ${v.rows.filter((r) => r.fit.status === 'fits').length} open models fit. ${v.calc ? v.verdict.headline : 'Break-even cannot be computed yet.'}`,
     query: serializeState(state),
     og_image: v.model ? `/og/${hw.id}--${v.model.id}.png` : null,
-    verdict: v.calc ? `${v.verdict.headline}${v.unit ? ` That’s ${v.unit.text}.` : ''}` : null,
+    verdict: v.calc ? `${v.verdict.headline}${v.verdict.sub ? ` ${v.verdict.sub}` : ''}` : null,
     ids: [hw.id],
   });
 }

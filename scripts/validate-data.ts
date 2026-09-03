@@ -5,14 +5,13 @@
  */
 import { readFileSync } from 'node:fs';
 import { kvCacheGbPer8kFromArchitecture } from '../src/fit';
-import { CAPABILITY_KEYS, type Hardware, type Model, type Throughput, type Defaults, type UnitsFile } from '../src/types';
+import { CAPABILITY_KEYS, type Hardware, type Model, type Throughput, type Defaults } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
 const hardware = read('hardware.json') as Hardware[];
 const models = read('models.json') as Model[];
 const throughput = read('throughput.json') as Throughput[];
 const defaults = read('defaults.json') as Defaults;
-const units = read('units.json') as UnitsFile;
 
 const errors: string[] = [];
 const warnings: string[] = [];
@@ -87,7 +86,6 @@ for (const t of throughput) {
 
 if (!/^\d{4}-\d{2}-\d{2}$/.test(defaults.data_last_checked)) errors.push('defaults.data_last_checked must be YYYY-MM-DD');
 for (const k of ['efficiency_dense', 'efficiency_moe'] as const) if (!(defaults.estimate[k] > 0 && defaults.estimate[k] <= 1)) errors.push(`defaults.estimate.${k} must be in (0, 1]`);
-for (const u of units.units) if (u.words == null && u.tokens == null) errors.push(`unit ${u.id}: needs words or tokens`);
 
 for (const w of warnings) console.warn(`warn  ${w}`);
 for (const e of errors) console.error(`error ${e}`);

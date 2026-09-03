@@ -22,6 +22,8 @@ export interface WaterlineOptions {
   /** dashed marker at this many days, with the depth at that point */
   markerDays?: number | null;
   id?: string;
+  /** skip the sky/water fills so the surrounding panel supplies them */
+  transparentBg?: boolean;
 }
 
 export interface WaterlineGeometry {
@@ -108,8 +110,10 @@ export function renderWaterline(o: WaterlineOptions): string {
   </defs>`);
 
   // sky and water
-  parts.push(`<rect x="${padL}" y="${padT}" width="${plotW}" height="${Math.max(0, surfaceY - padT)}" fill="var(--sky, #e8eef4)"/>`);
-  parts.push(`<rect x="${padL}" y="${surfaceY}" width="${plotW}" height="${Math.max(0, bottomY - surfaceY)}" fill="url(#${id}-water)"/>`);
+  if (!o.transparentBg) {
+    parts.push(`<rect x="${padL}" y="${padT}" width="${plotW}" height="${Math.max(0, surfaceY - padT)}" fill="var(--sky, #e8eef4)"/>`);
+    parts.push(`<rect x="${padL}" y="${surfaceY}" width="${plotW}" height="${Math.max(0, bottomY - surfaceY)}" fill="url(#${id}-water)"/>`);
+  }
 
   // depth grid
   if (showLabels) {
@@ -178,7 +182,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       parts.push(`<text x="${tx.toFixed(1)}" y="${(bottomY + 18 * s).toFixed(1)}" text-anchor="middle" font-size="${11 * s}" fill="var(--axis-text, #5b6673)" style="font-variant-numeric: tabular-nums">${t.label}</text>`);
     }
     parts.push(`<text x="${padL}" y="${(bottomY + 18 * s).toFixed(1)}" text-anchor="start" font-size="${11 * s}" fill="var(--axis-text, #5b6673)">bought</text>`);
-    parts.push(`<text x="${padL - 8 * s}" y="${(surfaceY + 4 * s).toFixed(1)}" text-anchor="end" font-size="${11 * s}" font-weight="600" fill="var(--axis-text, #5b6673)">surface</text>`);
+    parts.push(`<text x="${padL - 8 * s}" y="${(surfaceY + (o.transparentBg ? -5 * s : 4 * s)).toFixed(1)}" text-anchor="end" font-size="${11 * s}" font-weight="600" fill="var(--axis-text, #5b6673)">surface</text>`);
   }
 
   parts.push('</svg>');

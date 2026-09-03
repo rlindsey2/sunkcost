@@ -71,7 +71,10 @@
     <section id="zone-fits" class="col-left" aria-labelledby="h-fits">
       <div class="list-head">
         <h2 class="zone" id="h-fits"><b>3.</b> See what fits</h2>
-        <label class="field inline"><span>Show</span><select id="model-family" aria-label="Filter by model family"></select></label>
+        <div class="list-controls">
+          <label class="field inline"><span>Show</span><select id="model-family" aria-label="Filter by model family"></select></label>
+          <label class="field inline"><span>Sort</span><select id="model-sort" aria-label="Sort models"></select></label>
+        </div>
       </div>
       <div class="legend" aria-hidden="true">
         <span><i class="dot dot-green"></i> good</span>
@@ -80,20 +83,23 @@
         <span><i class="dot dot-unknown"></i> not rated</span>
         <span>· summarise, translate, coding, reasoning, agentic</span>
       </div>
-      <div id="models" role="radiogroup" aria-label="Models that fit"></div>
+      <div id="models" class="model-list" role="radiogroup" aria-label="Models that fit" tabindex="0"></div>
       <p class="muted small">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If you think one is wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
     </section>
 
     <section id="zone-breakeven" class="col-right" aria-labelledby="h-breakeven">
       <h2 class="zone" id="h-breakeven"><b>4.</b> See the break-even</h2>
-      <div class="hero">
-        <div id="waterline"></div>
-        <div id="verdict"></div>
-        <div class="actions">
-          <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
-          <button class="btn" id="download-card" type="button">Download card</button>
-          <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
+      <div class="hero" id="hero">
+        <div class="hero-water">
+          <div id="waterline"></div>
+          <div id="verdict"></div>
+          <div class="actions">
+            <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
+            <button class="btn" id="download-card" type="button">Download card</button>
+            <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
+          </div>
         </div>
+        <div class="hero-body">
         <div class="figures" id="figures"></div>
         <div id="smarts"></div>
         <div id="time-cost"></div>
@@ -105,6 +111,7 @@
           <h3>The small print that isn't small</h3>
           <ul id="small-print"></ul>
         </div>
+      </div>
       </div>
     </section>
   </main>

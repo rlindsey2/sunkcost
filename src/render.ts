@@ -156,7 +156,10 @@ function sourcesLine(m: Model, view: View, data: Dataset): string {
   parts.push(hf ? `<a href="${esc(hf)}" rel="noopener">weights</a>` : 'weights: models.json');
   const ce = m.cloud_equivalent;
   parts.push(ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">price</a>${ce.checked ? ` (${esc(ce.checked)})` : ''}` : 'price: models.json');
-  if (t) parts.push(t.measurement === 'measured' && t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">speed</a> (${esc(t.source)})` : t.measurement === 'estimated' ? `speed: estimate from ${view.hw.memory_bandwidth_gbs} GB/s bandwidth` : 'speed: unknown');
+  if (t) {
+    const adj = t.contextFactor < 0.95 ? `, adjusted for ${fmtCtx(view.contextTokens)} context` : '';
+    parts.push(t.measurement === 'measured' && t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">speed</a> (${esc(t.source)}${adj})` : t.measurement === 'estimated' ? `speed: estimate from ${view.hw.memory_bandwidth_gbs} GB/s bandwidth${adj}` : 'speed: unknown');
+  }
   const basis = data.defaults.frontier_basis;
   parts.push(m.frontier_equivalent?.basis ? `comparison: ${esc(m.frontier_equivalent.basis)}` : basis?.url ? `<a href="${esc(basis.url)}" rel="noopener">comparison basis</a>` : 'ratings: our judgement');
   return parts.join(' · ');
@@ -166,25 +169,28 @@ function renderModels(state: State, data: Dataset, view: View) {
   const hw = view.hw;
   const families = [...new Set(data.models.map((m) => m.family).filter(Boolean))] as string[];
   setOptions($<HTMLSelectElement>('#model-family'), `<option value="">All families</option>` + families.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join(''), state.family);
+  setOptions($<HTMLSelectElement>('#model-sort'), data.defaults.sorts.map((x) => `<option value="${esc(x.id)}">${esc(x.label)}</option>`).join(''), state.sort);
 
   const list = view.rows
     .map(({ model: m, fit, throughput: t }) => {
       const selected = view.model?.id === m.id;
       const kv = kvCacheGb(m, state.ctx);
       const disabled = fit.status !== 'fits';
-      const tps = t.tokensPerSec == null ? '<span class="todo">unknown</span>' : `<span class="num">${fmtNum(t.tokensPerSec, 0)}</span> tok/s`;
+      const slower = t.contextFactor < 0.95 && t.baseTokensPerSec != null;
+      const tps = t.tokensPerSec == null ? '<span class="todo">unknown</span>' : `<span class="num">${fmtNum(t.tokensPerSec, t.tokensPerSec < 10 ? 1 : 0)}</span> tok/s`;
       const meas = t.measurement === 'measured' ? '<span class="tag tag-measured">measured</span>' : t.measurement === 'estimated' ? '<span class="tag tag-estimated">estimated</span>' : '';
       const ce = m.cloud_equivalent;
       const cloud = ce.input_price_per_mtok == null ? `<span class="todo">API price unknown</span>` : `<span class="num">$${ce.input_price_per_mtok}</span> in / <span class="num">$${ce.output_price_per_mtok}</span> out per 1M`;
       const cloudName = ce.is_exact_match ? esc(ce.name) : `nearest: ${esc(ce.name)}`;
       const reason = fit.status === 'fits' ? '' : `<div class="fit-reason">${fit.status === 'nearly' ? 'Nearly' : fit.status === 'context' ? 'Context' : 'Unknown'}: ${esc(fit.reason)}.</div>`;
-      const limit = m.max_context_tokens != null ? `, up to ${fmtCtx(m.max_context_tokens)}` : '';
+      const limit = m.max_context_tokens != null ? `<b>${fmtCtx(m.max_context_tokens)} tokens</b>` : '<span class="todo">unknown</span>';
       return `<div class="model${selected ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}" role="radio" aria-checked="${selected}" tabindex="${disabled ? -1 : 0}" data-model="${esc(m.id)}" ${disabled ? 'aria-disabled="true"' : ''}>
         <div class="model-head">
           <span class="model-name">${esc(m.display_name)} <span class="quant">${esc(m.quantisation)}</span></span>
           <span class="model-tps">${tps} ${meas}</span>
         </div>
-        <div class="model-meta"><span class="num">${fmtGb(fit.needGb)}</span> at ${fmtCtx(state.ctx)} context${limit} <span class="muted">(${fmtGb(m.weights_gb)} weights + ${fmtGb(kv)} KV cache)</span></div>
+        <div class="model-meta"><span class="num">${fmtGb(fit.needGb)}</span> at ${fmtCtx(state.ctx)} context <span class="muted">(${fmtGb(m.weights_gb)} weights + ${fmtGb(kv)} KV cache)</span>${slower ? ` <span class="ctx-drag">${Math.round((1 - t.contextFactor) * 100)}% slower than at short context</span>` : ''}</div>
+        <div class="model-meta muted">Max context ${limit}${m.max_context_note ? ` <span class="muted">· ${esc(m.max_context_note)}</span>` : ''}</div>
         <div class="model-caps" aria-label="capability ratings">${CAPABILITY_KEYS.map((k) => dot(m.capabilities[k], k)).join('')}<span class="cap-note">${esc(m.capability_note)}</span></div>
         <div class="model-frontier">${frontierScale(m, data)}</div>
         <div class="model-cloud"><span class="muted">Cloud equivalent:</span> ${cloudName} · ${cloud}</div>
@@ -204,12 +210,16 @@ function renderVerdict(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const wl = $('#waterline');
   if (c && view.hw.price_usd != null) {
-    wl.innerHTML = renderWaterline({ devicePriceUsd: view.hw.price_usd, dailySaving: c.dailySaving, breakevenDays: c.breakevenDays, maxYears: data.defaults.waterline_max_years, width: 800, height: 260, markerDays: 365.25 });
+    wl.innerHTML = renderWaterline({ devicePriceUsd: view.hw.price_usd, dailySaving: c.dailySaving, breakevenDays: c.breakevenDays, maxYears: data.defaults.waterline_max_years, width: 800, height: 250, markerDays: 365.25 });
     wl.classList.remove('is-empty');
   } else {
     wl.innerHTML = '';
     wl.classList.add('is-empty');
   }
+  // how deep the panel reads: the longer you are under, the darker the water
+  const depth = c?.breakevenDays == null ? 1 : Math.min(1, Math.log10(Math.max(1, c.breakevenDays / 30)) / 2.4);
+  $('#hero').style.setProperty('--depth', depth.toFixed(3));
+  $('#hero').classList.toggle('is-never', view.verdict.kind === 'never');
   const cap = view.capacity;
   const caution = cap.capped && view.model
     ? `<div class="caution">You asked for ${formatUsageShort(cap.requested)} tokens a day. ${esc(view.model.display_name)} on this machine can only get through <b class="num">${formatUsageShort(cap.maxTokensPerDay!)}</b> a day at ${fmtNum(view.throughput?.tokensPerSec, 0)} tok/s, generating 24 hours non-stop, so that is what the break-even uses. The rest would still be going to an API.</div>`
@@ -227,7 +237,6 @@ export function shareUrl(state: State): string {
 
 export function shareText(view: View): string {
   const bits = [view.configLine + '.', view.verdict.headline];
-  if (view.unit) bits.push(`That’s ${view.unit.text}.`);
   return bits.join(' ');
 }
 
@@ -262,15 +271,61 @@ function renderSmarts(state: State, data: Dataset, view: View) {
   const max = d.frontier_scale_max ?? 70;
   const pct = (v: number) => `${Math.min(100, Math.max(0, (v / max) * 100)).toFixed(1)}%`;
   const refs = d.frontier_reference ?? [];
-  // number line: hosted models as ticks, this model as the marker
-  const ticks = refs.map((r, i) => `<span class="tick" style="left:${pct(r.score)}" title="${esc(r.name)}: ${r.score}"><i></i><em style="--row:${i % 2}">${esc(r.name)} ${r.score}</em></span>`).join('');
-  const marker = fe?.score != null ? `<span class="marker" style="left:${pct(fe.score)}"><i></i><b>${esc(m.display_name)} ${fe.score}</b></span>` : '';
-  const line = `<div class="numberline" role="img" aria-label="${esc(m.display_name)} scores ${fe?.score ?? 'unknown'} on the ${esc(d.frontier_basis?.name ?? 'index')}; hosted models: ${esc(refs.map((r) => `${r.name} ${r.score}`).join(', '))}">
-      <div class="track"></div>${ticks}${marker}</div>`;
+  // tier bands so the scale reads as "how smart", not just a number
+  const bands = d.frontier_tiers
+    .map((tt, i) => {
+      const from = tt.min_score;
+      const to = d.frontier_tiers[i + 1]?.min_score ?? max;
+      return `<span class="band${tier === tt.tier ? ' is-here' : ''}" style="left:${pct(from)};width:${(((to - from) / max) * 100).toFixed(1)}%"><em>${esc(tt.label)}</em></span>`;
+    })
+    .join('');
+  const ticks = refs.map((r) => `<span class="tick" style="left:${pct(r.score)}" title="${esc(r.name)}: ${r.score}"><i></i><em>${esc(r.name)} ${r.score}</em></span>`).join('');
+  const marker = fe?.score != null ? `<span class="marker" style="left:${pct(fe.score)}"><b>${esc(m.display_name)} ${fe.score}</b><i></i></span>` : '';
+  const line = `<div class="numberline" role="img" aria-label="${esc(m.display_name)} scores ${fe?.score ?? 'unknown'} on the ${esc(d.frontier_basis?.name ?? 'index')}, which is ${esc(t?.label ?? 'unplaced')}. Hosted models: ${esc(refs.map((r) => `${r.name} ${r.score}`).join(', '))}.">
+      <div class="bands">${bands}</div>${ticks}${marker}</div>`;
   el.innerHTML = `<div class="smarts-row"><b>How smart is ${esc(m.display_name)}, really?</b> ${frontierScale(m, data, true)}</div>
     ${line}
     <p class="muted small">${t ? esc(t.plain) + ' ' : ''}${fe?.basis ? `${esc(fe.basis)}${fe.url ? ` (<a href="${esc(fe.url)}" rel="noopener">source</a>)` : ''}. ` : ''}${d.frontier_basis?.url ? `Hosted models on the same index: <a href="${esc(d.frontier_basis.url)}" rel="noopener">${esc(d.frontier_basis.name ?? 'leaderboard')}</a>, checked ${esc(d.frontier_basis.checked ?? '')}. ` : ''}Cloud equivalent for pricing: ${esc(m.cloud_equivalent.name)}${m.cloud_equivalent.is_exact_match ? '' : ' (nearest hosted model, not the same one)'}.</p>`;
+  layoutNumberLine();
   void state;
+}
+
+/**
+ * Stagger the reference labels into as many rows as it takes for none to
+ * overlap, measuring the real boxes so it survives any viewport width.
+ */
+export function layoutNumberLine() {
+  const line = document.querySelector<HTMLElement>('.numberline');
+  if (!line) return;
+  const labels = [...line.querySelectorAll<HTMLElement>('.tick em')];
+  labels.forEach((l) => (l.style.removeProperty('--row'), l.style.removeProperty('transform')));
+  const rowEnds: number[] = [];
+  const lineLeft = line.getBoundingClientRect().left;
+  const lineWidth = line.getBoundingClientRect().width || 1;
+  for (const label of labels) {
+    const tick = label.parentElement!;
+    const box = label.getBoundingClientRect();
+    const tickX = tick.getBoundingClientRect().left + tick.getBoundingClientRect().width / 2 - lineLeft;
+    let left = box.left - lineLeft;
+    let right = box.right - lineLeft;
+    // keep labels inside the track
+    let shift = 0;
+    if (left < 0) shift = -left;
+    else if (right > lineWidth) shift = lineWidth - right;
+    if (shift) {
+      label.style.transform = `translateX(${shift.toFixed(1)}px)`;
+      left += shift;
+      right += shift;
+    }
+    let row = 0;
+    while (row < rowEnds.length && left < rowEnds[row] + 10) row++;
+    rowEnds[row] = right;
+    label.style.setProperty('--row', String(row));
+    // leader line from the tick down to a label that had to move
+    const labelX = (left + right) / 2;
+    label.style.setProperty('--lean', `${(tickX - labelX).toFixed(1)}px`);
+  }
+  line.style.setProperty('--rows', String(Math.max(1, rowEnds.length)));
 }
 
 function renderTimeCost(state: State, data: Dataset, view: View) {
@@ -322,7 +377,6 @@ breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)}
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
   <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx))} KV cache at ${fmtCtx(state.ctx)} context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × 2 bytes × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
-  ${view.unit ? `<dt>Human unit</dt><dd>${fmtTokens(c.breakevenTokens)} tokens ÷ ${fmtTokens(view.unit.unitTokens)} tokens per ${esc(view.unit.unit.singular)} (${fmtInt(view.unit.unit.words ?? 0)} words × ${data.units.tokens_per_word} tokens/word) ≈ ${view.unit.count}.</dd>` : ''}
 </dl>
 <p class="muted small">Left out, all of which favour local slightly less than shown: prompt-processing time and its electricity, idle power when the machine is on but not generating, and API prompt caching, which cuts the input price on repeated context. Left out in local’s favour: resale value, and the other jobs the machine does.</p>`;
 }

@@ -110,6 +110,8 @@ export interface Throughput {
   quant?: string;
   runtime?: string;
   notes?: string;
+  /** context depth the figure was measured at; speed is scaled from here */
+  measured_at_context?: number;
 }
 
 export interface UsageLabel {
@@ -139,7 +141,9 @@ export interface Defaults {
   };
   cloud: { default_tokens_per_sec: number; note: string };
   estimate: { efficiency_dense: number; efficiency_moe: number; note: string };
-  context: { default_tokens: number; options: number[] };
+  context: { default_tokens: number; options: number[]; note?: string };
+  context_decay?: { model: string; why: string; accuracy_note: string; calibration?: unknown[] };
+  sorts: { id: string; label: string }[];
   use_cases: { id: string; label: string; ratio: number; note?: string }[];
   frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
   frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string };
@@ -150,24 +154,9 @@ export interface Defaults {
   typical_task_output_tokens: number;
 }
 
-export interface Unit {
-  id: string;
-  singular: string;
-  plural: string;
-  words?: number;
-  tokens?: number;
-  source?: string;
-}
-
-export interface UnitsFile {
-  tokens_per_word: number;
-  units: Unit[];
-}
-
 export interface Dataset {
   hardware: Hardware[];
   models: Model[];
   throughput: Throughput[];
   defaults: Defaults;
-  units: UnitsFile;
 }

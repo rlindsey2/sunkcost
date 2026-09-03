@@ -69,11 +69,34 @@ export function fit(m: Model, hw: Hardware, contextTokens: number, nearlyRatio: 
 }
 
 export interface ResolvedThroughput {
+  /** speed at the context length you asked for */
   tokensPerSec: number | null;
+  /** speed before the context adjustment, as measured or estimated */
+  baseTokensPerSec: number | null;
+  /** context depth the base figure applies to */
+  baseContext: number;
+  /** tokensPerSec / baseTokensPerSec; < 1 means context slowed it down */
+  contextFactor: number;
   measurement: Measurement | 'unknown';
   source: string;
   sourceUrl: string | null;
   detail: string;
+}
+
+/**
+ * Decoding is memory-bandwidth bound at batch size 1: every generated token
+ * reads the active weights and the whole KV cache. Growing the context grows
+ * the cache, so speed falls roughly in proportion to the extra bytes read.
+ * See defaults.context_decay for the calibration against public benchmarks.
+ */
+export function contextSpeedFactor(m: Model, fromContext: number, toContext: number): number {
+  const weights = bytesReadPerTokenGb(m);
+  if (weights == null) return 1;
+  const kvFrom = kvCacheGb(m, fromContext) ?? 0;
+  const kvTo = kvCacheGb(m, toContext) ?? 0;
+  const denom = weights + kvTo;
+  if (denom <= 0) return 1;
+  return (weights + kvFrom) / denom;
 }
 
 /** Bytes the GPU must read per generated token, in GB. MoE models only read active experts. */
@@ -103,11 +126,17 @@ export function resolveThroughput(
   hw: Hardware,
   throughput: Throughput[],
   defaults: Defaults,
+  contextTokens: number,
 ): ResolvedThroughput {
   const row = throughput.find((t) => t.model_id === m.id && t.hardware_id === hw.id && t.tokens_per_sec != null);
   if (row && row.tokens_per_sec != null) {
+    const from = row.measured_at_context ?? 0;
+    const factor = contextSpeedFactor(m, from, contextTokens);
     return {
-      tokensPerSec: row.tokens_per_sec,
+      tokensPerSec: row.tokens_per_sec * factor,
+      baseTokensPerSec: row.tokens_per_sec,
+      baseContext: from,
+      contextFactor: factor,
       measurement: row.measurement,
       source: row.source,
       sourceUrl: row.source_url ?? null,
@@ -117,12 +146,16 @@ export function resolveThroughput(
   const eff = estimateEfficiency(m, hw, defaults);
   const est = estimateTokensPerSec(m, hw, eff);
   if (est == null) {
-    return { tokensPerSec: null, measurement: 'unknown', source: 'no measurement and not enough data to estimate', sourceUrl: null, detail: '' };
+    return { tokensPerSec: null, baseTokensPerSec: null, baseContext: 0, contextFactor: 1, measurement: 'unknown', source: 'no measurement and not enough data to estimate', sourceUrl: null, detail: '' };
   }
+  const factor = contextSpeedFactor(m, 0, contextTokens);
   const gb = bytesReadPerTokenGb(m)!;
   const moe = isMoe(m);
   return {
-    tokensPerSec: est,
+    tokensPerSec: est * factor,
+    baseTokensPerSec: est,
+    baseContext: 0,
+    contextFactor: factor,
     measurement: 'estimated',
     source: `estimated: ${hw.memory_bandwidth_gbs} GB/s ÷ ${gb.toFixed(1)} GB read per token${moe ? ' (active experts only)' : ''} × ${eff} ${moe ? 'MoE' : 'dense'} efficiency`,
     sourceUrl: null,

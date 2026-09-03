@@ -15,6 +15,8 @@ export interface State {
   cloudTps: number;
   /** model-family filter for the list; '' = all */
   family: string;
+  /** list sort key, see defaults.sorts */
+  sort: string;
 }
 
 const KEYS: Record<keyof State, string> = {
@@ -26,6 +28,7 @@ const KEYS: Record<keyof State, string> = {
   ctx: 'ctx',
   cloudTps: 'cs',
   family: 'f',
+  sort: 's',
 };
 
 function num(v: string | null, fallback: number, min?: number, max?: number): number {
@@ -49,6 +52,7 @@ export function defaultState(data: Dataset): State {
     ctx: d.context.default_tokens,
     cloudTps: d.cloud.default_tokens_per_sec,
     family: '',
+    sort: 'fit',
   };
 }
 
@@ -64,6 +68,7 @@ export function parseState(search: string, data: Dataset): State {
     usage: num(p.get(KEYS.usage), d.usage, u.min_tokens_per_day, u.max_tokens_per_day),
     ratio: num(p.get(KEYS.ratio), d.ratio, u.min_input_to_output_ratio, u.max_input_to_output_ratio),
     family: p.get('f') ?? '',
+    sort: data.defaults.sorts.some((x) => x.id === p.get('s')) ? p.get('s')! : d.sort,
     kwh: num(p.get(KEYS.kwh), d.kwh, 0, 5),
     ctx: num(p.get(KEYS.ctx), d.ctx, 1024, 1_000_000),
     cloudTps: num(p.get(KEYS.cloudTps), d.cloudTps, 1, 10000),
@@ -80,6 +85,7 @@ export function serializeState(s: State): string {
   p.set(KEYS.ctx, String(s.ctx));
   p.set(KEYS.cloudTps, String(s.cloudTps));
   if (s.family) p.set(KEYS.family, s.family);
+  if (s.sort && s.sort !== 'fit') p.set(KEYS.sort, s.sort);
   return p.toString();
 }
 

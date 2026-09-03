@@ -1,5 +1,5 @@
 import { data } from './data';
-import { renderAll, shareUrl } from './render';
+import { layoutNumberLine, renderAll, shareUrl } from './render';
 import { parseState, serializeState, sliderToUsage, usageToSlider, type State } from './state';
 import { renderOgCard, ogFigures, OG_WIDTH, OG_HEIGHT } from './og';
 import { fmtDuration, fmtNum } from './format';
@@ -16,7 +16,12 @@ function update(patch: Partial<State> = {}) {
   state = { ...state, ...patch };
   view = renderAll(state, data);
   const qs = serializeState(state);
-  if (location.search !== `?${qs}`) history.replaceState(null, '', `?${qs}`);
+  // some embeds (sandboxed frames) refuse history writes; the page must still work
+  try {
+    if (location.search !== `?${qs}`) history.replaceState(null, '', `?${qs}`);
+  } catch {
+    /* ignore */
+  }
 }
 
 /* ---- controls ---- */
@@ -62,6 +67,7 @@ $<HTMLSelectElement>('#chip').addEventListener('change', (e) => {
   if (pick) update({ hw: pick.id });
 });
 $<HTMLSelectElement>('#model-family').addEventListener('change', (e) => update({ family: (e.target as HTMLSelectElement).value }));
+$<HTMLSelectElement>('#model-sort').addEventListener('change', (e) => update({ sort: (e.target as HTMLSelectElement).value }));
 
 document.addEventListener('click', (e) => {
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model]');
@@ -90,19 +96,20 @@ $('#copy-link').addEventListener('click', async () => {
     await navigator.clipboard.writeText(shareUrl(state));
     btn.textContent = 'Copied';
   } catch {
-    prompt('Copy this link', shareUrl(state));
+    window.prompt('Copy this link', shareUrl(state));
   }
   setTimeout(() => (btn.textContent = 'Copy link'), 1600);
 });
 
-$('#download-card').addEventListener('click', async () => {
+// absent in the single-file build: sandboxed hosts cannot save a file the page makes
+document.querySelector('#download-card')?.addEventListener('click', async () => {
   if (!view.calc || view.hw.price_usd == null) return;
   const c = view.calc;
   const svg = renderOgCard({
     configLine: view.configLine,
     usageLine: view.usageLine,
     verdict: view.verdict.headline,
-    unitLine: view.unit ? `That’s ${view.unit.text}` : null,
+    subLine: view.verdict.sub,
     devicePriceUsd: view.hw.price_usd,
     dailySaving: c.dailySaving,
     breakevenDays: c.breakevenDays,
@@ -141,6 +148,13 @@ async function svgToPng(svg: string, w: number, h: number): Promise<Blob> {
     URL.revokeObjectURL(url);
   }
 }
+
+// the sticky controls panel sets the offset the sticky column and the scrollable list use
+const controls = document.querySelector<HTMLElement>('.controls')!;
+const syncControlsHeight = () => document.documentElement.style.setProperty('--controls-h', `${Math.round(controls.getBoundingClientRect().height)}px`);
+new ResizeObserver(() => { syncControlsHeight(); layoutNumberLine(); }).observe(controls);
+window.addEventListener('resize', () => { syncControlsHeight(); layoutNumberLine(); });
+syncControlsHeight();
 
 window.addEventListener('popstate', () => {
   state = parseState(location.search, data);

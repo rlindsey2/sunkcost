@@ -12,7 +12,7 @@ import { fmtDuration } from '../src/format';
 import type { Dataset } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
-const data: Dataset = { hardware: read('hardware.json'), models: read('models.json'), throughput: read('throughput.json'), defaults: read('defaults.json'), units: read('units.json') };
+const data: Dataset = { hardware: read('hardware.json'), models: read('models.json'), throughput: read('throughput.json'), defaults: read('defaults.json') };
 
 const outDir = new URL('../public/og/', import.meta.url);
 mkdirSync(outDir, { recursive: true });
@@ -45,7 +45,7 @@ function cardFor(hwId: string, modelId: string): string | null {
     configLine: view.configLine,
     usageLine: view.usageLine,
     verdict: view.verdict.headline,
-    unitLine: view.unit ? `That’s ${view.unit.text}` : null,
+    subLine: view.verdict.sub,
     devicePriceUsd: view.hw.price_usd,
     dailySaving: c.dailySaving,
     breakevenDays: c.breakevenDays,

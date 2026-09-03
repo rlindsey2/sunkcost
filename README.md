@@ -10,8 +10,9 @@ It is willing to say "this doesn't pay off". That is the product.
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # validates data, renders OG cards, writes routes.json, builds dist/
-npm test           # maths, fit logic, URL state, waterline
+npm test           # maths, fit logic, context decay, sorting, URL state, waterline
 npm run typecheck
+npm run build:single  # one self-contained HTML file: dist/sunkcost-standalone.html
 ```
 
 Static output lands in `dist/`. There is no backend: every number on the page comes from a field in `data/*.json` or from the formula shown under the result.
@@ -23,7 +24,7 @@ Static output lands in `dist/`. There is no backend: every number on the page co
 | `data/hardware.json` | Each machine config: memory, bandwidth, usable memory, price, power draw. Current 2026 Apple lineup, the discontinued M4 / M3 Ultra machines (marked `generation: previous`, launch prices), the NVIDIA DGX Spark, and AMD Strix Halo boxes (Framework Desktop, GMKtec EVO-X2, Beelink GTR9 Pro, Minisforum MS-S1 Max, HP Z2 Mini G1a). |
 | `data/models.json` | Each model × quant: GGUF size, architecture (for KV-cache), max context, capability ratings, cloud equivalent and OpenRouter price, frontier score and tier. |
 | `data/throughput.json` | Measured tokens/sec per model × hardware pair, with the source. Anything not listed is *estimated* from bandwidth and labelled as such. |
-| `data/defaults.json` | Usage default, electricity price, estimate efficiency factor, context options, the "data last checked" date. |
+| `data/defaults.json` | Usage default, use-case ratios, electricity price, estimate efficiency factors, context options and the decay model, sort options, frontier tiers and reference scores, the "data last checked" date. |
 | `data/units.json` | The absurd human units for the verdict line. |
 
 Rules the validator enforces (`npm run validate`):
@@ -45,6 +46,8 @@ breakeven_tokens    = breakeven_days × daily_tokens
 
 Memory fit: `weights_gb + kv_cache(context) ≤ usable_memory_gb`. KV cache is derived per layer from `n_kv_heads × head_dim × 2 bytes × 2`, with sliding-window layers capped at their window and linear-attention layers ignored. Usable memory on Macs follows the macOS default GPU wired limit (two-thirds at ≤32 GiB, 75% above).
 
+Context cost: every generated token reads the weights *and* the whole KV cache, so speed scales by `(weights + kv_at_measured_context) / (weights + kv_at_your_context)`. That matches the published short-vs-long-context benchmarks within about 20-30%; see `defaults.context_decay` for the three calibration cases and `npm test` for the assertions.
+
 Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active parameters only for MoE). Efficiency is 0.75 for dense models and 0.3 for MoE on Apple Silicon (0.65 on DGX Spark), calibrated against the measured pairs in `throughput.json` and explained in `defaults.json`.
 
 ## What the page shows
@@ -52,7 +55,8 @@ Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active param
 - **Machine picker**: device family, chip (current lineup and discontinued previous generation), memory tier with price.
 - **Use case dropdown** sets the input:output ratio in plain terms (chat, writing, summarising, coding, agentic coding, document search), with a custom ratio slider.
 - **Tokens-a-day slider** with a plain-English label, plus the machine's daily ceiling: tokens/sec × 86,400 × (ratio + 1). If you ask for more than the machine can generate in 24 hours, the verdict uses the ceiling and says so.
-- **Context slider** changes the KV-cache memory each model needs and greys out models whose context limit is below the setting.
+- **Context slider** changes the KV-cache memory each model needs, slows the quoted speed accordingly, shows each model's own maximum context, and greys out models whose limit is below the setting.
+- **Sorting**: best fit, smartest, fastest, biggest saving, smallest memory, cheapest to just use an API. Models that fit always sort ahead of ones that don't.
 - **Model list** with a family filter, capability dots, the cloud equivalent and its OpenRouter price, a frontier-comparison bar, and a sources line (weights, price, speed, comparison) on every card.
 - **How smart is it, really?** A number line placing the selected model's Artificial Analysis Intelligence Index score against the current Anthropic and OpenAI models, with tier labels defined in `defaults.json` (`frontier_tiers`, `frontier_reference`).
 
@@ -61,6 +65,10 @@ Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active param
 - Every configuration is a URL (`?hw=…&m=…&u=…&r=…&kwh=…&ctx=…&cs=…`). Changing anything updates the URL.
 - `npm run build:og` renders a 1200×630 card for every computable hardware × model pair at the default usage into `public/og/`, plus `default.png`. The in-page "Download card" button renders the exact current config with the same code.
 - **Limitation of static hosting:** social scrapers read `og:image` from HTML, not from JavaScript, so a bare query-string URL gets the default card. The per-config cards are wired up for the Phase 2 pages (`public/routes.json` lists every page, its title, query string and card). To get per-URL cards without those pages you would need an edge function, which is out of scope for v1.
+
+## Sharing a preview
+
+`npm run build:single` inlines the CSS and JS into `dist/sunkcost-standalone.html` — one file, no build step, no server. Open it from disk, email it, or publish it anywhere that takes a single HTML file. The site itself is plain static files in `dist/`, so any static host works: drag the folder onto Netlify Drop, `wrangler pages deploy dist`, or push and enable GitHub Pages.
 
 ## Phase 2 (structure only)
 

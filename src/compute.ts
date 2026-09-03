@@ -3,7 +3,6 @@ import { fit, resolveThroughput, type Fit, type ResolvedThroughput } from './fit
 import { fmtVerdictDuration } from './format';
 import type { State } from './state';
 import type { Dataset, Hardware, Model } from './types';
-import { pickUnit, type UnitPick } from './units';
 
 export interface ModelRow {
   model: Model;
@@ -26,13 +25,13 @@ export interface Capacity {
 export interface View {
   hw: Hardware;
   capacity: Capacity;
+  contextTokens: number;
   model: Model | null;
   rows: ModelRow[];
   hiddenCount: number;
   throughput: ResolvedThroughput | null;
   calc: CalcResult | null;
   verdict: { kind: VerdictKind; headline: string; sub: string | null };
-  unit: UnitPick | null;
   /** why the calculation could not run, if it couldn't */
   blockers: string[];
   configLine: string;
@@ -54,13 +53,13 @@ export function computeView(state: State, data: Dataset): View {
   const all = data.models.map<ModelRow>((m) => ({
     model: m,
     fit: fit(m, hw, state.ctx, d.nearly_fits_ratio),
-    throughput: resolveThroughput(m, hw, data.throughput, d),
+    throughput: resolveThroughput(m, hw, data.throughput, d, state.ctx),
   }));
   const order: Record<string, number> = { fits: 0, nearly: 1, context: 2, unknown: 3, no: 4 };
   const visible = all
     .filter((r) => r.fit.status !== 'no')
     .filter((r) => !state.family || r.model.family === state.family)
-    .sort((a, b) => order[a.fit.status] - order[b.fit.status] || (b.model.params_b - a.model.params_b));
+    .sort(comparator(state.sort, order));
   const hiddenCount = all.length - visible.length;
 
   // selected model must fit (or nearly fit) this hardware; otherwise pick the biggest that fits
@@ -109,9 +108,6 @@ export function computeView(state: State, data: Dataset): View {
     });
   }
 
-  const seed = `${hw.id}|${model?.id ?? ''}|${effectiveUsage}|${state.ratio}`;
-  const unit = calc?.breakevenTokens != null ? pickUnit(calc.breakevenTokens, seed, data.units) : null;
-
   let verdict: View['verdict'];
   if (!calc) {
     verdict = { kind: 'unknown', headline: 'Can’t compute this one.', sub: blockers.join('; ') };
@@ -124,10 +120,11 @@ export function computeView(state: State, data: Dataset): View {
         : 'Nothing to save against at this usage.',
     };
   } else {
+    const perDay = calc.dailySaving;
     verdict = {
       kind: 'surfaces',
       headline: `You’re underwater for ${fmtVerdictDuration(calc.breakevenDays)}.`,
-      sub: unit ? `That’s ${unit.text}.` : null,
+      sub: `Saving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day against the API, on ${hw.price_usd ? `$${hw.price_usd.toLocaleString('en-US')}` : ''} of hardware.`,
     };
   }
 
@@ -137,16 +134,48 @@ export function computeView(state: State, data: Dataset): View {
   return {
     hw,
     capacity,
+    contextTokens: state.ctx,
     model,
     rows: visible,
     hiddenCount,
     throughput: row?.throughput ?? null,
     calc,
     verdict,
-    unit,
     blockers,
     configLine,
     usageLine,
+  };
+}
+
+/** Saving per million tokens against the model's cloud equivalent, ignoring electricity. */
+export function apiCostPerMtok(m: Model, ratio: number): number | null {
+  const ce = m.cloud_equivalent;
+  if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) return null;
+  const outShare = 1 / (ratio + 1);
+  return ce.input_price_per_mtok * (1 - outShare) + ce.output_price_per_mtok * outShare;
+}
+
+function comparator(sort: string, order: Record<string, number>) {
+  const byFit = (a: ModelRow, b: ModelRow) => order[a.fit.status] - order[b.fit.status];
+  const num = (v: number | null | undefined, fallback: number) => (v == null || !Number.isFinite(v) ? fallback : v);
+  return (a: ModelRow, b: ModelRow): number => {
+    const fitDiff = byFit(a, b);
+    if (fitDiff) return fitDiff;
+    switch (sort) {
+      case 'smartest':
+        return num(b.model.frontier_equivalent?.score, -1) - num(a.model.frontier_equivalent?.score, -1);
+      case 'fastest':
+        return num(b.throughput.tokensPerSec, -1) - num(a.throughput.tokensPerSec, -1);
+      case 'savings':
+        return num(apiCostPerMtok(b.model, 4), -1) - num(apiCostPerMtok(a.model, 4), -1);
+      case 'cheapest_api':
+        return num(apiCostPerMtok(a.model, 4), Infinity) - num(apiCostPerMtok(b.model, 4), Infinity);
+      case 'smallest':
+        return num(a.fit.needGb, Infinity) - num(b.fit.needGb, Infinity);
+      default:
+        // best fit: biggest model that fits, since bigger is usually better at a given quant
+        return b.model.params_b - a.model.params_b;
+    }
   };
 }
 

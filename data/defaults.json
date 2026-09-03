@@ -64,7 +64,8 @@
       65536,
       131072,
       262144
-    ]
+    ],
+    "note": "The context window you want. It sets the KV-cache memory each model needs, and it slows generation down: every token generated has to read the whole cache back."
   },
   "nearly_fits_ratio": 1.4,
   "waterline_max_years": 10,
@@ -197,5 +198,59 @@
     }
   ],
   "frontier_reference_note": "Hosted lineups read from platform.claude.com/docs/en/models/overview and developers.openai.com/api/docs/models on 2026-09-03. score_alt is the non-reasoning figure where the index reports both.",
-  "frontier_scale_max": 70
+  "frontier_scale_max": 70,
+  "context_decay": {
+    "model": "tokens_per_sec(context) = measured × (bytes_of_weights + kv_at_measured_context) / (bytes_of_weights + kv_at_your_context)",
+    "why": "At batch size 1 decoding is memory-bandwidth bound. Each generated token reads the active weights AND the whole KV cache, so a large context cuts speed roughly in proportion to how much the cache adds to the bytes read.",
+    "calibration": [
+      {
+        "case": "gpt-oss-20b MXFP4 on DGX Spark",
+        "measured_at_0": 83.43,
+        "measured_at_32k": 61.65,
+        "predicted_at_32k": 60.0,
+        "source": "https://github.com/ggml-org/llama.cpp/blob/master/benches/dgx-spark/dgx-spark.md"
+      },
+      {
+        "case": "Qwen3-Coder 30B-A3B Q8 on DGX Spark",
+        "measured_at_0": 61.06,
+        "measured_at_32k": 30.21,
+        "predicted_at_32k": 23.4,
+        "source": "https://github.com/ggml-org/llama.cpp/blob/master/benches/dgx-spark/dgx-spark.md"
+      },
+      {
+        "case": "Qwen 32B 4-bit MLX on M3 Ultra",
+        "measured_at_1k": 31.2,
+        "measured_at_128k": 8.5,
+        "predicted_at_128k": 11.4,
+        "source": "https://github.com/ml-explore/mlx/discussions/3209"
+      }
+    ],
+    "accuracy_note": "Within about 20-30% on the three model x hardware pairs where a public benchmark reports both a short and a long context. It is a first-order model, not a measurement; the UI says when a figure has been adjusted."
+  },
+  "sorts": [
+    {
+      "id": "fit",
+      "label": "Best fit for this machine"
+    },
+    {
+      "id": "smartest",
+      "label": "Smartest first"
+    },
+    {
+      "id": "fastest",
+      "label": "Fastest first"
+    },
+    {
+      "id": "savings",
+      "label": "Biggest saving first"
+    },
+    {
+      "id": "smallest",
+      "label": "Smallest memory first"
+    },
+    {
+      "id": "cheapest_api",
+      "label": "Cheapest to just use an API"
+    }
+  ]
 }

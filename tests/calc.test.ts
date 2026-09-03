@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculate, positionAfterDays, splitTokens } from '../src/calc';
-import { fit, kvCacheGbFromArchitecture, estimateTokensPerSec } from '../src/fit';
-import { pickUnit } from '../src/units';
+import { fit, kvCacheGbFromArchitecture, estimateTokensPerSec, contextSpeedFactor, resolveThroughput } from '../src/fit';
 import { parseState, serializeState, sliderToUsage, usageToSlider } from '../src/state';
 import { waterlineGeometry, renderWaterline } from '../src/waterline';
 import { computeView } from '../src/compute';
@@ -10,9 +9,8 @@ import hardware from '../data/hardware.json';
 import models from '../data/models.json';
 import throughput from '../data/throughput.json';
 import defaults from '../data/defaults.json';
-import units from '../data/units.json';
 
-const data = { hardware, models, throughput, defaults, units } as unknown as Dataset;
+const data = { hardware, models, throughput, defaults } as unknown as Dataset;
 
 describe('calculate', () => {
   it('splits tokens by ratio', () => {
@@ -88,22 +86,6 @@ describe('fit', () => {
   });
 });
 
-describe('units', () => {
-  it('is deterministic per seed and varies across seeds', () => {
-    const a = pickUnit(1.2e9, 'seed-a', data.units)!;
-    const b = pickUnit(1.2e9, 'seed-a', data.units)!;
-    expect(a.text).toBe(b.text);
-    const texts = new Set(['a', 'b', 'c', 'd', 'e', 'f'].map((s) => pickUnit(1.2e9, s, data.units)!.unit.id));
-    expect(texts.size).toBeGreaterThan(1);
-  });
-  it('prefers counts a human can picture', () => {
-    const p = pickUnit(5e8, 'x', data.units)!;
-    expect(p.count).toBeGreaterThanOrEqual(1.5);
-    expect(p.count).toBeLessThan(10000);
-    expect(p.text).toMatch(/^about /);
-  });
-});
-
 describe('state', () => {
   it('round-trips through the query string', () => {
     const s = parseState('?hw=mac-studio-m5-max-64&m=qwen3-32b-q4&u=750000&r=6&kwh=0.3&ctx=65536&cs=120', data);
@@ -166,18 +148,19 @@ describe('computeView on real data', () => {
 
 describe('capacity and context limits', () => {
   it('caps usage at what the machine can generate in 24 hours', () => {
-    const s = parseState('?hw=mac-mini-m4-16&m=llama-3.1-8b-q4&u=20000000&r=4', data);
+    const s = parseState('?hw=mac-mini-m4-16&m=llama-3.1-8b-q4&u=20000000&r=4&ctx=8192', data);
     const v = computeView(s, data);
-    // measured 21.2 tok/s × 86,400 s = 1.83M output tokens; × 5 = 9.2M total < 20M requested
+    // measured 21.2 tok/s, adjusted for 8k context, × 86,400 s × (4 + 1) < 20M requested
     expect(v.capacity.capped).toBe(true);
-    expect(v.capacity.maxTokensPerDay!).toBeCloseTo(21.2 * 86400 * 5, 0);
+    expect(v.capacity.maxTokensPerDay!).toBeCloseTo(v.throughput!.tokensPerSec! * 86400 * 5, 0);
+    expect(v.throughput!.baseTokensPerSec).toBe(21.2);
     expect(v.capacity.effective).toBe(v.capacity.maxTokensPerDay);
     expect(v.usageLine).toMatch(/ceiling/);
   });
   it('does not cap modest usage', () => {
-    const v = computeView(parseState('?hw=mac-mini-m4-16&m=llama-3.1-8b-q4&u=500000', data), data);
+    const v = computeView(parseState('?hw=mac-mini-m4-16&m=llama-3.1-8b-q4&u=200000', data), data);
     expect(v.capacity.capped).toBe(false);
-    expect(v.capacity.effective).toBe(500000);
+    expect(v.capacity.effective).toBe(200000);
   });
   it('greys a model out when the context exceeds its limit', () => {
     const hw = data.hardware.find((h) => h.id === 'mac-studio-m5-max-64')!;
@@ -189,5 +172,67 @@ describe('capacity and context limits', () => {
     const v = computeView(parseState('?hw=mac-studio-m5-max-64&f=Gemma', data), data);
     expect(v.rows.every((r) => r.model.family === 'Gemma')).toBe(true);
     expect(v.model?.family).toBe('Gemma');
+  });
+});
+
+describe('context slows generation down', () => {
+  const m = data.models.find((x) => x.id === 'qwen3-32b-q4')!;
+
+  it('is 1 at the measured context and falls as context grows', () => {
+    expect(contextSpeedFactor(m, 0, 0)).toBe(1);
+    const at32k = contextSpeedFactor(m, 0, 32768);
+    const at128k = contextSpeedFactor(m, 0, 131072);
+    expect(at32k).toBeLessThan(1);
+    expect(at128k).toBeLessThan(at32k);
+    // 19.76 GB weights vs 8.6 GB of cache at 32k
+    expect(at32k).toBeCloseTo(19.76 / (19.76 + 8.588), 2);
+  });
+
+  it('matches the published gpt-oss-20b figures on DGX Spark within 10%', () => {
+    // llama.cpp bench: 83.43 tok/s at empty context, 61.65 at 32k
+    const oss = data.models.find((x) => x.id === 'gpt-oss-20b-mxfp4')!;
+    const predicted = 83.43 * contextSpeedFactor(oss, 0, 32768);
+    expect(Math.abs(predicted - 61.65) / 61.65).toBeLessThan(0.1);
+  });
+
+  it('reports the adjustment through resolveThroughput', () => {
+    const hw = data.hardware.find((h) => h.id === 'nvidia-dgx-spark-128')!;
+    const oss = data.models.find((x) => x.id === 'gpt-oss-20b-mxfp4')!;
+    const short = resolveThroughput(oss, hw, data.throughput, data.defaults, 4096);
+    const long = resolveThroughput(oss, hw, data.throughput, data.defaults, 131072);
+    expect(short.measurement).toBe('measured');
+    expect(short.baseTokensPerSec).toBe(83.43);
+    expect(long.tokensPerSec!).toBeLessThan(short.tokensPerSec!);
+    expect(long.contextFactor).toBeLessThan(short.contextFactor);
+  });
+});
+
+describe('sorting the model list', () => {
+  const base = '?hw=mac-studio-m5-max-64&ctx=8192';
+  const scores = (sort: string) =>
+    computeView(parseState(`${base}&s=${sort}`, data), data).rows.filter((r) => r.fit.status === 'fits');
+
+  it('sorts by intelligence score', () => {
+    const rows = scores('smartest');
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i - 1].model.frontier_equivalent!.score!).toBeGreaterThanOrEqual(rows[i].model.frontier_equivalent!.score!);
+    }
+  });
+  it('sorts by speed', () => {
+    const rows = scores('fastest');
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i - 1].throughput.tokensPerSec!).toBeGreaterThanOrEqual(rows[i].throughput.tokensPerSec!);
+    }
+  });
+  it('sorts by memory footprint', () => {
+    const rows = scores('smallest');
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i - 1].fit.needGb!).toBeLessThanOrEqual(rows[i].fit.needGb!);
+    }
+  });
+  it('keeps models that fit ahead of ones that do not, whatever the sort', () => {
+    const all = computeView(parseState(`${base}&s=fastest`, data), data).rows;
+    const lastFit = all.map((r) => r.fit.status === 'fits').lastIndexOf(true);
+    expect(all.slice(0, lastFit + 1).every((r) => r.fit.status === 'fits')).toBe(true);
   });
 });

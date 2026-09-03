@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Sunk Cost — how much local-LLM usage it takes for a Mac or DGX Spark to pay for itself.",
+  "description": "Sunk Cost \u2014 how much local-LLM usage it takes for a Mac or DGX Spark to pay for itself.",
   "scripts": {
     "dev": "vite",
     "build": "npm run validate && npm run build:og && npm run build:routes && vite build",
@@ -12,7 +12,8 @@
     "build:og": "tsx scripts/build-og.ts",
     "build:routes": "tsx scripts/build-routes.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:single": "npm run build && tsx scripts/build-artifact.ts"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
