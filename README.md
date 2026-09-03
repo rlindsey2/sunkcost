@@ -41,6 +41,7 @@ cloud_cost_per_day  = (daily_input_tokens  / 1e6 × input_price) + (daily_output
 local_cost_per_day  = (daily_output_tokens / local_tokens_per_sec / 3600) × device_watts / 1000 × electricity_price_per_kwh
 daily_saving        = cloud_cost_per_day − local_cost_per_day
 breakeven_days      = device_price / daily_saving        (never, if daily_saving ≤ 0)
+                      device_price is what you paid, if you entered it, else the list price
 breakeven_tokens    = breakeven_days × daily_tokens
 ```
 
@@ -52,7 +53,7 @@ Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active param
 
 ## What the page shows
 
-- **Machine picker**: device family, chip (current lineup and discontinued previous generation), memory tier with price.
+- **Machine picker**: device family, chip or system (current lineup and discontinued previous generation), memory tier with price, and a **What you paid** box that overrides the list price. Useful for a machine bought at launch, second-hand or on sale, and it is the only way to price the configurations with no published list price. It clears when you switch machines, since a price you paid for one box says nothing about another.
 - **Use case dropdown** sets the input:output ratio in plain terms (chat, writing, summarising, coding, agentic coding, document search), with a custom ratio slider.
 - **Tokens-a-day slider** with a plain-English label, plus the machine's daily ceiling: tokens/sec × 86,400 × (ratio + 1). If you ask for more than the machine can generate in 24 hours, the verdict uses the ceiling and says so.
 - **Context slider** changes the KV-cache memory each model needs, slows the quoted speed accordingly, shows each model's own maximum context, and greys out models whose limit is below the setting.

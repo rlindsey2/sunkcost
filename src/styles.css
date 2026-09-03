@@ -55,6 +55,14 @@ input[type='range'] { width: 100%; accent-color: var(--focus); margin: 6px 0 2px
 .readout { font-size: 13px; }
 .readout .warn { color: var(--accent-ink); }
 .configs { display: flex; flex-wrap: wrap; gap: 5px; }
+.price-input { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--panel); padding: 0 6px; }
+.price-input b { color: var(--muted); font-weight: 500; font-size: 13px; }
+.price-input input { border: 0; background: transparent; padding: 5px 2px; width: 84px; min-width: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.price-input input:focus { outline: none; }
+.price-input:focus-within { border-color: var(--focus); box-shadow: 0 0 0 2px rgba(27, 75, 122, 0.18); }
+.price-input input::-webkit-outer-spin-button, .price-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.linkish { font: inherit; font-size: inherit; color: var(--focus); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+#price-note { margin-top: 6px; }
 .config { display: grid; gap: 0; text-align: left; font: inherit; cursor: pointer; background: var(--panel); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 4px; padding: 4px 9px; min-width: 84px; }
 .config:hover { border-color: var(--ink); }
 .config.is-selected { border-color: var(--ink); background: var(--ink); color: #fff; }

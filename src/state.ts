@@ -17,6 +17,8 @@ export interface State {
   family: string;
   /** list sort key, see defaults.sorts */
   sort: string;
+  /** what you actually paid, overriding the list price; null = use the list price */
+  price: number | null;
 }
 
 const KEYS: Record<keyof State, string> = {
@@ -29,6 +31,7 @@ const KEYS: Record<keyof State, string> = {
   cloudTps: 'cs',
   family: 'f',
   sort: 's',
+  price: 'p',
 };
 
 function num(v: string | null, fallback: number, min?: number, max?: number): number {
@@ -38,6 +41,14 @@ function num(v: string | null, fallback: number, min?: number, max?: number): nu
   if (min != null && n < min) return min;
   if (max != null && n > max) return max;
   return n;
+}
+
+/** A hand-entered price. Anything unparseable or out of range falls back to the list price. */
+function priceParam(v: string | null): number | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0 || n > 1e7) return null;
+  return Math.round(n);
 }
 
 export function defaultState(data: Dataset): State {
@@ -53,6 +64,7 @@ export function defaultState(data: Dataset): State {
     cloudTps: d.cloud.default_tokens_per_sec,
     family: '',
     sort: 'fit',
+    price: null,
   };
 }
 
@@ -69,6 +81,7 @@ export function parseState(search: string, data: Dataset): State {
     ratio: num(p.get(KEYS.ratio), d.ratio, u.min_input_to_output_ratio, u.max_input_to_output_ratio),
     family: p.get('f') ?? '',
     sort: data.defaults.sorts.some((x) => x.id === p.get('s')) ? p.get('s')! : d.sort,
+    price: priceParam(p.get(KEYS.price)),
     kwh: num(p.get(KEYS.kwh), d.kwh, 0, 5),
     ctx: num(p.get(KEYS.ctx), d.ctx, 1024, 1_000_000),
     cloudTps: num(p.get(KEYS.cloudTps), d.cloudTps, 1, 10000),
@@ -86,6 +99,7 @@ export function serializeState(s: State): string {
   p.set(KEYS.cloudTps, String(s.cloudTps));
   if (s.family) p.set(KEYS.family, s.family);
   if (s.sort && s.sort !== 'fit') p.set(KEYS.sort, s.sort);
+  if (s.price != null) p.set(KEYS.price, String(Math.round(s.price)));
   return p.toString();
 }
 

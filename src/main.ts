@@ -57,22 +57,32 @@ $<HTMLInputElement>('#cloud-tps').addEventListener('input', (e) => {
 $<HTMLSelectElement>('#family').addEventListener('change', (e) => {
   const fam = (e.target as HTMLSelectElement).value;
   const first = data.hardware.find((h) => h.family === fam && h.price_usd != null) ?? data.hardware.find((h) => h.family === fam);
-  if (first) update({ hw: first.id });
+  if (first) update({ hw: first.id, price: null });
 });
 $<HTMLSelectElement>('#chip').addEventListener('change', (e) => {
   const chip = (e.target as HTMLSelectElement).value;
   const fam = view.hw.family;
   const same = data.hardware.filter((h) => h.family === fam && h.chip === chip);
   const pick = same.find((h) => h.unified_memory_gb === view.hw.unified_memory_gb) ?? same.find((h) => h.price_usd != null) ?? same[0];
-  if (pick) update({ hw: pick.id });
+  if (pick) update({ hw: pick.id, price: null });
 });
 $<HTMLSelectElement>('#model-family').addEventListener('change', (e) => update({ family: (e.target as HTMLSelectElement).value }));
 $<HTMLSelectElement>('#model-sort').addEventListener('change', (e) => update({ sort: (e.target as HTMLSelectElement).value }));
+$<HTMLInputElement>('#price').addEventListener('input', (e) => {
+  const raw = (e.target as HTMLInputElement).value.trim();
+  const n = Number(raw);
+  update({ price: raw === '' || !Number.isFinite(n) || n <= 0 ? null : Math.round(n) });
+});
 
 document.addEventListener('click', (e) => {
-  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model]');
+  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model],#price-reset');
   if (!t) return;
-  if (t.dataset.hw) update({ hw: t.dataset.hw });
+  if (t.id === 'price-reset') {
+    update({ price: null });
+    return;
+  }
+  // a price you paid for one machine says nothing about another, so it clears on switch
+  if (t.dataset.hw) update({ hw: t.dataset.hw, price: null });
   if (t.dataset.model && t.getAttribute('aria-disabled') !== 'true' && !(e.target as HTMLElement).closest('a')) {
     update({ model: t.dataset.model });
     document.querySelector<HTMLElement>(`[data-model="${t.dataset.model}"]`)?.focus();
@@ -103,20 +113,20 @@ $('#copy-link').addEventListener('click', async () => {
 
 // absent in the single-file build: sandboxed hosts cannot save a file the page makes
 document.querySelector('#download-card')?.addEventListener('click', async () => {
-  if (!view.calc || view.hw.price_usd == null) return;
+  if (!view.calc || view.price == null) return;
   const c = view.calc;
   const svg = renderOgCard({
     configLine: view.configLine,
     usageLine: view.usageLine,
     verdict: view.verdict.headline,
     subLine: view.verdict.sub,
-    devicePriceUsd: view.hw.price_usd,
+    devicePriceUsd: view.price,
     dailySaving: c.dailySaving,
     breakevenDays: c.breakevenDays,
     maxYears: data.defaults.waterline_max_years,
     dataChecked: data.defaults.data_last_checked,
     figures: ogFigures({
-      devicePriceUsd: view.hw.price_usd,
+      devicePriceUsd: view.price,
       cloudCostPerMonth: c.cloudCostPerMonth,
       localTokensPerSec: view.throughput?.tokensPerSec ?? null,
       measurement: view.throughput?.measurement ?? 'unknown',

@@ -65,6 +65,17 @@ function renderMachine(state: State, data: Dataset, view: View) {
 
   const rows = inFamily.filter((h) => h.chip === view.hw.chip);
   $('#configs').innerHTML = rows.map((h) => configButton(h, h.id === view.hw.id)).join('');
+  const priceInput = $<HTMLInputElement>('#price');
+  const listPrice = view.hw.price_usd;
+  priceInput.placeholder = listPrice == null ? 'what you paid' : String(listPrice);
+  const wanted = state.price == null ? '' : String(state.price);
+  if (priceInput.value !== wanted && document.activeElement !== priceInput) priceInput.value = wanted;
+  $('#price-note').innerHTML = view.priceIsCustom
+    ? `Using your price.${listPrice == null ? '' : ` List is ${fmtUsd(listPrice)}.`} <button type="button" class="linkish" id="price-reset">Use the list price</button>`
+    : listPrice == null
+      ? '<span class="todo">No list price for this configuration. Enter what you paid.</span>'
+      : `Bought it cheaper, or used? Enter what you paid.`;
+
   const bits: string[] = [];
   if (view.hw.chip_variant) bits.push(view.hw.chip_variant);
   if (view.hw.memory_bandwidth_gbs) bits.push(`${view.hw.memory_bandwidth_gbs} GB/s memory`);
@@ -209,8 +220,8 @@ function renderModels(state: State, data: Dataset, view: View) {
 function renderVerdict(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const wl = $('#waterline');
-  if (c && view.hw.price_usd != null) {
-    wl.innerHTML = renderWaterline({ devicePriceUsd: view.hw.price_usd, dailySaving: c.dailySaving, breakevenDays: c.breakevenDays, maxYears: data.defaults.waterline_max_years, width: 800, height: 250, markerDays: 365.25 });
+  if (c && view.price != null) {
+    wl.innerHTML = renderWaterline({ devicePriceUsd: view.price, dailySaving: c.dailySaving, breakevenDays: c.breakevenDays, maxYears: data.defaults.waterline_max_years, width: 800, height: 250, markerDays: 365.25 });
     wl.classList.remove('is-empty');
   } else {
     wl.innerHTML = '';
@@ -244,12 +255,12 @@ function renderFigures(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const t = view.throughput;
   const figs: [string, string, string?][] = [
-    ['Hardware', view.hw.price_usd == null ? 'unknown' : fmtUsd(view.hw.price_usd)],
+    ['Hardware', view.price == null ? 'unknown' : fmtUsd(view.price), view.priceIsCustom ? 'the price you paid' : view.hw.generation === 'previous' ? 'launch price' : undefined],
     ['API cost per month', c ? fmtUsd(c.cloudCostPerMonth) : '—', view.model ? `${view.model.cloud_equivalent.name} on OpenRouter` : undefined],
     ['Electricity per month', c ? fmtUsd(c.localCostPerMonth) : '—', view.hw.load_watts ? `${view.hw.load_watts} W under load${view.hw.load_watts_status === 'stand_in' ? ' (stand-in figure)' : ''}` : undefined],
     ['Local speed', t?.tokensPerSec == null ? 'unknown' : `${fmtNum(t.tokensPerSec, 0)} tok/s`, t ? t.measurement : undefined],
     ['Break-even', c ? (c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays)) : '—', c?.breakevenTokens != null ? `${fmtTokens(c.breakevenTokens)} tokens` : undefined],
-    ['After 12 months', c ? netAfter(view.hw.price_usd!, c.dailySaving, 365.25) : '—'],
+    ['After 12 months', c ? netAfter(view.price!, c.dailySaving, 365.25) : '—'],
   ];
   $('#figures').innerHTML = figs.map(([k, v, sub]) => `<div class="fig"><div class="fig-k">${esc(k)}</div><div class="fig-v num">${esc(v)}</div>${sub ? `<div class="fig-s">${esc(sub)}</div>` : ''}</div>`).join('');
   void state; void data;
@@ -365,10 +376,12 @@ local_cost_per_day  = (${fmtInt(c.dailyOutputTokens)} / ${fmtNum(tps, 1)} tok/s 
 
 daily_saving        = ${fmtUsd(c.cloudCostPerDay, { cents: true })} − ${fmtUsd(c.localCostPerDay, { cents: true })} = ${fmtUsd(c.dailySaving, { cents: true })}
 
-breakeven_days      = ${fmtUsd(hw.price_usd)} / ${fmtUsd(c.dailySaving, { cents: true })} = ${be === null ? 'never (saving ≤ 0)' : `${fmtInt(be)} days (${fmtDuration(be)})`}
+breakeven_days      = ${fmtUsd(view.price)} / ${fmtUsd(c.dailySaving, { cents: true })} = ${be === null ? 'never (saving ≤ 0)' : `${fmtInt(be)} days (${fmtDuration(be)})`}
 breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)} = ${fmtTokens(c.breakevenTokens)} tokens`}</pre>
 <dl class="sources">
-  <dt>Hardware price</dt><dd>${fmtUsd(hw.price_usd)} — hardware.json, <code>${esc(hw.id)}</code>${hw.sources?.length ? ` · ${links(hw.sources)}` : ''}</dd>
+  <dt>Hardware price</dt><dd>${view.priceIsCustom
+    ? `${fmtUsd(view.price)} — <b>the price you entered</b>. ${hw.price_usd == null ? 'No list price is recorded for this configuration.' : `The list price in hardware.json is ${fmtUsd(hw.price_usd)}${hw.sources?.length ? ` (${links(hw.sources)})` : ''}.`}`
+    : `${fmtUsd(view.price)} — hardware.json, <code>${esc(hw.id)}</code>${hw.sources?.length ? ` · ${links(hw.sources)}` : ''}`}</dd>
   <dt>Power under load</dt><dd>${hw.load_watts} W, <b>${esc((hw.load_watts_status ?? 'published').replace(/_/g, ' '))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}</dd>
   <dt>Usable memory</dt><dd>${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}</dd>
   <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}</dd>

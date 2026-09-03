@@ -32,7 +32,11 @@
         <label class="field"><span>Device</span><select id="family" aria-label="Device family"></select></label>
         <label class="field"><span>Chip / system</span><select id="chip" aria-label="Chip or system"></select></label>
         <div class="field"><span class="field-label">Memory · price</span><div id="configs" class="configs" role="radiogroup" aria-label="Memory configurations"></div></div>
+        <label class="field"><span>What you paid</span>
+          <span class="price-input"><b>$</b><input type="number" id="price" min="1" step="1" inputmode="numeric" aria-describedby="price-note" /></span>
+        </label>
       </div>
+      <div id="price-note" class="small muted"></div>
       <div id="hw-status" class="small muted"></div>
     </div>
 

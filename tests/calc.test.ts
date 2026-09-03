@@ -236,3 +236,35 @@ describe('sorting the model list', () => {
     expect(all.slice(0, lastFit + 1).every((r) => r.fit.status === 'fits')).toBe(true);
   });
 });
+
+describe('the price you actually paid', () => {
+  it('overrides the list price everywhere the maths uses it', () => {
+    const list = computeView(parseState('?hw=gmktec-evo-x2-128&m=gpt-oss-120b-mxfp4&u=2000000', data), data);
+    const paid = computeView(parseState('?hw=gmktec-evo-x2-128&m=gpt-oss-120b-mxfp4&u=2000000&p=1999', data), data);
+    expect(list.priceIsCustom).toBe(false);
+    expect(paid.priceIsCustom).toBe(true);
+    expect(paid.price).toBe(1999);
+    // same savings per day, so break-even scales with what you paid
+    expect(paid.calc!.dailySaving).toBeCloseTo(list.calc!.dailySaving, 9);
+    expect(paid.calc!.breakevenDays!).toBeCloseTo(list.calc!.breakevenDays! * (1999 / list.price!), 6);
+    expect(paid.configLine).toContain('$1,999');
+  });
+
+  it('unblocks a machine that has no list price', () => {
+    const without = computeView(parseState('?hw=mac-studio-m5-ultra-512', data), data);
+    expect(without.calc).toBeNull();
+    expect(without.blockers.join()).toMatch(/enter what you paid/);
+    const with_ = computeView(parseState('?hw=mac-studio-m5-ultra-512&p=12000', data), data);
+    expect(with_.calc).not.toBeNull();
+    expect(with_.price).toBe(12000);
+  });
+
+  it('ignores a nonsense price and round-trips a real one', () => {
+    expect(parseState('?hw=gmktec-evo-x2-128&p=abc', data).price).toBeNull();
+    expect(parseState('?hw=gmktec-evo-x2-128&p=-5', data).price).toBeNull();
+    expect(parseState('?hw=gmktec-evo-x2-128&p=0', data).price).toBeNull();
+    const s = parseState('?hw=gmktec-evo-x2-128&p=1999', data);
+    expect(parseState('?' + serializeState(s), data).price).toBe(1999);
+    expect(serializeState(parseState('?hw=gmktec-evo-x2-128', data))).not.toContain('p=');
+  });
+});

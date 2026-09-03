@@ -39,21 +39,21 @@ const fontOpts = (() => {
 function cardFor(hwId: string, modelId: string): string | null {
   const state = { ...defaultState(data), hw: hwId, model: modelId };
   const view = computeView(state, data);
-  if (!view.calc || view.hw.price_usd == null || view.model?.id !== modelId) return null;
+  if (!view.calc || view.price == null || view.model?.id !== modelId) return null;
   const c = view.calc;
   return renderOgCard({
     configLine: view.configLine,
     usageLine: view.usageLine,
     verdict: view.verdict.headline,
     subLine: view.verdict.sub,
-    devicePriceUsd: view.hw.price_usd,
+    devicePriceUsd: view.price,
     dailySaving: c.dailySaving,
     breakevenDays: c.breakevenDays,
     maxYears: data.defaults.waterline_max_years,
     dataChecked: data.defaults.data_last_checked,
     fontFamily: FONT,
     figures: ogFigures({
-      devicePriceUsd: view.hw.price_usd,
+      devicePriceUsd: view.price,
       cloudCostPerMonth: c.cloudCostPerMonth,
       localTokensPerSec: view.throughput?.tokensPerSec ?? null,
       measurement: view.throughput?.measurement ?? 'unknown',

@@ -24,6 +24,9 @@ export interface Capacity {
 
 export interface View {
   hw: Hardware;
+  /** the price the maths uses: what you paid, or the list price */
+  price: number | null;
+  priceIsCustom: boolean;
   capacity: Capacity;
   contextTokens: number;
   model: Model | null;
@@ -74,8 +77,11 @@ export function computeView(state: State, data: Dataset): View {
   }
 
   const row = model ? all.find((r) => r.model.id === model!.id)! : null;
+  const price = state.price ?? hw.price_usd;
+  const priceIsCustom = state.price != null && state.price !== hw.price_usd;
+
   const blockers: string[] = [];
-  if (hw.price_usd == null) blockers.push('hardware price is unknown (TODO in hardware.json)');
+  if (price == null) blockers.push('no price for this machine yet — enter what you paid to see the break-even');
   if (!model) blockers.push('no model in the list fits this configuration at the chosen context length');
   if (model) {
     const ce = model.cloud_equivalent;
@@ -95,7 +101,7 @@ export function computeView(state: State, data: Dataset): View {
   let calc: CalcResult | null = null;
   if (!blockers.length && model && row) {
     calc = calculate({
-      devicePriceUsd: hw.price_usd!,
+      devicePriceUsd: price!,
       dailyTokens: effectiveUsage,
       inputRatio: state.ratio,
       inputPricePerMtok: model.cloud_equivalent.input_price_per_mtok!,
@@ -124,15 +130,17 @@ export function computeView(state: State, data: Dataset): View {
     verdict = {
       kind: 'surfaces',
       headline: `You’re underwater for ${fmtVerdictDuration(calc.breakevenDays)}.`,
-      sub: `Saving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day against the API, on ${hw.price_usd ? `$${hw.price_usd.toLocaleString('en-US')}` : ''} of hardware.`,
+      sub: `Saving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day against the API, on ${price ? `$${price.toLocaleString('en-US')}` : ''} of hardware${priceIsCustom ? ' at the price you paid' : ''}.`,
     };
   }
 
   const usageLine = `${formatUsageShort(effectiveUsage)} tokens/day${capped ? ' (machine’s ceiling)' : ''}, ${ratioLabel(state.ratio)}`;
-  const configLine = model ? `${hardwareLabel(hw)} · ${modelLabel(model)}` : hardwareLabel(hw);
+  const configLine = `${hardwareLabel(hw)}${priceIsCustom ? ` at $${price!.toLocaleString('en-US')}` : ''}${model ? ` · ${modelLabel(model)}` : ''}`;
 
   return {
     hw,
+    price,
+    priceIsCustom,
     capacity,
     contextTokens: state.ctx,
     model,
