@@ -65,9 +65,25 @@ export interface ModelArchitecture {
   note?: string | null;
 }
 
+export interface FrontierEquivalent {
+  /** index into defaults.frontier_tiers; null = not placed */
+  tier: number | null;
+  score?: number | null;
+  score_note?: string | null;
+  basis?: string | null;
+  basis_TODO?: string;
+  url?: string | null;
+  checked?: string;
+}
+
 export interface Model {
   id: string;
   display_name: string;
+  /** Qwen, Llama, Gemma… used by the list filter */
+  family?: string;
+  max_context_tokens?: number | null;
+  max_context_note?: string | null;
+  frontier_equivalent?: FrontierEquivalent;
   params_b: number;
   active_params_b?: number | null;
   quantisation: string;
@@ -124,6 +140,11 @@ export interface Defaults {
   cloud: { default_tokens_per_sec: number; note: string };
   estimate: { efficiency_dense: number; efficiency_moe: number; note: string };
   context: { default_tokens: number; options: number[] };
+  use_cases: { id: string; label: string; ratio: number; note?: string }[];
+  frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
+  frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string };
+  frontier_reference?: { name: string; score: number; score_alt?: number; url?: string }[];
+  frontier_scale_max?: number;
   nearly_fits_ratio: number;
   waterline_max_years: number;
   typical_task_output_tokens: number;

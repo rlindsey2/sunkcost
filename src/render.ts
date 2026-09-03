@@ -1,8 +1,8 @@
-import { computeView, formatUsageShort, hardwareLabel, modelLabel, usageLabel, type View } from './compute';
+import { computeView, formatUsageShort, hardwareLabel, modelLabel, ratioLabel, usageLabel, type View } from './compute';
 import { esc, fmtDuration, fmtGb, fmtHours, fmtInt, fmtNum, fmtSeconds, fmtTokens, fmtUsd } from './format';
 import { kvCacheGb } from './fit';
 import { serializeState, type State } from './state';
-import { CAPABILITY_KEYS, CAPABILITY_LABELS, type Dataset, type Hardware, type Rating } from './types';
+import { CAPABILITY_KEYS, CAPABILITY_LABELS, type Dataset, type Hardware, type Model, type Rating } from './types';
 import { renderWaterline } from './waterline';
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
@@ -14,6 +14,7 @@ export function renderAll(state: State, data: Dataset): View {
   renderModels(state, data, view);
   renderVerdict(state, data, view);
   renderFigures(state, data, view);
+  renderSmarts(state, data, view);
   renderTimeCost(state, data, view);
   renderMath(state, data, view);
   renderSmallPrint(state, data, view);
@@ -31,90 +32,142 @@ export function pageTitle(view: View): string {
   return `${hardwareLabel(view.hw)} — how long until local AI pays for itself? — Sunk Cost`;
 }
 
+function setOptions(sel: HTMLSelectElement, html: string, value: string) {
+  if (sel.dataset.rendered !== html) {
+    sel.innerHTML = html;
+    sel.dataset.rendered = html;
+  }
+  sel.value = value;
+}
+
 /* ---------------- zone 1: machine ---------------- */
 
 function renderMachine(state: State, data: Dataset, view: View) {
   const families = [...new Set(data.hardware.map((h) => h.family))];
-  const famSel = $<HTMLSelectElement>('#family');
-  if (famSel.options.length !== families.length) {
-    famSel.innerHTML = families.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join('');
-  }
-  famSel.value = view.hw.family;
+  setOptions($<HTMLSelectElement>('#family'), families.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join(''), view.hw.family);
 
-  const configs = data.hardware.filter((h) => h.family === view.hw.family);
-  const gens: Array<'current' | 'previous'> = ['current', 'previous'];
-  $('#configs').innerHTML = gens
-    .map((gen) => {
-      const inGen = configs.filter((h) => (h.generation ?? 'current') === gen);
-      if (!inGen.length) return '';
-      const chips = [...new Set(inGen.map((h) => h.chip))];
-      const label = gen === 'previous'
-        ? `<div class="gen-label">Previous generation — discontinued; launch prices, for refurbished or used comparison</div>`
-        : configs.some((h) => h.generation === 'previous') ? `<div class="gen-label" style="border-top:0;padding-top:0">Current lineup</div>` : '';
-      return label + chips
-        .map((chip) => {
-          const rows = inGen.filter((h) => h.chip === chip);
-          const bw = [...new Set(rows.map((h) => h.memory_bandwidth_gbs))].filter(Boolean);
-          return `<div class="chip-group">
-        <div class="chip-name">${esc(chip)}${bw.length ? ` <span class="muted">· ${bw.join('–')} GB/s</span>` : ''}</div>
-        <div class="configs" role="radiogroup" aria-label="${esc(chip)} memory configurations">
-          ${rows.map((h) => configButton(h, h.id === view.hw.id)).join('')}
-        </div>
-      </div>`;
-        })
-        .join('');
+  const inFamily = data.hardware.filter((h) => h.family === view.hw.family);
+  const chipKey = (h: Hardware) => `${h.chip}`;
+  const groups: Array<['current' | 'previous', string]> = [['current', 'Current lineup'], ['previous', 'Previous generation (discontinued, launch price)']];
+  const hasPrev = inFamily.some((h) => h.generation === 'previous');
+  const chipHtml = groups
+    .map(([gen, label]) => {
+      const chips = [...new Set(inFamily.filter((h) => (h.generation ?? 'current') === gen).map(chipKey))];
+      if (!chips.length) return '';
+      const opts = chips.map((c) => {
+        const bw = [...new Set(inFamily.filter((h) => chipKey(h) === c).map((h) => h.memory_bandwidth_gbs))].filter(Boolean);
+        return `<option value="${esc(c)}">${esc(c)}${bw.length ? ` · ${bw.join('–')} GB/s` : ''}</option>`;
+      }).join('');
+      return hasPrev ? `<optgroup label="${esc(label)}">${opts}</optgroup>` : opts;
     })
     .join('');
-  const status = view.hw.status ? `<p class="muted small" style="margin-top:8px">${esc(hardwareLabel(view.hw))}: ${esc(view.hw.status)}${view.hw.TODO ? ` <span class="todo">TODO: ${esc(view.hw.TODO)}</span>` : ''}</p>` : '';
-  $('#hw-status').innerHTML = status;
+  setOptions($<HTMLSelectElement>('#chip'), chipHtml, view.hw.chip);
+
+  const rows = inFamily.filter((h) => h.chip === view.hw.chip);
+  $('#configs').innerHTML = rows.map((h) => configButton(h, h.id === view.hw.id)).join('');
+  const bits: string[] = [];
+  if (view.hw.chip_variant) bits.push(view.hw.chip_variant);
+  if (view.hw.memory_bandwidth_gbs) bits.push(`${view.hw.memory_bandwidth_gbs} GB/s memory`);
+  if (view.hw.usable_memory_gb != null) bits.push(`${view.hw.usable_memory_gb} GB usable by the GPU`);
+  if (view.hw.status) bits.push(view.hw.status);
+  $('#hw-status').innerHTML = `${esc(hardwareLabel(view.hw))}: ${esc(bits.join(' · '))}${view.hw.TODO ? ` <span class="todo">TODO: ${esc(view.hw.TODO)}</span>` : ''}`;
 }
 
 function configButton(h: Hardware, selected: boolean): string {
   const price = h.price_usd == null ? '<span class="todo">price unknown</span>' : fmtUsd(h.price_usd);
-  const variant = h.chip_variant ? `<span class="muted small">${esc(h.chip_variant)}</span>` : '';
-  return `<button type="button" role="radio" aria-checked="${selected}" class="config${selected ? ' is-selected' : ''}" data-hw="${esc(h.id)}">
-    <span class="config-mem num">${h.unified_memory_gb} GB</span>
-    <span class="config-price num">${price}</span>
-    ${variant}
+  return `<button type="button" role="radio" aria-checked="${selected}" class="config${selected ? ' is-selected' : ''}" data-hw="${esc(h.id)}" title="${esc(h.chip_variant ?? '')}">
+    <span class="config-mem">${h.unified_memory_gb} GB</span>
+    <span class="config-price">${price}</span>
   </button>`;
 }
 
 /* ---------------- controls ---------------- */
 
 function renderControls(state: State, data: Dataset, view: View) {
-  const u = data.defaults.usage;
+  const d = data.defaults;
   const out = state.usage / (state.ratio + 1);
-  $('#usage-readout').innerHTML = `<b class="num">${formatUsageShort(state.usage)}</b> tokens a day <span class="muted">— ${esc(usageLabel(state.usage, data))}</span>`;
-  $('#ratio-readout').innerHTML = `<b class="num">${state.ratio}:1</b> input to output <span class="muted">— ${fmtTokens(state.usage - out)} in, ${fmtTokens(out)} out</span>`;
-  const ratio = $<HTMLInputElement>('#ratio');
-  ratio.min = String(u.min_input_to_output_ratio);
-  ratio.max = String(u.max_input_to_output_ratio);
-  if (Number(ratio.value) !== state.ratio) ratio.value = String(state.ratio);
-
-  const ctx = $<HTMLSelectElement>('#ctx');
-  if (!ctx.options.length) {
-    ctx.innerHTML = data.defaults.context.options.map((c) => `<option value="${c}">${c >= 1024 ? `${c / 1024}k` : c} tokens</option>`).join('');
+  const cap = view.capacity;
+  let capNote = '';
+  if (cap.maxTokensPerDay != null && view.model) {
+    capNote = cap.capped
+      ? `<div class="warn">Ceiling: ${formatUsageShort(cap.maxTokensPerDay)} a day on this machine, flat out. The maths uses that.</div>`
+      : `<div class="muted">Ceiling on this machine: ${formatUsageShort(cap.maxTokensPerDay)} a day, generating 24 h non-stop.</div>`;
   }
-  ctx.value = String(state.ctx);
+  $('#usage-readout').innerHTML = `<b class="num">${formatUsageShort(state.usage)}</b> tokens a day <span class="muted">— ${esc(usageLabel(state.usage, data))}</span>${capNote}`;
+
+  // use case
+  const uc = d.use_cases;
+  const match = uc.find((u) => Math.abs(u.ratio - state.ratio) < 1e-9);
+  const ucHtml = uc.map((u) => `<option value="${u.ratio}">${esc(u.label)} · ${esc(ratioLabel(u.ratio))}</option>`).join('') + `<option value="custom">Custom ratio…</option>`;
+  setOptions($<HTMLSelectElement>('#usecase'), ucHtml, match ? String(match.ratio) : 'custom');
+  $('#ratio-custom').hidden = !!match;
+  const ratio = $<HTMLInputElement>('#ratio');
+  ratio.min = String(d.usage.min_input_to_output_ratio);
+  ratio.max = String(d.usage.max_input_to_output_ratio);
+  if (Number(ratio.value) !== state.ratio) ratio.value = String(state.ratio);
+  $('#ratio-readout').innerHTML = `<b class="num">${esc(ratioLabel(state.ratio))}</b>${match?.note ? ` <span class="muted">— ${esc(match.note)}</span>` : ''}`;
+
+  // context slider over the option list
+  const opts = d.context.options;
+  const cs = $<HTMLInputElement>('#ctxslider');
+  cs.min = '0';
+  cs.max = String(opts.length - 1);
+  const idx = Math.max(0, opts.indexOf(state.ctx));
+  if (Number(cs.value) !== idx) cs.value = String(idx);
+  const sel = view.model;
+  const kv = sel ? kvCacheGb(sel, state.ctx) : null;
+  const limit = sel?.max_context_tokens;
+  $('#ctx-readout').innerHTML = `<b class="num">${fmtCtx(state.ctx)}</b> tokens <span class="muted">— ${sel ? `${fmtGb(kv)} KV cache for ${esc(sel.display_name)}` : 'sets each model’s KV-cache memory'}${limit != null ? `; limit ${fmtCtx(limit)}` : ''}</span>`;
+
   const kwh = $<HTMLInputElement>('#kwh');
   if (Number(kwh.value) !== state.kwh) kwh.value = String(state.kwh);
-  const cs = $<HTMLInputElement>('#cloud-tps');
-  if (Number(cs.value) !== state.cloudTps) cs.value = String(state.cloudTps);
-  $('#kwh-note').textContent = `Default ${data.defaults.electricity.default_price_per_kwh_usd.toFixed(2)}/kWh is the ${data.defaults.electricity.country} residential average.`;
-  void view;
+  const ctps = $<HTMLInputElement>('#cloud-tps');
+  if (Number(ctps.value) !== state.cloudTps) ctps.value = String(state.cloudTps);
+  $('#kwh-note').textContent = `Default $${d.electricity.default_price_per_kwh_usd.toFixed(2)}/kWh is the ${d.electricity.country} residential average.`;
 }
 
-/* ---------------- zone 2: models ---------------- */
+export function fmtCtx(tokens: number): string {
+  return tokens >= 1024 ? `${Math.round(tokens / 1024)}k` : String(tokens);
+}
+
+/* ---------------- zone 3: models ---------------- */
 
 function dot(r: Rating, key: string): string {
   const label = CAPABILITY_LABELS[key as keyof typeof CAPABILITY_LABELS];
   return `<span class="dot dot-${r}" title="${esc(label.long)}: ${r}" aria-label="${esc(label.short)}: ${r}"></span>`;
 }
 
+function frontierScale(m: Model, data: Dataset, big = false): string {
+  const tier = m.frontier_equivalent?.tier ?? null;
+  const tiers = data.defaults.frontier_tiers;
+  const bars = tiers.map((t) => `<i class="${tier != null && t.tier <= tier ? 'on' : ''}"></i>`).join('');
+  const scale = `<span class="scale${tier == null ? ' unplaced' : ''}" aria-hidden="true">${bars}</span>`;
+  if (tier == null) return `${scale}<span class="muted">not yet placed against hosted models</span>`;
+  const t = tiers[tier];
+  const names = [t.anthropic, t.openai].filter(Boolean).join(' / ');
+  return `${scale}<b>${esc(t.label)}</b>${names ? ` — roughly ${esc(names)}` : ''}${big ? '' : ''}`;
+}
+
+function sourcesLine(m: Model, view: View, data: Dataset): string {
+  const row = view.rows.find((r) => r.model.id === m.id);
+  const t = row?.throughput;
+  const parts: string[] = [];
+  const hf = m.sources?.find((s) => s.includes('huggingface.co'));
+  parts.push(hf ? `<a href="${esc(hf)}" rel="noopener">weights</a>` : 'weights: models.json');
+  const ce = m.cloud_equivalent;
+  parts.push(ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">price</a>${ce.checked ? ` (${esc(ce.checked)})` : ''}` : 'price: models.json');
+  if (t) parts.push(t.measurement === 'measured' && t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">speed</a> (${esc(t.source)})` : t.measurement === 'estimated' ? `speed: estimate from ${view.hw.memory_bandwidth_gbs} GB/s bandwidth` : 'speed: unknown');
+  const basis = data.defaults.frontier_basis;
+  parts.push(m.frontier_equivalent?.basis ? `comparison: ${esc(m.frontier_equivalent.basis)}` : basis?.url ? `<a href="${esc(basis.url)}" rel="noopener">comparison basis</a>` : 'ratings: our judgement');
+  return parts.join(' · ');
+}
+
 function renderModels(state: State, data: Dataset, view: View) {
   const hw = view.hw;
-  const rows = view.rows;
-  const list = rows
+  const families = [...new Set(data.models.map((m) => m.family).filter(Boolean))] as string[];
+  setOptions($<HTMLSelectElement>('#model-family'), `<option value="">All families</option>` + families.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join(''), state.family);
+
+  const list = view.rows
     .map(({ model: m, fit, throughput: t }) => {
       const selected = view.model?.id === m.id;
       const kv = kvCacheGb(m, state.ctx);
@@ -122,66 +175,54 @@ function renderModels(state: State, data: Dataset, view: View) {
       const tps = t.tokensPerSec == null ? '<span class="todo">unknown</span>' : `<span class="num">${fmtNum(t.tokensPerSec, 0)}</span> tok/s`;
       const meas = t.measurement === 'measured' ? '<span class="tag tag-measured">measured</span>' : t.measurement === 'estimated' ? '<span class="tag tag-estimated">estimated</span>' : '';
       const ce = m.cloud_equivalent;
-      const cloud = ce.input_price_per_mtok == null
-        ? `<span class="todo">API price unknown</span>`
-        : `<span class="num">$${ce.input_price_per_mtok}</span> in / <span class="num">$${ce.output_price_per_mtok}</span> out per 1M`;
+      const cloud = ce.input_price_per_mtok == null ? `<span class="todo">API price unknown</span>` : `<span class="num">$${ce.input_price_per_mtok}</span> in / <span class="num">$${ce.output_price_per_mtok}</span> out per 1M`;
       const cloudName = ce.is_exact_match ? esc(ce.name) : `nearest: ${esc(ce.name)}`;
-      const reason = fit.status === 'nearly' ? `<div class="fit-reason">Nearly: ${esc(fit.reason)}.</div>` : fit.status === 'unknown' ? `<div class="fit-reason">Fit unknown: ${esc(fit.reason)}.</div>` : '';
+      const reason = fit.status === 'fits' ? '' : `<div class="fit-reason">${fit.status === 'nearly' ? 'Nearly' : fit.status === 'context' ? 'Context' : 'Unknown'}: ${esc(fit.reason)}.</div>`;
+      const limit = m.max_context_tokens != null ? `, up to ${fmtCtx(m.max_context_tokens)}` : '';
       return `<div class="model${selected ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}" role="radio" aria-checked="${selected}" tabindex="${disabled ? -1 : 0}" data-model="${esc(m.id)}" ${disabled ? 'aria-disabled="true"' : ''}>
         <div class="model-head">
           <span class="model-name">${esc(m.display_name)} <span class="quant">${esc(m.quantisation)}</span></span>
           <span class="model-tps">${tps} ${meas}</span>
         </div>
-        <div class="model-meta">
-          <span class="num">${fmtGb(fit.needGb)}</span> at ${state.ctx / 1024}k context <span class="muted">(${fmtGb(m.weights_gb)} weights + ${fmtGb(kv)} KV cache)</span>
-        </div>
-        <div class="model-caps" aria-label="capability ratings">
-          ${CAPABILITY_KEYS.map((k) => dot(m.capabilities[k], k)).join('')}
-          <span class="cap-note">${esc(m.capability_note)}</span>
-        </div>
+        <div class="model-meta"><span class="num">${fmtGb(fit.needGb)}</span> at ${fmtCtx(state.ctx)} context${limit} <span class="muted">(${fmtGb(m.weights_gb)} weights + ${fmtGb(kv)} KV cache)</span></div>
+        <div class="model-caps" aria-label="capability ratings">${CAPABILITY_KEYS.map((k) => dot(m.capabilities[k], k)).join('')}<span class="cap-note">${esc(m.capability_note)}</span></div>
+        <div class="model-frontier">${frontierScale(m, data)}</div>
         <div class="model-cloud"><span class="muted">Cloud equivalent:</span> ${cloudName} · ${cloud}</div>
+        <div class="model-sources">Sources: ${sourcesLine(m, view, data)}</div>
         ${reason}
       </div>`;
     })
     .join('');
-  const hidden = view.hiddenCount
-    ? `<p class="muted small">${view.hiddenCount} more model${view.hiddenCount === 1 ? '' : 's'} in the data won’t fit ${esc(hardwareLabel(hw))} at ${state.ctx / 1024}k context.</p>`
-    : '';
-  const fitsCount = rows.filter((r) => r.fit.status === 'fits').length;
-  $('#models').innerHTML = `<p class="muted small">${fitsCount} model${fitsCount === 1 ? '' : 's'} fit in ${hw.usable_memory_gb ?? '?'} GB usable memory${hw.notes ? ` <span class="hint" title="${esc(hw.notes)}">?</span>` : ''}. Greyed rows nearly fit; the reason is shown.</p>${list}${hidden}`;
+  const fitsCount = view.rows.filter((r) => r.fit.status === 'fits').length;
+  const hidden = view.hiddenCount ? `<p class="muted small">${view.hiddenCount} more model${view.hiddenCount === 1 ? '' : 's'} in the data won’t fit ${esc(hardwareLabel(hw))} at ${fmtCtx(state.ctx)} context${state.family ? ' or are filtered out' : ''}.</p>` : '';
+  $('#models').innerHTML = `<p class="muted small">${fitsCount} model${fitsCount === 1 ? '' : 's'} fit in ${hw.usable_memory_gb ?? '?'} GB usable memory. Greyed rows nearly fit, or exceed their context limit; the reason is shown.</p>${list}${hidden}`;
 }
 
-/* ---------------- zone 3: verdict ---------------- */
+/* ---------------- zone 4: verdict ---------------- */
 
 function renderVerdict(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const wl = $('#waterline');
   if (c && view.hw.price_usd != null) {
-    wl.innerHTML = renderWaterline({
-      devicePriceUsd: view.hw.price_usd,
-      dailySaving: c.dailySaving,
-      breakevenDays: c.breakevenDays,
-      maxYears: data.defaults.waterline_max_years,
-      width: 800,
-      height: 340,
-      markerDays: 365.25,
-    });
+    wl.innerHTML = renderWaterline({ devicePriceUsd: view.hw.price_usd, dailySaving: c.dailySaving, breakevenDays: c.breakevenDays, maxYears: data.defaults.waterline_max_years, width: 800, height: 260, markerDays: 365.25 });
     wl.classList.remove('is-empty');
   } else {
     wl.innerHTML = '';
     wl.classList.add('is-empty');
   }
+  const cap = view.capacity;
+  const caution = cap.capped && view.model
+    ? `<div class="caution">You asked for ${formatUsageShort(cap.requested)} tokens a day. ${esc(view.model.display_name)} on this machine can only get through <b class="num">${formatUsageShort(cap.maxTokensPerDay!)}</b> a day at ${fmtNum(view.throughput?.tokensPerSec, 0)} tok/s, generating 24 hours non-stop, so that is what the break-even uses. The rest would still be going to an API.</div>`
+    : '';
   $('#verdict').innerHTML = `<h2 class="verdict-headline verdict-${view.verdict.kind}">${esc(view.verdict.headline)}</h2>
     ${view.verdict.sub ? `<p class="verdict-sub">${esc(view.verdict.sub)}</p>` : ''}
-    <p class="verdict-config muted">${esc(view.configLine)} · ${esc(view.usageLine)}</p>`;
+    <p class="verdict-config muted">${esc(view.configLine)} · ${esc(view.usageLine)}</p>${caution}`;
   const url = shareUrl(state);
-  const x = `https://twitter.com/intent/tweet?${new URLSearchParams({ text: shareText(view), url }).toString()}`;
-  $<HTMLAnchorElement>('#share-x').href = x;
+  $<HTMLAnchorElement>('#share-x').href = `https://twitter.com/intent/tweet?${new URLSearchParams({ text: shareText(view), url }).toString()}`;
 }
 
 export function shareUrl(state: State): string {
-  const base = `${location.origin}${location.pathname}`;
-  return `${base}?${serializeState(state)}`;
+  return `${location.origin}${location.pathname}?${serializeState(state)}`;
 }
 
 export function shareText(view: View): string {
@@ -201,9 +242,7 @@ function renderFigures(state: State, data: Dataset, view: View) {
     ['Break-even', c ? (c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays)) : '—', c?.breakevenTokens != null ? `${fmtTokens(c.breakevenTokens)} tokens` : undefined],
     ['After 12 months', c ? netAfter(view.hw.price_usd!, c.dailySaving, 365.25) : '—'],
   ];
-  $('#figures').innerHTML = figs
-    .map(([k, v, sub]) => `<div class="fig"><div class="fig-k">${esc(k)}</div><div class="fig-v num">${esc(v)}</div>${sub ? `<div class="fig-s">${esc(sub)}</div>` : ''}</div>`)
-    .join('');
+  $('#figures').innerHTML = figs.map(([k, v, sub]) => `<div class="fig"><div class="fig-k">${esc(k)}</div><div class="fig-v num">${esc(v)}</div>${sub ? `<div class="fig-s">${esc(sub)}</div>` : ''}</div>`).join('');
   void state; void data;
 }
 
@@ -212,23 +251,39 @@ function netAfter(price: number, dailySaving: number, days: number): string {
   return v < 0 ? `${fmtUsd(v)} underwater` : `${fmtUsd(v)} ahead`;
 }
 
+function renderSmarts(state: State, data: Dataset, view: View) {
+  const m = view.model;
+  const el = $('#smarts');
+  if (!m) { el.innerHTML = ''; return; }
+  const d = data.defaults;
+  const fe = m.frontier_equivalent;
+  const tier = fe?.tier ?? null;
+  const t = tier == null ? null : d.frontier_tiers[tier];
+  const max = d.frontier_scale_max ?? 70;
+  const pct = (v: number) => `${Math.min(100, Math.max(0, (v / max) * 100)).toFixed(1)}%`;
+  const refs = d.frontier_reference ?? [];
+  // number line: hosted models as ticks, this model as the marker
+  const ticks = refs.map((r, i) => `<span class="tick" style="left:${pct(r.score)}" title="${esc(r.name)}: ${r.score}"><i></i><em style="--row:${i % 2}">${esc(r.name)} ${r.score}</em></span>`).join('');
+  const marker = fe?.score != null ? `<span class="marker" style="left:${pct(fe.score)}"><i></i><b>${esc(m.display_name)} ${fe.score}</b></span>` : '';
+  const line = `<div class="numberline" role="img" aria-label="${esc(m.display_name)} scores ${fe?.score ?? 'unknown'} on the ${esc(d.frontier_basis?.name ?? 'index')}; hosted models: ${esc(refs.map((r) => `${r.name} ${r.score}`).join(', '))}">
+      <div class="track"></div>${ticks}${marker}</div>`;
+  el.innerHTML = `<div class="smarts-row"><b>How smart is ${esc(m.display_name)}, really?</b> ${frontierScale(m, data, true)}</div>
+    ${line}
+    <p class="muted small">${t ? esc(t.plain) + ' ' : ''}${fe?.basis ? `${esc(fe.basis)}${fe.url ? ` (<a href="${esc(fe.url)}" rel="noopener">source</a>)` : ''}. ` : ''}${d.frontier_basis?.url ? `Hosted models on the same index: <a href="${esc(d.frontier_basis.url)}" rel="noopener">${esc(d.frontier_basis.name ?? 'leaderboard')}</a>, checked ${esc(d.frontier_basis.checked ?? '')}. ` : ''}Cloud equivalent for pricing: ${esc(m.cloud_equivalent.name)}${m.cloud_equivalent.is_exact_match ? '' : ' (nearest hosted model, not the same one)'}.</p>`;
+  void state;
+}
+
 function renderTimeCost(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const el = $('#time-cost');
-  if (!c || !view.throughput?.tokensPerSec) {
-    el.innerHTML = '';
-    return;
-  }
+  if (!c || !view.throughput?.tokensPerSec) { el.innerHTML = ''; return; }
   const tm = c.timing;
-  const faster = tm.speedRatio > 1;
   const n = data.defaults.typical_task_output_tokens;
-  el.innerHTML = `
-    <h3>Your time is not free</h3>
+  el.innerHTML = `<h3>Your time is not free</h3>
     <p>A ${fmtInt(n)}-token answer takes <b class="num">${fmtSeconds(tm.localSecondsPerTask)}</b> locally at ${fmtNum(view.throughput.tokensPerSec, 0)} tok/s, against <b class="num">${fmtSeconds(tm.cloudSecondsPerTask)}</b> from an API at ${state.cloudTps} tok/s.
-    ${faster
+    ${tm.speedRatio > 1
       ? `At your usage that is <b class="num">${fmtHours(tm.extraHoursPerDay)}</b> a day spent waiting that you wouldn’t otherwise. A cheaper answer you wait ${fmtNum(tm.speedRatio, 1)}× longer for is not obviously a win.`
-      : `At these speeds local is not slower than the API, so there is no waiting penalty to weigh.`}
-    </p>`;
+      : `At these speeds local is not slower than the API, so there is no waiting penalty to weigh.`}</p>`;
 }
 
 /* ---------------- how this is calculated ---------------- */
@@ -240,12 +295,10 @@ function renderMath(state: State, data: Dataset, view: View) {
     el.innerHTML = `<p class="muted">Nothing to show until the inputs are complete.${view.blockers.length ? ` Missing: ${esc(view.blockers.join('; '))}.` : ''}</p>`;
     return;
   }
-  const m = view.model;
-  const hw = view.hw;
-  const t = view.throughput;
-  const ce = m.cloud_equivalent;
+  const m = view.model, hw = view.hw, t = view.throughput, ce = m.cloud_equivalent;
   const tps = t.tokensPerSec!;
   const be = c.breakevenDays;
+  const usage = view.capacity.effective;
   el.innerHTML = `
 <pre class="formula">cloud_cost_per_day  = (${fmtInt(c.dailyInputTokens)} / 1,000,000 × $${ce.input_price_per_mtok})
                     + (${fmtInt(c.dailyOutputTokens)} / 1,000,000 × $${ce.output_price_per_mtok})
@@ -253,21 +306,22 @@ function renderMath(state: State, data: Dataset, view: View) {
 
 local_cost_per_day  = (${fmtInt(c.dailyOutputTokens)} / ${fmtNum(tps, 1)} tok/s / 3600) h
                       × ${hw.load_watts} W / 1000 × $${state.kwh}/kWh
-                    = ${fmtNum(c.localGenerationHoursPerDay, 2)} h × ${fmtNum(c.localKwhPerDay, 3)} kWh… = ${fmtUsd(c.localCostPerDay, { cents: true })}
+                    = ${fmtNum(c.localGenerationHoursPerDay, 2)} h → ${fmtNum(c.localKwhPerDay, 3)} kWh → ${fmtUsd(c.localCostPerDay, { cents: true })}
 
 daily_saving        = ${fmtUsd(c.cloudCostPerDay, { cents: true })} − ${fmtUsd(c.localCostPerDay, { cents: true })} = ${fmtUsd(c.dailySaving, { cents: true })}
 
 breakeven_days      = ${fmtUsd(hw.price_usd)} / ${fmtUsd(c.dailySaving, { cents: true })} = ${be === null ? 'never (saving ≤ 0)' : `${fmtInt(be)} days (${fmtDuration(be)})`}
-breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(state.usage)} = ${fmtTokens(c.breakevenTokens)} tokens`}</pre>
+breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)} = ${fmtTokens(c.breakevenTokens)} tokens`}</pre>
 <dl class="sources">
   <dt>Hardware price</dt><dd>${fmtUsd(hw.price_usd)} — hardware.json, <code>${esc(hw.id)}</code>${hw.sources?.length ? ` · ${links(hw.sources)}` : ''}</dd>
   <dt>Power under load</dt><dd>${hw.load_watts} W, <b>${esc((hw.load_watts_status ?? 'published').replace(/_/g, ' '))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}</dd>
   <dt>Usable memory</dt><dd>${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}</dd>
   <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}</dd>
+  <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} output tokens a day; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} total.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} Prompt processing time is not counted, so the real ceiling is lower.</dd>
   <dt>API price</dt><dd>${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
-  <dt>Token split</dt><dd>${fmtInt(state.usage)} tokens a day at ${state.ratio}:1 → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
-  <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx))} KV cache at ${state.ctx / 1024}k context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × 2 bytes × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
+  <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
+  <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx))} KV cache at ${fmtCtx(state.ctx)} context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × 2 bytes × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
   ${view.unit ? `<dt>Human unit</dt><dd>${fmtTokens(c.breakevenTokens)} tokens ÷ ${fmtTokens(view.unit.unitTokens)} tokens per ${esc(view.unit.unit.singular)} (${fmtInt(view.unit.unit.words ?? 0)} words × ${data.units.tokens_per_word} tokens/word) ≈ ${view.unit.count}.</dd>` : ''}
 </dl>
 <p class="muted small">Left out, all of which favour local slightly less than shown: prompt-processing time and its electricity, idle power when the machine is on but not generating, and API prompt caching, which cuts the input price on repeated context. Left out in local’s favour: resale value, and the other jobs the machine does.</p>`;
@@ -277,16 +331,16 @@ function links(urls: string[]): string {
   return urls.map((u, i) => `<a href="${esc(u)}" rel="noopener">source${urls.length > 1 ? ` ${i + 1}` : ''}</a>`).join(', ');
 }
 
-/* ---------------- honesty ---------------- */
-
 function renderSmallPrint(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const items = [
     `<b>Electricity is not free.</b> Counted above at $${state.kwh}/kWh (${esc(data.defaults.electricity.country)} average; edit it). ${c ? `Here it is ${fmtUsd(c.localCostPerMonth)} a month.` : ''}`,
     `<b>Your time is not free.</b> ${c && view.throughput?.tokensPerSec ? `Local runs at ${fmtNum(view.throughput.tokensPerSec, 0)} tok/s against ${state.cloudTps} tok/s from an API. Details above.` : 'See the timing comparison once the inputs are complete.'}`,
-    `<b>Resale value exists.</b> A Mac holds value and does other jobs. Break-even here treats the whole price as sunk, so it overstates the real loss.`,
+    `<b>Resale value exists.</b> The hardware holds value and does other jobs. Break-even here treats the whole price as sunk, so it overstates the real loss.`,
     `<b>API prices fall.</b> This is calculated at today’s prices (checked ${esc(data.defaults.data_last_checked)}). They have historically dropped fast, so the real payback period is likely longer than shown.`,
     `<b>Frontier models aren’t on the list.</b> The best cloud models can’t be run locally at any of these price points. This compares like with like on open models; it is not an apples-to-apples swap for a frontier API.`,
   ];
   $('#small-print').innerHTML = items.map((i) => `<li>${i}</li>`).join('');
 }
+
+export { modelLabel };

@@ -163,3 +163,31 @@ describe('computeView on real data', () => {
     expect(v.blockers.join()).toMatch(/price/);
   });
 });
+
+describe('capacity and context limits', () => {
+  it('caps usage at what the machine can generate in 24 hours', () => {
+    const s = parseState('?hw=mac-mini-m4-16&m=llama-3.1-8b-q4&u=20000000&r=4', data);
+    const v = computeView(s, data);
+    // measured 21.2 tok/s × 86,400 s = 1.83M output tokens; × 5 = 9.2M total < 20M requested
+    expect(v.capacity.capped).toBe(true);
+    expect(v.capacity.maxTokensPerDay!).toBeCloseTo(21.2 * 86400 * 5, 0);
+    expect(v.capacity.effective).toBe(v.capacity.maxTokensPerDay);
+    expect(v.usageLine).toMatch(/ceiling/);
+  });
+  it('does not cap modest usage', () => {
+    const v = computeView(parseState('?hw=mac-mini-m4-16&m=llama-3.1-8b-q4&u=500000', data), data);
+    expect(v.capacity.capped).toBe(false);
+    expect(v.capacity.effective).toBe(500000);
+  });
+  it('greys a model out when the context exceeds its limit', () => {
+    const hw = data.hardware.find((h) => h.id === 'mac-studio-m5-max-64')!;
+    const m = { ...data.models.find((x) => x.id === 'qwen3-32b-q4')!, max_context_tokens: 32768 };
+    expect(fit(m, hw, 65536, 1.4).status).toBe('context');
+    expect(fit(m, hw, 32768, 1.4).status).toBe('fits');
+  });
+  it('filters the list by family without dropping the selection logic', () => {
+    const v = computeView(parseState('?hw=mac-studio-m5-max-64&f=Gemma', data), data);
+    expect(v.rows.every((r) => r.model.family === 'Gemma')).toBe(true);
+    expect(v.model?.family).toBe('Gemma');
+  });
+});

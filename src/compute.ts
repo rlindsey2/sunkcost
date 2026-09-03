@@ -13,8 +13,19 @@ export interface ModelRow {
 
 export type VerdictKind = 'surfaces' | 'never' | 'unknown';
 
+export interface Capacity {
+  /** most total tokens/day this machine can process at the local speed, generating 24 h a day */
+  maxTokensPerDay: number | null;
+  maxOutputPerDay: number | null;
+  requested: number;
+  /** what the calculation actually used */
+  effective: number;
+  capped: boolean;
+}
+
 export interface View {
   hw: Hardware;
+  capacity: Capacity;
   model: Model | null;
   rows: ModelRow[];
   hiddenCount: number;
@@ -45,9 +56,10 @@ export function computeView(state: State, data: Dataset): View {
     fit: fit(m, hw, state.ctx, d.nearly_fits_ratio),
     throughput: resolveThroughput(m, hw, data.throughput, d),
   }));
-  const order: Record<string, number> = { fits: 0, nearly: 1, unknown: 2, no: 3 };
+  const order: Record<string, number> = { fits: 0, nearly: 1, context: 2, unknown: 3, no: 4 };
   const visible = all
     .filter((r) => r.fit.status !== 'no')
+    .filter((r) => !state.family || r.model.family === state.family)
     .sort((a, b) => order[a.fit.status] - order[b.fit.status] || (b.model.params_b - a.model.params_b));
   const hiddenCount = all.length - visible.length;
 
@@ -73,11 +85,19 @@ export function computeView(state: State, data: Dataset): View {
   if (row && row.throughput.tokensPerSec == null) blockers.push('local speed is unknown and cannot be estimated');
   if (hw.load_watts == null) blockers.push('power draw under load is unknown (TODO in hardware.json)');
 
+  // capacity: the machine can only generate so many tokens in 24 hours
+  const tps = row?.throughput.tokensPerSec ?? null;
+  const maxOutputPerDay = tps == null ? null : tps * 86400;
+  const maxTokensPerDay = maxOutputPerDay == null ? null : maxOutputPerDay * (state.ratio + 1);
+  const capped = maxTokensPerDay != null && state.usage > maxTokensPerDay;
+  const effectiveUsage = capped ? maxTokensPerDay! : state.usage;
+  const capacity: Capacity = { maxTokensPerDay, maxOutputPerDay, requested: state.usage, effective: effectiveUsage, capped };
+
   let calc: CalcResult | null = null;
   if (!blockers.length && model && row) {
     calc = calculate({
       devicePriceUsd: hw.price_usd!,
-      dailyTokens: state.usage,
+      dailyTokens: effectiveUsage,
       inputRatio: state.ratio,
       inputPricePerMtok: model.cloud_equivalent.input_price_per_mtok!,
       outputPricePerMtok: model.cloud_equivalent.output_price_per_mtok!,
@@ -89,7 +109,7 @@ export function computeView(state: State, data: Dataset): View {
     });
   }
 
-  const seed = `${hw.id}|${model?.id ?? ''}|${state.usage}|${state.ratio}`;
+  const seed = `${hw.id}|${model?.id ?? ''}|${effectiveUsage}|${state.ratio}`;
   const unit = calc?.breakevenTokens != null ? pickUnit(calc.breakevenTokens, seed, data.units) : null;
 
   let verdict: View['verdict'];
@@ -111,11 +131,12 @@ export function computeView(state: State, data: Dataset): View {
     };
   }
 
-  const usageLine = `${formatUsageShort(state.usage)} tokens/day, ${state.ratio}:1 input:output`;
+  const usageLine = `${formatUsageShort(effectiveUsage)} tokens/day${capped ? ' (machine’s ceiling)' : ''}, ${ratioLabel(state.ratio)}`;
   const configLine = model ? `${hardwareLabel(hw)} · ${modelLabel(model)}` : hardwareLabel(hw);
 
   return {
     hw,
+    capacity,
     model,
     rows: visible,
     hiddenCount,
@@ -127,6 +148,11 @@ export function computeView(state: State, data: Dataset): View {
     configLine,
     usageLine,
   };
+}
+
+export function ratioLabel(r: number): string {
+  if (r >= 1) return `${Number.isInteger(r) ? r : r.toFixed(1)}:1 input:output`;
+  return `1:${Number.isInteger(1 / r) ? 1 / r : (1 / r).toFixed(1)} input:output`;
 }
 
 export function formatUsageShort(n: number): string {

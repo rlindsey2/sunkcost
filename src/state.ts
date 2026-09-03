@@ -13,6 +13,8 @@ export interface State {
   ctx: number;
   /** cloud API decode speed, tokens per second (time comparison only) */
   cloudTps: number;
+  /** model-family filter for the list; '' = all */
+  family: string;
 }
 
 const KEYS: Record<keyof State, string> = {
@@ -23,6 +25,7 @@ const KEYS: Record<keyof State, string> = {
   kwh: 'kwh',
   ctx: 'ctx',
   cloudTps: 'cs',
+  family: 'f',
 };
 
 function num(v: string | null, fallback: number, min?: number, max?: number): number {
@@ -45,6 +48,7 @@ export function defaultState(data: Dataset): State {
     kwh: d.electricity.default_price_per_kwh_usd,
     ctx: d.context.default_tokens,
     cloudTps: d.cloud.default_tokens_per_sec,
+    family: '',
   };
 }
 
@@ -59,6 +63,7 @@ export function parseState(search: string, data: Dataset): State {
     model: model && data.models.some((m) => m.id === model) ? model : d.model,
     usage: num(p.get(KEYS.usage), d.usage, u.min_tokens_per_day, u.max_tokens_per_day),
     ratio: num(p.get(KEYS.ratio), d.ratio, u.min_input_to_output_ratio, u.max_input_to_output_ratio),
+    family: p.get('f') ?? '',
     kwh: num(p.get(KEYS.kwh), d.kwh, 0, 5),
     ctx: num(p.get(KEYS.ctx), d.ctx, 1024, 1_000_000),
     cloudTps: num(p.get(KEYS.cloudTps), d.cloudTps, 1, 10000),
@@ -74,6 +79,7 @@ export function serializeState(s: State): string {
   p.set(KEYS.kwh, String(s.kwh));
   p.set(KEYS.ctx, String(s.ctx));
   p.set(KEYS.cloudTps, String(s.cloudTps));
+  if (s.family) p.set(KEYS.family, s.family);
   return p.toString();
 }
 

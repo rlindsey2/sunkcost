@@ -21,7 +21,7 @@ Static output lands in `dist/`. There is no backend: every number on the page co
 | File | What it holds |
 |---|---|
 | `data/hardware.json` | Each machine config: memory, bandwidth, usable memory, price, power draw. Current 2026 lineup plus the discontinued M4 / M3 Ultra machines (marked `generation: previous`, launch prices). |
-| `data/models.json` | Each model × quant: GGUF size, architecture (for KV-cache), capability ratings, cloud equivalent and OpenRouter price. |
+| `data/models.json` | Each model × quant: GGUF size, architecture (for KV-cache), max context, capability ratings, cloud equivalent and OpenRouter price, frontier score and tier. |
 | `data/throughput.json` | Measured tokens/sec per model × hardware pair, with the source. Anything not listed is *estimated* from bandwidth and labelled as such. |
 | `data/defaults.json` | Usage default, electricity price, estimate efficiency factor, context options, the "data last checked" date. |
 | `data/units.json` | The absurd human units for the verdict line. |
@@ -46,6 +46,15 @@ breakeven_tokens    = breakeven_days × daily_tokens
 Memory fit: `weights_gb + kv_cache(context) ≤ usable_memory_gb`. KV cache is derived per layer from `n_kv_heads × head_dim × 2 bytes × 2`, with sliding-window layers capped at their window and linear-attention layers ignored. Usable memory on Macs follows the macOS default GPU wired limit (two-thirds at ≤32 GiB, 75% above).
 
 Estimated speed: `bandwidth ÷ bytes read per token × efficiency` (active parameters only for MoE). Efficiency is 0.75 for dense models and 0.3 for MoE on Apple Silicon (0.65 on DGX Spark), calibrated against the measured pairs in `throughput.json` and explained in `defaults.json`.
+
+## What the page shows
+
+- **Machine picker**: device family, chip (current lineup and discontinued previous generation), memory tier with price.
+- **Use case dropdown** sets the input:output ratio in plain terms (chat, writing, summarising, coding, agentic coding, document search), with a custom ratio slider.
+- **Tokens-a-day slider** with a plain-English label, plus the machine's daily ceiling: tokens/sec × 86,400 × (ratio + 1). If you ask for more than the machine can generate in 24 hours, the verdict uses the ceiling and says so.
+- **Context slider** changes the KV-cache memory each model needs and greys out models whose context limit is below the setting.
+- **Model list** with a family filter, capability dots, the cloud equivalent and its OpenRouter price, a frontier-comparison bar, and a sources line (weights, price, speed, comparison) on every card.
+- **How smart is it, really?** A number line placing the selected model's Artificial Analysis Intelligence Index score against the current Anthropic and OpenAI models, with tier labels defined in `defaults.json` (`frontier_tiers`, `frontier_reference`).
 
 ## Share mechanic
 

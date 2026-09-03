@@ -54,6 +54,14 @@ for (const m of models) {
     if (typeof ce.is_exact_match !== 'boolean') errors.push(`${m.id}: is_exact_match must be boolean`);
   }
   if (m.active_params_b != null && m.active_params_b > m.params_b) errors.push(`${m.id}: active params exceed total`);
+  if (m.max_context_tokens == null) warnings.push(`${m.id}: max_context_tokens is null (TODO)`);
+  const fe = m.frontier_equivalent;
+  if (!fe) warnings.push(`${m.id}: no frontier_equivalent`);
+  else if (fe.score != null) {
+    const expected = defaults.frontier_tiers.filter((t) => fe.score! >= t.min_score).at(-1)?.tier ?? 0;
+    if (fe.tier !== expected) errors.push(`${m.id}: frontier tier ${fe.tier} disagrees with score ${fe.score} (expected ${expected})`);
+    if (!fe.url && !fe.basis) errors.push(`${m.id}: frontier score needs a basis or url`);
+  } else if (fe.tier != null) errors.push(`${m.id}: frontier tier without a score`);
 }
 
 for (const t of throughput) {

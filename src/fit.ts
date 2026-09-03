@@ -38,7 +38,7 @@ export function footprintGb(m: Model, contextTokens: number): number | null {
   return m.weights_gb + kv;
 }
 
-export type FitStatus = 'fits' | 'nearly' | 'no' | 'unknown';
+export type FitStatus = 'fits' | 'nearly' | 'context' | 'no' | 'unknown';
 
 export interface Fit {
   status: FitStatus;
@@ -52,6 +52,9 @@ export function fit(m: Model, hw: Hardware, contextTokens: number, nearlyRatio: 
   const have = hw.usable_memory_gb;
   if (need == null || have == null) {
     return { status: 'unknown', needGb: need, haveGb: have, reason: need == null ? 'model size unknown' : 'usable memory unknown' };
+  }
+  if (m.max_context_tokens != null && contextTokens > m.max_context_tokens) {
+    return { status: 'context', needGb: need, haveGb: have, reason: `this model's context limit is ${Math.round(m.max_context_tokens / 1024)}k tokens` };
   }
   if (need <= have) return { status: 'fits', needGb: need, haveGb: have, reason: '' };
   if (need <= have * nearlyRatio) {

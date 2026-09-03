@@ -9,8 +9,8 @@
     "min_tokens_per_day": 10000,
     "max_tokens_per_day": 20000000,
     "default_input_to_output_ratio": 4,
-    "min_input_to_output_ratio": 1,
-    "max_input_to_output_ratio": 20,
+    "min_input_to_output_ratio": 0.25,
+    "max_input_to_output_ratio": 30,
     "labels": [
       {
         "up_to": 50000,
@@ -57,15 +57,145 @@
   "context": {
     "default_tokens": 32768,
     "options": [
+      4096,
       8192,
       16384,
       32768,
       65536,
-      131072
+      131072,
+      262144
     ]
   },
   "nearly_fits_ratio": 1.4,
   "waterline_max_years": 10,
   "typical_task_output_tokens": 1000,
-  "default_hardware_id": "mac-studio-m5-max-64"
+  "default_hardware_id": "mac-studio-m5-max-64",
+  "use_cases": [
+    {
+      "id": "chat",
+      "label": "Chatting and questions",
+      "ratio": 2,
+      "note": "short questions, medium answers, a little history carried along"
+    },
+    {
+      "id": "writing",
+      "label": "Writing and drafting",
+      "ratio": 0.5,
+      "note": "a short brief in, long text out"
+    },
+    {
+      "id": "summarising",
+      "label": "Summarising documents",
+      "ratio": 10,
+      "note": "whole documents in, a paragraph out"
+    },
+    {
+      "id": "translation",
+      "label": "Translation",
+      "ratio": 1,
+      "note": "about as much out as in"
+    },
+    {
+      "id": "coding",
+      "label": "Coding assistant",
+      "ratio": 4,
+      "note": "code and context in, small edits and explanations out"
+    },
+    {
+      "id": "agentic",
+      "label": "Agentic coding (Claude Code style)",
+      "ratio": 15,
+      "note": "whole files and tool results resent on every turn"
+    },
+    {
+      "id": "rag",
+      "label": "Search over your own documents",
+      "ratio": 20,
+      "note": "retrieved passages in, short answers out"
+    }
+  ],
+  "frontier_tiers": [
+    {
+      "tier": 0,
+      "min_score": 0,
+      "label": "Below every hosted tier",
+      "anthropic": null,
+      "openai": null,
+      "plain": "Fine for simple, well-specified tasks. Noticeably less capable than anything the big labs sell today."
+    },
+    {
+      "tier": 1,
+      "min_score": 24,
+      "label": "Haiku-class",
+      "anthropic": "Claude Haiku 4.5",
+      "openai": null,
+      "plain": "In the same band as Anthropic's cheap, fast tier. OpenAI's cheapest current model scores higher than this band."
+    },
+    {
+      "tier": 2,
+      "min_score": 43,
+      "label": "Sonnet-class",
+      "anthropic": "Claude Sonnet 5",
+      "openai": "GPT-5.6 Luna / Terra",
+      "plain": "In the same league as the labs' mainstream models on this index."
+    },
+    {
+      "tier": 3,
+      "min_score": 60,
+      "label": "Frontier",
+      "anthropic": "Claude Opus 5 / Fable 5.1",
+      "openai": "GPT-5.6 Sol",
+      "plain": "Matches the best hosted models. Nothing on this list gets here."
+    }
+  ],
+  "frontier_basis": {
+    "name": "Artificial Analysis Intelligence Index v4.1.1",
+    "url": "https://artificialanalysis.ai/leaderboards/models",
+    "checked": "2026-09-03",
+    "note": "One consistent public aggregate. Scores for hybrid models are the reasoning / highest-effort figure; the non-reasoning figure is noted per model. Older open models were scored under an earlier cohort of the index, so cross-era comparisons are approximate."
+  },
+  "frontier_reference": [
+    {
+      "name": "Claude Haiku 4.5",
+      "score": 30,
+      "score_alt": 24,
+      "url": "https://artificialanalysis.ai/models/claude-4-5-haiku-reasoning"
+    },
+    {
+      "name": "GPT-5.6 Luna",
+      "score": 52,
+      "score_alt": 27,
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-luna"
+    },
+    {
+      "name": "Claude Sonnet 5",
+      "score": 55,
+      "score_alt": 43,
+      "url": "https://artificialanalysis.ai/models/claude-sonnet-5"
+    },
+    {
+      "name": "GPT-5.6 Terra",
+      "score": 57,
+      "score_alt": 35,
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-terra"
+    },
+    {
+      "name": "GPT-5.6 Sol",
+      "score": 61,
+      "score_alt": 42,
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-sol"
+    },
+    {
+      "name": "Claude Opus 5",
+      "score": 63,
+      "url": "https://artificialanalysis.ai/models/claude-opus-5"
+    },
+    {
+      "name": "Claude Fable 5.1",
+      "score": 66,
+      "url": "https://artificialanalysis.ai/models/claude-fable-5-1"
+    }
+  ],
+  "frontier_reference_note": "Hosted lineups read from platform.claude.com/docs/en/models/overview and developers.openai.com/api/docs/models on 2026-09-03. score_alt is the non-reasoning figure where the index reports both.",
+  "frontier_scale_max": 70
 }

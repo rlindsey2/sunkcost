@@ -33,7 +33,18 @@
     "sources": [
       "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
       "https://huggingface.co/unsloth/Llama-3.1-8B-Instruct/raw/main/config.json"
-    ]
+    ],
+    "family": "Llama",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 7,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
+      "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "llama-3.1-8b-q8",
@@ -67,8 +78,20 @@
     },
     "license": "Llama 3.1 Community License",
     "sources": [
-      "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"
-    ]
+      "https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+      "https://huggingface.co/unsloth/Llama-3.1-8B-Instruct/raw/main/config.json"
+    ],
+    "family": "Llama",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 7,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
+      "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-8b-q4",
@@ -105,7 +128,18 @@
     "sources": [
       "https://huggingface.co/bartowski/Qwen_Qwen3-8B-GGUF",
       "https://huggingface.co/Qwen/Qwen3-8B/raw/main/config.json"
-    ]
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 40960,
+    "max_context_note": "32k natively; 128k with YaRN, which llama.cpp can enable",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 8,
+      "score_note": "reasoning mode; 5 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 8 (reasoning mode; 5 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-8b-instruct-reasoning",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-14b-q4",
@@ -141,7 +175,18 @@
     "sources": [
       "https://huggingface.co/bartowski/Qwen_Qwen3-14B-GGUF",
       "https://huggingface.co/Qwen/Qwen3-14B/raw/main/config.json"
-    ]
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 40960,
+    "max_context_note": "32k natively; 128k with YaRN",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 10,
+      "score_note": "reasoning mode; 7 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 10 (reasoning mode; 7 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-14b-instruct-reasoning",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-32b-q4",
@@ -177,7 +222,18 @@
     "sources": [
       "https://huggingface.co/bartowski/Qwen_Qwen3-32B-GGUF",
       "https://huggingface.co/Qwen/Qwen3-32B/raw/main/config.json"
-    ]
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 40960,
+    "max_context_note": "32k natively; 128k with YaRN",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 11,
+      "score_note": "reasoning mode; 8 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-32b-q8",
@@ -211,8 +267,20 @@
     },
     "license": "Apache 2.0",
     "sources": [
-      "https://huggingface.co/bartowski/Qwen_Qwen3-32B-GGUF"
-    ]
+      "https://huggingface.co/bartowski/Qwen_Qwen3-32B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3-32B/raw/main/config.json"
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 40960,
+    "max_context_note": "32k natively; 128k with YaRN",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 11,
+      "score_note": "reasoning mode; 8 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-30b-a3b-2507-q4",
@@ -248,7 +316,18 @@
     "sources": [
       "https://huggingface.co/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF",
       "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507/raw/main/config.json"
-    ]
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 9,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
+      "url": "https://artificialanalysis.ai/models/qwen3-30b-a3b-2507",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-coder-30b-a3b-q4",
@@ -284,7 +363,18 @@
     "sources": [
       "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF",
       "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/config.json"
-    ]
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively; up to 1M with YaRN",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 14,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 14",
+      "url": "https://artificialanalysis.ai/models/qwen3-coder-30b-a3b-instruct",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3-235b-a22b-2507-q4",
@@ -320,7 +410,18 @@
     "sources": [
       "https://huggingface.co/unsloth/Qwen3-235B-A22B-Instruct-2507-GGUF",
       "https://huggingface.co/Qwen/Qwen3-235B-A22B-Instruct-2507/raw/main/config.json"
-    ]
+    ],
+    "family": "Qwen",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 18,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 18",
+      "url": "https://artificialanalysis.ai/models/qwen3-235b-a22b-instruct-2507",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "gemma-3-12b-q4",
@@ -361,7 +462,18 @@
     "sources": [
       "https://huggingface.co/bartowski/google_gemma-3-12b-it-GGUF",
       "https://huggingface.co/unsloth/gemma-3-12b-it/raw/main/config.json"
-    ]
+    ],
+    "family": "Gemma",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k input",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 6,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 6",
+      "url": "https://artificialanalysis.ai/models/gemma-3-12b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "gemma-3-27b-q4",
@@ -401,7 +513,18 @@
     "sources": [
       "https://huggingface.co/bartowski/google_gemma-3-27b-it-GGUF",
       "https://huggingface.co/unsloth/gemma-3-27b-it/raw/main/config.json"
-    ]
+    ],
+    "family": "Gemma",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k input",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 7,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
+      "url": "https://artificialanalysis.ai/models/gemma-3-27b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "mistral-small-3.2-24b-q4",
@@ -437,7 +560,18 @@
     "sources": [
       "https://huggingface.co/unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF",
       "https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506/raw/main/config.json"
-    ]
+    ],
+    "family": "Mistral",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 11,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
+      "url": "https://artificialanalysis.ai/models/mistral-small-3-2",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "deepseek-r1-distill-qwen-32b-q4",
@@ -474,7 +608,18 @@
     "sources": [
       "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF",
       "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B/raw/main/config.json"
-    ]
+    ],
+    "family": "DeepSeek",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k in config; the card does not state one for the distills",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 11,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
+      "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-qwen-32b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "deepseek-r1-distill-llama-70b-q4",
@@ -511,7 +656,18 @@
     "sources": [
       "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF",
       "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B/raw/main/config.json"
-    ]
+    ],
+    "family": "DeepSeek",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k in config; the card does not state one for the distills",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 10,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
+      "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-llama-70b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "llama-3.3-70b-q4",
@@ -547,7 +703,18 @@
     "sources": [
       "https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF",
       "https://huggingface.co/unsloth/Llama-3.3-70B-Instruct/raw/main/config.json"
-    ]
+    ],
+    "family": "Llama",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 9,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
+      "url": "https://artificialanalysis.ai/models/llama-3-3-instruct-70b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "gpt-oss-20b-mxfp4",
@@ -587,7 +754,18 @@
     "sources": [
       "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF",
       "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json"
-    ]
+    ],
+    "family": "gpt-oss",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 15,
+      "score_note": "high reasoning effort; 14 at low",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 15 (high reasoning effort; 14 at low)",
+      "url": "https://artificialanalysis.ai/models/gpt-oss-20b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "gpt-oss-120b-mxfp4",
@@ -627,7 +805,18 @@
     "sources": [
       "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF",
       "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json"
-    ]
+    ],
+    "family": "gpt-oss",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 24,
+      "score_note": "high reasoning effort; 15 at low",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 24 (high reasoning effort; 15 at low)",
+      "url": "https://artificialanalysis.ai/models/gpt-oss-120b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "glm-4.5-air-q4",
@@ -663,7 +852,18 @@
     "sources": [
       "https://huggingface.co/unsloth/GLM-4.5-Air-GGUF",
       "https://huggingface.co/zai-org/GLM-4.5-Air/raw/main/config.json"
-    ]
+    ],
+    "family": "GLM",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 17,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 17",
+      "url": "https://artificialanalysis.ai/models/glm-4-5-air",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "llama-4-scout-q4",
@@ -703,7 +903,18 @@
     "sources": [
       "https://huggingface.co/unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF",
       "https://huggingface.co/unsloth/Llama-4-Scout-17B-16E-Instruct/raw/main/config.json"
-    ]
+    ],
+    "family": "Llama",
+    "max_context_tokens": 10485760,
+    "max_context_note": "10M claimed; nobody has the memory for that locally",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 10,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
+      "url": "https://artificialanalysis.ai/models/llama-4-scout",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "gemma-4-31b-q4",
@@ -742,9 +953,21 @@
     "license": "Apache 2.0",
     "sources": [
       "https://huggingface.co/bartowski/google_gemma-4-31b-it-GGUF",
-      "https://huggingface.co/google/gemma-4-31b-it/raw/main/config.json"
+      "https://huggingface.co/google/gemma-4-31b-it/raw/main/config.json",
+      "https://huggingface.co/google/gemma-4-31B-it/raw/main/config.json"
     ],
-    "TODO": "Capability ratings needed."
+    "TODO": "Capability ratings needed.",
+    "family": "Gemma",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 30,
+      "score_note": "reasoning mode; 22 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 30 (reasoning mode; 22 without)",
+      "url": "https://artificialanalysis.ai/models/gemma-4-31b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3.6-35b-a3b-q4",
@@ -784,7 +1007,18 @@
       "https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF",
       "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json"
     ],
-    "TODO": "Capability ratings needed."
+    "TODO": "Capability ratings needed.",
+    "family": "Qwen",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively; up to 1M",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 32,
+      "score_note": "reasoning mode; 25 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 32 (reasoning mode; 25 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "qwen3.8-27b-q4",
@@ -824,7 +1058,18 @@
       "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF",
       "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json"
     ],
-    "TODO": "Capability ratings needed."
+    "TODO": "Capability ratings needed.",
+    "family": "Qwen",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively; up to 1M with YaRN",
+    "frontier_equivalent": {
+      "tier": 2,
+      "score": 52,
+      "score_note": "xhigh reasoning effort; 35 without reasoning",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 52 (xhigh reasoning effort; 35 without reasoning)",
+      "url": "https://artificialanalysis.ai/models/qwen3-8-27b",
+      "checked": "2026-09-03"
+    }
   },
   {
     "id": "mistral-small-4-119b-q4",
@@ -862,6 +1107,17 @@
       "https://huggingface.co/unsloth/Mistral-Small-4-119B-2603-GGUF",
       "https://huggingface.co/mistralai/Mistral-Small-4-119B-2603/raw/main/config.json"
     ],
-    "TODO": "Capability ratings needed; active-parameter count (6B) is from Mistral's announcement, not the config."
+    "TODO": "Capability ratings needed; active-parameter count (6B) is from Mistral's announcement, not the config.",
+    "family": "Mistral",
+    "max_context_tokens": 1048576,
+    "max_context_note": "card says 256k; config allows 1M",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 20,
+      "score_note": "reasoning mode; 12 without",
+      "basis": "Artificial Analysis Intelligence Index v4.1.1: 20 (reasoning mode; 12 without)",
+      "url": "https://artificialanalysis.ai/models/mistral-small-4",
+      "checked": "2026-09-03"
+    }
   }
 ]
