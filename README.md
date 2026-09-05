@@ -75,6 +75,12 @@ Layout is a three-column app shell on wide screens (configuration, model list, v
 - `npm run build:og` renders a 1200×630 card for every computable hardware × model pair at the default usage into `public/og/`, plus `default.png`. The in-page "Download card" button renders the exact current config with the same code.
 - **Limitation of static hosting:** social scrapers read `og:image` from HTML, not from JavaScript, so a bare query-string URL gets the default card. The per-config cards are wired up for the Phase 2 pages (`public/routes.json` lists every page, its title, query string and card). To get per-URL cards without those pages you would need an edge function, which is out of scope for v1.
 
+## The daily ceiling
+
+`tokens_per_sec × 86,400` is the **output** a machine can generate running flat out for 24 hours. The total shown grosses that up by the input:output ratio, because input tokens count towards your usage but are read far faster than they are written, so they are treated as costing no time.
+
+That last assumption is the weak one: prompt processing is fast, not free. On a heavy input ratio the real ceiling is plausibly 20-30% lower than shown. The fix is to record measured prompt-processing rates per model × hardware pair and subtract prefill time; see `capacity_note_TODO` in `defaults.json`.
+
 ## Sharing a preview
 
 Live preview: **https://sunkcost-preview.netlify.app**

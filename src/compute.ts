@@ -62,7 +62,7 @@ export function computeView(state: State, data: Dataset): View {
   const visible = all
     .filter((r) => r.fit.status !== 'no')
     .filter((r) => !state.family || r.model.family === state.family)
-    .sort(comparator(state.sort, order));
+    .sort(comparator(state.sort, order, state.ratio));
   const hiddenCount = all.length - visible.length;
 
   // selected model must fit (or nearly fit) this hardware; otherwise pick the biggest that fits
@@ -163,7 +163,7 @@ export function apiCostPerMtok(m: Model, ratio: number): number | null {
   return ce.input_price_per_mtok * (1 - outShare) + ce.output_price_per_mtok * outShare;
 }
 
-function comparator(sort: string, order: Record<string, number>) {
+function comparator(sort: string, order: Record<string, number>, ratio: number) {
   const byFit = (a: ModelRow, b: ModelRow) => order[a.fit.status] - order[b.fit.status];
   const num = (v: number | null | undefined, fallback: number) => (v == null || !Number.isFinite(v) ? fallback : v);
   return (a: ModelRow, b: ModelRow): number => {
@@ -175,9 +175,9 @@ function comparator(sort: string, order: Record<string, number>) {
       case 'fastest':
         return num(b.throughput.tokensPerSec, -1) - num(a.throughput.tokensPerSec, -1);
       case 'savings':
-        return num(apiCostPerMtok(b.model, 4), -1) - num(apiCostPerMtok(a.model, 4), -1);
+        return num(apiCostPerMtok(b.model, ratio), -1) - num(apiCostPerMtok(a.model, ratio), -1);
       case 'cheapest_api':
-        return num(apiCostPerMtok(a.model, 4), Infinity) - num(apiCostPerMtok(b.model, 4), Infinity);
+        return num(apiCostPerMtok(a.model, ratio), Infinity) - num(apiCostPerMtok(b.model, ratio), Infinity);
       case 'smallest':
         return num(a.fit.needGb, Infinity) - num(b.fit.needGb, Infinity);
       default:

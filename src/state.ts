@@ -63,7 +63,7 @@ export function defaultState(data: Dataset): State {
     ctx: d.context.default_tokens,
     cloudTps: d.cloud.default_tokens_per_sec,
     family: '',
-    sort: 'fit',
+    sort: data.defaults.default_sort ?? 'fit',
     price: null,
   };
 }
@@ -98,7 +98,7 @@ export function serializeState(s: State): string {
   p.set(KEYS.ctx, String(s.ctx));
   p.set(KEYS.cloudTps, String(s.cloudTps));
   if (s.family) p.set(KEYS.family, s.family);
-  if (s.sort && s.sort !== 'fit') p.set(KEYS.sort, s.sort);
+  if (s.sort) p.set(KEYS.sort, s.sort);
   if (s.price != null) p.set(KEYS.price, String(Math.round(s.price)));
   return p.toString();
 }

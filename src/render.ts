@@ -99,10 +99,12 @@ function renderControls(state: State, data: Dataset, view: View) {
   const out = state.usage / (state.ratio + 1);
   const cap = view.capacity;
   let capNote = '';
-  if (cap.maxTokensPerDay != null && view.model) {
-    capNote = cap.capped
+  if (cap.maxTokensPerDay != null && cap.maxOutputPerDay != null && view.model && view.throughput?.tokensPerSec) {
+    const head = cap.capped
       ? `<span class="flag warn">This machine tops out at ${formatUsageShort(cap.maxTokensPerDay)} a day. The maths uses that.</span>`
-      : `<span class="flag dim">Ceiling here: ${formatUsageShort(cap.maxTokensPerDay)} a day, generating non-stop.</span>`;
+      : `<span class="flag dim">Ceiling here: ${formatUsageShort(cap.maxTokensPerDay)} a day.</span>`;
+    // the ceiling is a generation limit; spelling that out stops the total reading as magic
+    capNote = `${head}<span class="cap-detail muted">${formatUsageShort(cap.maxOutputPerDay)} of that is output — all it can generate at ${fmtNum(view.throughput.tokensPerSec, 0)} tok/s, running around the clock. The rest is the input that comes with it, which the GPU reads far faster than it writes.</span>`;
   }
   $('#usage-readout').innerHTML = `<b class="num">${formatUsageShort(state.usage)}</b> tokens a day <span class="muted">— ${esc(usageLabel(state.usage, data))}</span>${capNote}`;
 
@@ -240,7 +242,7 @@ function renderVerdict(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const cap = view.capacity;
   const caution = cap.capped && view.model
-    ? `<div class="caution">You asked for ${formatUsageShort(cap.requested)} tokens a day. ${esc(view.model.display_name)} on this machine can only get through <b class="num">${formatUsageShort(cap.maxTokensPerDay!)}</b> a day at ${fmtNum(view.throughput?.tokensPerSec, 0)} tok/s, generating around the clock, so that is what the break-even uses. The rest would still go to an API.</div>`
+    ? `<div class="caution">You asked for ${formatUsageShort(cap.requested)} tokens a day. At ${fmtNum(view.throughput?.tokensPerSec, 0)} tok/s this machine can generate <b class="num">${formatUsageShort(cap.maxOutputPerDay!)}</b> output tokens a day running around the clock, which at ${esc(ratioLabel(state.ratio))} is <b class="num">${formatUsageShort(cap.maxTokensPerDay!)}</b> in total. That is what the break-even uses; the rest would still go to an API.</div>`
     : '';
   $('#verdict').innerHTML = `<h2 class="verdict-headline verdict-${view.verdict.kind}">${esc(view.verdict.headline)}</h2>
     ${view.verdict.sub ? `<p class="verdict-sub">${esc(view.verdict.sub)}</p>` : ''}
@@ -426,7 +428,7 @@ breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)}
   <dt>Power under load</dt><dd>${hw.load_watts} W, <b>${esc((hw.load_watts_status ?? 'published').replace(/_/g, ' '))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}</dd>
   <dt>Usable memory</dt><dd>${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}</dd>
   <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}</dd>
-  <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} output tokens a day; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} total.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} Prompt processing time is not counted, so the real ceiling is lower.</dd>
+  <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} <b>output</b> tokens a day, generating without a break; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} once the input at ${esc(ratioLabel(state.ratio))} is counted.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} ${esc(data.defaults.capacity_note ?? '')}</dd>
   <dt>API price</dt><dd>${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>

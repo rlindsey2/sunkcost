@@ -144,6 +144,8 @@ export interface Defaults {
   context: { default_tokens: number; options: number[]; note?: string };
   context_decay?: { model: string; why: string; accuracy_note: string; calibration?: unknown[] };
   sorts: { id: string; label: string }[];
+  default_sort?: string;
+  capacity_note?: string;
   use_cases: { id: string; label: string; ratio: number; note?: string }[];
   frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
   frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string };

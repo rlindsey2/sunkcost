@@ -8,7 +8,7 @@
     "default_tokens_per_day": 500000,
     "min_tokens_per_day": 10000,
     "max_tokens_per_day": 20000000,
-    "default_input_to_output_ratio": 4,
+    "default_input_to_output_ratio": 15,
     "min_input_to_output_ratio": 0.25,
     "max_input_to_output_ratio": 30,
     "labels": [
@@ -32,7 +32,8 @@
         "up_to": 20000001,
         "label": "agents running most of the day"
       }
-    ]
+    ],
+    "default_use_case": "agentic"
   },
   "electricity": {
     "default_price_per_kwh_usd": 0.17,
@@ -259,5 +260,8 @@
       "id": "cheapest_api",
       "label": "Cheapest to just use an API"
     }
-  ]
+  ],
+  "default_sort": "smartest",
+  "capacity_note": "The daily ceiling counts generation only: tokens_per_sec x 86,400 seconds gives the output tokens a machine can produce running flat out, and the total is that grossed up by your input:output ratio. Input tokens are counted in the total but assumed to cost no time, because prompt processing runs roughly 20-100x faster than generation. It is not free though, so the real ceiling is lower than shown - on a heavy input ratio, plausibly 20-30% lower.",
+  "capacity_note_TODO": "Capture measured prompt-processing rates (llama-bench 'pp' figures) per model x hardware pair and subtract prefill time from the ceiling, instead of caveating it."
 }
