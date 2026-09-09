@@ -444,7 +444,11 @@ local_cost_per_day  = (${fmtInt(c.dailyOutputTokens)} / ${fmtNum(tps, 1)} tok/s 
 
 daily_saving        = ${fmtUsd(c.cloudCostPerDay, { cents: true })} − ${fmtUsd(c.localCostPerDay, { cents: true })} = ${fmtUsd(c.dailySaving, { cents: true })}
 
-breakeven_days      = ${fmtUsd(view.price)} / ${fmtUsd(c.dailySaving, { cents: true })} = ${be === null ? 'never (saving ≤ 0)' : `${fmtInt(be)} days (${fmtDuration(be)})`}
+${c.apiDeclinePerYear > 0
+    ? `api_price(t)        = today’s price × ${(1 - c.apiDeclinePerYear).toFixed(2)}^t        (t in years)
+saved_by(T)         = ∫ cloud(t) dt − local × T      (the saving shrinks each year)
+breakeven_days      = the T where saved_by(T) = ${fmtUsd(view.price)} → ${be === null ? 'no such T — the saving peaks below the price' : `${fmtInt(be)} days (${fmtDuration(be)})`}`
+    : `breakeven_days      = ${fmtUsd(view.price)} / ${fmtUsd(c.dailySaving, { cents: true })} = ${be === null ? 'never (saving ≤ 0)' : `${fmtInt(be)} days (${fmtDuration(be)})`}`}
 breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)} = ${fmtTokens(c.breakevenTokens)} tokens`}</pre>
 <dl class="sources">
   <dt>Hardware price</dt><dd>${view.priceIsCustom
@@ -456,6 +460,7 @@ breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)}
   <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} <b>output</b> tokens a day, generating without a break; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} once the input at ${esc(ratioLabel(state.ratio))} is counted.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} ${esc(data.defaults.capacity_note ?? '')}</dd>
   <dt>API price</dt><dd>${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
+  ${c.apiDeclinePerYear > 0 ? `<dt>Falling API prices</dt><dd>Assuming ${Math.round(c.apiDeclinePerYear * 100)}% a year. ${esc(data.defaults.api_decline.source)}${data.defaults.api_decline.source_url ? ` <a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">Source</a>.` : ''}${c.bestPosition ? ` The saving peaks ${fmtDuration(c.bestPosition.days)} in; after that the API is cheaper than the electricity and the position sinks.` : ''}</dd>` : ''}
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
   <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx))} KV cache at ${fmtCtx(state.ctx)} context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × 2 bytes × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
 </dl>
@@ -472,7 +477,9 @@ function renderSmallPrint(state: State, data: Dataset, view: View) {
     `<b>Electricity is not free.</b> Counted above at $${state.kwh}/kWh (${esc(data.defaults.electricity.country)} average; edit it). ${c ? `Here it is ${fmtUsd(c.localCostPerMonth)} a month.` : ''}`,
     `<b>Your time is not free.</b> ${c && view.throughput?.tokensPerSec ? `Local runs at ${fmtNum(view.throughput.tokensPerSec, 0)} tok/s against ${state.cloudTps} tok/s from an API. Details above.` : 'See the timing comparison once the inputs are complete.'}`,
     `<b>Resale value exists.</b> The hardware holds value and does other jobs. Break-even here treats the whole price as sunk, so it overstates the real loss.`,
-    `<b>API prices fall.</b> This is calculated at today’s prices (checked ${esc(data.defaults.data_last_checked)}). They have historically dropped fast, so the real payback period is likely longer than shown.`,
+    state.decline > 0
+      ? `<b>API prices fall — and you have said so.</b> This is calculated with the API getting ${Math.round(state.decline * 100)}% cheaper a year. ${esc(data.defaults.api_decline.source)}`
+      : `<b>API prices fall.</b> This is calculated at today’s prices (checked ${esc(data.defaults.data_last_checked)}), held flat forever. They have not behaved that way. Turn on “${esc(data.defaults.api_decline.label)}” under the assumptions to see what that does — it is usually the difference between a long pay-back and none.`,
     `<b>Frontier models aren’t on the list.</b> The best cloud models can’t be run locally at any of these price points. This compares like with like on open models; it is not an apples-to-apples swap for a frontier API.`,
   ];
   $('#small-print').innerHTML = items.map((i) => `<li>${i}</li>`).join('');

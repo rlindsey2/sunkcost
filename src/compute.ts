@@ -125,7 +125,7 @@ export function computeView(state: State, data: Dataset): View {
       kind: 'never',
       headline: 'You never surface.',
       sub: best
-        ? `You get to ${fmtMoney(best.usd)} at your closest, about ${fmtYears(best.days)} in, and then sink again: by then the API has fallen below what the electricity costs you.`
+        ? `You get within ${fmtMoney(Math.abs(best.usd))} of the surface, about ${fmtYears(best.days)} in, then sink again: by then the API costs less than your electricity.`
         : 'The API falls faster than the machine can pay for itself.',
     };
   } else if (calc.breakevenDays === null) {
@@ -199,9 +199,7 @@ function comparator(sort: string, order: Record<string, number>, ratio: number) 
 }
 
 function fmtMoney(v: number): string {
-  const abs = Math.abs(v);
-  const s = abs < 100 ? `$${abs.toFixed(2)}` : `$${Math.round(abs).toLocaleString('en-US')}`;
-  return v < 0 ? `${s} under` : `${s} clear`;
+  return v < 100 ? `$${v.toFixed(2)}` : `$${Math.round(v).toLocaleString('en-US')}`;
 }
 
 function fmtYears(days: number): string {
