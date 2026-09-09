@@ -14,8 +14,12 @@ import { fmtUsd } from './format';
 export interface WaterlineOptions {
   devicePriceUsd: number;
   dailySaving: number;
+  /** when set, the saving decays and the curve bends instead of running straight */
+  decay?: { cloudPerDay: number; localPerDay: number; decline: number };
   /** null = it never pays back */
   breakevenDays: number | null;
+  /** when the decaying saving peaks; frames the window in the never case */
+  peakDays?: number | null;
   maxYears: number;
   width?: number;
   height?: number;
@@ -51,7 +55,14 @@ const YEAR = 365.25;
  */
 export function waterlineGeometry(o: WaterlineOptions): WaterlineGeometry {
   const maxDays = o.maxYears * YEAR;
-  if (o.breakevenDays === null) return { horizonDays: maxDays, surfacesOnChart: false, surfacesOffChart: false, never: true };
+  if (o.breakevenDays === null) {
+    // never pays back: with a decaying API price, frame the window on the best it ever gets,
+    // so the curve visibly rises, stalls and turns over instead of running flat off the edge
+    if (o.peakDays != null && Number.isFinite(o.peakDays)) {
+      return { horizonDays: Math.max(o.peakDays * 1.5, 60), surfacesOnChart: false, surfacesOffChart: false, never: true };
+    }
+    return { horizonDays: maxDays, surfacesOnChart: false, surfacesOffChart: false, never: true };
+  }
   return { horizonDays: Math.max(o.breakevenDays * 1.16, 60), surfacesOnChart: true, surfacesOffChart: false, never: false };
 }
 
@@ -98,7 +109,8 @@ export function renderWaterline(o: WaterlineOptions): string {
 
   const price = o.devicePriceUsd;
   const T = g.horizonDays;
-  const endValue = positionAfterDays(price, o.dailySaving, T);
+  const pos = (days: number) => positionAfterDays(price, o.dailySaving, days, o.decay);
+  const endValue = pos(T);
 
   const yMinVal = Math.min(-price * 1.04, endValue * 1.04);
   const yMaxVal = g.surfacesOnChart ? Math.max(endValue * 1.18, price * 0.22) : price * 0.24;
@@ -111,6 +123,18 @@ export function renderWaterline(o: WaterlineOptions): string {
   const x0 = x(0), y0 = y(-price);
   const x1 = x(T), y1 = y(endValue);
   const beX = g.surfacesOnChart ? x(o.breakevenDays!) : null;
+  const bends = !!o.decay && o.decay.decline > 0;
+
+  /** the position curve sampled across the window, so a decaying saving reads as a bend */
+  const pathFrom = (fromDays: number, toDays: number): string => {
+    const steps = bends ? 48 : 1;
+    const pts: string[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const dd = fromDays + ((toDays - fromDays) * i) / steps;
+      pts.push(`${x(dd).toFixed(1)} ${y(pos(dd)).toFixed(1)}`);
+    }
+    return `M ${pts.join(' L ')}`;
+  };
 
   const p: string[] = [];
   p.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${ariaLabel(o, g)}" font-family="${font}" class="waterline">`);
@@ -148,7 +172,7 @@ export function renderWaterline(o: WaterlineOptions): string {
 
   // the mass of water you have climbed through: area under the curve
   const clip = `clip-path="url(#${id}-clip)"`;
-  p.push(`<path ${clip} d="M ${x0} ${plotBottom.toFixed(1)} L ${x0} ${y0.toFixed(1)} L ${x1} ${y1.toFixed(1)} L ${x1} ${plotBottom.toFixed(1)} Z" fill="url(#${id}-mass)"/>`);
+  p.push(`<path ${clip} d="M ${x0} ${plotBottom.toFixed(1)} L ${pathFrom(0, T).slice(2)} L ${x1} ${plotBottom.toFixed(1)} Z" fill="url(#${id}-mass)"/>`);
 
   // the surface: a bright line edge to edge, with light scattering just above it
   p.push(`<rect x="0" y="${(surfaceY - 7 * s).toFixed(1)}" width="${W}" height="${7 * s}" fill="var(--surface, #9cc7ee)" opacity="0.16"/>`);
@@ -160,13 +184,15 @@ export function renderWaterline(o: WaterlineOptions): string {
   // the curve, with a soft halo so it survives on a busy ground
   const curveUnder = 'var(--curve-under, #a9d3f2)';
   const curveAbove = 'var(--curve-above, #f0a75a)';
-  const seg = (ax: number, ay: number, bx: number, by: number, color: string) =>
-    `<line ${clip} x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${color}" stroke-opacity="0.28" stroke-width="${9 * s}" stroke-linecap="round"/>` +
-    `<line ${clip} x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${color}" stroke-width="${3.25 * s}" stroke-linecap="round"/>`;
+  const seg = (fromDays: number, toDays: number, color: string) => {
+    const d = pathFrom(fromDays, toDays);
+    return `<path ${clip} d="${d}" fill="none" stroke="${color}" stroke-opacity="0.28" stroke-width="${9 * s}" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<path ${clip} d="${d}" fill="none" stroke="${color}" stroke-width="${3.25 * s}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  };
 
   if (beX !== null) {
-    p.push(seg(x0, y0, beX, surfaceY, curveUnder));
-    p.push(seg(beX, surfaceY, x1, y1, curveAbove));
+    p.push(seg(0, o.breakevenDays!, curveUnder));
+    p.push(seg(o.breakevenDays!, T, curveAbove));
     p.push(`<circle cx="${beX.toFixed(1)}" cy="${surfaceY.toFixed(1)}" r="${6 * s}" fill="var(--curve-above, #f0a75a)" stroke="#fff" stroke-width="${2 * s}"/>`);
     if (showLabels) {
       const anchor = beX > padX + innerW * 0.6 ? 'end' : 'start';
@@ -174,7 +200,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       p.push(`<text x="${lx.toFixed(1)}" y="${(surfaceY - 12 * s).toFixed(1)}" text-anchor="${anchor}" font-size="${12 * s}" font-weight="600" fill="var(--surface-ink, #4d7ea6)">surfaces at ${labelDays(o.breakevenDays!)}</text>`);
     }
   } else {
-    p.push(seg(x0, y0, x1, y1, curveUnder));
+    p.push(seg(0, T, curveUnder));
     if (showLabels) {
       const msg = g.never ? 'never reaches the surface' : `surfaces at ${labelDays(o.breakevenDays!)} — far off this chart`;
       const my = Math.max(y1 - 14 * s, padT + 14 * s);
@@ -187,7 +213,7 @@ export function renderWaterline(o: WaterlineOptions): string {
   // where you stand after a year
   if (o.markerDays != null && o.markerDays > 0 && o.markerDays < T) {
     const mx = x(o.markerDays);
-    const mv = positionAfterDays(price, o.dailySaving, o.markerDays);
+    const mv = pos(o.markerDays);
     const my = y(mv);
     p.push(`<line x1="${mx.toFixed(1)}" x2="${mx.toFixed(1)}" y1="${padT}" y2="${plotBottom.toFixed(1)}" stroke="var(--chart-ink, #b6cfe2)" stroke-opacity="0.3" stroke-width="${s}" stroke-dasharray="${3 * s} ${4 * s}"/>`);
     p.push(`<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="${4 * s}" fill="var(--water-deep, #05121e)" stroke="var(--chart-ink, #b6cfe2)" stroke-width="${1.5 * s}"/>`);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculate, positionAfterDays, splitTokens } from '../src/calc';
+import { calculate, cumulativeSaving, DAYS_PER_YEAR, positionAfterDays, splitTokens } from '../src/calc';
 import { fit, kvCacheGbFromArchitecture, estimateTokensPerSec, contextSpeedFactor, resolveThroughput } from '../src/fit';
 import { parseState, serializeState, sliderToUsage, usageToSlider } from '../src/state';
 import { waterlineGeometry, renderWaterline } from '../src/waterline';
@@ -277,5 +277,66 @@ describe('the price you actually paid', () => {
     const s = parseState('?hw=gmktec-evo-x2-128&p=1999', data);
     expect(parseState('?' + serializeState(s), data).price).toBe(1999);
     expect(serializeState(parseState('?hw=gmktec-evo-x2-128', data))).not.toContain('p=');
+  });
+});
+
+describe('assuming API prices keep falling', () => {
+  const base = {
+    devicePriceUsd: 3499, dailyTokens: 2_000_000, inputRatio: 15,
+    inputPricePerMtok: 0.32, outputPricePerMtok: 2.5,
+    localTokensPerSec: 25, cloudTokensPerSec: 80, loadWatts: 145, pricePerKwh: 0.17, typicalTaskOutputTokens: 1000,
+  };
+
+  it('leaves the maths untouched when it is off', () => {
+    const flat = calculate({ ...base, apiDeclinePerYear: 0 });
+    expect(flat.apiDeclinePerYear).toBe(0);
+    expect(flat.breakevenDays!).toBeCloseTo(3499 / flat.dailySaving, 6);
+    expect(flat.bestPosition).toBeUndefined();
+  });
+
+  it('pushes break-even out, never pulls it in', () => {
+    const cheap = { ...base, devicePriceUsd: 599 };
+    const flat = calculate({ ...cheap, apiDeclinePerYear: 0 });
+    const decayed = calculate({ ...cheap, apiDeclinePerYear: 0.2 });
+    expect(decayed.breakevenDays).not.toBeNull();
+    expect(decayed.breakevenDays!).toBeGreaterThan(flat.breakevenDays!);
+    // the day-one saving is identical; only the future differs
+    expect(decayed.dailySaving).toBeCloseTo(flat.dailySaving, 9);
+  });
+
+  it('at a steep decline, a machine that pays back on flat prices never does', () => {
+    // $3,499 over 10.9 years on today's prices; at −40%/yr the API undercuts the
+    // electricity long before the hardware is repaid
+    expect(calculate({ ...base, apiDeclinePerYear: 0 }).breakevenDays!).toBeGreaterThan(3000);
+    expect(calculate({ ...base, apiDeclinePerYear: 0.4 }).breakevenDays).toBeNull();
+  });
+
+  it('can turn a payback into a never, and says where the peak was', () => {
+    const marginal = { ...base, dailyTokens: 260_000 };
+    expect(calculate({ ...marginal, apiDeclinePerYear: 0 }).breakevenDays).not.toBeNull();
+    const decayed = calculate({ ...marginal, apiDeclinePerYear: 0.6 });
+    expect(decayed.breakevenDays).toBeNull();
+    expect(decayed.dailySaving).toBeGreaterThan(0);
+    expect(decayed.bestPosition!.usd).toBeLessThan(0);
+    expect(decayed.bestPosition!.days).toBeGreaterThan(0);
+  });
+
+  it('integrates the decaying saving correctly', () => {
+    // at 50%/yr the first year yields cloud × 365.25 × (0.5 − 1)/ln(0.5) = cloud × 365.25 × 0.7213
+    const cloud = 2;
+    const saved = cumulativeSaving(cloud, 0, 0.5, DAYS_PER_YEAR);
+    expect(saved).toBeCloseTo(cloud * DAYS_PER_YEAR * 0.72135, 2);
+    // the total is bounded: two more centuries add nothing
+    const forever = cumulativeSaving(cloud, 0, 0.5, DAYS_PER_YEAR * 200);
+    const longer = cumulativeSaving(cloud, 0, 0.5, DAYS_PER_YEAR * 400);
+    expect(forever).toBeCloseTo((cloud * DAYS_PER_YEAR) / Math.log(2), 1);
+    expect(longer).toBeCloseTo(forever, 6);
+  });
+
+  it('round-trips through the URL', () => {
+    const s = parseState('?hw=mac-studio-m5-max-64&d=0.4', data);
+    expect(s.decline).toBe(0.4);
+    expect(parseState('?' + serializeState(s), data).decline).toBe(0.4);
+    expect(serializeState(parseState('?hw=mac-studio-m5-max-64', data))).not.toContain('d=');
   });
 });

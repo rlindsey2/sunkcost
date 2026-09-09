@@ -146,6 +146,15 @@ export interface Defaults {
   sorts: { id: string; label: string }[];
   default_sort?: string;
   capacity_note?: string;
+  api_decline: {
+    default_on: boolean;
+    default_rate_per_year: number;
+    options: number[];
+    label: string;
+    note: string;
+    source: string;
+    source_url?: string;
+  };
   use_cases: { id: string; label: string; ratio: number; note?: string }[];
   frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
   frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string };

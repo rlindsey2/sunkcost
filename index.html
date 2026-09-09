@@ -54,6 +54,7 @@
       <span>of memory.</span>
     </p>
     <p class="sentence-meta">
+      <a class="deep-link" id="hw-page-link" href="/leaderboard/">About this machine</a>
       <span id="price-line"></span>
       <span class="money money-inline" id="price-wrap" hidden><b aria-hidden="true">$</b><input type="number" id="price" min="1" step="1" inputmode="numeric" aria-label="What you paid" placeholder="what you paid" /></span>
       <span class="dim" id="hw-status"></span>
@@ -107,6 +108,14 @@
                 <label class="field"><span class="label">Electricity, $/kWh</span><input class="input" type="number" id="kwh" min="0" step="0.01" /></label>
                 <label class="field"><span class="label">API speed, tok/s</span><input class="input" type="number" id="cloud-tps" min="1" step="5" /></label>
               </div>
+              <label class="switch">
+                <input type="checkbox" id="decline-on" />
+                <span class="switch-box" aria-hidden="true"></span>
+                <span class="switch-text"><b>Assume API prices keep falling</b><span class="note dim" id="decline-note"></span></span>
+              </label>
+              <label class="field" id="decline-rate-field" hidden><span class="label">How fast they fall</span>
+                <span class="select"><select id="decline-rate" aria-label="Annual fall in API prices"></select></span>
+              </label>
               <p class="note dim" id="kwh-note"></p>
               <p class="note dim">Where nothing has been measured, local speed is estimated as memory bandwidth ÷ bytes read per token × <span id="efficiency-note"></span>, and labelled as such. API speed only affects the time comparison.</p>
             </div>
@@ -141,7 +150,8 @@
       </header>
       <p class="legend" id="fit-summary"></p>
       <div id="models" class="model-list" role="radiogroup" aria-label="Models" tabindex="0"></div>
-      <p class="note dim pane-foot">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If one looks wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
+      <p class="note dim pane-foot"><a href="/leaderboard/">See every model ranked against Claude and GPT →</a></p>
+      <p class="note dim">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If one looks wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
     </aside>
   </div>
 

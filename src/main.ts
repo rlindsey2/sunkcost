@@ -80,6 +80,11 @@ $<HTMLSelectElement>('#memory').addEventListener('change', (e) => {
   if (wrap) delete wrap.dataset.open;
   update({ hw: (e.target as HTMLSelectElement).value, price: null });
 });
+$<HTMLInputElement>('#decline-on').addEventListener('change', (e) => {
+  const rate = Number($<HTMLSelectElement>('#decline-rate').value) || data.defaults.api_decline.default_rate_per_year;
+  update({ decline: (e.target as HTMLInputElement).checked ? rate : 0 });
+});
+$<HTMLSelectElement>('#decline-rate').addEventListener('change', (e) => update({ decline: Number((e.target as HTMLSelectElement).value) }));
 $<HTMLSelectElement>('#model-family').addEventListener('change', (e) => update({ family: (e.target as HTMLSelectElement).value }));
 $<HTMLSelectElement>('#model-sort').addEventListener('change', (e) => update({ sort: (e.target as HTMLSelectElement).value }));
 $<HTMLInputElement>('#price').addEventListener('input', (e) => {

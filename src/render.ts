@@ -90,6 +90,11 @@ function renderMachine(state: State, data: Dataset, view: View) {
   if (view.hw.memory_bandwidth_gbs) bits.push(`${view.hw.memory_bandwidth_gbs} GB/s`);
   if (view.hw.usable_memory_gb != null) bits.push(`${view.hw.usable_memory_gb} GB usable by the GPU`);
   if (view.hw.status) bits.push(view.hw.status);
+  const hwLink = document.querySelector<HTMLAnchorElement>('#hw-page-link');
+  if (hwLink) {
+    hwLink.href = `/hardware/${view.hw.id}/`;
+    hwLink.textContent = `About the ${hardwareLabel(view.hw)}`;
+  }
   $('#hw-status').innerHTML = `${esc(bits.join(' · '))}${view.hw.TODO ? ` <span class="todo">TODO: ${esc(view.hw.TODO)}</span>` : ''}`;
 }
 
@@ -138,6 +143,20 @@ function renderControls(state: State, data: Dataset, view: View) {
   if (Number(kwh.value) !== state.kwh) kwh.value = String(state.kwh);
   const ctps = $<HTMLInputElement>('#cloud-tps');
   if (Number(ctps.value) !== state.cloudTps) ctps.value = String(state.cloudTps);
+  const dec = d.api_decline;
+  const on = state.decline > 0;
+  const declineOn = $<HTMLInputElement>('#decline-on');
+  if (declineOn.checked !== on) declineOn.checked = on;
+  $('#decline-rate-field').hidden = !on;
+  setOptions(
+    $<HTMLSelectElement>('#decline-rate'),
+    dec.options.map((r) => `<option value="${r}">${Math.round(r * 100)}% a year</option>`).join(''),
+    String(on ? state.decline : dec.default_rate_per_year),
+  );
+  $('#decline-note').textContent = on
+    ? `Break-even below assumes the API gets ${Math.round(state.decline * 100)}% cheaper every year.`
+    : 'Off: today’s prices, held flat forever. That flatters the machine.';
+
   $('#kwh-note').textContent = `Default $${d.electricity.default_price_per_kwh_usd.toFixed(2)}/kWh is the ${d.electricity.country} residential average.`;
 }
 
@@ -224,7 +243,9 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
   ].filter(Boolean).join('');
 
   const reason = fit.status === 'fits' ? '' : `<p class="m-reason">${fit.status === 'nearly' ? 'Nearly fits' : fit.status === 'context' ? 'Past its context limit' : fit.status === 'no' ? 'Doesn’t fit' : 'Unknown'} — ${esc(fit.reason)}.</p>`;
-  const sources = selected ? `<p class="m-src">Sources: ${sourcesLine(m, view, data)}</p>` : '';
+  const sources = selected
+    ? `<p class="m-src"><a href="/models/${esc(m.id)}/">What it takes to run ${esc(m.display_name)}</a> · ${sourcesLine(m, view, data)}</p>`
+    : '';
 
   return `<div class="model${selected ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}" role="radio" aria-checked="${selected}" tabindex="${disabled ? -1 : 0}" data-model="${esc(m.id)}"${disabled ? ' aria-disabled="true"' : ''}>
     <div class="m-top">
@@ -281,6 +302,8 @@ export function drawWaterline(data: Dataset, view: View) {
   wl.innerHTML = renderWaterline({
     devicePriceUsd: view.price,
     dailySaving: c.dailySaving,
+    decay: c.apiDeclinePerYear > 0 ? { cloudPerDay: c.cloudCostPerDay, localPerDay: c.localCostPerDay, decline: c.apiDeclinePerYear } : undefined,
+    peakDays: c.bestPosition?.days ?? null,
     breakevenDays: c.breakevenDays,
     maxYears: data.defaults.waterline_max_years,
     width,

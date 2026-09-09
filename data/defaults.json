@@ -263,5 +263,20 @@
   ],
   "default_sort": "smartest",
   "capacity_note": "The daily ceiling counts generation only: tokens_per_sec x 86,400 seconds gives the output tokens a machine can produce running flat out, and the total is that grossed up by your input:output ratio. Input tokens are counted in the total but assumed to cost no time, because prompt processing runs roughly 20-100x faster than generation. It is not free though, so the real ceiling is lower than shown - on a heavy input ratio, plausibly 20-30% lower.",
-  "capacity_note_TODO": "Capture measured prompt-processing rates (llama-bench 'pp' figures) per model x hardware pair and subtract prefill time from the ceiling, instead of caveating it."
+  "capacity_note_TODO": "Capture measured prompt-processing rates (llama-bench 'pp' figures) per model x hardware pair and subtract prefill time from the ceiling, instead of caveating it.",
+  "api_decline": {
+    "default_on": false,
+    "default_rate_per_year": 0.4,
+    "options": [
+      0.2,
+      0.3,
+      0.4,
+      0.6
+    ],
+    "label": "API prices keep falling",
+    "note": "Break-even is otherwise calculated at today's prices, held flat forever. They have not behaved that way: the cost of a given level of capability has fallen steeply and repeatedly since 2023. Switch this on to decay the API price by a set fraction each year. It pushes break-even out, and past the point where the API costs less than your electricity it stops being reachable at all.",
+    "source": "Epoch AI, 'LLM inference prices have fallen rapidly' — 9x to 900x per year depending on the capability level, with a median around 50x over the period studied. A conservative 40%/yr is the default here.",
+    "source_url": "https://epoch.ai/data-insights/llm-inference-price-trends",
+    "TODO": "Re-check the trend figure; the cited analysis predates 2026."
+  }
 }

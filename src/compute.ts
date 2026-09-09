@@ -1,4 +1,4 @@
-import { calculate, type CalcResult } from './calc';
+import { calculate, DAYS_PER_YEAR, type CalcResult } from './calc';
 import { fit, resolveThroughput, type Fit, type ResolvedThroughput } from './fit';
 import { fmtVerdictDuration } from './format';
 import type { State } from './state';
@@ -112,12 +112,22 @@ export function computeView(state: State, data: Dataset): View {
       loadWatts: hw.load_watts!,
       pricePerKwh: state.kwh,
       typicalTaskOutputTokens: d.typical_task_output_tokens,
+      apiDeclinePerYear: state.decline,
     });
   }
 
   let verdict: View['verdict'];
   if (!calc) {
     verdict = { kind: 'unknown', headline: 'Can’t compute this one.', sub: blockers.join('; ') };
+  } else if (calc.breakevenDays === null && calc.apiDeclinePerYear > 0 && calc.dailySaving > 0) {
+    const best = calc.bestPosition;
+    verdict = {
+      kind: 'never',
+      headline: 'You never surface.',
+      sub: best
+        ? `You get to ${fmtMoney(best.usd)} at your closest, about ${fmtYears(best.days)} in, and then sink again: by then the API has fallen below what the electricity costs you.`
+        : 'The API falls faster than the machine can pay for itself.',
+    };
   } else if (calc.breakevenDays === null) {
     verdict = {
       kind: 'never',
@@ -131,7 +141,7 @@ export function computeView(state: State, data: Dataset): View {
     verdict = {
       kind: 'surfaces',
       headline: `You’re underwater for ${fmtVerdictDuration(calc.breakevenDays)}.`,
-      sub: `Saving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day against the API, on ${price ? `$${price.toLocaleString('en-US')}` : ''} of hardware${priceIsCustom ? ' at the price you paid' : ''}.`,
+      sub: `${calc.apiDeclinePerYear > 0 ? `With the API getting ${Math.round(calc.apiDeclinePerYear * 100)}% cheaper a year, s` : 'S'}aving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day today, on ${price ? `$${price.toLocaleString('en-US')}` : ''} of hardware${priceIsCustom ? ' at the price you paid' : ''}.`,
     };
   }
 
@@ -186,6 +196,17 @@ function comparator(sort: string, order: Record<string, number>, ratio: number) 
         return b.model.params_b - a.model.params_b;
     }
   };
+}
+
+function fmtMoney(v: number): string {
+  const abs = Math.abs(v);
+  const s = abs < 100 ? `$${abs.toFixed(2)}` : `$${Math.round(abs).toLocaleString('en-US')}`;
+  return v < 0 ? `${s} under` : `${s} clear`;
+}
+
+function fmtYears(days: number): string {
+  const y = days / DAYS_PER_YEAR;
+  return y >= 1.5 ? `${y.toFixed(1)} years` : `${Math.round(days / 30.4)} months`;
 }
 
 export function ratioLabel(r: number): string {

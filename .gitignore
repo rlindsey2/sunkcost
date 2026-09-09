@@ -4,7 +4,14 @@ dist
 # generated at build time from data/*.json
 public/og/*.png
 public/og/*.svg
-public/routes.json
 
 # seeded design canvas (2.5 MB, regenerated from design/*.dc.html)
 design/sunk-cost-layout-directions.html
+
+# generated at build time by scripts/build-pages.ts
+public/leaderboard/
+public/models/
+public/hardware/
+public/compare/
+public/sitemap.xml
+public/robots.txt
