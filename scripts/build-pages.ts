@@ -48,7 +48,8 @@ function leaderboard(): string {
   });
 
   const rows = unique
-    .map((m) => {
+    .map((m, idx) => {
+      const next = unique[idx + 1];
       const score = m.frontier_equivalent!.score!;
       const runners = cheapestPerFamily(runnersFor(m, data));
       const cheapest = runners.slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0];
@@ -59,6 +60,7 @@ function leaderboard(): string {
   <td class="c-caps">${dotRow(m)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
   <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <span class="dim">${fmtUsd(cheapest.hw.price_usd)}</span>` : '<span class="dim">nothing on the list</span>'}</td>
+  <td class="c-vs">${next ? `<a href="/compare/${slug(m.id)}-vs-${slug(next.id)}/">vs ${esc(next.display_name)}</a>` : ''}</td>
 </tr>`;
     })
     .join('');
@@ -70,6 +72,7 @@ function leaderboard(): string {
   <td class="c-score"><span class="bar"><span style="width:${((r.score / max) * 100).toFixed(1)}%"></span></span><b>${r.score}</b></td>
   <td class="c-tier" colspan="3"><span class="dim">Runs in someone else’s data centre. You cannot download it.</span></td>
   <td class="c-hw"><span class="dim">—</span></td>
+  <td class="c-vs"></td>
 </tr>`,
     )
     .join('');
@@ -81,7 +84,7 @@ function leaderboard(): string {
 <p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it.</p>
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b>. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 <table class="board">
-<thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th></tr></thead>
+<thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${frontierRows}${rows}</tbody>
 </table>
 <p class="note">Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning score. Older models were scored under an earlier cohort of the index, so cross-era comparisons are approximate. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
@@ -296,6 +299,61 @@ ${row('Pay-back', esc(verdictLine(va)), esc(verdictLine(vb)))}
   );
 }
 
+/* ------------------------- model head-to-heads ------------------------- */
+
+function modelComparePage(a: Model, b: Model): string {
+  const ra = runnersFor(a, data);
+  const rb = runnersFor(b, data);
+  const ctx = data.defaults.context.default_tokens;
+  const sa = a.frontier_equivalent?.score ?? null;
+  const sb = b.frontier_equivalent?.score ?? null;
+  const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
+  const capRows = CAPABILITY_KEYS.map(
+    (k) => `<tr><th>${esc(CAP_SHORT[k])}</th><td><span class="dot dot-${a.capabilities[k]}"></span> ${esc(ratingWord[a.capabilities[k]])}</td><td><span class="dot dot-${b.capabilities[k]}"></span> ${esc(ratingWord[b.capabilities[k]])}</td></tr>`,
+  ).join('');
+
+  const verdict =
+    sa != null && sb != null && sa !== sb
+      ? `${esc(sa > sb ? a.display_name : b.display_name)} scores higher on the intelligence index — ${Math.max(sa, sb)} against ${Math.min(sa, sb)}.`
+      : 'Neither has a clear lead on the index.';
+  const sizeNote =
+    a.weights_gb != null && b.weights_gb != null && Math.abs(a.weights_gb - b.weights_gb) > 1
+      ? ` ${esc(a.weights_gb < b.weights_gb ? a.display_name : b.display_name)} is the smaller download at ${fmtGb(Math.min(a.weights_gb, b.weights_gb))}, so it runs on cheaper hardware.`
+      : '';
+
+  const body = `<article class="prose">
+<h1>${esc(a.display_name)} vs ${esc(b.display_name)}</h1>
+<p class="lede">${verdict}${sizeNote}</p>
+<table class="board compare">
+<thead><tr><th></th><th><a href="/models/${esc(a.id)}/">${esc(a.display_name)}</a></th><th><a href="/models/${esc(b.id)}/">${esc(b.display_name)}</a></th></tr></thead>
+<tbody>
+${row('Intelligence index', sa != null ? `<b>${sa}</b>` : 'not placed', sb != null ? `<b>${sb}</b>` : 'not placed')}
+${row('Class', esc(tierName(a, data)), esc(tierName(b, data)))}
+${row('Weights', fmtGb(a.weights_gb), fmtGb(b.weights_gb))}
+${row('Quantisation', esc(a.quantisation), esc(b.quantisation))}
+${row('Parameters', `${fmtNum(a.params_b, 1)}B${a.active_params_b && a.active_params_b < a.params_b ? ` (${fmtNum(a.active_params_b, 1)}B active)` : ''}`, `${fmtNum(b.params_b, 1)}B${b.active_params_b && b.active_params_b < b.params_b ? ` (${fmtNum(b.active_params_b, 1)}B active)` : ''}`)}
+${row('Max context', a.max_context_tokens ? `${Math.round(a.max_context_tokens / 1024)}k` : 'unknown', b.max_context_tokens ? `${Math.round(b.max_context_tokens / 1024)}k` : 'unknown')}
+${row('API price per 1M', `$${a.cloud_equivalent.input_price_per_mtok} in / $${a.cloud_equivalent.output_price_per_mtok} out`, `$${b.cloud_equivalent.input_price_per_mtok} in / $${b.cloud_equivalent.output_price_per_mtok} out`)}
+${row('Licence', esc(a.license), esc(b.license))}
+${row('Cheapest machine that runs it', ra[0] ? `<a href="/hardware/${esc(ra[0].hw.id)}/">${esc(hardwareLabel(ra[0].hw))}</a> ${fmtUsd(ra[0].hw.price_usd)}` : 'none listed', rb[0] ? `<a href="/hardware/${esc(rb[0].hw.id)}/">${esc(hardwareLabel(rb[0].hw))}</a> ${fmtUsd(rb[0].hw.price_usd)}` : 'none listed')}
+${capRows}
+</tbody>
+</table>
+<p class="note">Ratings are coarse on purpose. Speeds and pay-back depend on the machine — open either model's page for the full list, or <a href="/leaderboard/">see both against the frontier</a>. Context is ${Math.round(ctx / 1024)}k throughout.</p>
+</article>`;
+  return pageShell(
+    {
+      title: `${a.display_name} vs ${b.display_name} — which should you run? — Sunk Cost`,
+      description: `Side by side: intelligence score, size, context, licence, API price and the cheapest machine that runs each.`,
+      canonical: `/compare/${slug(a.id)}-vs-${slug(b.id)}/`,
+      ogImage: '/og/default.png',
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Models' }, { href: '#', label: `${a.display_name} vs ${b.display_name}` }],
+    },
+    body,
+    data,
+  );
+}
+
 /* --------------------------------- build --------------------------------- */
 
 write('/leaderboard/', leaderboard());
@@ -314,6 +372,16 @@ for (let i = 0; i < flagships.length; i++) {
   for (let j = i + 1; j < flagships.length; j++) {
     write(`/compare/${slug(hardwareLabel(flagships[i]))}-vs-${slug(hardwareLabel(flagships[j]))}/`, comparePage(flagships[i], flagships[j]));
   }
+}
+
+// model head-to-heads: each model against the next one down the leaderboard,
+// which is the comparison someone actually has to make
+const ranked = data.models
+  .filter((m) => m.frontier_equivalent?.score != null)
+  .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
+  .filter((m, i, xs) => xs.findIndex((x) => x.display_name === m.display_name) === i);
+for (let i = 0; i + 1 < ranked.length; i++) {
+  write(`/compare/${slug(ranked[i].id)}-vs-${slug(ranked[i + 1].id)}/`, modelComparePage(ranked[i], ranked[i + 1]));
 }
 
 const urls = ['/', ...paths]

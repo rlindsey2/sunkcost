@@ -75,6 +75,7 @@ a:hover { color: var(--ink); }
 .c-score .bar { display: inline-block; width: 84px; height: 6px; background: var(--panel-3); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-right: 8px; }
 .c-score .bar span { display: block; height: 100%; background: var(--w-2); }
 .is-frontier .c-score .bar span { background: var(--w-3); }
+.c-vs { font-size: 12.5px; }
 .c-tier, .c-gb, .c-hw { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
 .compare td { font-size: 14px; }
 
