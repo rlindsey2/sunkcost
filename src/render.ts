@@ -56,25 +56,34 @@ function renderMachine(state: State, data: Dataset, view: View) {
       if (!chips.length) return '';
       const opts = chips.map((c) => {
         const bw = [...new Set(inFamily.filter((h) => chipKey(h) === c).map((h) => h.memory_bandwidth_gbs))].filter(Boolean);
-        return `<option value="${esc(c)}">${esc(c)}${bw.length ? ` · ${bw.join('–')} GB/s` : ''}</option>`;
+        void bw;
+        return `<option value="${esc(c)}">${esc(c)}</option>`;
       }).join('');
       return hasPrev ? `<optgroup label="${esc(label)}">${opts}</optgroup>` : opts;
     })
     .join('');
   setOptions($<HTMLSelectElement>('#chip'), chipHtml, view.hw.chip);
 
-  const rows = inFamily.filter((h) => h.chip === view.hw.chip);
-  $('#configs').innerHTML = rows.map((h) => configButton(h, h.id === view.hw.id)).join('');
-  const priceInput = $<HTMLInputElement>('#price');
+  const rows = inFamily.filter((h) => h.chip === view.hw.chip).sort((a, b) => a.unified_memory_gb - b.unified_memory_gb);
+  setOptions(
+    $<HTMLSelectElement>('#memory'),
+    rows.map((h) => `<option value="${esc(h.id)}">${h.unified_memory_gb} GB · ${h.price_usd == null ? 'no list price' : fmtUsd(h.price_usd)}</option>`).join(''),
+    view.hw.id,
+  );
+
+  // the price reads as a clause after the sentence; the input only appears when asked for
   const listPrice = view.hw.price_usd;
+  const wrap = $<HTMLElement>('#price-wrap');
+  const priceInput = $<HTMLInputElement>('#price');
   priceInput.placeholder = listPrice == null ? 'what you paid' : String(listPrice);
   const wanted = state.price == null ? '' : String(state.price);
   if (priceInput.value !== wanted && document.activeElement !== priceInput) priceInput.value = wanted;
-  $('#price-note').innerHTML = view.priceIsCustom
-    ? `Using your price.${listPrice == null ? '' : ` List is ${fmtUsd(listPrice)}.`} <button type="button" class="linkish" id="price-reset">Use the list price</button>`
+  wrap.hidden = !(view.priceIsCustom || wrap.dataset.open === '1');
+  $('#price-line').innerHTML = view.priceIsCustom
+    ? `You paid <b class="num">${fmtUsd(view.price)}</b>${listPrice == null ? '' : ` · list is ${fmtUsd(listPrice)}`} · <button type="button" class="linkish" id="price-reset">use the list price</button>`
     : listPrice == null
-      ? '<span class="todo">No list price for this configuration. Enter what you paid.</span>'
-      : `Bought it cheaper, second-hand or on sale? Enter what you paid.`;
+      ? `<span class="todo">No list price yet</span> · <button type="button" class="linkish" id="price-toggle">enter what you paid</button>`
+      : `List price <b class="num">${fmtUsd(listPrice)}</b>${view.hw.generation === 'previous' ? ' at launch' : ''} · <button type="button" class="linkish" id="price-toggle">I paid something else</button>`;
 
   const bits: string[] = [];
   if (view.hw.chip_variant) bits.push(view.hw.chip_variant);
@@ -84,13 +93,6 @@ function renderMachine(state: State, data: Dataset, view: View) {
   $('#hw-status').innerHTML = `${esc(bits.join(' · '))}${view.hw.TODO ? ` <span class="todo">TODO: ${esc(view.hw.TODO)}</span>` : ''}`;
 }
 
-function configButton(h: Hardware, selected: boolean): string {
-  const price = h.price_usd == null ? '<span class="todo">no price</span>' : fmtUsd(h.price_usd);
-  return `<button type="button" role="radio" aria-checked="${selected}" class="seg" data-hw="${esc(h.id)}" title="${esc(h.chip_variant ?? '')}">
-    <span class="seg-mem">${h.unified_memory_gb} GB</span>
-    <span class="seg-price">${price}</span>
-  </button>`;
-}
 
 /* ---------------- controls ---------------- */
 
@@ -193,8 +195,8 @@ function renderModels(state: State, data: Dataset, view: View) {
       return `<span class="chip"><i class="dot dot-${k}"></i>${esc(label)}</span>`;
     })
     .join('');
-  $('#fit-summary').innerHTML = `<span class="chips"><span class="chip"><b>${fits}</b> of ${data.models.length} fit in ${hw.usable_memory_gb ?? '?'} GB</span>${legend}</span>`;
-  $('#models').innerHTML = list || `<p class="m-empty">Nothing in this family fits ${esc(hardwareLabel(hw))} at ${fmtCtx(state.ctx)} context.</p>`;
+  $('#fit-summary').innerHTML = `<span class="chips"><span class="chip"><b>${fits}</b> of ${view.rows.length} fit in ${hw.usable_memory_gb ?? '?'} GB usable</span>${legend}</span>`;
+  $('#models').innerHTML = list || `<p class="m-empty">No models in this family.</p>`;
 }
 
 function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, data: Dataset, view: View): string {
@@ -221,7 +223,7 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
     price,
   ].filter(Boolean).join('');
 
-  const reason = fit.status === 'fits' ? '' : `<p class="m-reason">${fit.status === 'nearly' ? 'Nearly fits' : fit.status === 'context' ? 'Past its context limit' : 'Unknown'} — ${esc(fit.reason)}.</p>`;
+  const reason = fit.status === 'fits' ? '' : `<p class="m-reason">${fit.status === 'nearly' ? 'Nearly fits' : fit.status === 'context' ? 'Past its context limit' : fit.status === 'no' ? 'Doesn’t fit' : 'Unknown'} — ${esc(fit.reason)}.</p>`;
   const sources = selected ? `<p class="m-src">Sources: ${sourcesLine(m, view, data)}</p>` : '';
 
   return `<div class="model${selected ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}" role="radio" aria-checked="${selected}" tabindex="${disabled ? -1 : 0}" data-model="${esc(m.id)}"${disabled ? ' aria-disabled="true"' : ''}>

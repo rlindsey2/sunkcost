@@ -75,6 +75,11 @@ $<HTMLSelectElement>('#chip').addEventListener('change', (e) => {
   const pick = same.find((h) => h.unified_memory_gb === view.hw.unified_memory_gb) ?? same.find((h) => h.price_usd != null) ?? same[0];
   if (pick) update({ hw: pick.id, price: null });
 });
+$<HTMLSelectElement>('#memory').addEventListener('change', (e) => {
+  const wrap = document.querySelector<HTMLElement>('#price-wrap');
+  if (wrap) delete wrap.dataset.open;
+  update({ hw: (e.target as HTMLSelectElement).value, price: null });
+});
 $<HTMLSelectElement>('#model-family').addEventListener('change', (e) => update({ family: (e.target as HTMLSelectElement).value }));
 $<HTMLSelectElement>('#model-sort').addEventListener('change', (e) => update({ sort: (e.target as HTMLSelectElement).value }));
 $<HTMLInputElement>('#price').addEventListener('input', (e) => {
@@ -84,9 +89,18 @@ $<HTMLInputElement>('#price').addEventListener('input', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model],#price-reset');
+  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model],#price-reset,#price-toggle');
+  if (t?.id === 'price-toggle') {
+    const wrap = document.querySelector<HTMLElement>('#price-wrap')!;
+    wrap.dataset.open = '1';
+    wrap.hidden = false;
+    document.querySelector<HTMLInputElement>('#price')?.focus();
+    return;
+  }
   if (!t) return;
   if (t.id === 'price-reset') {
+    const wrap = document.querySelector<HTMLElement>('#price-wrap');
+    if (wrap) delete wrap.dataset.open;
     update({ price: null });
     return;
   }

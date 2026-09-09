@@ -57,7 +57,7 @@ The palette comes from bathymetric charts: paper at the surface, graduated blues
 
 The break-even card is one body of water rather than a chart in a box. The sky, the surface and the deep run edge to edge, and the verdict is written on the water itself, so the picture and the number are a single object you can screenshot. The window always frames the whole climb: the curve rises from the purchase to the moment it breaks the surface, however far away that is, and the time axis carries the scale. Only when it never pays back does the window fall back to a fixed span, and the flat line is the message.
 
-Layout is a three-column app shell on wide screens (configuration, model list, verdict), two columns on laptops, and a single column on phones with a persistent bar that keeps the verdict in reach while you scroll. Both themes are real: tokens define light on `:root`, dark under `prefers-color-scheme` and under `[data-theme]` so the toggle wins either way. Every text-on-background pair was measured against WCAG AA and the neutral ramp darkened until it passed.
+Layout: the machine is a sentence, everything else hangs off it. "I'm looking at a [Mac Studio], the [M5 Max] with [64 GB] of memory" — three inline selects — with the list price and an "I paid something else" toggle as a clause beneath. Under that, two columns: on the left the water with the verdict, then the usage card (use case, tokens a day, context window) so you can drag a slider and watch the curve move, then the figures and the working; on the right every model, the ones that fit first and the ones that don't greyed with the reason, scrolling on its own. On a phone the columns stack in that order.
 
 ## What the page shows
 

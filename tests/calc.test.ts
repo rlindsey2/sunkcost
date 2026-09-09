@@ -140,7 +140,10 @@ describe('computeView on real data', () => {
     expect(v.model).not.toBeNull();
     expect(v.calc).not.toBeNull();
     expect(['surfaces', 'never']).toContain(v.verdict.kind);
-    expect(v.rows.every((r) => r.fit.status !== 'no')).toBe(true);
+    // every model is listed; the ones that don't fit come after the ones that do
+    expect(v.rows.some((r) => r.fit.status === 'no')).toBe(true);
+    const lastFit = v.rows.map((r) => r.fit.status === 'fits').lastIndexOf(true);
+    expect(v.rows.slice(0, lastFit + 1).every((r) => r.fit.status === 'fits')).toBe(true);
   });
   it('falls back to a model that fits when the URL model does not', () => {
     const v = computeView(parseState('?hw=mac-mini-m6-16&m=qwen3-235b-a22b-2507-q4', data), data);

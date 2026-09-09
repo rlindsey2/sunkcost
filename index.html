@@ -42,42 +42,48 @@
     </div>
   </header>
 
-  <div class="app">
-    <aside class="config" aria-label="Configuration">
-      <section class="card" aria-labelledby="h-machine">
-        <h2 class="card-title" id="h-machine"><span class="step">1</span> Your machine</h2>
-        <div class="card-body stack">
-          <div class="row-2">
-            <label class="field"><span class="label">Device</span>
-              <span class="select"><select id="family" aria-label="Device family"></select></span>
-            </label>
-            <label class="field"><span class="label">Chip or system</span>
-              <span class="select"><select id="chip" aria-label="Chip or system"></select></span>
-            </label>
-          </div>
-          <div class="field">
-            <span class="label">Memory</span>
-            <div id="configs" class="segmented" role="radiogroup" aria-label="Memory configurations"></div>
-          </div>
-          <label class="field"><span class="label">What you paid <span class="label-hint">optional</span></span>
-            <span class="money"><b aria-hidden="true">$</b><input type="number" id="price" min="1" step="1" inputmode="numeric" aria-describedby="price-note" /></span>
-          </label>
-          <p class="note" id="price-note"></p>
-          <p class="note dim" id="hw-status"></p>
-        </div>
-      </section>
+  <section class="sentence" aria-labelledby="h-machine">
+    <h2 class="sr-only" id="h-machine">Your machine</h2>
+    <p class="sentence-line">
+      <span>I’m looking at a</span>
+      <span class="inline-select"><select id="family" aria-label="Device family"></select></span>
+      <span>, the</span>
+      <span class="inline-select"><select id="chip" aria-label="Chip or system"></select></span>
+      <span>with</span>
+      <span class="inline-select"><select id="memory" aria-label="Memory"></select></span>
+      <span>of memory.</span>
+    </p>
+    <p class="sentence-meta">
+      <span id="price-line"></span>
+      <span class="money money-inline" id="price-wrap" hidden><b aria-hidden="true">$</b><input type="number" id="price" min="1" step="1" inputmode="numeric" aria-label="What you paid" placeholder="what you paid" /></span>
+      <span class="dim" id="hw-status"></span>
+    </p>
+  </section>
 
-      <section class="card" aria-labelledby="h-usage">
-        <h2 class="card-title" id="h-usage"><span class="step">2</span> How you'd use it</h2>
-        <div class="card-body stack">
+  <div class="app">
+    <main class="pane pane-verdict" aria-labelledby="h-breakeven">
+      <h2 class="sr-only" id="h-breakeven">The break-even</h2>
+      <div class="hero" id="hero">
+        <div class="hero-water" id="hero-water">
+          <div id="waterline" class="hero-chart" aria-hidden="false"></div>
+          <div class="hero-content">
+            <div id="verdict"></div>
+            <div class="actions">
+              <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
+              <button class="btn" id="download-card" type="button">Download card</button>
+              <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="card usage" aria-labelledby="h-usage">
+        <h2 class="sr-only" id="h-usage">How you’d use it</h2>
+        <div class="card-body usage-grid">
           <label class="field"><span class="label">Mostly for</span>
             <span class="select"><select id="usecase" aria-label="Use case"></select></span>
-          </label>
-          <div class="field" id="ratio-custom" hidden>
-            <label class="label" for="ratio">Custom input to output ratio</label>
-            <input type="range" id="ratio" step="0.25" aria-describedby="ratio-readout" />
             <p class="readout" id="ratio-readout" aria-live="polite"></p>
-          </div>
+          </label>
           <div class="field">
             <label class="label" for="usage">Tokens a day</label>
             <input type="range" id="usage" aria-describedby="usage-readout" />
@@ -87,6 +93,12 @@
             <label class="label" for="ctxslider">Context window you want</label>
             <input type="range" id="ctxslider" aria-describedby="ctx-readout" />
             <p class="readout" id="ctx-readout" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="card-body usage-more">
+          <div class="field" id="ratio-custom" hidden>
+            <label class="label" for="ratio">Custom input to output ratio</label>
+            <input type="range" id="ratio" step="0.25" aria-describedby="ratio-readout" />
           </div>
           <details class="disclose">
             <summary>Assumptions you can change</summary>
@@ -101,55 +113,36 @@
           </details>
         </div>
       </section>
-    </aside>
 
-    <main class="results">
-      <section id="zone-fits" class="pane pane-models" aria-labelledby="h-fits">
-        <header class="pane-head">
-          <h2 class="pane-title" id="h-fits"><span class="step">3</span> What fits</h2>
-          <div class="pane-tools">
-            <span class="select select-sm"><select id="model-family" aria-label="Filter by model family"></select></span>
-            <span class="select select-sm"><select id="model-sort" aria-label="Sort models"></select></span>
-          </div>
-        </header>
-        <p class="legend" id="fit-summary"></p>
-        <div id="models" class="model-list" role="radiogroup" aria-label="Models that fit" tabindex="0"></div>
-        <p class="note dim pane-foot">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If one looks wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
-      </section>
-
-      <section id="zone-breakeven" class="pane pane-verdict" aria-labelledby="h-breakeven">
-        <header class="pane-head">
-          <h2 class="pane-title" id="h-breakeven"><span class="step">4</span> The break-even</h2>
-        </header>
-
-        <div class="hero" id="hero">
-          <div class="hero-water" id="hero-water">
-            <div id="waterline" class="hero-chart" aria-hidden="false"></div>
-            <div class="hero-content">
-              <div id="verdict"></div>
-              <div class="actions">
-                <button class="btn btn-primary" id="copy-link" type="button">Copy link</button>
-                <button class="btn" id="download-card" type="button">Download card</button>
-                <a class="btn" id="share-x" href="#" target="_blank" rel="noopener">Post on X</a>
-              </div>
-            </div>
-          </div>
-          <div class="hero-body stack">
-            <div class="figures" id="figures"></div>
-            <div id="smarts"></div>
-            <div id="time-cost"></div>
-            <details class="disclose">
-              <summary>How this is calculated</summary>
-              <div id="math"></div>
-            </details>
-            <section class="fineprint">
-              <h3>The small print that isn't small</h3>
-              <ul id="small-print"></ul>
-            </section>
-          </div>
+      <section class="card" id="zone-breakeven" aria-label="The figures">
+        <div class="card-body stack">
+          <div class="figures" id="figures"></div>
+          <div id="smarts"></div>
+          <div id="time-cost"></div>
+          <details class="disclose">
+            <summary>How this is calculated</summary>
+            <div id="math"></div>
+          </details>
+          <section class="fineprint">
+            <h3>The small print that isn't small</h3>
+            <ul id="small-print"></ul>
+          </section>
         </div>
       </section>
     </main>
+
+    <aside id="zone-fits" class="pane pane-models" aria-labelledby="h-fits">
+      <header class="pane-head">
+        <h2 class="pane-title" id="h-fits">What fits</h2>
+        <div class="pane-tools">
+          <span class="select select-sm"><select id="model-family" aria-label="Filter by model family"></select></span>
+          <span class="select select-sm"><select id="model-sort" aria-label="Sort models"></select></span>
+        </div>
+      </header>
+      <p class="legend" id="fit-summary"></p>
+      <div id="models" class="model-list" role="radiogroup" aria-label="Models" tabindex="0"></div>
+      <p class="note dim pane-foot">Capability ratings and the frontier comparison are a judgement call informed by public benchmarks, coarse on purpose. If one looks wrong, <a id="corrections" href="#" rel="noopener">tell us</a>.</p>
+    </aside>
   </div>
 
   <div class="minibar" id="minibar" hidden>

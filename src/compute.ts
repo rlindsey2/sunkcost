@@ -59,8 +59,9 @@ export function computeView(state: State, data: Dataset): View {
     throughput: resolveThroughput(m, hw, data.throughput, d, state.ctx),
   }));
   const order: Record<string, number> = { fits: 0, nearly: 1, context: 2, unknown: 3, no: 4 };
+  // every model stays in the list — the ones that don't fit are greyed with the reason, so a
+  // buyer can see what a bigger memory tier would unlock without changing anything
   const visible = all
-    .filter((r) => r.fit.status !== 'no')
     .filter((r) => !state.family || r.model.family === state.family)
     .sort(comparator(state.sort, order, state.ratio));
   const hiddenCount = all.length - visible.length;
@@ -70,10 +71,10 @@ export function computeView(state: State, data: Dataset): View {
   const chosen = visible.find((r) => r.model.id === state.model && r.fit.status === 'fits');
   if (chosen) model = chosen.model;
   else {
-    // auto-pick: the largest rated model that fits; unrated models only if nothing else does
+    // auto-pick: the first model that fits in the current sort order, so "smartest first"
+    // really does put the smartest one in the water
     const fits = visible.filter((r) => r.fit.status === 'fits');
-    const rated = fits.filter((r) => !Object.values(r.model.capabilities).includes('unknown'));
-    model = (rated[0] ?? fits[0])?.model ?? null;
+    model = fits[0]?.model ?? null;
   }
 
   const row = model ? all.find((r) => r.model.id === model!.id)! : null;

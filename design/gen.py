@@ -163,70 +163,100 @@ FIT_MODELS = [
  ('Llama 3.1 8B', 'Q4_K_M', '75', 'Below hosted', 1, 'garrr', 'never', '9.2 GB', '$0.02 / $0.04', 7, False),
 ]
 
-# ---------------- A · Say it in a sentence ----------------
+# ---------------- A · Say it in a sentence (chosen, refined) ----------------
+def slider(label, readout, frac, ticks, color=None):
+    color = color or T['w3']
+    return f"""<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;"><span style="font-size: 11.5px; font-weight: 500; color: {T['muted']};">{label}</span><span style="font-size: 12.5px; color: {T['ink2']};">{readout}</span></div>
+  <div style="position: relative; height: 18px;"><div style="position: absolute; left: 0; right: 0; top: 8px; height: 3px; border-radius: 2px; background: {T['line2']};"></div><div style="position: absolute; left: 0; width: {frac}%; top: 8px; height: 3px; border-radius: 2px; background: {color};"></div><div style="position: absolute; left: {frac}%; top: 1px; width: 16px; height: 16px; border-radius: 50%; background: {color}; box-shadow: 0 0 0 3px #fff, 0 1px 3px rgba(0,0,0,0.3); transform: translateX(-50%);"></div></div>
+  <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: {T['faint']};">{''.join(f'<span>{t}</span>' for t in ticks)}</div>
+</div>"""
+
+def model_row(name, q, tps, smart, tier, caps, be, gb, price, sel=False, status='fits', reason=''):
+    dim = status != 'fits'
+    return f"""<div style="background: {T['panel']}; border: 1px solid {T['ink'] if sel else T['line']}; border-radius: 10px; padding: 11px 13px; display: flex; flex-direction: column; gap: 6px; {'box-shadow: inset 3px 0 0 ' + T['ink'] + ';' if sel else ''} {'opacity: 0.55; background: transparent;' if dim else ''}">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px;">
+    <div style="display: flex; align-items: baseline; gap: 7px; min-width: 0;"><span style="font-size: 14px; font-weight: 600; letter-spacing: -0.012em; white-space: nowrap;">{name}</span><span class="mono" style="font-size: 11px; color: {T['faint']};">{q}</span></div>
+    <div class="mono" style="font-size: 12.5px; white-space: nowrap;">{tps if dim else tps + ' tok/s'}</div>
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: {T['muted']};">
+    <div style="display: flex; align-items: center; gap: 7px;">{tier_bar(tier)}<span>{smart}</span></div>
+    {dots(caps)}
+  </div>
+  <div style="display: flex; justify-content: space-between; font-size: 12px; color: {T['muted']};"><span class="mono">{gb} at 32k</span><span class="mono" style="{'color:' + T['bad'] + ';' if be == 'never' else ''}">{'pays back in ' + be if be != 'never' else 'never pays back'}</span></div>
+  {f'<div style="font-size: 12px; color: {T["accentInk"]};">{reason}</div>' if reason else ''}
+</div>"""
+
+NOFIT = [
+ ('Llama 3.3 70B', 'Q4_K_M', '—', 'Below hosted', 1, 'gggaa', '—', '53 GB', '', 'nearly', 'Nearly: needs 53 GB, this config has 48 GB usable'),
+ ('gpt-oss-120b', 'MXFP4', '—', 'Haiku-class', 2, 'gagga', '—', '65 GB', '', 'nearly', 'Nearly: needs 65 GB, this config has 48 GB usable'),
+ ('GLM-4.5-Air', 'Q4_K_M', '—', 'Below hosted', 1, 'gggag', '—', '79 GB', '', 'no', 'Needs 79 GB'),
+ ('Qwen3 235B-A22B', 'Q4_K_M', '—', 'Below hosted', 1, 'ggggа', '—', '148 GB', '', 'no', 'Needs 148 GB'),
+]
+
 def sentence_desktop():
     W, H = 1440, 900
-    sentence = f'''<div style="font-size: 26px; line-height: 1.55; letter-spacing: -0.02em; color: {T['ink2']}; max-width: 1180px; text-wrap: pretty;">
-I'm looking at a {inline_select('Mac Studio M5 Max, 64GB')} for {inline_select('agentic coding')}, around {inline_select('500k tokens a day')} with a {inline_select('32k')} context window.
-<span style="color: {T['faint']}; font-size: 15px; letter-spacing: 0; margin-left: 10px; white-space: nowrap;">List price $3,499 · <a href="#" style="color: {T['w3']};">I paid something else</a></span>
-</div>'''
-    picks = [
-      ('Smartest that fits', 'Qwen3.8 27B', 'Sonnet-class · 52 on the intelligence index', '25 tok/s', 'You’re underwater for 27 years.', 3, True),
-      ('Fastest that fits', 'Qwen3.6 35B-A3B', 'Haiku-class · 32 on the index', '73 tok/s', 'Underwater for 1,048 years.', 2, False),
-      ('Best coder that fits', 'Qwen3-Coder 30B-A3B', 'Below every hosted tier · 14', '35 tok/s', 'Underwater for 360 years.', 1, False),
-    ]
-    cards = ''
-    for label, name, smart, tps, verdict, tier, sel in picks:
-        bd = T['ink'] if sel else T['line']
-        cards += f'''<div style="flex: 1 1 0; background: {T['panel']}; border: 1px solid {bd}; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);{' box-shadow: inset 3px 0 0 ' + T['ink'] + ';' if sel else ''}">
-  <div style="font-size: 11.5px; font-weight: 500; color: {T['muted']}; letter-spacing: 0.01em;">{label}</div>
-  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;">
-    <div style="font-size: 17px; font-weight: 600; letter-spacing: -0.014em;">{name}</div>
-    <div class="mono" style="font-size: 13px; color: {T['ink2']};">{tps}</div>
+    sentence = f"""<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 24px; flex-wrap: wrap;">
+  <div style="font-size: 26px; line-height: 1.5; letter-spacing: -0.02em; color: {T['ink2']}; text-wrap: pretty;">
+    I'm looking at a {inline_select('Mac Studio')} with an {inline_select('M5 Max')} and {inline_select('64 GB')} of memory.
   </div>
-  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {T['muted']};">{tier_bar(tier)}<span>{smart}</span></div>
-  <div style="font-size: 13.5px; color: {T['ink']}; border-top: 1px solid {T['line']}; padding-top: 10px;">{verdict}</div>
-</div>'''
-    body = f'''<div style="width: {W}px; height: {H}px; background: {T['bg']}; display: flex; flex-direction: column; overflow: hidden;">
+  <div style="color: {T['faint']}; font-size: 14px; white-space: nowrap;">List price <span class="mono" style="color: {T['ink2']};">$3,499</span> · <a href="#">I paid something else</a> · 614 GB/s · 48 GB usable by the GPU</div>
+</div>"""
+    controls = f"""<div style="background: {T['panel']}; border: 1px solid {T['line']}; border-radius: 14px; padding: 14px 16px; display: grid; grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start;">
+  <div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 11.5px; font-weight: 500; color: {T['muted']};">Mostly for</span><div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 9px; border-radius: 7px; border: 1px solid {T['line2']}; background: {T['panel2']}; font-size: 13px;">Agentic coding · 15:1<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="{T['muted']}" stroke-width="1.6"><path d="M3 4.5l3 3 3-3"/></svg></div><span style="font-size: 11.5px; color: {T['faint']};">Whole files and tool results resent every turn</span></div>
+  {slider('Tokens a day', '<b class="mono" style="color:' + T['ink'] + '">500k</b> — a moderate coding-assistant day', 46, ['a few chats','light use','heavy agent use','agents all day'])}
+  {slider('Context window', '<b class="mono" style="color:' + T['ink'] + '">32k</b> — 2.1 GB of KV cache for Qwen3.8 27B', 50, ['4k','16k','64k','256k'])}
+</div>"""
+    stats = f"""<div style="background: {T['panel']}; border: 1px solid {T['line']}; border-radius: 14px; padding: 16px 18px;">
+  {figures([('Hardware','$3,499','list price'),('API cost per month','$11.51','Qwen3.8 27B on OpenRouter'),('Electricity per month','$0.84','145 W under load'),('Local speed','25 tok/s','estimated, at 32k'),('Break-even','27 years','4.99B tokens'),('After 12 months','−$3,371','still underwater')], cols=3, size=20)}
+</div>"""
+    rows = ''.join(model_row(*m[:9], sel=m[10]) for m in FIT_MODELS[:6])
+    rows += ''.join(model_row(*m[:9], status=m[9], reason=m[10]) for m in NOFIT[:2])
+    right = f"""<div style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+    <div style="font-size: 13px; font-weight: 600;">16 of 23 models fit in 48 GB</div>
+    <div style="display: flex; gap: 6px;">{pill('All families')}{pill('Smartest first', True)}</div>
+  </div>
+  <div style="display: flex; gap: 10px; font-size: 11.5px; color: {T['faint']}; flex-wrap: wrap;">{''.join(f'<span style="display:inline-flex;align-items:center;gap:4px;"><i style="width:8px;height:8px;border-radius:50%;background:{c};display:inline-block;"></i>{l}</span>' for c, l in [(T['ok'],'good'),(T['warn'],'usable'),(T['bad'],"don't"),(T['none'],'not rated')])}<span>· summarise, translate, coding, reasoning, agentic</span></div>
+  <div style="display: flex; flex-direction: column; gap: 8px; overflow: hidden; position: relative;">{rows}
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 90px; background: linear-gradient(180deg, transparent, {T['bg']});"></div>
+  </div>
+</div>"""
+    body = f"""<div style="width: {W}px; height: {H}px; background: {T['bg']}; display: flex; flex-direction: column; overflow: hidden;">
 {topbar()}
-<div style="padding: 26px 40px 0; display: flex; flex-direction: column; gap: 22px; flex: 1 1 auto; min-height: 0;">
+<div style="padding: 22px 32px 0; display: flex; flex-direction: column; gap: 18px; flex: 1 1 auto; min-height: 0;">
   {sentence}
-  <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: start;">
-    {hero_card(770, 470, 300, 'You’re underwater for 27.3 years.', 'Saving $0.35 a day against the API, on $3,499 of hardware.', 'Mac Studio M5 Max, 64GB · Qwen3.8 27B Q4_K_M · 500k tokens/day, 15:1 input:output')}
+  <div style="display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 22px; align-items: start; min-height: 0;">
     <div style="display: flex; flex-direction: column; gap: 14px;">
-      <div style="display: flex; align-items: baseline; justify-content: space-between;">
-        <div style="font-size: 13px; font-weight: 600;">Three models worth running on it</div>
-        <a href="#" style="font-size: 12.5px;">See all 16 that fit</a>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 10px;">{cards}</div>
+      {hero_card(806, 380, 225, 'You’re underwater for 27.3 years.', 'Saving $0.35 a day against the API, on $3,499 of hardware.', 'Mac Studio M5 Max, 64GB · Qwen3.8 27B Q4_K_M · 500k tokens/day, 15:1 input:output', hsize=36)}
+      {controls}
+      {stats}
     </div>
-  </div>
-  <div style="background: {T['panel']}; border: 1px solid {T['line']}; border-radius: 14px; padding: 16px 18px;">
-    {figures([('Hardware','$3,499',''),('API cost per month','$11.51','Qwen3.8 27B on OpenRouter'),('Electricity per month','$0.84','145 W under load'),('Local speed','25 tok/s','estimated'),('Break-even','27 years','4.99B tokens'),('After 12 months','−$3,371','still underwater')], cols=6)}
+    {right}
   </div>
 </div>
-</div>'''
+</div>"""
     return shell(body)
 
 def sentence_mobile():
     W, H = 390, 844
-    body = f'''<div style="width: {W}px; height: {H}px; background: {T['bg']}; display: flex; flex-direction: column; overflow: hidden;">
+    rows = ''.join(model_row(*m[:9], sel=m[10]) for m in FIT_MODELS[:2])
+    body = f"""<div style="width: {W}px; height: {H}px; background: {T['bg']}; display: flex; flex-direction: column; overflow: hidden;">
 {topbar_mobile()}
-<div style="padding: 18px 16px 0; display: flex; flex-direction: column; gap: 16px;">
+<div style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 14px;">
   <div style="font-size: 20px; line-height: 1.6; letter-spacing: -0.02em; color: {T['ink2']}; text-wrap: pretty;">
-    I'm looking at a {inline_select('Mac Studio M5 Max, 64GB')} for {inline_select('agentic coding')}, around {inline_select('500k tokens a day')}.
+    I'm looking at a {inline_select('Mac Studio')} with an {inline_select('M5 Max')} and {inline_select('64 GB')} of memory. <span style="font-size: 13px; color: {T['faint']}; letter-spacing: 0;">$3,499 list · <a href="#">I paid less</a></span>
   </div>
-  {hero_card(358, 400, 232, 'You’re underwater for 27.3 years.', 'Saving $0.35 a day against the API, on $3,499.', 'Qwen3.8 27B · 500k tokens/day · 15:1', hsize=30, pad=16, axis=('bought','10 yr','20 yr','30 yr'))}
-  <div style="display: flex; align-items: baseline; justify-content: space-between;">
-    <div style="font-size: 13px; font-weight: 600;">Running Qwen3.8 27B</div>
-    <a href="#" style="font-size: 12.5px;">Change · 16 fit</a>
+  {hero_card(358, 330, 190, 'You’re underwater for 27.3 years.', 'Saving $0.35 a day on $3,499.', 'Qwen3.8 27B · 500k tokens/day · 15:1', hsize=28, pad=16, actions=False)}
+  <div style="background: {T['panel']}; border: 1px solid {T['line']}; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px;">
+    {slider('Tokens a day', '<b class="mono" style="color:' + T['ink'] + '">500k</b> · agentic coding', 46, ['few chats','light','heavy','all day'])}
+    {slider('Context window', '<b class="mono" style="color:' + T['ink'] + '">32k</b> · 2.1 GB KV', 50, ['4k','16k','64k','256k'])}
   </div>
-  <div style="background: {T['panel']}; border: 1px solid {T['line']}; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
-    <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: {T['muted']};">{tier_bar(3)}<span>Sonnet-class · about Claude Sonnet 5</span></div>
-    {figures([('API / month','$11.51',''),('Speed','25 tok/s','estimated'),('Break-even','27 yrs','')], cols=3, size=17)}
-  </div>
+  <div style="background: {T['panel']}; border: 1px solid {T['line']}; border-radius: 14px; padding: 14px 16px;">{figures([('Hardware','$3,499',''),('API / month','$11.51',''),('Speed','25 tok/s',''),('Break-even','27 yrs','')], cols=2, size=17)}</div>
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 13px; font-weight: 600;">16 of 23 models fit</div><div style="font-size: 12px; color: {T['muted']};">Smartest first</div></div>
+  <div style="display: flex; flex-direction: column; gap: 8px;">{rows}</div>
 </div>
-</div>'''
+</div>"""
     return shell(body)
 
 # ---------------- B · Verdict first ----------------
@@ -455,24 +485,25 @@ for k, v in files.items(): open(k, 'w').write(v)
 
 X = [0, 1560, 3120, 4680]
 canvas = {
+ "pages": [{"id": "chosen", "name": "A · Sentence (chosen)"}, {"id": "explore", "name": "Explorations B–D"}],
  "artboards": [
-  {"file": "Main.dc.html", "title": "A · Say it in a sentence — desktop", "x": X[0], "y": 0, "w": 1440, "h": 900},
-  {"file": "SentenceMobile.dc.html", "title": "A · Say it in a sentence — mobile", "x": X[0], "y": 1040, "w": 390, "h": 844},
-  {"file": "VerdictFirstDesktop.dc.html", "title": "B · Verdict first — desktop", "x": X[1], "y": 0, "w": 1440, "h": 900},
-  {"file": "VerdictFirstMobile.dc.html", "title": "B · Verdict first — mobile", "x": X[1], "y": 1040, "w": 390, "h": 844},
-  {"file": "LedgerDesktop.dc.html", "title": "C · The ledger — desktop", "x": X[2], "y": 0, "w": 1440, "h": 900},
-  {"file": "LedgerMobile.dc.html", "title": "C · The ledger — mobile", "x": X[2], "y": 1040, "w": 390, "h": 844},
-  {"file": "GuidedDesktop.dc.html", "title": "D · Guided — desktop (step 2 of 4)", "x": X[3], "y": 0, "w": 1440, "h": 900},
-  {"file": "GuidedMobile.dc.html", "title": "D · Guided — mobile (step 4 of 4)", "x": X[3], "y": 1040, "w": 390, "h": 844},
+  {"file": "Main.dc.html", "title": "A · Say it in a sentence — desktop", "x": 0, "y": 0, "w": 1440, "h": 900, "page": "chosen"},
+  {"file": "SentenceMobile.dc.html", "title": "A · Say it in a sentence — mobile", "x": 1560, "y": 0, "w": 390, "h": 844, "page": "chosen"},
+  {"file": "VerdictFirstDesktop.dc.html", "title": "B · Verdict first — desktop", "x": X[1], "y": 0, "w": 1440, "h": 900, "page": "explore"},
+  {"file": "VerdictFirstMobile.dc.html", "title": "B · Verdict first — mobile", "x": X[1], "y": 1040, "w": 390, "h": 844, "page": "explore"},
+  {"file": "LedgerDesktop.dc.html", "title": "C · The ledger — desktop", "x": X[2], "y": 0, "w": 1440, "h": 900, "page": "explore"},
+  {"file": "LedgerMobile.dc.html", "title": "C · The ledger — mobile", "x": X[2], "y": 1040, "w": 390, "h": 844, "page": "explore"},
+  {"file": "GuidedDesktop.dc.html", "title": "D · Guided — desktop (step 2 of 4)", "x": X[3], "y": 0, "w": 1440, "h": 900, "page": "explore"},
+  {"file": "GuidedMobile.dc.html", "title": "D · Guided — mobile (step 4 of 4)", "x": X[3], "y": 1040, "w": 390, "h": 844, "page": "explore"},
  ],
  "annotations": [
-  {"id": "brief", "x": 0, "y": -300, "w": 520, "text": "Four ways to make Sunk Cost feel calm. Each attacks the overwhelm along a different axis. All use the current tokens: Instrument Sans, Plex Mono, the bathymetric blues, one warm accent for the moment you surface.\n\nThe real numbers are from the live tool: Mac Studio M5 Max 64GB at $3,499 running Qwen3.8 27B, 500k tokens a day at 15:1."},
-  {"id": "a-note", "x": 0, "y": -150, "w": 460, "text": "A · Say it in a sentence\nAxis: language over controls. The whole configuration is one editable sentence; the long model list collapses to three picks with a reason each.\nTradeoff: the tail of 16 models is behind a click, so scanning everything takes an extra step."},
-  {"id": "b-note", "x": X[1], "y": -150, "w": 460, "text": "B · Verdict first\nAxis: hierarchy. The water fills the first screen and the configuration lives inside it as pills. Everything else is one quiet reading column below, no cards.\nTradeoff: comparing models means scrolling away from the answer and back."},
-  {"id": "c-note", "x": X[2], "y": -150, "w": 460, "text": "C · The ledger\nAxis: density done calmly. One row per model, five columns, every model that fits on one screen without reading six lines per card. Verdict stays pinned on the right.\nTradeoff: least friendly for someone new to the topic; the sources and notes move behind a click."},
-  {"id": "d-note", "x": X[3], "y": -150, "w": 460, "text": "D · Guided\nAxis: progressive disclosure. Four steps, one question per screen, big targets. The answer is the last screen with a small carousel to try other models.\nTradeoff: more taps, and tweak-and-compare is slower than the live page."},
+  {"id": "a-note", "x": 0, "y": -170, "w": 560, "page": "chosen", "text": "A · Say it in a sentence — refined after review\nThe sentence is only about the machine: device, chip, memory, and what you paid. Tokens a day and the context window stay as sliders, beside the water, so you can drag and watch the curve move. The figures sit under the water on the left. The right column is every model, fits first, then the ones that nearly fit or don’t, greyed with the reason — it scrolls on its own."},
+  {"id": "brief", "x": 0, "y": -300, "w": 520, "page": "explore", "text": "The three directions not chosen, kept for reference. Each attacked the overwhelm along a different axis; the sticky note above each says which and what it costs."},
+  {"id": "b-note", "x": X[1], "y": -150, "w": 460, "page": "explore", "text": "B · Verdict first\nAxis: hierarchy. The water fills the first screen and the configuration lives inside it as pills. Everything else is one quiet reading column below, no cards.\nTradeoff: comparing models means scrolling away from the answer and back."},
+  {"id": "c-note", "x": X[2], "y": -150, "w": 460, "page": "explore", "text": "C · The ledger\nAxis: density done calmly. One row per model, five columns, every model that fits on one screen without reading six lines per card. Verdict stays pinned on the right.\nTradeoff: least friendly for someone new to the topic; the sources and notes move behind a click."},
+  {"id": "d-note", "x": X[3], "y": -150, "w": 460, "page": "explore", "text": "D · Guided\nAxis: progressive disclosure. Four steps, one question per screen, big targets. The answer is the last screen with a small carousel to try other models.\nTradeoff: more taps, and tweak-and-compare is slower than the live page."},
  ],
- "launch": {"view": "canvas"}
+ "launch": {"view": "canvas", "page": "chosen"}
 }
 json.dump(canvas, open('canvas.json', 'w'), indent=2)
 print('wrote', len(files), 'artboards')
