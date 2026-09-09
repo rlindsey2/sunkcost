@@ -1,0 +1,108 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "A \u00b7 Say it in a sentence \u2014 desktop",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "SentenceMobile.dc.html",
+      "title": "A \u00b7 Say it in a sentence \u2014 mobile",
+      "x": 0,
+      "y": 1040,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "VerdictFirstDesktop.dc.html",
+      "title": "B \u00b7 Verdict first \u2014 desktop",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "VerdictFirstMobile.dc.html",
+      "title": "B \u00b7 Verdict first \u2014 mobile",
+      "x": 1560,
+      "y": 1040,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "LedgerDesktop.dc.html",
+      "title": "C \u00b7 The ledger \u2014 desktop",
+      "x": 3120,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "LedgerMobile.dc.html",
+      "title": "C \u00b7 The ledger \u2014 mobile",
+      "x": 3120,
+      "y": 1040,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "GuidedDesktop.dc.html",
+      "title": "D \u00b7 Guided \u2014 desktop (step 2 of 4)",
+      "x": 4680,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "GuidedMobile.dc.html",
+      "title": "D \u00b7 Guided \u2014 mobile (step 4 of 4)",
+      "x": 4680,
+      "y": 1040,
+      "w": 390,
+      "h": 844
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -300,
+      "w": 520,
+      "text": "Four ways to make Sunk Cost feel calm. Each attacks the overwhelm along a different axis. All use the current tokens: Instrument Sans, Plex Mono, the bathymetric blues, one warm accent for the moment you surface.\n\nThe real numbers are from the live tool: Mac Studio M5 Max 64GB at $3,499 running Qwen3.8 27B, 500k tokens a day at 15:1."
+    },
+    {
+      "id": "a-note",
+      "x": 0,
+      "y": -150,
+      "w": 460,
+      "text": "A \u00b7 Say it in a sentence\nAxis: language over controls. The whole configuration is one editable sentence; the long model list collapses to three picks with a reason each.\nTradeoff: the tail of 16 models is behind a click, so scanning everything takes an extra step."
+    },
+    {
+      "id": "b-note",
+      "x": 1560,
+      "y": -150,
+      "w": 460,
+      "text": "B \u00b7 Verdict first\nAxis: hierarchy. The water fills the first screen and the configuration lives inside it as pills. Everything else is one quiet reading column below, no cards.\nTradeoff: comparing models means scrolling away from the answer and back."
+    },
+    {
+      "id": "c-note",
+      "x": 3120,
+      "y": -150,
+      "w": 460,
+      "text": "C \u00b7 The ledger\nAxis: density done calmly. One row per model, five columns, every model that fits on one screen without reading six lines per card. Verdict stays pinned on the right.\nTradeoff: least friendly for someone new to the topic; the sources and notes move behind a click."
+    },
+    {
+      "id": "d-note",
+      "x": 4680,
+      "y": -150,
+      "w": 460,
+      "text": "D \u00b7 Guided\nAxis: progressive disclosure. Four steps, one question per screen, big targets. The answer is the last screen with a small carousel to try other models.\nTradeoff: more taps, and tweak-and-compare is slower than the live page."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #eff2f1; color: #0e1720; font-family: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; font-feature-settings: 'ss01', 'cv01'; }
+    a { color: #1f5479; } a:hover { color: #0e1720; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    
+  </style>
+</helmet>
+<div style="width: 1440px; height: 900px; background: #eff2f1; display: flex; flex-direction: column; overflow: hidden;">
+<div style="display: flex; align-items: center; gap: 18px; height: 58px; padding: 0 22px; border-bottom: 1px solid #dfe5e6; background: #eff2f1;">
+  <div style="display: flex; align-items: center; gap: 8px; flex: none;">
+    <div style="width: 11px; height: 11px; border-radius: 2px; background: linear-gradient(180deg, #a8c7de 0 42%, #1f5479 42%, #05121e 100%); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);"></div>
+    <div style="font-weight: 700; font-size: 15px; letter-spacing: -0.02em;">Sunk Cost</div>
+    <div style="font-size: 12px; color: #5e6d77;">sunkcost.ai</div>
+  </div>
+  <div style="flex: 1 1 auto; min-width: 0; color: #4f5e68; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">If you buy this machine to run local models, how long until it pays for itself, and what can it actually do?</div>
+  <div style="font-size: 11.5px; color: #5e6d77; flex: none;" class="mono">Data checked 2026-09-03</div>
+</div>
+<div style="position: relative; width: 1440px; height: 560px; overflow: hidden; background: #05121e; color: #eef5fb;">
+  <div style="position: absolute; inset: 0;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 560" width="1440" height="560" preserveAspectRatio="xMidYMid slice" style="display:block;width:100%;height:100%;font-family:'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;"><defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dbe8f1"/><stop offset="1" stop-color="#eef4f8"/></linearGradient>
+<linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f5479"/><stop offset="0.55" stop-color="#123f60"/><stop offset="1" stop-color="#05121e"/></linearGradient>
+<linearGradient id="mass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9d3f2" stop-opacity="0.34"/><stop offset="1" stop-color="#a9d3f2" stop-opacity="0.03"/></linearGradient>
+<clipPath id="clip"><rect x="14" y="16" width="1412" height="333"/></clipPath>
+</defs><rect x="0" y="0" width="1440" height="82.6" fill="url(#sky)"/><rect x="0" y="82.6" width="1440" height="477.4" fill="url(#water)"/><line x1="0" x2="1440" y1="162.7" y2="162.7" stroke="#bcd4e6" stroke-opacity="0.13"/><text x="14" y="157.7" font-size="12.075" fill="#bcd4e6" opacity="0.6" class="mono">−$1,000</text><line x1="0" x2="1440" y1="242.9" y2="242.9" stroke="#bcd4e6" stroke-opacity="0.13"/><text x="14" y="237.9" font-size="12.075" fill="#bcd4e6" opacity="0.6" class="mono">−$2,000</text><line x1="0" x2="1440" y1="323.0" y2="323.0" stroke="#bcd4e6" stroke-opacity="0.13"/><text x="14" y="318.0" font-size="12.075" fill="#bcd4e6" opacity="0.6" class="mono">−$3,000</text><path clip-path="url(#clip)" d="M 14 349.0 L 14 339.0 L 1426.0 75.1 L 1426.0 349.0 Z" fill="url(#mass)"/><rect x="0" y="75.6" width="1440" height="7" fill="#9cc7ee" opacity="0.16"/><line x1="0" x2="1440" y1="82.6" y2="82.6" stroke="#9cc7ee" stroke-width="1.75"/><text x="14" y="74.6" font-size="11.5" font-weight="600" letter-spacing="0.8" fill="#2f6890" opacity="0.95">BREAK EVEN</text><line clip-path="url(#clip)" x1="14.0" y1="339.0" x2="1186.0" y2="82.6" stroke="#a9d3f2" stroke-opacity="0.28" stroke-width="9" stroke-linecap="round"/><line clip-path="url(#clip)" x1="14.0" y1="339.0" x2="1186.0" y2="82.6" stroke="#a9d3f2" stroke-width="3.25" stroke-linecap="round"/><line clip-path="url(#clip)" x1="1186.0" y1="82.6" x2="1426.0" y2="75.1" stroke="#f0a75a" stroke-opacity="0.28" stroke-width="9" stroke-linecap="round"/><line clip-path="url(#clip)" x1="1186.0" y1="82.6" x2="1426.0" y2="75.1" stroke="#f0a75a" stroke-width="3.25" stroke-linecap="round"/><circle cx="1186.0" cy="82.6" r="6" fill="#f0a75a" stroke="#fff" stroke-width="2"/><text x="1173.0" y="70.6" text-anchor="end" font-size="13.799999999999999" font-weight="600" fill="#2f6890">surfaces at 27.3 yrs</text><circle cx="14" cy="339.0" r="3.5" fill="#a9d3f2"/><text x="14.0" y="363.0" text-anchor="start" font-size="12.075" fill="#bcd4e6" opacity="0.55" class="mono">bought</text><text x="451.7" y="363.0" text-anchor="middle" font-size="12.075" fill="#bcd4e6" opacity="0.55" class="mono">10 yr</text><text x="889.4" y="363.0" text-anchor="middle" font-size="12.075" fill="#bcd4e6" opacity="0.55" class="mono">20 yr</text><text x="1327.2" y="363.0" text-anchor="middle" font-size="12.075" fill="#bcd4e6" opacity="0.55" class="mono">30 yr</text></svg></div>
+  <div style="position: absolute; top: 18px; left: 22px; right: 22px; z-index: 2; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+  <div style="font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; border: 1px solid #0e1720; background: #0e1720; color: #fff; white-space: nowrap;">Mac Studio M5 Max · 64GB · $3,499</div><div style="font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; border: 1px solid #0e1720; background: #0e1720; color: #fff; white-space: nowrap;">Qwen3.8 27B Q4_K_M</div><div style="font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; border: 1px solid #c6d0d3; background: #ffffff; color: #0e1720; white-space: nowrap;">Agentic coding · 15:1</div><div style="font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; border: 1px solid #c6d0d3; background: #ffffff; color: #0e1720; white-space: nowrap;">500k tokens a day</div><div style="font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; border: 1px solid #c6d0d3; background: #ffffff; color: #0e1720; white-space: nowrap;">32k context</div>
+  <div style="flex: 1 1 auto;"></div><div style="font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; border: 1px solid #c6d0d3; background: #ffffff; color: #0e1720; white-space: nowrap;">Paid a different price?</div>
+</div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 40px 34px; background: linear-gradient(180deg, transparent 0, rgba(5,18,30,0.5) 40%, rgba(5,18,30,0.85) 100%); display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 40px; align-items: end;">
+    <div>
+      <div style="font-size: 62px; line-height: 1; letter-spacing: -0.04em; font-weight: 600; color: #fff; text-wrap: balance; padding-top: 60px;">You’re underwater for 27.3 years.</div>
+      <div style="font-size: 17px; margin-top: 12px; color: #cfe0ee;">Saving $0.35 a day against the API, on $3,499 of hardware. Roughly Claude Sonnet 5 smarts at 25 tokens a second.</div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; color: #eef5fb;">
+      <div><div style="font-size: 12px; color: rgba(207,224,238,0.7);">Hardware</div><div class="mono" style="font-size: 22px; font-weight: 600;">$3,499</div></div><div><div style="font-size: 12px; color: rgba(207,224,238,0.7);">API per month</div><div class="mono" style="font-size: 22px; font-weight: 600;">$11.51</div></div><div><div style="font-size: 12px; color: rgba(207,224,238,0.7);">Local speed</div><div class="mono" style="font-size: 22px; font-weight: 600;">25 tok/s</div></div><div><div style="font-size: 12px; color: rgba(207,224,238,0.7);">After 12 months</div><div class="mono" style="font-size: 22px; font-weight: 600;">−$3,371</div></div>
+    </div>
+  </div>
+</div>
+<div style="padding: 34px 40px 0; display: grid; grid-template-columns: minmax(0, 1fr); max-width: 1100px;">
+  <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+    <div style="font-size: 15px; font-weight: 600;">What else fits in 48 GB</div>
+    <div style="display: flex; gap: 14px; font-size: 12.5px; color: #4f5e68;"><span>Sorted by smartest</span><span>All families</span><span>16 fit · 7 shown</span></div>
+  </div>
+  <div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; padding: 8px 0; font-size: 11.5px; color: #5e6d77; border-bottom: 1px solid #c6d0d3;"><div>Model</div><div>Speed at 32k</div><div>How smart</div><div>Good at</div><div>Pays back in</div></div>
+  <div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; font-weight: 600;">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>Qwen3.8 27B</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">Q4_K_M</span></div>
+  <div class="mono" style="font-size: 13px;">25 tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Sonnet-class</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">27 yrs</div>
+</div><div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; ">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>Qwen3.6 35B-A3B</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">Q4_K_M</span></div>
+  <div class="mono" style="font-size: 13px;">73 tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Haiku-class</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">1,048 yrs</div>
+</div><div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; ">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>Gemma 4 31B</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">Q4_K_M</span></div>
+  <div class="mono" style="font-size: 13px;">18 tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Haiku-class</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b6c0c5;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">412 yrs</div>
+</div><div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; ">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>gpt-oss-120b</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">MXFP4</span></div>
+  <div class="mono" style="font-size: 13px;">— tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Haiku-class</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">needs 64 GB</div>
+</div><div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; ">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>gpt-oss-20b</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">MXFP4</span></div>
+  <div class="mono" style="font-size: 13px;">64 tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Below hosted</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">1,048 yrs</div>
+</div><div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; ">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>Qwen3-Coder 30B-A3B</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">Q4_K_M</span></div>
+  <div class="mono" style="font-size: 13px;">35 tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Below hosted</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">360 yrs</div>
+</div><div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 150px 120px 110px; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #dfe5e6; ">
+  <div style="display: flex; align-items: baseline; gap: 8px;"><span>Qwen3 32B</span><span class="mono" style="font-size: 11.5px; color: #5e6d77; font-weight: 400;">Q4_K_M</span></div>
+  <div class="mono" style="font-size: 13px;">16 tok/s</div>
+  <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #4f5e68; font-weight: 400;"><div style="display: inline-grid; grid-template-columns: repeat(4, 20px); gap: 2px; vertical-align: middle;"><div style="height: 7px; border-radius: 2px; background: #1f5479;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div><div style="height: 7px; border-radius: 2px; background: #dfe5e6;"></div></div>Below hosted</div>
+  <div><div style="display: flex; gap: 4px; align-items: center;"><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #2c7a58;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: #b3831a;"></div></div></div>
+  <div class="mono" style="font-size: 13px; color: #35424e;">412 yrs</div>
+</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

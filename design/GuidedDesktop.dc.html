@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #eff2f1; color: #0e1720; font-family: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; font-feature-settings: 'ss01', 'cv01'; }
+    a { color: #1f5479; } a:hover { color: #0e1720; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    
+  </style>
+</helmet>
+<div style="width: 1440px; height: 900px; background: #eff2f1; display: flex; flex-direction: column; overflow: hidden;">
+<div style="display: flex; align-items: center; gap: 18px; height: 58px; padding: 0 22px; border-bottom: 1px solid #dfe5e6; background: #eff2f1;">
+  <div style="display: flex; align-items: center; gap: 8px; flex: none;">
+    <div style="width: 11px; height: 11px; border-radius: 2px; background: linear-gradient(180deg, #a8c7de 0 42%, #1f5479 42%, #05121e 100%); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);"></div>
+    <div style="font-weight: 700; font-size: 15px; letter-spacing: -0.02em;">Sunk Cost</div>
+    <div style="font-size: 12px; color: #5e6d77;">sunkcost.ai</div>
+  </div>
+  <div style="flex: 1 1 auto; min-width: 0; color: #4f5e68; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+  <div style="font-size: 11.5px; color: #5e6d77; flex: none;" class="mono">Data checked 2026-09-03</div>
+</div>
+<div style="padding: 28px 40px 0; display: flex; flex-direction: column; gap: 28px; flex: 1 1 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center;"><div style="display: flex; align-items: center; gap: 10px;"><div style="display: flex; align-items: center; gap: 8px;"><div class="mono" style="width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11.5px; font-weight: 600; background: #1f5479; color: #fff;">1</div><div style="font-size: 13px; color: #4f5e68; font-weight: 400;">Your machine</div></div><div style="width: 34px; height: 1px; background: #c6d0d3;"></div><div style="display: flex; align-items: center; gap: 8px;"><div class="mono" style="width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11.5px; font-weight: 600; background: #0e1720; color: #fff;">2</div><div style="font-size: 13px; color: #0e1720; font-weight: 600;">How you’d use it</div></div><div style="width: 34px; height: 1px; background: #c6d0d3;"></div><div style="display: flex; align-items: center; gap: 8px;"><div class="mono" style="width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11.5px; font-weight: 600; background: #eceff0; color: #4f5e68;">3</div><div style="font-size: 13px; color: #4f5e68; font-weight: 400;">What it can run</div></div><div style="width: 34px; height: 1px; background: #c6d0d3;"></div><div style="display: flex; align-items: center; gap: 8px;"><div class="mono" style="width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11.5px; font-weight: 600; background: #eceff0; color: #4f5e68;">4</div><div style="font-size: 13px; color: #4f5e68; font-weight: 400;">The answer</div></div></div><div style="font-size: 12.5px; color: #4f5e68;">Mac Studio M5 Max, 64GB · $3,499 <a href="#">change</a></div></div>
+  <div style="max-width: 760px;">
+    <div style="font-size: 34px; line-height: 1.1; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance;">What would you mostly use it for?</div>
+    <div style="font-size: 15px; color: #4f5e68; margin-top: 10px;">This sets how much of your usage is reading versus writing. Agents resend whole files every turn, so they read far more than they write.</div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 1100px;"><div style="background: #ffffff; border: 1.5px solid #dfe5e6; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.014em;">Chatting and questions</div><div class="mono" style="font-size: 12px; color: #4f5e68;">2:1</div></div>
+  <div style="font-size: 13px; color: #4f5e68;">Short questions, medium answers</div>
+</div><div style="background: #ffffff; border: 1.5px solid #dfe5e6; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.014em;">Writing and drafting</div><div class="mono" style="font-size: 12px; color: #4f5e68;">1:2</div></div>
+  <div style="font-size: 13px; color: #4f5e68;">A short brief in, long text out</div>
+</div><div style="background: #ffffff; border: 1.5px solid #dfe5e6; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.014em;">Summarising documents</div><div class="mono" style="font-size: 12px; color: #4f5e68;">10:1</div></div>
+  <div style="font-size: 13px; color: #4f5e68;">Whole documents in, a paragraph out</div>
+</div><div style="background: #ffffff; border: 1.5px solid #dfe5e6; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.014em;">Coding assistant</div><div class="mono" style="font-size: 12px; color: #4f5e68;">4:1</div></div>
+  <div style="font-size: 13px; color: #4f5e68;">Code in, small edits out</div>
+</div><div style="background: #ffffff; border: 1.5px solid #0e1720; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.014em;">Agentic coding</div><div class="mono" style="font-size: 12px; color: #4f5e68;">15:1</div></div>
+  <div style="font-size: 13px; color: #4f5e68;">Whole files and tool results resent every turn</div>
+</div><div style="background: #ffffff; border: 1.5px solid #dfe5e6; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(14,23,32,0.05), 0 10px 26px -20px rgba(14,23,32,0.5);">
+  <div style="display: flex; justify-content: space-between; align-items: baseline;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.014em;">Search over your documents</div><div class="mono" style="font-size: 12px; color: #4f5e68;">20:1</div></div>
+  <div style="font-size: 13px; color: #4f5e68;">Retrieved passages in, short answers out</div>
+</div></div>
+  <div style="max-width: 1100px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="font-weight: 600;">Roughly how much, on a normal day?</span><span class="mono" style="color: #35424e;">500k tokens — a moderate coding-assistant day</span></div>
+    <div style="position: relative; height: 22px;"><div style="position: absolute; left: 0; right: 0; top: 10px; height: 3px; border-radius: 2px; background: #c6d0d3;"></div><div style="position: absolute; left: 0; width: 46%; top: 10px; height: 3px; border-radius: 2px; background: #1f5479;"></div><div style="position: absolute; left: 46%; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #1f5479; box-shadow: 0 0 0 4px #fff, 0 1px 3px rgba(0,0,0,0.3); transform: translateX(-50%);"></div></div>
+    <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #5e6d77;"><span>a few chats</span><span>light assistant use</span><span>heavy coding with an agent</span><span>agents all day</span></div>
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin-top: auto; padding-bottom: 32px;">
+    <div style="font-size: 13.5px; color: #4f5e68;">← Your machine</div>
+    <div style="font-size: 14px; font-weight: 600; padding: 12px 22px; border-radius: 10px; background: #0e1720; color: #fff;">See what it can run</div>
+  </div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -5,3 +5,6 @@ dist
 public/og/*.png
 public/og/*.svg
 public/routes.json
+
+# seeded design canvas (2.5 MB, regenerated from design/*.dc.html)
+design/sunk-cost-layout-directions.html
