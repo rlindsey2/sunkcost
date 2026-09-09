@@ -581,14 +581,6 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
 .minibar-text span { font-size: 11px; color: rgba(207, 224, 238, 0.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (min-width: 900px) { .minibar { display: none !important; } }
 
-/* ---------- footer ---------- */
-
-.footer {
-  max-width: 1560px; margin: 0 auto; padding: 22px var(--gutter) 40px;
-  border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;
-}
-.footer p { font-size: 12.5px; color: var(--faint); max-width: 92ch; line-height: 1.55; }
-
 /* ---------- scrollbars ---------- */
 
 .model-list { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
