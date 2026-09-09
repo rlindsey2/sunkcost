@@ -11,8 +11,17 @@ export const KV_BYTES_PER_VALUE = 2; // f16 K and V caches, the llama.cpp defaul
  */
 export function kvCacheGbFromArchitecture(m: Model, contextTokens: number): number | null {
   const a = m.architecture;
-  if (!a || a.n_layers == null || a.n_kv_heads == null || a.head_dim == null) return null;
-  const perTokenPerLayer = 2 * a.n_kv_heads * a.head_dim * (a.kv_bytes_per_value ?? KV_BYTES_PER_VALUE);
+  if (!a || a.n_layers == null) return null;
+  const bytes = a.kv_bytes_per_value ?? KV_BYTES_PER_VALUE;
+  let perTokenPerLayer: number;
+  if (a.kv_lora_rank != null) {
+    // latent attention: one compressed vector plus the RoPE part, and no separate K and V
+    perTokenPerLayer = (a.kv_lora_rank + (a.qk_rope_head_dim ?? 0)) * bytes;
+  } else if (a.n_kv_heads != null && a.head_dim != null) {
+    perTokenPerLayer = 2 * a.n_kv_heads * a.head_dim * bytes;
+  } else {
+    return null;
+  }
   const slidingLayers = a.sliding_window_layers ?? 0;
   const fullLayers = a.full_attention_layers ?? a.n_layers - slidingLayers;
   const window = a.sliding_window ?? contextTokens;

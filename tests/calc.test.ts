@@ -340,3 +340,21 @@ describe('assuming API prices keep falling', () => {
     expect(serializeState(parseState('?hw=mac-studio-m5-max-64', data))).not.toContain('d=');
   });
 });
+
+describe('older models', () => {
+  it('are hidden by default and revealed on request', () => {
+    const hidden = computeView(parseState('?hw=mac-studio-m5-max-64', data), data);
+    expect(hidden.rows.every((r) => r.model.generation !== 'legacy')).toBe(true);
+    expect(hidden.olderHidden).toBeGreaterThan(0);
+    const shown = computeView(parseState('?hw=mac-studio-m5-max-64&old=1', data), data);
+    expect(shown.rows.some((r) => r.model.generation === 'legacy')).toBe(true);
+    expect(shown.olderHidden).toBe(0);
+    expect(shown.rows.length).toBeGreaterThan(hidden.rows.length);
+  });
+
+  it('keeps an explicitly chosen older model visible', () => {
+    const v = computeView(parseState('?hw=mac-studio-m5-max-64&m=qwen3-32b-q4', data), data);
+    expect(v.rows.some((r) => r.model.id === 'qwen3-32b-q4')).toBe(true);
+    expect(v.model?.id).toBe('qwen3-32b-q4');
+  });
+});

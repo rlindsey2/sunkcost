@@ -55,6 +55,14 @@ export interface ModelArchitecture {
   n_layers: number | null;
   n_kv_heads: number | null;
   head_dim: number | null;
+  /**
+   * Multi-head latent attention (DeepSeek V4, GLM, some Mistral). The cache holds one
+   * compressed latent per token per layer plus the RoPE part, not n_kv_heads × head_dim,
+   * which is why these models take so much less memory at long context than their head
+   * counts suggest. When set, this supersedes n_kv_heads × head_dim.
+   */
+  kv_lora_rank?: number | null;
+  qk_rope_head_dim?: number | null;
   /** layers whose KV cache grows with the full context; defaults to n_layers */
   full_attention_layers?: number | null;
   /** layers with a fixed attention window (Gemma 3, gpt-oss, Llama 4 chunked) */
@@ -81,6 +89,11 @@ export interface Model {
   display_name: string;
   /** Qwen, Llama, Gemma… used by the list filter */
   family?: string;
+  /** other names the same weights are published under (finetunes with identical memory profiles) */
+  aliases?: string[];
+  alias_note?: string;
+  /** current = what people run today; legacy = superseded, kept because people still ask */
+  generation?: 'current' | 'legacy';
   max_context_tokens?: number | null;
   max_context_note?: string | null;
   frontier_equivalent?: FrontierEquivalent;

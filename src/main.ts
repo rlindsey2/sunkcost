@@ -94,7 +94,11 @@ $<HTMLInputElement>('#price').addEventListener('input', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model],#price-reset,#price-toggle');
+  const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model],#price-reset,#price-toggle,#show-older,#hide-older');
+  if (t?.id === 'show-older' || t?.id === 'hide-older') {
+    update({ showOlder: t.id === 'show-older' });
+    return;
+  }
   if (t?.id === 'price-toggle') {
     const wrap = document.querySelector<HTMLElement>('#price-wrap')!;
     wrap.dataset.open = '1';

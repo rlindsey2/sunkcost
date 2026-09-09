@@ -214,7 +214,12 @@ function renderModels(state: State, data: Dataset, view: View) {
       return `<span class="chip"><i class="dot dot-${k}"></i>${esc(label)}</span>`;
     })
     .join('');
-  $('#fit-summary').innerHTML = `<span class="chips"><span class="chip"><b>${fits}</b> of ${view.rows.length} fit in ${hw.usable_memory_gb ?? '?'} GB usable</span>${legend}</span>`;
+  const older = view.olderHidden
+    ? `<button type="button" class="chip chip-btn" id="show-older"><b>${view.olderHidden}</b> older hidden — show</button>`
+    : state.showOlder
+      ? `<button type="button" class="chip chip-btn" id="hide-older">hide older models</button>`
+      : '';
+  $('#fit-summary').innerHTML = `<span class="chips"><span class="chip"><b>${fits}</b> of ${view.rows.length} fit in ${hw.usable_memory_gb ?? '?'} GB usable</span>${older}${legend}</span>`;
   $('#models').innerHTML = list || `<p class="m-empty">No models in this family.</p>`;
 }
 
@@ -249,7 +254,7 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
 
   return `<div class="model${selected ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}" role="radio" aria-checked="${selected}" tabindex="${disabled ? -1 : 0}" data-model="${esc(m.id)}"${disabled ? ' aria-disabled="true"' : ''}>
     <div class="m-top">
-      <span class="m-id"><span class="m-name">${esc(m.display_name)}</span><span class="m-quant">${esc(m.quantisation)}</span></span>
+      <span class="m-id"><span class="m-name">${esc(m.display_name)}</span><span class="m-quant">${esc(m.quantisation)}</span>${m.generation === 'legacy' ? '<span class="m-legacy" title="Superseded by a newer model, kept because people still run it">older</span>' : ''}</span>
       <span class="m-speed">${speed}${tag}</span>
     </div>
     <div class="chips">${chips}</div>

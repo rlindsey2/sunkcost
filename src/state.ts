@@ -21,6 +21,8 @@ export interface State {
   price: number | null;
   /** annual fall in API prices to assume; 0 = hold today's prices */
   decline: number;
+  /** show superseded models in the list */
+  showOlder: boolean;
 }
 
 const KEYS: Record<keyof State, string> = {
@@ -35,6 +37,7 @@ const KEYS: Record<keyof State, string> = {
   sort: 's',
   price: 'p',
   decline: 'd',
+  showOlder: 'old',
 };
 
 function num(v: string | null, fallback: number, min?: number, max?: number): number {
@@ -69,6 +72,7 @@ export function defaultState(data: Dataset): State {
     sort: data.defaults.default_sort ?? 'fit',
     price: null,
     decline: data.defaults.api_decline.default_on ? data.defaults.api_decline.default_rate_per_year : 0,
+    showOlder: false,
   };
 }
 
@@ -87,6 +91,7 @@ export function parseState(search: string, data: Dataset): State {
     sort: data.defaults.sorts.some((x) => x.id === p.get('s')) ? p.get('s')! : d.sort,
     price: priceParam(p.get(KEYS.price)),
     decline: num(p.get(KEYS.decline), d.decline, 0, 0.95),
+    showOlder: p.get(KEYS.showOlder) === '1',
     kwh: num(p.get(KEYS.kwh), d.kwh, 0, 5),
     ctx: num(p.get(KEYS.ctx), d.ctx, 1024, 1_000_000),
     cloudTps: num(p.get(KEYS.cloudTps), d.cloudTps, 1, 10000),
@@ -106,6 +111,7 @@ export function serializeState(s: State): string {
   if (s.sort) p.set(KEYS.sort, s.sort);
   if (s.price != null) p.set(KEYS.price, String(Math.round(s.price)));
   if (s.decline > 0) p.set(KEYS.decline, String(s.decline));
+  if (s.showOlder) p.set(KEYS.showOlder, '1');
   return p.toString();
 }
 

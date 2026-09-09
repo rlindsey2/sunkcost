@@ -44,7 +44,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
       "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "llama-3.1-8b-q8",
@@ -91,7 +92,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
       "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "qwen3-8b-q4",
@@ -139,7 +141,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 8 (reasoning mode; 5 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-8b-instruct-reasoning",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "qwen3-14b-q4",
@@ -186,7 +189,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 10 (reasoning mode; 7 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-14b-instruct-reasoning",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "qwen3-32b-q4",
@@ -233,7 +237,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "qwen3-32b-q8",
@@ -280,7 +285,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "qwen3-30b-a3b-2507-q4",
@@ -327,7 +333,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
       "url": "https://artificialanalysis.ai/models/qwen3-30b-a3b-2507",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "qwen3-coder-30b-a3b-q4",
@@ -374,7 +381,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 14",
       "url": "https://artificialanalysis.ai/models/qwen3-coder-30b-a3b-instruct",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current"
   },
   {
     "id": "qwen3-235b-a22b-2507-q4",
@@ -421,7 +429,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 18",
       "url": "https://artificialanalysis.ai/models/qwen3-235b-a22b-instruct-2507",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "gemma-3-12b-q4",
@@ -473,7 +482,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 6",
       "url": "https://artificialanalysis.ai/models/gemma-3-12b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "gemma-3-27b-q4",
@@ -524,7 +534,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
       "url": "https://artificialanalysis.ai/models/gemma-3-27b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "mistral-small-3.2-24b-q4",
@@ -571,7 +582,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
       "url": "https://artificialanalysis.ai/models/mistral-small-3-2",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "deepseek-r1-distill-qwen-32b-q4",
@@ -619,7 +631,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
       "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-qwen-32b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "deepseek-r1-distill-llama-70b-q4",
@@ -667,7 +680,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
       "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-llama-70b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "llama-3.3-70b-q4",
@@ -714,7 +728,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
       "url": "https://artificialanalysis.ai/models/llama-3-3-instruct-70b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "gpt-oss-20b-mxfp4",
@@ -765,7 +780,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 15 (high reasoning effort; 14 at low)",
       "url": "https://artificialanalysis.ai/models/gpt-oss-20b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current"
   },
   {
     "id": "gpt-oss-120b-mxfp4",
@@ -816,7 +832,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 24 (high reasoning effort; 15 at low)",
       "url": "https://artificialanalysis.ai/models/gpt-oss-120b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current"
   },
   {
     "id": "glm-4.5-air-q4",
@@ -863,7 +880,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 17",
       "url": "https://artificialanalysis.ai/models/glm-4-5-air",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "llama-4-scout-q4",
@@ -914,7 +932,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
       "url": "https://artificialanalysis.ai/models/llama-4-scout",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "legacy"
   },
   {
     "id": "gemma-4-31b-q4",
@@ -967,7 +986,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 30 (reasoning mode; 22 without)",
       "url": "https://artificialanalysis.ai/models/gemma-4-31b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current"
   },
   {
     "id": "qwen3.6-35b-a3b-q4",
@@ -1018,7 +1038,15 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 32 (reasoning mode; 25 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current",
+    "aliases": [
+      "Ornith 1.5 35B-A3B",
+      "BigBang v1",
+      "POCKET-35B",
+      "XYZ Aquila mini"
+    ],
+    "alias_note": "Several of the most-downloaded GGUF repos are finetunes of these weights. They share the architecture exactly, so the memory and speed figures here apply unchanged."
   },
   {
     "id": "qwen3.8-27b-q4",
@@ -1069,7 +1097,8 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 52 (xhigh reasoning effort; 35 without reasoning)",
       "url": "https://artificialanalysis.ai/models/qwen3-8-27b",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current"
   },
   {
     "id": "mistral-small-4-119b-q4",
@@ -1118,6 +1147,7 @@
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 20 (reasoning mode; 12 without)",
       "url": "https://artificialanalysis.ai/models/mistral-small-4",
       "checked": "2026-09-03"
-    }
+    },
+    "generation": "current"
   }
 ]

@@ -24,6 +24,8 @@ export interface Capacity {
 
 export interface View {
   hw: Hardware;
+  /** superseded models filtered out of the list */
+  olderHidden: number;
   /** the price the maths uses: what you paid, or the list price */
   price: number | null;
   priceIsCustom: boolean;
@@ -63,7 +65,10 @@ export function computeView(state: State, data: Dataset): View {
   // buyer can see what a bigger memory tier would unlock without changing anything
   const visible = all
     .filter((r) => !state.family || r.model.family === state.family)
+    .filter((r) => state.showOlder || r.model.generation !== 'legacy' || r.model.id === state.model)
     .sort(comparator(state.sort, order, state.ratio));
+  const olderHidden = all.filter((r) => (!state.family || r.model.family === state.family) && r.model.generation === 'legacy').length -
+    visible.filter((r) => r.model.generation === 'legacy').length;
   const hiddenCount = all.length - visible.length;
 
   // selected model must fit (or nearly fit) this hardware; otherwise pick the biggest that fits
@@ -150,6 +155,7 @@ export function computeView(state: State, data: Dataset): View {
 
   return {
     hw,
+    olderHidden,
     price,
     priceIsCustom,
     capacity,
