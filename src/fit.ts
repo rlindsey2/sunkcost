@@ -12,21 +12,30 @@ export const KV_BYTES_PER_VALUE = 2; // f16 K and V caches, the llama.cpp defaul
 export function kvCacheGbFromArchitecture(m: Model, contextTokens: number): number | null {
   const a = m.architecture;
   if (!a || a.n_layers == null) return null;
+
+  // a whole-model figure, for architectures whose per-layer cache length varies
+  if (a.kv_bytes_per_token_total != null) return (a.kv_bytes_per_token_total * contextTokens) / 1e9;
+
   const bytes = a.kv_bytes_per_value ?? KV_BYTES_PER_VALUE;
-  let perTokenPerLayer: number;
-  if (a.kv_lora_rank != null) {
-    // latent attention: one compressed vector plus the RoPE part, and no separate K and V
-    perTokenPerLayer = (a.kv_lora_rank + (a.qk_rope_head_dim ?? 0)) * bytes;
-  } else if (a.n_kv_heads != null && a.head_dim != null) {
-    perTokenPerLayer = 2 * a.n_kv_heads * a.head_dim * bytes;
-  } else {
-    return null;
+  let perTokenPerLayer: number | null = a.bytes_per_token_full ?? null;
+  if (perTokenPerLayer == null) {
+    if (a.kv_lora_rank != null) {
+      // latent attention: one compressed vector plus the RoPE part, and no separate K and V
+      perTokenPerLayer = (a.kv_lora_rank + (a.qk_rope_head_dim ?? 0)) * bytes;
+    } else if (a.n_kv_heads != null && a.head_dim != null) {
+      perTokenPerLayer = 2 * a.n_kv_heads * a.head_dim * bytes;
+    } else {
+      return null;
+    }
   }
+  const slidingBytes = a.bytes_per_token_sliding ?? perTokenPerLayer;
   const slidingLayers = a.sliding_window_layers ?? 0;
   const fullLayers = a.full_attention_layers ?? a.n_layers - slidingLayers;
   const window = a.sliding_window ?? contextTokens;
-  const cached = fullLayers * contextTokens + slidingLayers * Math.min(contextTokens, window);
-  return (perTokenPerLayer * cached) / 1e9;
+  // sliding layers stop growing once the window is full; full layers grow with the context
+  const growing = fullLayers * contextTokens * perTokenPerLayer;
+  const capped = slidingLayers * Math.min(contextTokens, window) * slidingBytes;
+  return (growing + capped) / 1e9;
 }
 
 /** Derived at 8k so the validate script can check models.json agrees with the architecture. */

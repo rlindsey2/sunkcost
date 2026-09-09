@@ -151,10 +151,12 @@
     }
   ],
   "frontier_basis": {
-    "name": "Artificial Analysis Intelligence Index v4.1.1",
+    "name": "Artificial Analysis Intelligence Index",
     "url": "https://artificialanalysis.ai/leaderboards/models",
     "checked": "2026-09-03",
-    "note": "One consistent public aggregate. Scores for hybrid models are the reasoning / highest-effort figure; the non-reasoning figure is noted per model. Older open models were scored under an earlier cohort of the index, so cross-era comparisons are approximate."
+    "note": "One consistent public aggregate. Scores for hybrid models are the reasoning / highest-effort figure; the non-reasoning figure is noted per model. Older open models were scored under an earlier cohort of the index, so cross-era comparisons are approximate.",
+    "mixed_versions": true,
+    "mixed_versions_note": "Scores here were read at two different versions of the index — v4.1.1 for the models checked on 2026-09-03 and v4.3 for those added on 2026-09-09. The index is rescaled between versions, so comparing a v4.1.1 score with a v4.3 one is only roughly valid. A re-read at one version is in progress; until then, treat close rankings across the two as unresolved."
   },
   "frontier_reference": [
     {

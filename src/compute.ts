@@ -91,7 +91,9 @@ export function computeView(state: State, data: Dataset): View {
   if (!model) blockers.push('no model in the list fits this configuration at the chosen context length');
   if (model) {
     const ce = model.cloud_equivalent;
-    if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) blockers.push('API price for the cloud equivalent is unknown (TODO in models.json)');
+    if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) {
+      blockers.push(`nobody hosts ${model.display_name}, so there is no rental price to weigh the hardware against`);
+    }
   }
   if (row && row.throughput.tokensPerSec == null) blockers.push('local speed is unknown and cannot be estimated');
   if (hw.load_watts == null) blockers.push('power draw under load is unknown (TODO in hardware.json)');

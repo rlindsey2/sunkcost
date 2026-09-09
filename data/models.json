@@ -43,7 +43,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
       "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -91,7 +92,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
       "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -140,7 +142,8 @@
       "score_note": "reasoning mode; 5 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 8 (reasoning mode; 5 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-8b-instruct-reasoning",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -188,7 +191,8 @@
       "score_note": "reasoning mode; 7 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 10 (reasoning mode; 7 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-14b-instruct-reasoning",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -236,7 +240,8 @@
       "score_note": "reasoning mode; 8 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -284,7 +289,8 @@
       "score_note": "reasoning mode; 8 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -332,7 +338,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
       "url": "https://artificialanalysis.ai/models/qwen3-30b-a3b-2507",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -380,7 +387,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 14",
       "url": "https://artificialanalysis.ai/models/qwen3-coder-30b-a3b-instruct",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current"
   },
@@ -428,7 +436,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 18",
       "url": "https://artificialanalysis.ai/models/qwen3-235b-a22b-instruct-2507",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -481,7 +490,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 6",
       "url": "https://artificialanalysis.ai/models/gemma-3-12b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -533,7 +543,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
       "url": "https://artificialanalysis.ai/models/gemma-3-27b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -581,7 +592,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
       "url": "https://artificialanalysis.ai/models/mistral-small-3-2",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -630,7 +642,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
       "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-qwen-32b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -679,7 +692,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
       "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-llama-70b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -727,7 +741,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
       "url": "https://artificialanalysis.ai/models/llama-3-3-instruct-70b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -779,7 +794,8 @@
       "score_note": "high reasoning effort; 14 at low",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 15 (high reasoning effort; 14 at low)",
       "url": "https://artificialanalysis.ai/models/gpt-oss-20b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current"
   },
@@ -831,7 +847,8 @@
       "score_note": "high reasoning effort; 15 at low",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 24 (high reasoning effort; 15 at low)",
       "url": "https://artificialanalysis.ai/models/gpt-oss-120b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current"
   },
@@ -879,7 +896,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 17",
       "url": "https://artificialanalysis.ai/models/glm-4-5-air",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -931,7 +949,8 @@
       "score_note": null,
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
       "url": "https://artificialanalysis.ai/models/llama-4-scout",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "legacy"
   },
@@ -985,7 +1004,8 @@
       "score_note": "reasoning mode; 22 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 30 (reasoning mode; 22 without)",
       "url": "https://artificialanalysis.ai/models/gemma-4-31b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current"
   },
@@ -1037,7 +1057,8 @@
       "score_note": "reasoning mode; 25 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 32 (reasoning mode; 25 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current",
     "aliases": [
@@ -1096,7 +1117,8 @@
       "score_note": "xhigh reasoning effort; 35 without reasoning",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 52 (xhigh reasoning effort; 35 without reasoning)",
       "url": "https://artificialanalysis.ai/models/qwen3-8-27b",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current"
   },
@@ -1107,12 +1129,14 @@
     "active_params_b": 6,
     "quantisation": "Q4_K_M",
     "weights_gb": 73.77,
-    "kv_cache_gb_per_8k": 4.832,
+    "kv_cache_gb_per_8k": 0.189,
     "architecture": {
       "n_layers": 36,
       "n_kv_heads": 32,
       "head_dim": 128,
-      "note": "No grouped-query attention (32 KV heads), so the KV cache is large."
+      "kv_lora_rank": 256,
+      "qk_rope_head_dim": 64,
+      "note": "Latent attention: the cache holds a 256-wide compressed vector plus 64 RoPE dimensions per layer, 640 bytes a token. The 32 KV heads in the config are not a cache width — reading them that way overstates the memory 25-fold."
     },
     "capabilities": {
       "summarisation": "unknown",
@@ -1129,7 +1153,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/mistralai/mistral-small-2603",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-09-09"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -1139,15 +1163,1699 @@
     "TODO": "Capability ratings needed; active-parameter count (6B) is from Mistral's announcement, not the config.",
     "family": "Mistral",
     "max_context_tokens": 1048576,
-    "max_context_note": "card says 256k; config allows 1M",
+    "max_context_note": "1M",
     "frontier_equivalent": {
       "tier": 0,
       "score": 20,
       "score_note": "reasoning mode; 12 without",
       "basis": "Artificial Analysis Intelligence Index v4.1.1: 20 (reasoning mode; 12 without)",
       "url": "https://artificialanalysis.ai/models/mistral-small-4",
-      "checked": "2026-09-03"
+      "checked": "2026-09-03",
+      "index_version": "v4.1.1"
     },
     "generation": "current"
+  },
+  {
+    "id": "muse-glimmer-30b-q4",
+    "display_name": "Muse Glimmer 30B",
+    "family": "Meta",
+    "generation": "current",
+    "params_b": 29.78,
+    "active_params_b": 29.78,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 17.31,
+    "kv_cache_gb_per_8k": 0.191,
+    "architecture": {
+      "n_layers": 52,
+      "n_kv_heads": 2,
+      "head_dim": 128,
+      "full_attention_layers": 13,
+      "sliding_window_layers": 39,
+      "sliding_window": 2048,
+      "note": "3 sliding-window layers (2048) per full-attention layer, so the cache barely grows with context. Multimodal: the vision projector is a separate ~1.4 GB file, not counted here."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Meta's dense 30B under Apache 2.0, aimed at local agents.",
+    "cloud_equivalent": {
+      "name": "Muse Glimmer 30B",
+      "input_price_per_mtok": 0.3,
+      "output_price_per_mtok": 1.1,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/meta/muse-glimmer-30b",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 18,
+      "score_note": "high effort",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 18 (high effort)",
+      "url": "https://artificialanalysis.ai/models/muse-glimmer",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/meta-models/Muse-Glimmer-30B",
+      "https://huggingface.co/bartowski/Muse-Glimmer-30B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "laguna-xs-2.1-q4",
+    "display_name": "Laguna XS 2.1",
+    "family": "Laguna",
+    "generation": "current",
+    "params_b": 33.44,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 20.27,
+    "kv_cache_gb_per_8k": 0.398,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 10,
+      "sliding_window_layers": 30,
+      "sliding_window": 512,
+      "note": "3 sliding-window layers (512) per full-attention layer. The runtime keeps the KV cache in FP8, so real usage is about half the figure here."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. poolside's agentic-coding MoE: 33B total but only 3B active per token.",
+    "cloud_equivalent": {
+      "name": "Laguna XS 2.1",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.12,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/poolside/laguna-xs-2.1",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "OpenMDW 1.1",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "basis": null,
+      "url": null,
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/poolside/Laguna-XS-2.1",
+      "https://huggingface.co/poolside/Laguna-XS-2.1-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ling-3.0-flash-q4",
+    "display_name": "Ling 3.0 flash",
+    "family": "Ling",
+    "generation": "current",
+    "params_b": 124.0,
+    "active_params_b": 5.1,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 77.8,
+    "kv_cache_gb_per_8k": 0.94,
+    "architecture": {
+      "n_layers": 42,
+      "n_kv_heads": 32,
+      "head_dim": 128,
+      "full_attention_layers": 7,
+      "note": "Hybrid: five linear-attention layers per full-attention layer. Those seven layers use compressed latent attention, which this figure does NOT model, so the KV cache shown is an over-estimate.",
+      "TODO": "Read kv_lora_rank from config.json and switch this entry to the latent-attention path."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. MIT-licensed 124B with only 5.1B active, for machines with a lot of memory.",
+    "cloud_equivalent": {
+      "name": "Ling 3.0 flash",
+      "input_price_per_mtok": 0.021,
+      "output_price_per_mtok": 0.063,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/inclusionai/ling-3.0-flash",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "MIT",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 25,
+      "score_note": "estimated",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 25 (estimated)",
+      "url": "https://artificialanalysis.ai/models/ling-3-0-flash",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/inclusionAI/Ling-3.0-flash",
+      "https://huggingface.co/bartowski/Ling-3.0-flash-GGUF"
+    ],
+    "TODO": "Capability ratings needed. KV-cache figure over-estimates: latent attention not yet modelled."
+  },
+  {
+    "id": "ling-3.0-tiny-q4",
+    "display_name": "Ling 3.0 tiny",
+    "family": "Ling",
+    "generation": "current",
+    "params_b": 7.89,
+    "active_params_b": 1.3,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 4.82,
+    "kv_cache_gb_per_8k": 0.403,
+    "architecture": {
+      "n_layers": 24,
+      "n_kv_heads": 16,
+      "head_dim": 128,
+      "full_attention_layers": 6,
+      "note": "Hybrid: three linear-attention layers per full-attention layer. Those layers use compressed latent attention, which this figure does NOT model, so the KV cache shown is an over-estimate.",
+      "TODO": "Read kv_lora_rank from config.json and switch this entry to the latent-attention path."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. 1.3B active in a 7.9B mixture, so it runs quickly on very little memory.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is no rental price to compare against. The break-even cannot be computed for this model."
+    },
+    "license": "MIT",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 12,
+      "score_note": "reasoning mode",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 12 (reasoning mode)",
+      "url": "https://artificialanalysis.ai/models/ling-3-0-tiny",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/inclusionAI/Ling-3.0-tiny",
+      "https://huggingface.co/inclusionAI/Ling-3.0-tiny-GGUF"
+    ],
+    "TODO": "Capability ratings needed. KV-cache figure over-estimates: latent attention not yet modelled."
+  },
+  {
+    "id": "lfm2.5-2.6b-q4",
+    "display_name": "LFM2.5 2.6B",
+    "family": "Liquid",
+    "generation": "current",
+    "params_b": 2.697,
+    "active_params_b": 2.697,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 1.67,
+    "kv_cache_gb_per_8k": 0.134,
+    "architecture": {
+      "n_layers": 30,
+      "n_kv_heads": 8,
+      "head_dim": 64,
+      "full_attention_layers": 8,
+      "note": "Only 8 of 30 layers are attention; the rest are short convolutions that keep a fixed-size state. head_dim derived from hidden_size ÷ heads, as the config omits it."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Convolution hybrid, so the context costs almost no memory. A useful floor for small machines.",
+    "cloud_equivalent": {
+      "name": "LFM2.5 2.6B",
+      "input_price_per_mtok": 0.0,
+      "output_price_per_mtok": 0.0,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/liquid/lfm-2.5-2.6b:free",
+      "is_exact_match": true,
+      "checked": "2026-09-09",
+      "note": "Listed free on OpenRouter on the date checked, which makes the break-even against it meaningless — a free endpoint can never be beaten on price."
+    },
+    "license": "LFM 1.0 (see repo)",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 8,
+      "score_note": "reasoning mode",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 8 (reasoning mode)",
+      "url": "https://artificialanalysis.ai/models/lfm2-5-2-6b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/LiquidAI/LFM2.5-2.6B",
+      "https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "minicpm5-2b-q4",
+    "display_name": "MiniCPM5 2B",
+    "family": "MiniCPM",
+    "generation": "current",
+    "params_b": 2.517,
+    "active_params_b": 2.517,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 1.56,
+    "kv_cache_gb_per_8k": 0.352,
+    "architecture": {
+      "n_layers": 42,
+      "n_kv_heads": 2,
+      "head_dim": 128,
+      "note": "Standard grouped-query attention, 16 query heads to 2 KV heads."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The best score per gigabyte on this list: 13 on the index at 1.6 GB.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is no rental price to compare against. The break-even cannot be computed for this model."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 13,
+      "score_note": "reasoning mode",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 13 (reasoning mode)",
+      "url": "https://artificialanalysis.ai/models/minicpm5-2b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/openbmb/MiniCPM5-2B",
+      "https://huggingface.co/openbmb/MiniCPM5-2B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ornith-1.5-9b-q4",
+    "display_name": "Ornith 1.5 9B",
+    "family": "Ornith",
+    "generation": "current",
+    "params_b": 9.653,
+    "active_params_b": 9.653,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 5.78,
+    "kv_cache_gb_per_8k": 0.268,
+    "architecture": {
+      "n_layers": 32,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 8,
+      "note": "Hybrid: three linear-attention layers per full-attention layer. Multimodal; the vision projector is a separate 0.92 GB file, not counted here."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. DeepReinforce's MIT-licensed coding model, post-trained on Qwen3.5.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is no rental price to compare against. The break-even cannot be computed for this model."
+    },
+    "license": "MIT",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "basis": null,
+      "url": null,
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/ornith-ai/Ornith-1.5-9B",
+      "https://huggingface.co/ornith-ai/Ornith-1.5-9B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ornith-1.5-35b-a3b-q4",
+    "display_name": "Ornith 1.5 35B-A3B",
+    "family": "Ornith",
+    "generation": "current",
+    "params_b": 35.95,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 21.71,
+    "kv_cache_gb_per_8k": 0.168,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 10,
+      "note": "Hybrid: three linear-attention layers per full-attention layer. Multimodal; the vision projector is a separate 0.90 GB file, not counted here."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. MIT-licensed 36B mixture with 3B active. Active-parameter count is inferred from the name, not stated on the card.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is no rental price to compare against. The break-even cannot be computed for this model."
+    },
+    "license": "MIT",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "basis": null,
+      "url": null,
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B",
+      "https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "spark-x2.5-4b-q4",
+    "display_name": "Spark-X2.5 4B",
+    "family": "Spark",
+    "generation": "current",
+    "params_b": 4.112,
+    "active_params_b": 4.112,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 2.6,
+    "kv_cache_gb_per_8k": 0.359,
+    "architecture": {
+      "n_layers": 36,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 9,
+      "sliding_window_layers": 27,
+      "sliding_window": 512,
+      "note": "3 sliding-window layers (512) per full-attention layer, which is what makes a million-token context tractable at this size."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is no rental price to compare against. The break-even cannot be computed for this model."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M native",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "basis": null,
+      "url": null,
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/XHToken/Spark-X2.5-4B",
+      "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "inkling-small-ud-q4",
+    "display_name": "Inkling Small",
+    "family": "Inkling",
+    "generation": "current",
+    "params_b": 265.96,
+    "active_params_b": 12.0,
+    "quantisation": "UD-Q4_K_M",
+    "weights_gb": 162.54,
+    "kv_cache_gb_per_8k": 0.308,
+    "architecture": {
+      "n_layers": 42,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 7,
+      "sliding_window_layers": 35,
+      "sliding_window": 512,
+      "note": "35 of 42 layers use a 512-token window. Published only as an unsloth dynamic quant, which allocates bits differently from a plain Q4_K_M."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Thinking Machines' open weights. 'Small' is relative to a 975B sibling — this still needs 256 GB.",
+    "cloud_equivalent": {
+      "name": "Inkling Small",
+      "input_price_per_mtok": 0.45,
+      "output_price_per_mtok": 1.2,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/thinkingmachines/inkling-small",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M (model_max_length; the config states no max_position_embeddings)",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 26,
+      "score_note": "reasoning mode",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 26 (reasoning mode)",
+      "url": "https://artificialanalysis.ai/models/inkling-small",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/thinkingmachines/Inkling-Small",
+      "https://huggingface.co/unsloth/Inkling-Small-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "gemma-4-12b-q4",
+    "display_name": "Gemma 4 12B",
+    "family": "Gemma",
+    "generation": "current",
+    "params_b": 11.96,
+    "active_params_b": 11.96,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 7.12,
+    "kv_cache_gb_per_8k": 0.47,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 8,
+      "head_dim": 256,
+      "full_attention_layers": 8,
+      "sliding_window_layers": 40,
+      "sliding_window": 1024,
+      "bytes_per_token_full": 2048,
+      "bytes_per_token_sliding": 8192,
+      "note": "8 of 48 layers grow with the context, and those use a different geometry from the other 40: one KV head at 512 wide (2,048 B/token) against eight heads at 256 wide on the windowed layers, which stop growing at 1,024 tokens."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Google's mid-size Gemma 4. The windowed layers keep the context nearly free.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 14,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 14",
+      "url": "https://artificialanalysis.ai/models/gemma-4-12b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/google/gemma-4-12B-it",
+      "https://huggingface.co/bartowski/google_gemma-4-12B-it-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "gemma-4-e4b-q4",
+    "display_name": "Gemma 4 E4B",
+    "family": "Gemma",
+    "generation": "current",
+    "params_b": 8.0,
+    "active_params_b": 4.5,
+    "quantisation": "QAT Q4_0",
+    "weights_gb": 5.15,
+    "kv_cache_gb_per_8k": 0.155,
+    "architecture": {
+      "n_layers": 42,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 4,
+      "sliding_window_layers": 20,
+      "sliding_window": 512,
+      "bytes_per_token_full": 4096,
+      "bytes_per_token_sliding": 2048,
+      "note": "Only the first 24 layers hold a cache at all: the config shares KV across the last 18, which have no key/value projections. Of those 24, four grow with the context and twenty stop at a 512-token window."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Google's quantisation-aware build for small machines; the published weights are already 4-bit.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 9,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 9",
+      "url": "https://artificialanalysis.ai/models/gemma-4-e4b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/google/gemma-4-E4B-it"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "gemma-4-26b-a4b-q4",
+    "display_name": "Gemma 4 26B-A4B",
+    "family": "Gemma",
+    "generation": "current",
+    "params_b": 25.2,
+    "active_params_b": 3.8,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 16.9,
+    "kv_cache_gb_per_8k": 0.377,
+    "architecture": {
+      "n_layers": 30,
+      "n_kv_heads": 8,
+      "head_dim": 256,
+      "full_attention_layers": 5,
+      "sliding_window_layers": 25,
+      "sliding_window": 1024,
+      "bytes_per_token_full": 4096,
+      "bytes_per_token_sliding": 8192,
+      "note": "5 of 30 layers grow with the context, at two KV heads by 512 wide; the other 25 stop at a 1,024-token window."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. 3.8B active out of 25B, so it is quick for its class.",
+    "cloud_equivalent": {
+      "name": "Gemma 4 26B-A4B",
+      "input_price_per_mtok": 0.042,
+      "output_price_per_mtok": 0.22,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-4-26b-a4b-it",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 17,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 17",
+      "url": "https://artificialanalysis.ai/models/gemma-4-26b-a4b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/google/gemma-4-26B-A4B-it",
+      "https://huggingface.co/unsloth/gemma-4-26b-a4b-it-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3.5-9b-q4",
+    "display_name": "Qwen3.5 9B",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 9.65,
+    "active_params_b": 9.65,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 5.68,
+    "kv_cache_gb_per_8k": 0.268,
+    "architecture": {
+      "n_layers": 32,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 8,
+      "note": "Hybrid: three linear-attention layers per full-attention layer, so only 8 of 32 hold a growing cache."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The small end of the current Qwen ladder, which jumps from 9B straight to 27B.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 14,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 14",
+      "url": "https://artificialanalysis.ai/models/qwen3-5-9b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Qwen/Qwen3.5-9B"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3.5-4b-q4",
+    "display_name": "Qwen3.5 4B",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 4.66,
+    "active_params_b": 4.66,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 2.74,
+    "kv_cache_gb_per_8k": 0.268,
+    "architecture": {
+      "n_layers": 32,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 8,
+      "note": "Hybrid: three linear-attention layers per full-attention layer."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Runs on almost anything and still scores respectably.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 13,
+      "score_note": "estimated",
+      "basis": "Artificial Analysis Intelligence Index v4.3: 13 (estimated)",
+      "url": "https://artificialanalysis.ai/models/qwen3-5-4b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Qwen/Qwen3.5-4B"
+    ],
+    "TODO": "Capability ratings needed. Index score is Artificial Analysis's estimate, not a measured run."
+  },
+  {
+    "id": "qwen3.6-27b-q4",
+    "display_name": "Qwen3.6 27B",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 27.78,
+    "active_params_b": 27.78,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 16.82,
+    "kv_cache_gb_per_8k": 0.537,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 16,
+      "note": "Hybrid: three linear-attention layers per full-attention layer, so 16 of 64 hold a growing cache."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The previous dense Qwen at this size; Qwen3.8 27B scores higher for the same memory.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 22,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 22",
+      "url": "https://artificialanalysis.ai/models/qwen3-6-27b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Qwen/Qwen3.6-27B"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3-coder-next-q4",
+    "display_name": "Qwen3-Coder Next",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 79.67,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 48.41,
+    "kv_cache_gb_per_8k": 0.201,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 12,
+      "note": "Hybrid: 12 of 48 layers hold a growing cache."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Qwen's current coding model: 80B on disk but only 3B active per token.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 10,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 10",
+      "url": "https://artificialanalysis.ai/models/qwen3-coder-next",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Qwen/Qwen3-Coder-Next"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3.5-122b-a10b-ud-q4",
+    "display_name": "Qwen3.5 122B-A10B",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 125.09,
+    "active_params_b": 10.0,
+    "quantisation": "UD-Q4_K_M",
+    "weights_gb": 78.26,
+    "kv_cache_gb_per_8k": 0.201,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 12,
+      "note": "Hybrid: 12 of 48 layers hold a growing cache. Published only as an unsloth dynamic quant, which allocates bits differently from a plain Q4_K_M."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. 10B active out of 125B — the large-memory option that still runs at a usable speed.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 16,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 16",
+      "url": "https://artificialanalysis.ai/models/qwen3-5-122b-a10b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Qwen/Qwen3.5-122B-A10B"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "qwen3.8-flash-next-q4",
+    "display_name": "Qwen3.8 Flash Next",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 180.0,
+    "active_params_b": 6.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 119.6,
+    "kv_cache_gb_per_8k": 0.226,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 12,
+      "bytes_per_token_full": 2304,
+      "note": "Hybrid: 12 of 48 layers hold a growing cache, and each also runs a sparse-attention indexer with its own cache, adding about 12% on top of the plain figure."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The strongest open model that fits in 128 GB, and the only one within reach of the hosted mid-tier.",
+    "cloud_equivalent": {
+      "name": "Qwen3.8 Flash",
+      "input_price_per_mtok": 0.15,
+      "output_price_per_mtok": 0.47,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.8-flash",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "qwen-community-1.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 42,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 42",
+      "url": "https://artificialanalysis.ai/models/qwen3-8-flash-next",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Qwen/Qwen3.8-Flash-Next"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "granite-4.2-8b-q4",
+    "display_name": "Granite 4.2 8B",
+    "family": "Granite",
+    "generation": "current",
+    "params_b": 8.0,
+    "active_params_b": 8.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 5.35,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Plain grouped-query attention on all 40 layers, so the context costs real memory. head_dim is absent from the config and derived as hidden_size ÷ heads."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. IBM's small model, aimed at enterprises that care about provenance.",
+    "cloud_equivalent": {
+      "name": "Granite 4.2 8B",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.25,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 12,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 12",
+      "url": "https://artificialanalysis.ai/models/granite-4-2-8b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/ibm-granite/granite-4.2-8b"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "granite-4.2-30b-q4",
+    "display_name": "Granite 4.2 30B",
+    "family": "Granite",
+    "generation": "current",
+    "params_b": 29.28,
+    "active_params_b": 29.28,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 17.72,
+    "kv_cache_gb_per_8k": 2.147,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Plain grouped-query attention on all 64 layers, so long contexts are expensive here. head_dim derived from hidden_size ÷ heads."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 30B; the context costs far more memory than the hybrid models of the same size.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 15,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 15",
+      "url": "https://artificialanalysis.ai/models/granite-4-2-30b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/ibm-granite/granite-4.2-30b"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ministral-3-8b-q4",
+    "display_name": "Ministral 3 8B",
+    "family": "Mistral",
+    "generation": "current",
+    "params_b": 8.92,
+    "active_params_b": 8.92,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 5.2,
+    "kv_cache_gb_per_8k": 1.141,
+    "architecture": {
+      "n_layers": 34,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Mistral has dropped sliding-window attention: all 34 layers are full attention."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Mistral's current small model.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 5,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 5",
+      "url": "https://artificialanalysis.ai/models/ministral-3-8b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ministral-3-14b-q4",
+    "display_name": "Ministral 3 14B",
+    "family": "Mistral",
+    "generation": "current",
+    "params_b": 13.95,
+    "active_params_b": 13.95,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 8.24,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "All 40 layers full attention; no sliding window."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Matches the older Mistral Small 24B on the index at a third of the size.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 6,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 6",
+      "url": "https://artificialanalysis.ai/models/ministral-3-14b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "devstral-small-2-24b-q4",
+    "display_name": "Devstral Small 2 24B",
+    "family": "Mistral",
+    "generation": "current",
+    "params_b": 24.01,
+    "active_params_b": 24.01,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 14.33,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "All 40 layers full attention; no sliding window."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Mistral's coding model, with an unusually long context for its size.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 393216,
+    "max_context_note": "384k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 8,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 8",
+      "url": "https://artificialanalysis.ai/models/devstral-small-2",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "devstral-2-123b-q4",
+    "display_name": "Devstral 2 123B",
+    "family": "Mistral",
+    "generation": "current",
+    "params_b": 125.03,
+    "active_params_b": 125.03,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 74.9,
+    "kv_cache_gb_per_8k": 2.953,
+    "architecture": {
+      "n_layers": 88,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Dense, all 88 layers full attention — the context cost is the highest on this list per token."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 123B: every parameter is read for every token, so it is slow as well as large.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "other (see repo)",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 9,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 9",
+      "url": "https://artificialanalysis.ai/models/devstral-2-123b",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "nemotron-3.5-lightning-30b-q4",
+    "display_name": "Nemotron 3.5 Lightning 30B-A3B",
+    "family": "Nemotron",
+    "generation": "current",
+    "params_b": 31.6,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 25.48,
+    "kv_cache_gb_per_8k": 0.05,
+    "architecture": {
+      "n_layers": 52,
+      "n_kv_heads": 2,
+      "head_dim": 128,
+      "full_attention_layers": 6,
+      "note": "Only 6 of 52 layers are attention at all; 23 are Mamba blocks with a fixed-size state and 23 are feed-forward only. The context is close to free."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. NVIDIA's Mamba hybrid: almost no KV cache, so long contexts cost nothing in memory.",
+    "cloud_equivalent": {
+      "name": "Nemotron 3.5 Lightning",
+      "input_price_per_mtok": 0.08,
+      "output_price_per_mtok": 0.2,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/nvidia/nemotron-3.5-lightning",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "OpenMDW 1.1",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 14,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 14",
+      "url": "https://artificialanalysis.ai/models/nemotron-3-5-lightning",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "glm-4.7-flash-q4",
+    "display_name": "GLM-4.7-Flash",
+    "family": "GLM",
+    "generation": "current",
+    "params_b": 31.22,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 18.31,
+    "kv_cache_gb_per_8k": 0.444,
+    "architecture": {
+      "n_layers": 47,
+      "n_kv_heads": 20,
+      "head_dim": null,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
+      "note": "Latent attention: the cache holds one 512-wide compressed vector plus 64 RoPE dimensions per layer, 1,152 bytes a token, not the 20 KB a head count would suggest. The config states no head_dim and it cannot be derived."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Replaces GLM-4.5-Air at a quarter of the size and a higher score.",
+    "cloud_equivalent": {
+      "name": "GLM-4.7-Flash",
+      "input_price_per_mtok": 0.061,
+      "output_price_per_mtok": 0.4,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/z-ai/glm-4.7-flash",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "MIT",
+    "max_context_tokens": 202752,
+    "max_context_note": "198k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 15,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 15",
+      "url": "https://artificialanalysis.ai/models/glm-4-7-flash",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/zai-org/GLM-4.7-Flash"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "glm-5.3-flash-ud-q4",
+    "display_name": "GLM-5.3-Flash",
+    "family": "GLM",
+    "generation": "current",
+    "params_b": 321.3,
+    "active_params_b": 18.0,
+    "quantisation": "UD-Q4_K_M",
+    "weights_gb": 188.99,
+    "kv_cache_gb_per_8k": 0.139,
+    "architecture": {
+      "n_layers": 45,
+      "n_kv_heads": 64,
+      "head_dim": null,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 0,
+      "full_attention_layers": 11,
+      "bytes_per_token_full": 1538,
+      "note": "34 of 45 layers use linear attention with a fixed state; the other 11 use latent attention with no RoPE part (1,024 B) plus a sparse-attention indexer (514 B). Note this is the figure for vLLM or SGLang: the reference Transformers code expands the latent before caching and uses far more."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Ties Qwen3.8 Flash for the strongest open model, but needs a 256 GB machine.",
+    "cloud_equivalent": {
+      "name": "GLM-5.3-Flash",
+      "input_price_per_mtok": 0.075,
+      "output_price_per_mtok": 0.25,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/z-ai/glm-5.3-flash",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "MIT",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 42,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 42",
+      "url": "https://artificialanalysis.ai/models/glm-5-3-flash",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/zai-org/GLM-5.3-Flash"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "deepseek-v4-flash-ud-q4",
+    "display_name": "DeepSeek V4-Flash",
+    "family": "DeepSeek",
+    "generation": "current",
+    "params_b": 284.0,
+    "active_params_b": 13.0,
+    "quantisation": "UD-Q4_K_M",
+    "weights_gb": 155.1,
+    "kv_cache_gb_per_8k": 0.056,
+    "architecture": {
+      "n_layers": 43,
+      "n_kv_heads": 1,
+      "head_dim": 512,
+      "kv_bytes_per_token_total": 6880,
+      "note": "Every layer compresses its cache by a different ratio: 21 layers keep one entry per four tokens, 20 keep one per 128, and two are a fixed 128-entry window. Summed, that is about 6.9 KB a token for the whole model — roughly a thirteenth of what the head counts imply. Read from the repo's own inference code."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The DeepSeek that replaced the R1 distills. Its compressed cache makes a million-token context practical.",
+    "cloud_equivalent": {
+      "name": "DeepSeek V4-Flash",
+      "input_price_per_mtok": 0.065,
+      "output_price_per_mtok": 0.18,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/deepseek/deepseek-v4-flash",
+      "is_exact_match": true,
+      "checked": "2026-09-09"
+    },
+    "license": "MIT",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 35,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 35",
+      "url": "https://artificialanalysis.ai/models/deepseek-v4-flash",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731"
+    ],
+    "TODO": "Capability ratings needed. Parameter count disputed: the card says 284B, the checkpoint totals 304B because it bundles a speculative-decoding module."
+  },
+  {
+    "id": "minimax-m2.7-q4",
+    "display_name": "MiniMax M2.7",
+    "family": "MiniMax",
+    "generation": "current",
+    "params_b": 228.7,
+    "active_params_b": 10.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 140.2,
+    "kv_cache_gb_per_8k": 2.08,
+    "architecture": {
+      "n_layers": 62,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "All 62 layers are full attention in this release, so the context is expensive despite the small active-parameter count."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. 10B active out of 229B; fast for its size once it fits.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "other (see repo)",
+    "max_context_tokens": 204800,
+    "max_context_note": "200k",
+    "frontier_equivalent": {
+      "tier": 0,
+      "score": 23,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 23",
+      "url": "https://artificialanalysis.ai/models/minimax-m2-7",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "hunyuan-hy3-q4",
+    "display_name": "Tencent Hy3",
+    "family": "Hunyuan",
+    "generation": "current",
+    "params_b": 295.0,
+    "active_params_b": 21.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 182.16,
+    "kv_cache_gb_per_8k": 2.684,
+    "architecture": {
+      "n_layers": 80,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Plain grouped-query attention on all 80 layers."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Tencent's Apache-licensed flagship. Needs an Ultra-class machine.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 26,
+      "score_note": null,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 26",
+      "url": "https://artificialanalysis.ai/models/hy3",
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/tencent/Hy3"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "kat-coder-v2.5-q4",
+    "display_name": "KAT-Coder V2.5 Dev 35B-A3B",
+    "family": "KAT",
+    "generation": "current",
+    "params_b": 34.66,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 21.39,
+    "kv_cache_gb_per_8k": 0.168,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 10,
+      "note": "Hybrid: three linear-attention layers per full-attention layer, so 10 of 40 hold a growing cache."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Kwaipilot's agentic coding model; the only current coder between the 30B and the 80B.",
+    "cloud_equivalent": {
+      "name": "no hosted endpoint found",
+      "input_price_per_mtok": null,
+      "output_price_per_mtok": null,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": null,
+      "is_exact_match": false,
+      "checked": "2026-09-09",
+      "note": "No OpenRouter listing found on the date checked, so there is nothing to price a break-even against."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "basis": null,
+      "url": null,
+      "checked": "2026-09-09",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev"
+    ],
+    "TODO": "Capability ratings needed. Active parameters inferred from the name, not stated on the card."
   }
 ]

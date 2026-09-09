@@ -87,6 +87,7 @@ ${gap != null ? `<p>The short version: the best open model here scores <b>${best
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${frontierRows}${rows}</tbody>
 </table>
+${data.defaults.frontier_basis?.mixed_versions ? `<p class="warnbox">${esc(data.defaults.frontier_basis.mixed_versions_note ?? '')}</p>` : ''}
 <p class="note">Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning score. Older models were scored under an earlier cohort of the index, so cross-era comparisons are approximate. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 

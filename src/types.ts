@@ -63,6 +63,16 @@ export interface ModelArchitecture {
    */
   kv_lora_rank?: number | null;
   qk_rope_head_dim?: number | null;
+  /**
+   * Escape hatches for architectures a single head-count cannot express. Where a
+   * research pass has read the real per-layer widths out of config.json and the
+   * modelling code, it records the bytes directly and `note` carries the arithmetic.
+   * `kv_bytes_per_token_total` wins outright; otherwise the full and sliding groups
+   * can each carry their own width.
+   */
+  kv_bytes_per_token_total?: number | null;
+  bytes_per_token_full?: number | null;
+  bytes_per_token_sliding?: number | null;
   /** layers whose KV cache grows with the full context; defaults to n_layers */
   full_attention_layers?: number | null;
   /** layers with a fixed attention window (Gemma 3, gpt-oss, Llama 4 chunked) */
@@ -82,6 +92,7 @@ export interface FrontierEquivalent {
   basis_TODO?: string;
   url?: string | null;
   checked?: string;
+  index_version?: string;
 }
 
 export interface Model {
@@ -170,7 +181,7 @@ export interface Defaults {
   };
   use_cases: { id: string; label: string; ratio: number; note?: string }[];
   frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
-  frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string };
+  frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string; mixed_versions?: boolean; mixed_versions_note?: string };
   frontier_reference?: { name: string; short?: string; score: number; score_alt?: number; url?: string }[];
   frontier_scale_max?: number;
   nearly_fits_ratio: number;

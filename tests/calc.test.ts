@@ -223,11 +223,14 @@ describe('sorting the model list', () => {
   const scores = (sort: string) =>
     computeView(parseState(`${base}&s=${sort}`, data), data).rows.filter((r) => r.fit.status === 'fits');
 
-  it('sorts by intelligence score', () => {
+  it('sorts by intelligence score, with unscored models last', () => {
     const rows = scores('smartest');
-    for (let i = 1; i < rows.length; i++) {
-      expect(rows[i - 1].model.frontier_equivalent!.score!).toBeGreaterThanOrEqual(rows[i].model.frontier_equivalent!.score!);
-    }
+    const seen = rows.map((r) => r.model.frontier_equivalent?.score ?? null);
+    const scored = seen.filter((s): s is number => s != null);
+    for (let i = 1; i < scored.length; i++) expect(scored[i - 1]).toBeGreaterThanOrEqual(scored[i]);
+    // every unscored model sits after every scored one
+    const lastScored = seen.map((s) => s != null).lastIndexOf(true);
+    expect(seen.slice(0, lastScored + 1).every((s) => s != null)).toBe(true);
   });
   it('sorts by speed', () => {
     const rows = scores('fastest');
