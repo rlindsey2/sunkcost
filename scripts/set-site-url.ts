@@ -7,9 +7,10 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const target = (process.env.SITE_URL ?? '').replace(/\/$/, '');
+// SITE_URL wins; otherwise Netlify's own URL variable names the primary domain of the site being built
+const target = (process.env.SITE_URL ?? process.env.URL ?? '').replace(/\/$/, '');
 if (!target) {
-  console.log('SITE_URL not set; leaving the built URLs alone');
+  console.log('neither SITE_URL nor URL is set; leaving the built URLs alone');
   process.exit(0);
 }
 

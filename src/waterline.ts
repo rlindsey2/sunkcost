@@ -34,6 +34,8 @@ export interface WaterlineOptions {
   id?: string;
   /** skip the sky and water fills so a surrounding panel supplies them */
   transparentBg?: boolean;
+  /** sky, surface and water only — for states with nothing to plot */
+  bare?: boolean;
 }
 
 export interface WaterlineGeometry {
@@ -158,6 +160,12 @@ export function renderWaterline(o: WaterlineOptions): string {
   if (!o.transparentBg) {
     p.push(`<rect x="0" y="0" width="${W}" height="${Math.max(0, surfaceY)}" fill="url(#${id}-sky)"/>`);
     p.push(`<rect x="0" y="${surfaceY.toFixed(1)}" width="${W}" height="${Math.max(0, H - surfaceY).toFixed(1)}" fill="url(#${id}-water)"/>`);
+  }
+  if (o.bare) {
+    p.push(`<rect x="0" y="${(surfaceY - 7 * s).toFixed(1)}" width="${W}" height="${7 * s}" fill="var(--surface, #9cc7ee)" opacity="0.16"/>`);
+    p.push(`<line x1="0" x2="${W}" y1="${surfaceY.toFixed(1)}" y2="${surfaceY.toFixed(1)}" stroke="var(--surface, #9cc7ee)" stroke-width="${1.75 * s}"/>`);
+    p.push('</svg>');
+    return p.join('\n');
   }
 
   // depth grid, labelled inside the water where the light text reads

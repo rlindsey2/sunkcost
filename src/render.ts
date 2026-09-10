@@ -294,16 +294,16 @@ function renderVerdict(state: State, data: Dataset, view: View) {
 export function drawWaterline(data: Dataset, view: View) {
   const wl = $('#waterline');
   const c = view.calc;
-  if (!c || view.price == null) {
-    wl.innerHTML = '';
-    wl.classList.add('is-empty');
-    return;
-  }
-  wl.classList.remove('is-empty');
   const box = $('#hero-water').getBoundingClientRect();
   const content = document.querySelector('.hero-content')?.getBoundingClientRect().height ?? 120;
   const width = Math.round(box.width) || 460;
   const height = Math.round(box.height) || 340;
+  wl.classList.remove('is-empty');
+  if (!c || view.price == null) {
+    // nothing to plot, but the water is still the ground the words sit on
+    wl.innerHTML = renderWaterline({ devicePriceUsd: 1000, dailySaving: 0, breakevenDays: null, maxYears: 1, width, height, plotHeight: Math.max(170, height - content - 4), bare: true });
+    return;
+  }
   wl.innerHTML = renderWaterline({
     devicePriceUsd: view.price,
     dailySaving: c.dailySaving,

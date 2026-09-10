@@ -152,7 +152,7 @@ describe('computeView on real data', () => {
   it('blocks rather than guesses when the price is unknown', () => {
     const v = computeView(parseState('?hw=mac-studio-m5-ultra-512', data), data);
     expect(v.calc).toBeNull();
-    expect(v.verdict.kind).toBe('unknown');
+    expect(v.verdict.kind).toBe('unpriced');
     expect(v.blockers.join()).toMatch(/price/);
   });
 });
@@ -267,7 +267,8 @@ describe('the price you actually paid', () => {
   it('unblocks a machine that has no list price', () => {
     const without = computeView(parseState('?hw=mac-studio-m5-ultra-512', data), data);
     expect(without.calc).toBeNull();
-    expect(without.blockers.join()).toMatch(/enter what you paid/);
+    expect(without.verdict.kind).toBe('unpriced');
+    expect(without.verdict.headline).toMatch(/No price/);
     const with_ = computeView(parseState('?hw=mac-studio-m5-ultra-512&p=12000', data), data);
     expect(with_.calc).not.toBeNull();
     expect(with_.price).toBe(12000);
@@ -359,5 +360,16 @@ describe('older models', () => {
     const v = computeView(parseState('?hw=mac-studio-m5-max-64&m=qwen3-32b-q4', data), data);
     expect(v.rows.some((r) => r.model.id === 'qwen3-32b-q4')).toBe(true);
     expect(v.model?.id).toBe('qwen3-32b-q4');
+  });
+});
+
+describe('a model nobody hosts', () => {
+  it('gets a verdict about that, not an error', () => {
+    const v = computeView(parseState('?hw=mac-studio-m5-max-64&m=kat-coder-v2.5-q4', data), data);
+    expect(v.model?.id).toBe('kat-coder-v2.5-q4');
+    expect(v.calc).toBeNull();
+    expect(v.verdict.kind).toBe('unhosted');
+    expect(v.verdict.headline).toMatch(/Nobody rents/);
+    expect(v.verdict.sub).toMatch(/tok\/s/);
   });
 });

@@ -508,7 +508,7 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
 .hero.is-never .verdict-headline { color: var(--accent-2); }
 .verdict-sub { font-size: 14.5px; margin-top: 7px; color: var(--water-text); text-shadow: 0 1px 10px rgba(3, 12, 20, 0.5); }
 .verdict-config { font-size: 12px; margin-top: 4px; color: rgba(207, 224, 238, 0.68); text-shadow: 0 1px 10px rgba(3, 12, 20, 0.5); }
-.verdict-unknown { font-size: 21px; color: var(--water-text); }
+.verdict-unhosted, .verdict-unpriced, .verdict-nofit, .verdict-unknown { color: #fff; }
 .caution {
   margin-top: 11px; padding: 8px 11px; font-size: 12.5px; line-height: 1.45;
   color: #ffe7cd; background: rgba(240, 167, 90, 0.14); border: 1px solid rgba(240, 167, 90, 0.3); border-radius: var(--r-sm);

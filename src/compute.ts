@@ -10,7 +10,7 @@ export interface ModelRow {
   throughput: ResolvedThroughput;
 }
 
-export type VerdictKind = 'surfaces' | 'never' | 'unknown';
+export type VerdictKind = 'surfaces' | 'never' | 'unhosted' | 'unpriced' | 'nofit' | 'unknown';
 
 export interface Capacity {
   /** most total tokens/day this machine can process at the local speed, generating 24 h a day */
@@ -124,8 +124,28 @@ export function computeView(state: State, data: Dataset): View {
   }
 
   let verdict: View['verdict'];
-  if (!calc) {
-    verdict = { kind: 'unknown', headline: 'Can’t compute this one.', sub: blockers.join('; ') };
+  if (!calc && model && (model.cloud_equivalent.input_price_per_mtok == null || model.cloud_equivalent.output_price_per_mtok == null)) {
+    // no one rents this model, so there is no bill to beat: local is the only way to run it at all
+    const speed = row?.throughput.tokensPerSec;
+    verdict = {
+      kind: 'unhosted',
+      headline: `Nobody rents ${model.display_name}.`,
+      sub: `There is no API price to beat, so break-even does not apply — if you want it, you run it yourself.${speed ? ` On this machine that means about ${Math.round(speed)} tok/s in ${(row!.fit.needGb ?? 0).toFixed(0)} GB.` : ''}`,
+    };
+  } else if (!calc && price == null) {
+    verdict = {
+      kind: 'unpriced',
+      headline: 'No price for this machine yet.',
+      sub: `${hw.status ?? 'It has not been priced.'} Enter what you expect to pay and the water fills in.`,
+    };
+  } else if (!calc && !model) {
+    verdict = {
+      kind: 'nofit',
+      headline: `Nothing here fits in ${hw.usable_memory_gb ?? '?'} GB.`,
+      sub: 'Try a bigger memory tier, a shorter context window, or show the older models.',
+    };
+  } else if (!calc) {
+    verdict = { kind: 'unknown', headline: 'Missing a number.', sub: blockers.join('; ') };
   } else if (calc.breakevenDays === null && calc.apiDeclinePerYear > 0 && calc.dailySaving > 0) {
     const best = calc.bestPosition;
     verdict = {
