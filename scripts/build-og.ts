@@ -69,6 +69,8 @@ function toPng(svg: string): Buffer {
 
 let n = 0;
 const manifest: Record<string, string> = {};
+// for the edge function: per configuration, which card to serve and what to say about it
+const shareManifest: { pairs: Record<string, { image: string; headline: string; config: string }>; defaults: Record<string, string> } = { pairs: {}, defaults: {} };
 for (const hw of data.hardware) {
   for (const m of data.models) {
     const svg = cardFor(hw.id, m.id);
@@ -76,6 +78,8 @@ for (const hw of data.hardware) {
     const name = `${hw.id}--${m.id}.png`;
     writeFileSync(new URL(name, outDir), toPng(svg));
     manifest[`${hw.id}|${m.id}`] = `/og/${name}`;
+    const v = computeView({ ...defaultState(data), hw: hw.id, model: m.id }, data);
+    shareManifest.pairs[`${hw.id}|${m.id}`] = { image: `/og/${name}`, headline: v.verdict.headline, config: v.configLine };
     n++;
   }
 }
@@ -85,4 +89,11 @@ const dv = computeView(ds, data);
 const def = dv.model ? cardFor(ds.hw, dv.model.id) : null;
 if (def) writeFileSync(new URL('default.png', outDir), toPng(def));
 writeFileSync(new URL('manifest.json', outDir), JSON.stringify(manifest, null, 2));
+for (const hw of data.hardware) {
+  const v = computeView({ ...defaultState(data), hw: hw.id }, data);
+  if (v.model && shareManifest.pairs[`${hw.id}|${v.model.id}`]) shareManifest.defaults[hw.id] = v.model.id;
+}
+const edgeDir = new URL('../netlify/edge-functions/', import.meta.url);
+mkdirSync(edgeDir, { recursive: true });
+writeFileSync(new URL('og-manifest.json', edgeDir), JSON.stringify(shareManifest));
 console.log(`wrote ${n} OG cards${def ? ' + default.png' : ''} to public/og/ (${OG_WIDTH}×${OG_HEIGHT})`);

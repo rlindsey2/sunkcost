@@ -3,7 +3,13 @@
   publish = "dist"
   command = "npm run build"
 
-# The whole app is one page; every configuration is a query string on it.
+# Share tags for a linked configuration are rewritten at the edge; see netlify/edge-functions/og.ts
+[[edge_functions]]
+  path = "/"
+  function = "og"
+
+# The generated pages are real files under /leaderboard, /models, /hardware and /compare.
+# Anything else falls back to the app, whose configuration lives in the query string.
 [[redirects]]
   from = "/*"
   to = "/index.html"

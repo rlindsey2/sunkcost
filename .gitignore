@@ -15,3 +15,6 @@ public/hardware/
 public/compare/
 public/sitemap.xml
 public/robots.txt
+
+# built for the edge function from data/*.json
+netlify/edge-functions/og-manifest.json
