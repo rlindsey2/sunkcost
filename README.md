@@ -81,6 +81,19 @@ Layout: the machine is a sentence, everything else hangs off it. "I'm looking at
 
 That last assumption is the weak one: prompt processing is fast, not free. On a heavy input ratio the real ceiling is plausibly 20-30% lower than shown. The fix is to record measured prompt-processing rates per model × hardware pair and subtract prefill time; see `capacity_note_TODO` in `defaults.json`.
 
+## Generated pages
+
+`npm run build:pages` writes real HTML into `public/` for everything a search might land on, then `vite build` copies it into `dist/`:
+
+| Path | What it answers |
+|---|---|
+| `/leaderboard/` | Every open model ranked on one intelligence index, with the hosted Anthropic and OpenAI models in the same table for scale |
+| `/models/<id>/` | What hardware you need to run it, cheapest and fastest and shortest pay-back, how good it is, what it costs either way |
+| `/hardware/<id>/` | Can this machine run local LLMs, what it runs, how fast, and whether it pays back |
+| `/compare/<a>-vs-<b>/` | Machine against machine, and each model against the next one down the leaderboard |
+
+Plus `sitemap.xml` and `robots.txt`. Nothing on these pages needs JavaScript.
+
 ## Sharing a preview
 
 Live preview: **https://sunkcost-preview.netlify.app**
