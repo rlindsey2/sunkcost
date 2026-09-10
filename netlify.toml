@@ -1,7 +1,10 @@
 # Static site: everything is built ahead of time, there is no backend.
 [build]
   publish = "dist"
-  command = "npm run build && tsx scripts/set-site-url.ts"
+  command = "npm run build && npx tsx scripts/set-site-url.ts"
+
+[build.environment]
+  NODE_VERSION = "22"
 
 # Share tags for a linked configuration are rewritten at the edge; see netlify/edge-functions/og.ts
 [[edge_functions]]

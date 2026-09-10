@@ -2,8 +2,7 @@
   "_comment": "Global assumptions. Every value here is shown in the UI and editable where it makes sense. Edit freely; the validate script checks types.",
   "data_last_checked": "2026-09-03",
   "site_url": "https://sunkcost.ai",
-  "repo_url": null,
-  "repo_url_TODO": "Set to the public GitHub URL once the repo is pushed; the corrections link uses it.",
+  "repo_url": "https://github.com/rlindsey2/sunkcost",
   "usage": {
     "default_tokens_per_day": 500000,
     "min_tokens_per_day": 10000,

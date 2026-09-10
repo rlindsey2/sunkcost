@@ -1,4 +1,6 @@
-# Sunk Cost — sunkcost.ai
+# Sunk Cost
+
+Source: https://github.com/rlindsey2/sunkcost · Live preview: https://sunkcost-preview.netlify.app — sunkcost.ai
 
 A single page that answers one question honestly: *if I buy this hardware to run local models, how much would I have to use it before it pays for itself, and what can it actually do?*
 
