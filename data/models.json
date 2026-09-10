@@ -41,10 +41,11 @@
       "tier": 0,
       "score": 7,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 7 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -90,10 +91,11 @@
       "tier": 0,
       "score": 7,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 7 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/llama-3-1-instruct-8b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -138,12 +140,13 @@
     "max_context_note": "32k natively; 128k with YaRN, which llama.cpp can enable",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 8,
-      "score_note": "reasoning mode; 5 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 8 (reasoning mode; 5 without)",
+      "score": 5,
+      "score_note": "reasoning mode; 6 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 5 (reasoning mode; 6 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-8b-instruct-reasoning",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -187,12 +190,13 @@
     "max_context_note": "32k natively; 128k with YaRN",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 10,
+      "score": 6,
       "score_note": "reasoning mode; 7 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 10 (reasoning mode; 7 without)",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 6 (reasoning mode; 7 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-14b-instruct-reasoning",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -236,12 +240,13 @@
     "max_context_note": "32k natively; 128k with YaRN",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 11,
-      "score_note": "reasoning mode; 8 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
+      "score": 7,
+      "score_note": "reasoning mode",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 7 (reasoning mode)",
       "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -285,12 +290,13 @@
     "max_context_note": "32k natively; 128k with YaRN",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 11,
-      "score_note": "reasoning mode; 8 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11 (reasoning mode; 8 without)",
+      "score": 7,
+      "score_note": "reasoning mode",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 7 (reasoning mode)",
       "url": "https://artificialanalysis.ai/models/qwen3-32b-instruct-reasoning",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -334,12 +340,13 @@
     "max_context_note": "256k natively",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 9,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
-      "url": "https://artificialanalysis.ai/models/qwen3-30b-a3b-2507",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "score": 10,
+      "score_note": "reasoning mode; 8 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 10 (reasoning mode; 8 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-30b-a3b-2507-reasoning",
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -383,12 +390,13 @@
     "max_context_note": "256k natively; up to 1M with YaRN",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 14,
+      "score": 10,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 14",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 10 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/qwen3-coder-30b-a3b-instruct",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current"
   },
@@ -432,12 +440,13 @@
     "max_context_note": "256k natively",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 18,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 18",
-      "url": "https://artificialanalysis.ai/models/qwen3-235b-a22b-instruct-2507",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "score": 13,
+      "score_note": "reasoning mode; 12 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 13 (reasoning mode; 12 without)",
+      "url": "https://artificialanalysis.ai/models/qwen3-235b-a22b-instruct-2507-reasoning",
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -486,12 +495,13 @@
     "max_context_note": "128k input",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 6,
+      "score": 4,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 6",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 4",
       "url": "https://artificialanalysis.ai/models/gemma-3-12b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -539,12 +549,13 @@
     "max_context_note": "128k input",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 7,
+      "score": 5,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 7",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 5",
       "url": "https://artificialanalysis.ai/models/gemma-3-27b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -588,12 +599,13 @@
     "max_context_note": "128k",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 11,
+      "score": 7,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 7",
       "url": "https://artificialanalysis.ai/models/mistral-small-3-2",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -638,12 +650,13 @@
     "max_context_note": "128k in config; the card does not state one for the distills",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 11,
+      "score": 8,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 11",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 8 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-qwen-32b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -688,12 +701,13 @@
     "max_context_note": "128k in config; the card does not state one for the distills",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 10,
+      "score": 8,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 8 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/deepseek-r1-distill-llama-70b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -737,12 +751,13 @@
     "max_context_note": "128k",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 9,
+      "score": 8,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 9",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 8 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/llama-3-3-instruct-70b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -790,12 +805,13 @@
     "max_context_note": "128k",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 15,
-      "score_note": "high reasoning effort; 14 at low",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 15 (high reasoning effort; 14 at low)",
+      "score": 9,
+      "score_note": "high reasoning effort; 10 at low",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 9 (high reasoning effort; 10 at low)",
       "url": "https://artificialanalysis.ai/models/gpt-oss-20b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current"
   },
@@ -842,13 +858,14 @@
     "max_context_tokens": 131072,
     "max_context_note": "128k",
     "frontier_equivalent": {
-      "tier": 1,
-      "score": 24,
-      "score_note": "high reasoning effort; 15 at low",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 24 (high reasoning effort; 15 at low)",
+      "tier": 0,
+      "score": 12,
+      "score_note": "high reasoning effort; 10 at low",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 12 (high reasoning effort; 10 at low)",
       "url": "https://artificialanalysis.ai/models/gpt-oss-120b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current"
   },
@@ -892,12 +909,13 @@
     "max_context_note": "128k",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 17,
+      "score": 11,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 17",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 11 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/glm-4-5-air",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -945,12 +963,13 @@
     "max_context_note": "10M claimed; nobody has the memory for that locally",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 10,
+      "score": 6,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 10",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 6",
       "url": "https://artificialanalysis.ai/models/llama-4-scout",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "legacy"
   },
@@ -999,13 +1018,14 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k",
     "frontier_equivalent": {
-      "tier": 1,
-      "score": 30,
-      "score_note": "reasoning mode; 22 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 30 (reasoning mode; 22 without)",
+      "tier": 0,
+      "score": 15,
+      "score_note": "reasoning mode; 14 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 15 (reasoning mode; 14 without)",
       "url": "https://artificialanalysis.ai/models/gemma-4-31b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current"
   },
@@ -1053,12 +1073,13 @@
     "max_context_note": "256k natively; up to 1M",
     "frontier_equivalent": {
       "tier": 1,
-      "score": 32,
-      "score_note": "reasoning mode; 25 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 32 (reasoning mode; 25 without)",
+      "score": 19,
+      "score_note": "reasoning mode; 15 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 19 (reasoning mode; 15 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current",
     "aliases": [
@@ -1112,13 +1133,14 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k natively; up to 1M with YaRN",
     "frontier_equivalent": {
-      "tier": 2,
-      "score": 52,
-      "score_note": "xhigh reasoning effort; 35 without reasoning",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 52 (xhigh reasoning effort; 35 without reasoning)",
+      "tier": 1,
+      "score": 34,
+      "score_note": "xhigh reasoning effort; 22 without reasoning",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 34 (xhigh reasoning effort; 22 without reasoning)",
       "url": "https://artificialanalysis.ai/models/qwen3-8-27b",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current"
   },
@@ -1166,12 +1188,13 @@
     "max_context_note": "1M",
     "frontier_equivalent": {
       "tier": 0,
-      "score": 20,
-      "score_note": "reasoning mode; 12 without",
-      "basis": "Artificial Analysis Intelligence Index v4.1.1: 20 (reasoning mode; 12 without)",
+      "score": 11,
+      "score_note": "reasoning mode; 9 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 11 (reasoning mode; 9 without)",
       "url": "https://artificialanalysis.ai/models/mistral-small-4",
-      "checked": "2026-09-03",
-      "index_version": "v4.1.1"
+      "checked": "2026-09-11",
+      "index_version": "v4.3"
     },
     "generation": "current"
   },
@@ -1215,12 +1238,13 @@
     "max_context_tokens": 131072,
     "max_context_note": "128k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 18,
       "score_note": "high effort",
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 18 (high effort)",
       "url": "https://artificialanalysis.ai/models/muse-glimmer",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1272,9 +1296,10 @@
       "tier": null,
       "score": null,
       "score_note": null,
-      "basis": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
       "url": null,
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1324,10 +1349,11 @@
     "frontier_equivalent": {
       "tier": 1,
       "score": 25,
-      "score_note": "estimated",
-      "basis": "Artificial Analysis Intelligence Index v4.3: 25 (estimated)",
+      "score_note": null,
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 25 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/ling-3-0-flash",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1378,10 +1404,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 12,
-      "score_note": "reasoning mode",
-      "basis": "Artificial Analysis Intelligence Index v4.3: 12 (reasoning mode)",
+      "score_note": null,
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 12",
       "url": "https://artificialanalysis.ai/models/ling-3-0-tiny",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1431,10 +1458,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 8,
-      "score_note": "reasoning mode",
-      "basis": "Artificial Analysis Intelligence Index v4.3: 8 (reasoning mode)",
+      "score_note": null,
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 8 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/lfm2-5-2-6b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1483,10 +1511,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 13,
-      "score_note": "reasoning mode",
-      "basis": "Artificial Analysis Intelligence Index v4.3: 13 (reasoning mode)",
+      "score_note": null,
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 13",
       "url": "https://artificialanalysis.ai/models/minicpm5-2b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1537,9 +1566,10 @@
       "tier": null,
       "score": null,
       "score_note": null,
-      "basis": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
       "url": null,
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1590,9 +1620,10 @@
       "tier": null,
       "score": null,
       "score_note": null,
-      "basis": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
       "url": null,
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1645,9 +1676,10 @@
       "tier": null,
       "score": null,
       "score_note": null,
-      "basis": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
       "url": null,
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1698,10 +1730,11 @@
     "frontier_equivalent": {
       "tier": 1,
       "score": 26,
-      "score_note": "reasoning mode",
-      "basis": "Artificial Analysis Intelligence Index v4.3: 26 (reasoning mode)",
+      "score_note": null,
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 26",
       "url": "https://artificialanalysis.ai/models/inkling-small",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1755,10 +1788,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 14,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 14",
+      "score_note": "reasoning mode; 9 without",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 14 (reasoning mode; 9 without) — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/gemma-4-12b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1812,10 +1846,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 9,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 9",
+      "score_note": "reasoning mode; 7 without",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 9 (reasoning mode; 7 without) — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/gemma-4-e4b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1867,10 +1902,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 17,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 17",
+      "score_note": "reasoning mode; 13 without",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 17 (reasoning mode; 13 without) — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/gemma-4-26b-a4b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1920,10 +1956,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 14,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 14",
+      "score_note": "reasoning mode; 13 without",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 14 (reasoning mode; 13 without) — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/qwen3-5-9b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -1972,10 +2009,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 13,
-      "score_note": "estimated",
-      "basis": "Artificial Analysis Intelligence Index v4.3: 13 (estimated)",
+      "score_note": "reasoning mode; 11 without",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 13 (reasoning mode; 11 without) — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/qwen3-5-4b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2022,12 +2060,13 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 22,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 22",
+      "score_note": "reasoning mode; 20 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 22 (reasoning mode; 20 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-6-27b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2077,9 +2116,10 @@
       "tier": 0,
       "score": 10,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 10",
       "url": "https://artificialanalysis.ai/models/qwen3-coder-next",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2128,10 +2168,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 16,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 16",
+      "score_note": "reasoning mode; 18 without",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 16 (reasoning mode; 18 without)",
       "url": "https://artificialanalysis.ai/models/qwen3-5-122b-a10b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2178,12 +2219,13 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k",
     "frontier_equivalent": {
-      "tier": 1,
-      "score": 42,
+      "tier": 2,
+      "score": 40,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 42",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 40",
       "url": "https://artificialanalysis.ai/models/qwen3-8-flash-next",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2231,9 +2273,10 @@
       "tier": 0,
       "score": 12,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 12",
       "url": "https://artificialanalysis.ai/models/granite-4-2-8b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2282,9 +2325,10 @@
       "tier": 0,
       "score": 15,
       "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 15",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 15 — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/granite-4-2-30b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2333,9 +2377,10 @@
       "tier": 0,
       "score": 5,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 5",
       "url": "https://artificialanalysis.ai/models/ministral-3-8b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2384,9 +2429,10 @@
       "tier": 0,
       "score": 6,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 6",
       "url": "https://artificialanalysis.ai/models/ministral-3-14b",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2435,9 +2481,10 @@
       "tier": 0,
       "score": 8,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 8",
       "url": "https://artificialanalysis.ai/models/devstral-small-2",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2486,9 +2533,10 @@
       "tier": 0,
       "score": 9,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 9",
-      "url": "https://artificialanalysis.ai/models/devstral-2-123b",
-      "checked": "2026-09-09",
+      "url": "https://artificialanalysis.ai/models/devstral-2",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2537,9 +2585,10 @@
       "tier": 0,
       "score": 14,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 14",
       "url": "https://artificialanalysis.ai/models/nemotron-3-5-lightning",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2588,10 +2637,11 @@
     "frontier_equivalent": {
       "tier": 0,
       "score": 15,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 15",
+      "score_note": "reasoning mode; 11 without",
+      "estimated": true,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 15 (reasoning mode; 11 without) — Artificial Analysis's estimate, not a measured run",
       "url": "https://artificialanalysis.ai/models/glm-4-7-flash",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2640,12 +2690,13 @@
     "max_context_tokens": 1048576,
     "max_context_note": "1M",
     "frontier_equivalent": {
-      "tier": 1,
+      "tier": 2,
       "score": 42,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 42",
       "url": "https://artificialanalysis.ai/models/glm-5-3-flash",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2693,10 +2744,11 @@
     "frontier_equivalent": {
       "tier": 1,
       "score": 35,
-      "score_note": null,
-      "basis": "Artificial Analysis Intelligence Index v4.3: 35",
+      "score_note": "max effort; the 0731 build",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 35 (max effort; the 0731 build)",
       "url": "https://artificialanalysis.ai/models/deepseek-v4-flash",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2742,12 +2794,13 @@
     "max_context_tokens": 204800,
     "max_context_note": "200k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 23,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 23",
       "url": "https://artificialanalysis.ai/models/minimax-m2-7",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2796,9 +2849,10 @@
       "tier": 1,
       "score": 26,
       "score_note": null,
+      "estimated": false,
       "basis": "Artificial Analysis Intelligence Index v4.3: 26",
       "url": "https://artificialanalysis.ai/models/hy3",
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [
@@ -2848,9 +2902,10 @@
       "tier": null,
       "score": null,
       "score_note": null,
-      "basis": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
       "url": null,
-      "checked": "2026-09-09",
+      "checked": "2026-09-11",
       "index_version": "v4.3"
     },
     "sources": [

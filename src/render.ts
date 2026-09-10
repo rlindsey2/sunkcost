@@ -369,7 +369,7 @@ function renderSmarts(state: State, data: Dataset, view: View) {
   el.innerHTML = `<div class="smarts-head"><h3>How smart is ${esc(m.display_name)}, really?</h3>${frontierScale(m, data, true)}</div>
     ${line}
     <p class="note dim numberline-key">Scale: Anthropic's Claude models (Haiku, Sonnet, Opus, Fable) and OpenAI's GPT-5.6 models (Luna, Terra, Sol).</p>
-    <p class="note">${t ? esc(t.plain) + ' ' : ''}${fe?.basis ? `${esc(fe.basis)}${fe.url ? ` (<a href="${esc(fe.url)}" rel="noopener">source</a>)` : ''}. ` : ''}${d.frontier_basis?.url ? `Hosted models on the same index: <a href="${esc(d.frontier_basis.url)}" rel="noopener">${esc(d.frontier_basis.name ?? 'leaderboard')}</a>${fe?.index_version ? ` ${esc(fe.index_version)}` : ''}. ` : ''}${d.frontier_basis?.mixed_versions ? `<b>${esc(d.frontier_basis.mixed_versions_note ?? '')}</b> ` : ''}Cloud equivalent for pricing: ${esc(m.cloud_equivalent.name)}${m.cloud_equivalent.is_exact_match ? '' : ' (nearest hosted model, not the same one)'}.</p>`;
+    <p class="note">${t ? esc(t.plain) + ' ' : ''}${fe?.basis ? `${esc(fe.basis)}${fe.url ? ` (<a href="${esc(fe.url)}" rel="noopener">source</a>)` : ''}. ` : ''}${d.frontier_basis?.url ? `Hosted models on the same index: <a href="${esc(d.frontier_basis.url)}" rel="noopener">${esc(d.frontier_basis.name ?? 'leaderboard')}</a>${fe?.index_version ? ` ${esc(fe.index_version)}` : ''}. ` : ''}${fe?.estimated ? `<b>${esc(d.frontier_basis?.estimated_note ?? '')}</b> ` : ''}Cloud equivalent for pricing: ${esc(m.cloud_equivalent.name)}${m.cloud_equivalent.is_exact_match ? '' : ' (nearest hosted model, not the same one)'}.</p>`;
   layoutNumberLine();
   void state;
 }

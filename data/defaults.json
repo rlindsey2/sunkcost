@@ -127,15 +127,15 @@
     },
     {
       "tier": 1,
-      "min_score": 24,
+      "min_score": 18,
       "label": "Haiku-class",
       "anthropic": "Claude Haiku 4.5",
       "openai": null,
-      "plain": "In the same band as Anthropic's cheap, fast tier. OpenAI's cheapest current model scores higher than this band."
+      "plain": "In the same band as Anthropic's cheap, fast tier. Every current OpenAI model scores above this band."
     },
     {
       "tier": 2,
-      "min_score": 43,
+      "min_score": 38,
       "label": "Sonnet-class",
       "anthropic": "Claude Sonnet 5",
       "openai": "GPT-5.6 Luna / Terra",
@@ -143,72 +143,72 @@
     },
     {
       "tier": 3,
-      "min_score": 60,
+      "min_score": 47,
       "label": "Frontier",
       "anthropic": "Claude Opus 5 / Fable 5.1",
-      "openai": "GPT-5.6 Sol",
-      "plain": "Matches the best hosted models. Nothing on this list gets here."
+      "openai": "GPT-5.6 Sol / GPT-6 Astra",
+      "plain": "Matches the best hosted models. Nothing you can download gets here."
     }
   ],
   "frontier_basis": {
-    "name": "Artificial Analysis Intelligence Index",
+    "name": "Artificial Analysis Intelligence Index v4.3",
     "url": "https://artificialanalysis.ai/leaderboards/models",
-    "checked": "2026-09-03",
-    "note": "One consistent public aggregate. Scores for hybrid models are the reasoning / highest-effort figure; the non-reasoning figure is noted per model. Older open models were scored under an earlier cohort of the index, so cross-era comparisons are approximate.",
-    "mixed_versions": true,
-    "mixed_versions_note": "Scores here were read at two different versions of the index — v4.1.1 for the models checked on 2026-09-03 and v4.3 for those added on 2026-09-09. The index is rescaled between versions, so comparing a v4.1.1 score with a v4.3 one is only roughly valid. A re-read at one version is in progress; until then, treat close rankings across the two as unresolved."
+    "checked": "2026-09-11",
+    "note": "One consistent public aggregate, re-read across every model on 2026-09-11 so the ranking is on a single scale. Hybrid models are shown at their reasoning or highest-effort figure, with the alternative noted per model. Some scores are Artificial Analysis's own estimate rather than a measured run of the full suite; those are marked.",
+    "estimated_note": "Marked 'estimated' where Artificial Analysis imputed the score rather than running the full v4.3 suite. 26 of the models here carry that mark."
   },
   "frontier_reference": [
     {
       "name": "Claude Haiku 4.5",
-      "score": 30,
-      "score_alt": 24,
-      "url": "https://artificialanalysis.ai/models/claude-4-5-haiku-reasoning",
-      "short": "Haiku 4.5"
-    },
-    {
-      "name": "GPT-5.6 Luna",
-      "score": 52,
-      "score_alt": 27,
-      "url": "https://artificialanalysis.ai/models/gpt-5-6-luna",
-      "short": "Luna"
+      "score": 18,
+      "score_alt": 15,
+      "url": "https://artificialanalysis.ai/models/claude-4-5-haiku-reasoning"
     },
     {
       "name": "Claude Sonnet 5",
-      "score": 55,
-      "score_alt": 43,
-      "url": "https://artificialanalysis.ai/models/claude-sonnet-5",
-      "short": "Sonnet 5"
+      "score": 38,
+      "score_alt": 29,
+      "url": "https://artificialanalysis.ai/models/claude-sonnet-5"
+    },
+    {
+      "name": "GPT-5.6 Luna",
+      "score": 38,
+      "score_alt": 17,
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-luna"
     },
     {
       "name": "GPT-5.6 Terra",
-      "score": 57,
-      "score_alt": 35,
-      "url": "https://artificialanalysis.ai/models/gpt-5-6-terra",
-      "short": "Terra"
+      "score": 42,
+      "score_alt": 22,
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-terra"
     },
     {
       "name": "GPT-5.6 Sol",
-      "score": 61,
-      "score_alt": 42,
-      "url": "https://artificialanalysis.ai/models/gpt-5-6-sol",
-      "short": "Sol"
+      "score": 47,
+      "score_alt": 28,
+      "url": "https://artificialanalysis.ai/models/gpt-5-6-sol"
     },
     {
       "name": "Claude Opus 5",
-      "score": 63,
-      "url": "https://artificialanalysis.ai/models/claude-opus-5",
-      "short": "Opus 5"
+      "score": 51,
+      "score_alt": 40,
+      "url": "https://artificialanalysis.ai/models/claude-opus-5"
+    },
+    {
+      "name": "GPT-6 Astra",
+      "score": 53,
+      "score_alt": 45,
+      "url": "https://artificialanalysis.ai/models/gpt-6-astra"
     },
     {
       "name": "Claude Fable 5.1",
-      "score": 66,
-      "url": "https://artificialanalysis.ai/models/claude-fable-5-1",
-      "short": "Fable 5.1"
+      "score": 53,
+      "score_alt": 47,
+      "url": "https://artificialanalysis.ai/models/claude-fable-5-1"
     }
   ],
-  "frontier_reference_note": "Hosted lineups read from platform.claude.com/docs/en/models/overview and developers.openai.com/api/docs/models on 2026-09-03. score_alt is the non-reasoning figure where the index reports both. Short names on the scale are Anthropic's Claude models (Haiku, Sonnet, Opus, Fable) and OpenAI's GPT-5.6 models (Luna, Terra, Sol).",
-  "frontier_scale_max": 70,
+  "frontier_reference_note": "Hosted lineups read from the Artificial Analysis leaderboard on 2026-09-11. score_alt is the non-reasoning or lowest-effort figure where the index reports both. GPT-6 Astra arrived on 2026-09-03 and now tops OpenAI's range.",
+  "frontier_scale_max": 56,
   "context_decay": {
     "model": "tokens_per_sec(context) = measured × (bytes_of_weights + kv_at_measured_context) / (bytes_of_weights + kv_at_your_context)",
     "why": "At batch size 1 decoding is memory-bandwidth bound. Each generated token reads the active weights AND the whole KV cache, so a large context cuts speed roughly in proportion to how much the cache adds to the bytes read.",
