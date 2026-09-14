@@ -15,6 +15,8 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").repl
 
 export default async (request: Request, context: Context) => {
   const url = new URL(request.url);
+  // the bare preview host is redirected to the real domain; let that happen untouched
+  if (url.hostname === "sunkcost-preview.netlify.app") return context.next();
   const hw = url.searchParams.get("hw");
   if (!hw) return context.next();
   const model = url.searchParams.get("m") ?? defaults[hw];

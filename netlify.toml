@@ -11,6 +11,14 @@
   path = "/"
   function = "og"
 
+# The preview address predates the domain. Send it, path and query intact, to the real one.
+# Only this exact host matches, so deploy previews (deploy-preview-N--…) keep working.
+[[redirects]]
+  from = "https://sunkcost-preview.netlify.app/*"
+  to = "https://sunkcost.ai/:splat"
+  status = 301
+  force = true
+
 # The generated pages are real files under /leaderboard, /models, /hardware and /compare.
 # Anything else falls back to the app, whose configuration lives in the query string.
 [[redirects]]
