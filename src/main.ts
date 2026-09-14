@@ -1,12 +1,13 @@
 import { data } from './data';
 import { drawWaterline, layoutNumberLine, renderAll, shareUrl } from './render';
+import { onSiteHost, sharePath } from './share';
 import { parseState, serializeState, sliderToUsage, usageToSlider, type State } from './state';
 import { renderOgCard, ogFigures, OG_WIDTH, OG_HEIGHT } from './og';
 import { fmtDuration, fmtNum } from './format';
 import type { View } from './compute';
 import './styles.css';
 
-let state: State = parseState(location.search, data);
+let state: State = parseState(location.search, data, location.pathname);
 let view: View;
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
@@ -24,10 +25,13 @@ function update(patch: Partial<State> = {}) {
     const max = Number(el.max || 100);
     el.style.setProperty('--pct', max === min ? '0%' : `${(((Number(el.value) - min) / (max - min)) * 100).toFixed(2)}%`);
   }
-  const qs = serializeState(state);
+  // keep the address bar a shareable link: on the site, the pre-built page for this machine and model
+  const onSite = onSiteHost(data);
+  const target = onSite ? sharePath(state, view.model?.id, data) : `?${serializeState(state)}`;
   // some embeds (sandboxed frames) refuse history writes; the page must still work
   try {
-    if (location.search !== `?${qs}`) history.replaceState(null, '', `?${qs}`);
+    const current = onSite ? location.pathname + location.search : location.search;
+    if (current !== target) history.replaceState(null, '', target);
   } catch {
     /* ignore */
   }
@@ -135,10 +139,10 @@ document.addEventListener('keydown', (e) => {
 $('#copy-link').addEventListener('click', async () => {
   const btn = $('#copy-link');
   try {
-    await navigator.clipboard.writeText(shareUrl(state));
+    await navigator.clipboard.writeText(shareUrl(state, data, view.model?.id));
     btn.textContent = 'Copied';
   } catch {
-    window.prompt('Copy this link', shareUrl(state));
+    window.prompt('Copy this link', shareUrl(state, data, view.model?.id));
   }
   setTimeout(() => (btn.textContent = 'Copy link'), 1600);
 });
@@ -203,7 +207,7 @@ if (heroWater) {
 window.addEventListener('resize', () => layoutNumberLine());
 
 window.addEventListener('popstate', () => {
-  state = parseState(location.search, data);
+  state = parseState(location.search, data, location.pathname);
   usage.value = String(usageToSlider(state.usage, u.min_tokens_per_day, u.max_tokens_per_day));
   update();
 });

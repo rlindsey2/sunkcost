@@ -4,6 +4,7 @@ import { kvCacheGb } from './fit';
 import { serializeState, type State } from './state';
 import { CAPABILITY_KEYS, CAPABILITY_LABELS, type Dataset, type Hardware, type Model, type Rating } from './types';
 import { renderWaterline } from './waterline';
+import { onSiteHost, sharePath } from './share';
 
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
@@ -237,8 +238,10 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
 
   const ce = m.cloud_equivalent;
   const price = ce.input_price_per_mtok == null
-    ? '<span class="chip todo">API price unknown</span>'
-    : `<span class="chip" title="${esc(ce.is_exact_match ? ce.name : `nearest hosted equivalent: ${ce.name}`)} on OpenRouter"><b>$${ce.input_price_per_mtok}</b>/<b>$${ce.output_price_per_mtok}</b> per 1M${ce.is_exact_match ? '' : '*'}</span>`;
+    ? ''
+    : ce.stand_in
+      ? `<span class="chip chip-standin" title="${esc(ce.note ?? `Nobody rents ${m.display_name} by the token; priced as ${ce.name}`)}"><b>$${ce.input_price_per_mtok}</b>/<b>$${ce.output_price_per_mtok}</b> per 1M · priced as ${esc(ce.name)}</span>`
+      : `<span class="chip" title="${esc(ce.is_exact_match ? ce.name : `nearest hosted equivalent: ${ce.name}`)} on OpenRouter"><b>$${ce.input_price_per_mtok}</b>/<b>$${ce.output_price_per_mtok}</b> per 1M${ce.is_exact_match ? '' : '*'}</span>`;
 
   const chips = [
     `<span class="chip" title="${fmtGb(m.weights_gb)} of weights plus ${fmtGb(kv)} of KV cache"><b>${fmtGb(fit.needGb)}</b> at ${fmtCtx(state.ctx)}</span>`,
@@ -248,9 +251,13 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
   ].filter(Boolean).join('');
 
   const reason = fit.status === 'fits' ? '' : `<p class="m-reason">${fit.status === 'nearly' ? 'Nearly fits' : fit.status === 'context' ? 'Past its context limit' : fit.status === 'no' ? 'Doesn’t fit' : 'Unknown'} — ${esc(fit.reason)}.</p>`;
+  // the link matters most on a model that does not fit, so greyed-out cards keep it, clickable
+  const runLink = `<a href="/models/${esc(m.id)}/">What it takes to run ${esc(m.display_name)}</a>`;
   const sources = selected
-    ? `<p class="m-src"><a href="/models/${esc(m.id)}/">What it takes to run ${esc(m.display_name)}</a> · ${sourcesLine(m, view, data)}</p>`
-    : '';
+    ? `<p class="m-src">${runLink} · ${sourcesLine(m, view, data)}</p>`
+    : disabled
+      ? `<p class="m-src">${runLink}</p>`
+      : '';
 
   return `<div class="model${selected ? ' is-selected' : ''}${disabled ? ' is-disabled' : ''}" role="radio" aria-checked="${selected}" tabindex="${disabled ? -1 : 0}" data-model="${esc(m.id)}"${disabled ? ' aria-disabled="true"' : ''}>
     <div class="m-top">
@@ -283,7 +290,7 @@ function renderVerdict(state: State, data: Dataset, view: View) {
 
   drawWaterline(data, view);
 
-  $<HTMLAnchorElement>('#share-x').href = `https://twitter.com/intent/tweet?${new URLSearchParams({ text: shareText(view), url: shareUrl(state) }).toString()}`;
+  $<HTMLAnchorElement>('#share-x').href = `https://twitter.com/intent/tweet?${new URLSearchParams({ text: shareText(view), url: shareUrl(state, data, view.model?.id) }).toString()}`;
 }
 
 /**
@@ -318,8 +325,10 @@ export function drawWaterline(data: Dataset, view: View) {
   });
 }
 
-export function shareUrl(state: State): string {
-  return `${location.origin}${location.pathname}?${serializeState(state)}`;
+/** The address to share: the pre-built page for this machine and model, on the site itself. */
+export function shareUrl(state: State, data: Dataset, modelId?: string | null): string {
+  const origin = onSiteHost(data) ? location.origin : data.defaults.site_url.replace(/\/$/, '');
+  return `${origin}${sharePath(state, modelId, data)}`;
 }
 
 export function shareText(view: View): string {
@@ -332,7 +341,7 @@ function renderFigures(state: State, data: Dataset, view: View) {
   const t = view.throughput;
   const figs: [string, string, string?][] = [
     ['Hardware', view.price == null ? 'unknown' : fmtUsd(view.price), view.priceIsCustom ? 'the price you paid' : view.hw.generation === 'previous' ? 'launch price' : undefined],
-    ['API cost per month', c ? fmtUsd(c.cloudCostPerMonth) : '—', view.model ? `${view.model.cloud_equivalent.name} on OpenRouter` : undefined],
+    ['API cost per month', c ? fmtUsd(c.cloudCostPerMonth) : '—', view.model ? (view.model.cloud_equivalent.stand_in ? `nobody rents it; priced as ${view.model.cloud_equivalent.name}` : `${view.model.cloud_equivalent.name} on OpenRouter`) : undefined],
     ['Electricity per month', c ? fmtUsd(c.localCostPerMonth) : '—', view.hw.load_watts ? `${view.hw.load_watts} W under load${view.hw.load_watts_status === 'stand_in' ? ' (stand-in figure)' : ''}` : undefined],
     ['Local speed', t?.tokensPerSec == null ? 'unknown' : `${fmtNum(t.tokensPerSec, 0)} tok/s`, t ? t.measurement : undefined],
     ['Break-even', c ? (c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays)) : '—', c?.breakevenTokens != null ? `${fmtTokens(c.breakevenTokens)} tokens` : undefined],
@@ -463,7 +472,7 @@ breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)}
   <dt>Usable memory</dt><dd>${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}</dd>
   <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}</dd>
   <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} <b>output</b> tokens a day, generating without a break; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} once the input at ${esc(ratioLabel(state.ratio))} is counted.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} ${esc(data.defaults.capacity_note ?? '')}</dd>
-  <dt>API price</dt><dd>${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
+  <dt>API price</dt><dd>${ce.stand_in ? `${esc(ce.note ?? '')} ${esc(ce.name)}` : `${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}`}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
   ${c.apiDeclinePerYear > 0 ? `<dt>Falling API prices</dt><dd>Assuming ${Math.round(c.apiDeclinePerYear * 100)}% a year. ${esc(data.defaults.api_decline.source)}${data.defaults.api_decline.source_url ? ` <a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">Source</a>.` : ''}${c.bestPosition ? ` The saving peaks ${fmtDuration(c.bestPosition.days)} in; after that the API is cheaper than the electricity and the position sinks.` : ''}</dd>` : ''}
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>

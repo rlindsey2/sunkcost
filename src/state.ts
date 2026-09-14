@@ -76,8 +76,19 @@ export function defaultState(data: Dataset): State {
   };
 }
 
-export function parseState(search: string, data: Dataset): State {
+/** A share page lives at /s/<hardware>/<model>/: the path names the pair, the query carries the rest. */
+export function parseSharePath(pathname: string): { hw: string; model: string } | null {
+  const m = pathname.match(/^\/s\/([^/]+)\/([^/]+)\/?$/);
+  return m ? { hw: decodeURIComponent(m[1]), model: decodeURIComponent(m[2]) } : null;
+}
+
+export function parseState(search: string, data: Dataset, pathname = '/'): State {
   const p = new URLSearchParams(search);
+  const fromPath = parseSharePath(pathname);
+  if (fromPath) {
+    p.set(KEYS.hw, fromPath.hw);
+    p.set(KEYS.model, fromPath.model);
+  }
   const d = defaultState(data);
   const u = data.defaults.usage;
   const hw = p.get(KEYS.hw);

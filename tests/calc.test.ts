@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { calculate, cumulativeSaving, DAYS_PER_YEAR, positionAfterDays, splitTokens } from '../src/calc';
 import { fit, kvCacheGbFromArchitecture, estimateTokensPerSec, contextSpeedFactor, resolveThroughput } from '../src/fit';
-import { parseState, serializeState, sliderToUsage, usageToSlider } from '../src/state';
+import { parseState, serializeState, sliderToUsage, usageToSlider, parseSharePath } from '../src/state';
+import { sharePath } from '../src/share';
 import { waterlineGeometry, renderWaterline } from '../src/waterline';
 import { computeView } from '../src/compute';
 import type { Dataset, Hardware, Model } from '../src/types';
@@ -363,14 +364,57 @@ describe('older models', () => {
   });
 });
 
-describe('a model nobody hosts', () => {
-  it('gets a verdict about that, not an error', () => {
+describe('a model nobody rents', () => {
+  it('is priced as its closest hosted match, and says so', () => {
+    const m = data.models.find((x) => x.id === 'kat-coder-v2.5-q4')!;
+    expect(m.cloud_equivalent.stand_in).toBe(true);
+    expect(m.cloud_equivalent.stand_in_for).toBe('qwen3.6-35b-a3b-q4');
+    expect(m.cloud_equivalent.note).toMatch(/Nobody rents/);
     const v = computeView(parseState('?hw=mac-studio-m5-max-64&m=kat-coder-v2.5-q4', data), data);
     expect(v.model?.id).toBe('kat-coder-v2.5-q4');
-    expect(v.calc).toBeNull();
-    expect(v.verdict.kind).toBe('unhosted');
-    expect(v.verdict.headline).toMatch(/Nobody rents/);
-    expect(v.verdict.sub).toMatch(/tok\/s/);
+    expect(v.calc).not.toBeNull();
+    expect(['surfaces', 'never']).toContain(v.verdict.kind);
+  });
+
+  it('leaves no model without a price, and never borrows from a borrower', () => {
+    for (const m of data.models) {
+      const ce = m.cloud_equivalent;
+      expect(ce.input_price_per_mtok, m.id).not.toBeNull();
+      if (ce.stand_in) {
+        const src = data.models.find((x) => x.id === ce.stand_in_for);
+        expect(src, m.id).toBeDefined();
+        expect(src!.cloud_equivalent.stand_in, m.id).toBeFalsy();
+        expect(src!.generation, m.id).not.toBe('legacy');
+        expect([src!.cloud_equivalent.input_price_per_mtok, src!.cloud_equivalent.output_price_per_mtok], m.id)
+          .toEqual([ce.input_price_per_mtok, ce.output_price_per_mtok]);
+      }
+    }
+  });
+});
+
+describe('share links', () => {
+  it('put a pair with a card on its own page, and read it back', () => {
+    const s = parseState('?hw=mac-mini-m6-32&m=qwen3.8-27b-q4&u=1000000', data);
+    const path = sharePath(s, 'qwen3.8-27b-q4', data);
+    expect(path.startsWith('/s/mac-mini-m6-32/qwen3.8-27b-q4/?')).toBe(true);
+    expect(path).not.toMatch(/[?&](hw|m)=/);
+    const url = new URL(path, 'https://sunkcost.ai');
+    const back = parseState(url.search, data, url.pathname);
+    expect(back.hw).toBe('mac-mini-m6-32');
+    expect(back.model).toBe('qwen3.8-27b-q4');
+    expect(back.usage).toBe(1000000);
+  });
+
+  it('fall back to the app root for a pair with no card', () => {
+    // a 189 GB model does not fit a 16 GB Mac mini, so there is no card and no share page
+    const s = parseState('?hw=mac-mini-m6-16', data);
+    expect(sharePath(s, 'glm-5.3-flash-ud-q4', data).startsWith('/?')).toBe(true);
+  });
+
+  it('only treat /s/<hardware>/<model>/ as a share page', () => {
+    expect(parseSharePath('/')).toBeNull();
+    expect(parseSharePath('/models/qwen3.8-27b-q4/')).toBeNull();
+    expect(parseSharePath('/s/a/b/')).toEqual({ hw: 'a', model: 'b' });
   });
 });
 

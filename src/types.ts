@@ -49,6 +49,11 @@ export interface CloudEquivalent {
   source_url?: string | null;
   is_exact_match: boolean;
   checked?: string;
+  note?: string;
+  /** nobody rents this model; the price is borrowed from the closest hosted match */
+  stand_in?: boolean;
+  stand_in_for?: string;
+  stand_in_basis?: 'finetune' | 'nearest_score' | 'nearest_size';
 }
 
 export interface ModelArchitecture {

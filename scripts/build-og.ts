@@ -6,6 +6,7 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { Resvg } from '@resvg/resvg-js';
 import { computeView } from '../src/compute';
+import { hasShareCard } from '../src/share';
 import { defaultState } from '../src/state';
 import { renderOgCard, ogFigures, OG_WIDTH, OG_HEIGHT } from '../src/og';
 import { fmtDuration } from '../src/format';
@@ -39,7 +40,7 @@ const fontOpts = (() => {
 function cardFor(hwId: string, modelId: string): string | null {
   const state = { ...defaultState(data), hw: hwId, model: modelId };
   const view = computeView(state, data);
-  if (!view.calc || view.price == null || view.model?.id !== modelId) return null;
+  if (!hasShareCard(hwId, modelId, data) || !view.calc || view.price == null) return null;
   const c = view.calc;
   return renderOgCard({
     configLine: view.configLine,
@@ -69,7 +70,7 @@ function toPng(svg: string): Buffer {
 
 let n = 0;
 const manifest: Record<string, string> = {};
-// for the edge function: per configuration, which card to serve and what to say about it
+// per machine-and-model pair: which card to show and what to say about it
 const shareManifest: { pairs: Record<string, { image: string; headline: string; config: string }>; defaults: Record<string, string> } = { pairs: {}, defaults: {} };
 for (const hw of data.hardware) {
   for (const m of data.models) {
@@ -89,11 +90,8 @@ const dv = computeView(ds, data);
 const def = dv.model ? cardFor(ds.hw, dv.model.id) : null;
 if (def) writeFileSync(new URL('default.png', outDir), toPng(def));
 writeFileSync(new URL('manifest.json', outDir), JSON.stringify(manifest, null, 2));
-for (const hw of data.hardware) {
-  const v = computeView({ ...defaultState(data), hw: hw.id }, data);
-  if (v.model && shareManifest.pairs[`${hw.id}|${v.model.id}`]) shareManifest.defaults[hw.id] = v.model.id;
-}
-const edgeDir = new URL('../netlify/edge-functions/', import.meta.url);
-mkdirSync(edgeDir, { recursive: true });
-writeFileSync(new URL('og-manifest.json', edgeDir), JSON.stringify(shareManifest));
+// read by scripts/build-share-pages.ts, which writes one share page per pair
+const genDir = new URL('../.generated/', import.meta.url);
+mkdirSync(genDir, { recursive: true });
+writeFileSync(new URL('share-manifest.json', genDir), JSON.stringify(shareManifest));
 console.log(`wrote ${n} OG cards${def ? ' + default.png' : ''} to public/og/ (${OG_WIDTH}×${OG_HEIGHT})`);

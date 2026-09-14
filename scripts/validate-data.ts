@@ -49,7 +49,14 @@ for (const m of models) {
   const ce = m.cloud_equivalent;
   if (!ce) errors.push(`${m.id}: cloud_equivalent missing`);
   else {
-    if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) warnings.push(`${m.id}: cloud price null (TODO)`);
+    if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) errors.push(`${m.id}: no rental price — add the OpenRouter price, or a stand-in from the closest hosted model`);
+    if (ce.stand_in) {
+      const target = models.find((x) => x.id === ce.stand_in_for);
+      if (!target) errors.push(`${m.id}: stand-in points at unknown model ${ce.stand_in_for}`);
+      else if (target.cloud_equivalent.stand_in) errors.push(`${m.id}: stand-in ${target.id} is itself a stand-in`);
+      else if (target.cloud_equivalent.input_price_per_mtok !== ce.input_price_per_mtok || target.cloud_equivalent.output_price_per_mtok !== ce.output_price_per_mtok) errors.push(`${m.id}: stand-in price no longer matches ${target.id}`);
+      if (!ce.stand_in_basis || !ce.note) errors.push(`${m.id}: stand-in needs a basis and a note saying nobody rents it`);
+    }
     if (typeof ce.is_exact_match !== 'boolean') errors.push(`${m.id}: is_exact_match must be boolean`);
   }
   if (m.active_params_b != null && m.active_params_b > m.params_b) errors.push(`${m.id}: active params exceed total`);

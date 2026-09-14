@@ -16,5 +16,6 @@ public/compare/
 public/sitemap.xml
 public/robots.txt
 
-# built for the edge function from data/*.json
-netlify/edge-functions/og-manifest.json
+# built from data/*.json for scripts/build-share-pages.ts
+.generated/
+.netlify/

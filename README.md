@@ -73,9 +73,10 @@ Layout: the machine is a sentence, everything else hangs off it. "I'm looking at
 
 ## Share mechanic
 
-- Every configuration is a URL (`?hw=…&m=…&u=…&r=…&kwh=…&ctx=…&cs=…`). Changing anything updates the URL.
-- `npm run build:og` renders a 1200×630 card for every computable hardware × model pair at the default usage into `public/og/`, plus `default.png`. The in-page "Download card" button renders the exact current config with the same code.
-- **Limitation of static hosting:** social scrapers read `og:image` from HTML, not from JavaScript, so a bare query-string URL gets the default card. The per-config cards are wired up for the Phase 2 pages (`public/routes.json` lists every page, its title, query string and card). To get per-URL cards without those pages you would need an edge function, which is out of scope for v1.
+- Every configuration is a URL. The address bar always holds a shareable link: `/s/<machine>/<model>/?…` when that pair has a card (the query carries usage, context, the price you paid and the rest), otherwise `/?…`.
+- `scripts/build-og.ts` renders a 1200×630 card for every machine-and-model pair that has a verdict at the default usage, into `public/og/`, and writes `.generated/share-manifest.json`.
+- `scripts/build-share-pages.ts` runs after `vite build` and writes one page per pair under `dist/s/`: the built app, unchanged, with its share tags set for that pair. Social scrapers don't run JavaScript, so this is what makes a link preview properly on X, Slack or iMessage. It is a plain file, so it costs nothing to serve and can't fall over under load.
+- Share pages carry `noindex`, since they are near-duplicates of the app. Older `/?hw=…&m=…` links still open the right configuration, with the generic card.
 
 ## The daily ceiling
 
@@ -96,27 +97,19 @@ That last assumption is the weak one: prompt processing is fast, not free. On a 
 
 Plus `sitemap.xml` and `robots.txt`. Nothing on these pages needs JavaScript.
 
-## Sharing a preview
+## Hosting
 
-Live at **https://sunkcost.ai**, built by Netlify on every push to `main`. DNS lives on Cloudflare (the domain is registered there, so it must): `sunkcost.ai` and `www` are CNAMEs to `sunkcost-preview.netlify.app`, set to DNS-only so Netlify can issue the certificate. Turning the orange cloud on will break HTTPS renewal.
+Live at **https://sunkcost.ai** on Cloudflare Pages (project `sunkcost`). Every push to `main` runs `.github/workflows/deploy.yml`: install, test, build, then `wrangler pages deploy dist`. The workflow needs the repository secret `CLOUDFLARE_API_TOKEN` (a token with Cloudflare Pages: Edit and nothing else) and the repository variable `CLOUDFLARE_ACCOUNT_ID`.
 
-To redeploy after a change:
+Everything served is a static file, with no functions, so traffic is free and unmetered on Cloudflare's free plan. The limits that matter are 20,000 files per deployment (the build writes about 3,400) and 25 MiB per file. `public/_headers` sets cache lifetimes. DNS is on Cloudflare, where the domain is registered, and a redirect rule sends `www` to the apex.
 
-```bash
-npm run build   # Netlify's URL variable supplies the domain in CI
-netlify deploy --prod --dir=dist --site sunkcost-preview
-```
+`npm run build:single` inlines the CSS and JS into `dist/sunkcost-standalone.html` for hosts that take a single file.
 
-The site was created through the Netlify API rather than the build hooks, so there is no git integration; deploys are manual uploads of `dist`. Note that this Netlify account defaults new sites to team-login protection (`sso_login`), which had to be turned off on this site for the link to be publicly viewable.
-
-`npm run build:single` inlines the CSS and JS into `dist/sunkcost-standalone.html` — one file, no build step, no server. Open it from disk, email it, or publish it anywhere that takes a single HTML file. The site itself is plain static files in `dist/`, so any static host works: drag the folder onto Netlify Drop, `wrangler pages deploy dist`, or push and enable GitHub Pages.
-
-## Phase 2 (structure only)
-
-`scripts/build-routes.ts` emits `public/routes.json`: one entry per hardware config, per model, and per family comparison, each with the SEO title format, description, pre-filled query string, OG image and a written verdict. Generating the HTML for them is a routing exercise on top of that file.
+The site first ran on Netlify (`sunkcost-preview.netlify.app`, builds now stopped). Its free plan takes every site offline once 300 monthly credits are spent, and each deploy costs 15, which is why it moved.
 
 ## Known gaps (all marked in the data)
 
+- Eleven models nobody rents by the token are priced as their closest hosted match: a finetune's base model where there is one, otherwise the nearest model on the intelligence index, otherwise the nearest in size. Model cards, the figures and the working all say so, and `npm run validate` checks every stand-in still matches its source's price.
 - Apple has not published power figures for the 2026 Macs; the previous chip's Apple figure is used as a labelled stand-in.
 - Mac Studio M5 Ultra 512GB has no price yet.
 - No measured tokens/sec exists for any 2026 Mac (they ship 22 September 2026); everything on them is estimated and labelled.

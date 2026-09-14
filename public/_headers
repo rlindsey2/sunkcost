@@ -1,0 +1,12 @@
+# Cloudflare Pages response headers.
+# Hashed bundles never change, so browsers keep them for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Share cards are regenerated only when the data changes.
+/og/*
+  Cache-Control: public, max-age=86400
+
+# Share pages carry the verdict in their tags; let scrapers pick up rebuilds within minutes.
+/s/*
+  Cache-Control: public, max-age=300
