@@ -1,6 +1,6 @@
 # Sunk Cost
 
-Source: https://github.com/rlindsey2/sunkcost · Live preview: https://sunkcost-preview.netlify.app — sunkcost.ai
+Live at **https://sunkcost.ai** · Source: https://github.com/rlindsey2/sunkcost
 
 A single page that answers one question honestly: *if I buy this hardware to run local models, how much would I have to use it before it pays for itself, and what can it actually do?*
 
@@ -98,12 +98,12 @@ Plus `sitemap.xml` and `robots.txt`. Nothing on these pages needs JavaScript.
 
 ## Sharing a preview
 
-Live preview: **https://sunkcost-preview.netlify.app**
+Live at **https://sunkcost.ai**, built by Netlify on every push to `main`. DNS lives on Cloudflare (the domain is registered there, so it must): `sunkcost.ai` and `www` are CNAMEs to `sunkcost-preview.netlify.app`, set to DNS-only so Netlify can issue the certificate. Turning the orange cloud on will break HTTPS renewal.
 
 To redeploy after a change:
 
 ```bash
-SITE_URL=https://sunkcost-preview.netlify.app npm run build:preview
+npm run build   # Netlify's URL variable supplies the domain in CI
 netlify deploy --prod --dir=dist --site sunkcost-preview
 ```
 
