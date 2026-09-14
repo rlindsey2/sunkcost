@@ -1018,7 +1018,7 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 15,
       "score_note": "reasoning mode; 14 without",
       "estimated": false,
@@ -1133,7 +1133,7 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k natively; up to 1M with YaRN",
     "frontier_equivalent": {
-      "tier": 1,
+      "tier": 2,
       "score": 34,
       "score_note": "xhigh reasoning effort; 22 without reasoning",
       "estimated": false,
@@ -1900,7 +1900,7 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 17,
       "score_note": "reasoning mode; 13 without",
       "estimated": true,
@@ -2166,7 +2166,7 @@
     "max_context_tokens": 262144,
     "max_context_note": "256k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 16,
       "score_note": "reasoning mode; 18 without",
       "estimated": false,
@@ -2322,7 +2322,7 @@
     "max_context_tokens": 131072,
     "max_context_note": "128k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 15,
       "score_note": null,
       "estimated": true,
@@ -2635,7 +2635,7 @@
     "max_context_tokens": 202752,
     "max_context_note": "198k",
     "frontier_equivalent": {
-      "tier": 0,
+      "tier": 1,
       "score": 15,
       "score_note": "reasoning mode; 11 without",
       "estimated": true,
@@ -2742,7 +2742,7 @@
     "max_context_tokens": 1048576,
     "max_context_note": "1M",
     "frontier_equivalent": {
-      "tier": 1,
+      "tier": 2,
       "score": 35,
       "score_note": "max effort; the 0731 build",
       "estimated": false,

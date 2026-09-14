@@ -373,3 +373,28 @@ describe('a model nobody hosts', () => {
     expect(v.verdict.sub).toMatch(/tok\/s/);
   });
 });
+
+describe('intelligence bands', () => {
+  // the edges drifted once when the index was re-read; pin them to the rule so it cannot recur silently
+  const d = data.defaults;
+  const ref = (name: string) => d.frontier_reference!.find((r) => r.name === name)!.score;
+  const edge = (tier: number) => d.frontier_tiers.find((t) => t.tier === tier)!.min_score;
+
+  it('start each band at about 80% of its reference model', () => {
+    expect(Math.abs(edge(1) - 0.8 * ref('Claude Haiku 4.5'))).toBeLessThanOrEqual(1);
+    expect(Math.abs(edge(2) - 0.8 * ref('Claude Sonnet 5'))).toBeLessThanOrEqual(1);
+    expect(Math.abs(edge(3) - (ref('Claude Sonnet 5') + ref('Claude Opus 5')) / 2)).toBeLessThanOrEqual(1);
+  });
+
+  it('place each hosted reference model in its own band', () => {
+    const bandOf = (s: number) => d.frontier_tiers.filter((t) => s >= t.min_score).at(-1)!.tier;
+    expect(bandOf(ref('Claude Haiku 4.5'))).toBe(1);
+    expect(bandOf(ref('Claude Sonnet 5'))).toBe(2);
+    expect(bandOf(ref('Claude Opus 5'))).toBe(3);
+  });
+
+  it('put Qwen3.8 27B, just below Sonnet 5, in the Sonnet band', () => {
+    const m = data.models.find((x) => x.id === 'qwen3.8-27b-q4')!;
+    expect(m.frontier_equivalent!.tier).toBe(2);
+  });
+});

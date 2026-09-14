@@ -126,7 +126,7 @@
     },
     {
       "tier": 1,
-      "min_score": 18,
+      "min_score": 15,
       "label": "Haiku-class",
       "anthropic": "Claude Haiku 4.5",
       "openai": null,
@@ -134,7 +134,7 @@
     },
     {
       "tier": 2,
-      "min_score": 38,
+      "min_score": 30,
       "label": "Sonnet-class",
       "anthropic": "Claude Sonnet 5",
       "openai": "GPT-5.6 Luna / Terra",
@@ -142,7 +142,7 @@
     },
     {
       "tier": 3,
-      "min_score": 47,
+      "min_score": 45,
       "label": "Frontier",
       "anthropic": "Claude Opus 5 / Fable 5.1",
       "openai": "GPT-5.6 Sol / GPT-6 Astra",
@@ -154,7 +154,8 @@
     "url": "https://artificialanalysis.ai/leaderboards/models",
     "checked": "2026-09-11",
     "note": "One consistent public aggregate, re-read across every model on 2026-09-11 so the ranking is on a single scale. Hybrid models are shown at their reasoning or highest-effort figure, with the alternative noted per model. Some scores are Artificial Analysis's own estimate rather than a measured run of the full suite; those are marked.",
-    "estimated_note": "Marked 'estimated' where Artificial Analysis imputed the score rather than running the full v4.3 suite. 26 of the models here carry that mark."
+    "estimated_note": "Marked 'estimated' where Artificial Analysis imputed the score rather than running the full v4.3 suite. 26 of the models here carry that mark.",
+    "band_rule": "Each band starts at about 80% of its reference model's score — Haiku-class at 15 (Claude Haiku 4.5 scores 18), Sonnet-class at 30 (Claude Sonnet 5 scores 38) — the same proportions the first version used. The frontier band starts halfway between Claude Sonnet 5 and Claude Opus 5 (51), because the hosted top tier is bunched too tightly for a percentage rule."
   },
   "frontier_reference": [
     {
