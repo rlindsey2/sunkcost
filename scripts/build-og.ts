@@ -6,10 +6,10 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { Resvg } from '@resvg/resvg-js';
 import { computeView } from '../src/compute';
+import { cardSvg, CARD_FONT } from '../src/card';
 import { hasShareCard } from '../src/share';
 import { defaultState } from '../src/state';
-import { renderOgCard, ogFigures, OG_WIDTH, OG_HEIGHT } from '../src/og';
-import { fmtDuration } from '../src/format';
+import { OG_WIDTH, OG_HEIGHT } from '../src/og';
 import type { Dataset } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -18,7 +18,7 @@ const data: Dataset = { hardware: read('hardware.json'), models: read('models.js
 const outDir = new URL('../public/og/', import.meta.url);
 mkdirSync(outDir, { recursive: true });
 
-const FONT = 'Helvetica Neue, Helvetica, Arial, sans-serif';
+const FONT = CARD_FONT;
 
 // Loading every system font per card is slow (seconds each). Use the first font file we can find;
 // drop a .ttf/.otf into assets/fonts/ to make the cards identical on every machine.
@@ -38,29 +38,8 @@ const fontOpts = (() => {
 })();
 
 function cardFor(hwId: string, modelId: string): string | null {
-  const state = { ...defaultState(data), hw: hwId, model: modelId };
-  const view = computeView(state, data);
-  if (!hasShareCard(hwId, modelId, data) || !view.calc || view.price == null) return null;
-  const c = view.calc;
-  return renderOgCard({
-    configLine: view.configLine,
-    usageLine: view.usageLine,
-    verdict: view.verdict.headline,
-    subLine: view.verdict.sub,
-    devicePriceUsd: view.price,
-    dailySaving: c.dailySaving,
-    breakevenDays: c.breakevenDays,
-    maxYears: data.defaults.waterline_max_years,
-    dataChecked: data.defaults.data_last_checked,
-    fontFamily: FONT,
-    figures: ogFigures({
-      devicePriceUsd: view.price,
-      cloudCostPerMonth: c.cloudCostPerMonth,
-      localTokensPerSec: view.throughput?.tokensPerSec ?? null,
-      measurement: view.throughput?.measurement ?? 'unknown',
-      breakevenLabel: c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays),
-    }),
-  });
+  if (!hasShareCard(hwId, modelId, data)) return null;
+  return cardSvg({ ...defaultState(data), hw: hwId, model: modelId }, data, FONT);
 }
 
 function toPng(svg: string): Buffer {

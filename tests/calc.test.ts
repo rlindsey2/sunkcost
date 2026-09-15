@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { calculate, cumulativeSaving, DAYS_PER_YEAR, positionAfterDays, splitTokens } from '../src/calc';
 import { fit, kvCacheGbFromArchitecture, estimateTokensPerSec, contextSpeedFactor, resolveThroughput } from '../src/fit';
 import { parseState, serializeState, sliderToUsage, usageToSlider, parseSharePath } from '../src/state';
-import { sharePath } from '../src/share';
+import { sharePath, cardQuery } from '../src/share';
+import { cardSvg, cardView } from '../src/card';
 import { waterlineGeometry, renderWaterline } from '../src/waterline';
 import { computeView } from '../src/compute';
 import type { Dataset, Hardware, Model } from '../src/types';
@@ -440,5 +441,31 @@ describe('intelligence bands', () => {
   it('put Qwen3.8 27B, just below Sonnet 5, in the Sonnet band', () => {
     const m = data.models.find((x) => x.id === 'qwen3.8-27b-q4')!;
     expect(m.frontier_equivalent!.tier).toBe(2);
+  });
+});
+
+describe('cards for a link\'s own settings', () => {
+  const base = { ...defaultStateFor(), hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4' };
+  function defaultStateFor() { return parseState('', data); }
+
+  it('uses the pre-built card when the link is on default settings', () => {
+    expect(cardQuery(base, data)).toBeNull();
+    // sort, filters and cloud speed never reach the card
+    expect(cardQuery({ ...base, sort: 'smartest', cloudTps: 200, family: 'qwen' }, data)).toBeNull();
+  });
+
+  it('asks for its own card when usage differs, and draws that usage', () => {
+    const s = { ...base, usage: 1_000_000 };
+    const q = cardQuery(s, data)!;
+    expect(new URLSearchParams(q).get('u')).toBe('1000000');
+    // the query round-trips to the same card settings
+    const back = parseState(q, data, '/s/mac-mini-m6-32/qwen3.8-27b-q4/');
+    expect(cardQuery(back, data)).toBe(q);
+    expect(cardSvg(s, data)).toContain('1M tokens/day');
+    expect(cardSvg(s, data)).not.toBe(cardSvg(base, data));
+  });
+
+  it('has nothing to draw when the model no longer fits', () => {
+    expect(cardView({ ...base, ctx: 1_000_000 }, data)).toBeNull();
   });
 });

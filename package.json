@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Sunk Cost \u2014 how much local-LLM usage it takes for a Mac or DGX Spark to pay for itself.",
+  "description": "Sunk Cost — how much local-LLM usage it takes for a Mac or DGX Spark to pay for itself.",
   "scripts": {
     "dev": "vite",
-    "build": "npm run validate && npm run build:og && npm run build:pages && vite build && npm run build:share",
+    "build": "npm run validate && npm run build:og && npm run build:pages && vite build && npm run build:share && npm run build:functions",
     "preview": "vite preview",
     "validate": "tsx scripts/validate-data.ts",
     "build:og": "tsx scripts/build-og.ts",
@@ -14,10 +14,12 @@
     "typecheck": "tsc --noEmit",
     "build:single": "npm run build && tsx scripts/build-artifact.ts",
     "build:pages": "tsx scripts/build-pages.ts",
-    "build:share": "tsx scripts/build-share-pages.ts"
+    "build:share": "tsx scripts/build-share-pages.ts",
+    "build:functions": "tsx scripts/prepare-functions.ts"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
+    "@resvg/resvg-wasm": "^2.6.2",
     "@types/node": "^26.4.1",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",

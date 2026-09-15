@@ -24,6 +24,9 @@ jobs:
       - run: npm test
       # validate data, render share cards, generate static and share pages, bundle the app
       - run: npm run build
+        env:
+          # "on" routes share pages through functions/ so a link's own usage gets its own card
+          DYNAMIC_CARDS: ${{ vars.DYNAMIC_CARDS }}
       - name: Publish
         uses: cloudflare/wrangler-action@v3
         with:

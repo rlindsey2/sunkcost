@@ -3,7 +3,7 @@
  * config, the verdict and the plain figures beneath. Used by scripts/build-og.ts
  * at build time and by the in-page "download card" button.
  */
-import { renderWaterline } from './waterline';
+import { renderWaterline, type WaterlineOptions } from './waterline';
 import { esc, fmtUsd, fmtNum } from './format';
 
 export interface OgCardInput {
@@ -15,6 +15,9 @@ export interface OgCardInput {
   dailySaving: number;
   breakevenDays: number | null;
   maxYears: number;
+  /** falling API prices bend the curve, as on the page */
+  decay?: WaterlineOptions['decay'];
+  peakDays?: number | null;
   figures: { label: string; value: string }[];
   siteName?: string;
   dataChecked?: string;
@@ -39,6 +42,8 @@ export function renderOgCard(i: OgCardInput): string {
     devicePriceUsd: i.devicePriceUsd,
     dailySaving: i.dailySaving,
     breakevenDays: i.breakevenDays,
+    decay: i.decay,
+    peakDays: i.peakDays,
     maxYears: i.maxYears,
     width: OG_WIDTH,
     height: waterH,

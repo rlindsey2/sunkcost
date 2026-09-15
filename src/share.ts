@@ -40,3 +40,24 @@ export function onSiteHost(data: Dataset): boolean {
   const h = location.hostname;
   return h === site || h === `www.${site}` || h.endsWith('.pages.dev') || h === 'localhost' || h === '127.0.0.1';
 }
+
+/**
+ * The query for the card a state draws, when its settings differ from the pair's pre-built card:
+ * usage, input:output ratio, electricity, context, the price paid and the API price decline.
+ * Sort, filters and cloud speed never reach the card, so they are left out; null means the
+ * pre-built card already shows exactly this.
+ */
+export function cardQuery(state: State, data: Dataset): string | null {
+  const pick = (s: State) => {
+    const q = new URLSearchParams();
+    q.set('u', String(Math.round(s.usage)));
+    q.set('r', String(s.ratio));
+    q.set('kwh', String(s.kwh));
+    q.set('ctx', String(Math.round(s.ctx)));
+    if (s.price != null) q.set('p', String(Math.round(s.price)));
+    q.set('d', String(s.decline));
+    return q.toString();
+  };
+  const mine = pick(state);
+  return mine === pick({ ...defaultState(data), hw: state.hw, model: state.model }) ? null : mine;
+}
