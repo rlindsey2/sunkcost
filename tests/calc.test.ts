@@ -5,6 +5,7 @@ import { parseState, serializeState, sliderToUsage, usageToSlider, parseSharePat
 import { sharePath, cardQuery } from '../src/share';
 import { cardSvg, cardView } from '../src/card';
 import { bestByTier, bestUsageLevels } from '../src/best';
+import { submissionPayload, submissionRow } from '../src/submissions';
 import { waterlineGeometry, renderWaterline } from '../src/waterline';
 import { computeView } from '../src/compute';
 import type { Dataset, Hardware, Model } from '../src/types';
@@ -529,5 +530,30 @@ describe('your own numbers', () => {
     expect(v.calc!.apiDeclinePerYear).toBe(0);
     expect(cardQuery(s, data)).toContain('sub=100');
     expect(cardSvg(s, data)).toContain('Your bill / month');
+  });
+});
+
+describe('capturing what people enter', () => {
+  const base = parseState('', data);
+
+  it('sends nothing while only our own figures are in use', () => {
+    expect(submissionPayload(base)).toBeNull();
+  });
+
+  it('records a custom machine with a measured speed, recomputing what the site showed', () => {
+    const s = { ...base, hw: 'custom', model: 'qwen3.8-27b-q4', price: 1600, customName: '2× RTX 3090', customMem: 48, customWatts: 700, customBw: 936, tps: 50 };
+    const row = submissionRow(JSON.parse(JSON.stringify(submissionPayload(s))), data)!;
+    expect(row.kinds).toBe('custom_machine,measured_speed');
+    expect(row).toMatchObject({ hw: 'custom', model: 'qwen3.8-27b-q4', custom_name: '2× RTX 3090', custom_mem_gb: 48, tps: 50, our_measurement: 'estimated' });
+    expect(row.our_tps as number).toBeGreaterThan(0);
+    expect(row.breakeven_days as number).toBeGreaterThan(0);
+  });
+
+  it('rejects junk and strips markup from names', () => {
+    expect(submissionRow('hello', data)).toBeNull();
+    expect(submissionRow({ hw: 'nope', sub: 100 }, data)).toBeNull();
+    expect(submissionRow({ hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4', tps: -5 }, data)).toBeNull();
+    const row = submissionRow({ hw: 'custom', customName: '<b>box</b>', customMem: 24, customWatts: 400, price: 900 }, data)!;
+    expect(row.custom_name).toBe('bbox/b');
   });
 });

@@ -1,6 +1,7 @@
 import { data } from './data';
 import { drawWaterline, layoutNumberLine, renderAll, shareUrl } from './render';
 import { onSiteHost, sharePath } from './share';
+import { submissionPayload } from './submissions';
 import { CUSTOM_HW, parseState, serializeState, sliderToUsage, usageToSlider, type State } from './state';
 import { OG_WIDTH, OG_HEIGHT } from './og';
 import { fmtNum } from './format';
@@ -106,6 +107,7 @@ $<HTMLInputElement>('#price').addEventListener('input', (e) => {
   const raw = (e.target as HTMLInputElement).value.trim();
   const n = Number(raw);
   update({ price: raw === '' || !Number.isFinite(n) || n <= 0 ? null : Math.round(n) });
+  queueSubmission();
 });
 
 /** A number you may leave blank: blank or nonsense means "not given". */
@@ -116,13 +118,19 @@ function numberOrNull(el: HTMLInputElement, round: boolean): number | null {
   return round ? Math.round(n) : n;
 }
 const onNumber = (sel: string, key: 'customMem' | 'customWatts' | 'customBw' | 'tps' | 'sub', round: boolean) =>
-  $<HTMLInputElement>(sel).addEventListener('input', (e) => update({ [key]: numberOrNull(e.target as HTMLInputElement, round) } as Partial<State>));
+  $<HTMLInputElement>(sel).addEventListener('input', (e) => {
+    update({ [key]: numberOrNull(e.target as HTMLInputElement, round) } as Partial<State>);
+    queueSubmission();
+  });
 onNumber('#custom-mem', 'customMem', false);
 onNumber('#custom-watts', 'customWatts', true);
 onNumber('#custom-bw', 'customBw', true);
 onNumber('#your-tps', 'tps', false);
 onNumber('#sub', 'sub', true);
-$<HTMLInputElement>('#custom-name').addEventListener('input', (e) => update({ customName: (e.target as HTMLInputElement).value.slice(0, 40) }));
+$<HTMLInputElement>('#custom-name').addEventListener('input', (e) => {
+  update({ customName: (e.target as HTMLInputElement).value.slice(0, 40) });
+  queueSubmission();
+});
 
 document.addEventListener('click', (e) => {
   // shortcuts to an input: open the assumptions it lives in and put the cursor there
@@ -174,6 +182,39 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     update({ model: t.dataset.model!, ...(t.dataset.model !== state.model ? { tps: null } : {}) });
     document.querySelector<HTMLElement>(`[data-model="${t.dataset.model}"]`)?.focus();
+  }
+});
+
+/* ---- what people enter ---- */
+
+// Numbers you type in (not ones arriving in a shared link) are sent once you stop typing, without
+// cookies or an identifier, so the options and estimates can improve. Browsers set not to be
+// tracked send nothing.
+let pendingSubmission: number | undefined;
+let lastSubmission = '';
+function queueSubmission() {
+  clearTimeout(pendingSubmission);
+  pendingSubmission = window.setTimeout(sendSubmission, 4000);
+}
+function sendSubmission() {
+  pendingSubmission = undefined;
+  const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
+  if (!onSiteHost(data) || nav.globalPrivacyControl || navigator.doNotTrack === '1') return;
+  const payload = submissionPayload(state);
+  if (!payload) return;
+  const body = JSON.stringify(payload);
+  if (body === lastSubmission) return;
+  lastSubmission = body;
+  try {
+    fetch('/api/submit', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+  } catch {
+    /* recording is best effort; the calculator never depends on it */
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && pendingSubmission !== undefined) {
+    clearTimeout(pendingSubmission);
+    sendSubmission();
   }
 });
 

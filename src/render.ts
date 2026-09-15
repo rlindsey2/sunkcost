@@ -68,8 +68,8 @@ function renderMachine(state: State, data: Dataset, view: View) {
     priceInput.placeholder = 'what it cost';
     $('#price-line').textContent = 'It cost';
     $('#hw-status').textContent = state.customBw != null
-      ? `Speeds for every model are estimated from your ${state.customBw} GB/s, with efficiency calibrated on Apple Silicon and DGX Spark. Discrete GPUs usually beat that, so a measured speed is better.`
-      : 'Your figures, not ours. Add the memory bandwidth to estimate speeds for every model, or enter a measured speed for one under the assumptions.';
+      ? `Speeds for every model are estimated from your ${state.customBw} GB/s, with efficiency calibrated on Apple Silicon and DGX Spark. Discrete GPUs usually beat that, so a measured speed is better. What you enter is sent anonymously to improve the options.`
+      : 'Your figures, not ours. Add the memory bandwidth to estimate speeds for every model, or enter a measured speed for one under the assumptions. What you enter is sent anonymously to improve the options.';
     return;
   }
   if (hwLink) hwLink.hidden = false;

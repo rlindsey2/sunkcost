@@ -44,7 +44,7 @@ export interface View {
 }
 
 export function hardwareLabel(h: Hardware): string {
-  if (h.id === CUSTOM_HW) return `${h.chip}, ${h.unified_memory_gb} GB`;
+  if (h.id === CUSTOM_HW) return h.usable_memory_gb == null ? h.chip : `${h.chip}, ${h.usable_memory_gb} GB`;
   return `${h.family} ${h.chip}, ${h.unified_memory_gb}GB`;
 }
 

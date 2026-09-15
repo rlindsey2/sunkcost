@@ -15,7 +15,8 @@
     "build:single": "npm run build && tsx scripts/build-artifact.ts",
     "build:pages": "tsx scripts/build-pages.ts",
     "build:share": "tsx scripts/build-share-pages.ts",
-    "build:functions": "tsx scripts/prepare-functions.ts"
+    "build:functions": "tsx scripts/prepare-functions.ts",
+    "submissions": "tsx scripts/submissions-report.ts"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",

@@ -26,6 +26,7 @@ const version = createHash('sha1').update(process.env.GITHUB_SHA ?? String(Date.
 writeFileSync(new URL('card-build.json', gen), JSON.stringify({ version, fontFamily: font[1] }));
 
 const on = process.env.DYNAMIC_CARDS === 'on';
-const routes = { version: 1, include: on ? ['/s/*', '/card/*'] : ['/card/*'], exclude: [] };
+// /api/* (recording what people enter) is always routed; it is cheap and needs no switch
+const routes = { version: 1, include: on ? ['/s/*', '/card/*', '/api/*'] : ['/card/*', '/api/*'], exclude: [] };
 writeFileSync(new URL('../dist/_routes.json', import.meta.url), JSON.stringify(routes));
 console.log(`functions: font ${font[1]}, version ${version}, on-demand cards ${on ? 'ON' : 'off'}`);

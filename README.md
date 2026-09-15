@@ -79,6 +79,12 @@ Three inputs replace a figure of ours with yours, and every view that uses one s
 - **Your measured speed** (`tps`), for the selected model on the selected machine. It replaces ours as given, without the context adjustment, is tagged *yours*, and clears when you switch model or machine. The note beside it links to a prefilled GitHub issue (label `measurement`), so a reported speed arrives with the runtime, context and a link, and can go into `throughput.json` with its source.
 - **A monthly bill** (`sub`) instead of per-token prices, for people weighing a machine against a subscription. `cloud_cost_per_day` becomes the bill × 12 ÷ 365.25; falling API prices are switched off in this mode, and the small print says the bill buys a different model.
 
+### What gets recorded
+
+When someone types their own machine, speed or bill (not when those arrive in a shared link), the page sends the settings to `functions/api/submit.ts` four seconds after they stop typing. The server checks every field (`submissionRow` in `src/submissions.ts`), recomputes what the site showed for them, including our speed for that pair and the pay-back, and stores one row in the `sunkcost-submissions` D1 database, bound to the Pages project as `SUBMISSIONS`. No IP address, cookie or identifier is stored, only the country Cloudflare reports. Browsers with Global Privacy Control or Do Not Track send nothing, and the page says all this beside the inputs. The table is created on first write.
+
+`npm run submissions` (or `-- --days 30`) prints what to act on: custom machines by how often they're entered, measured speeds against ours with large disagreements flagged, and the bills people compare against. It needs `CLOUDFLARE_API_TOKEN` with D1 read and `CLOUDFLARE_ACCOUNT_ID`. The reports are unverified, so treat them as leads to measure or find a source for, never as data.
+
 ## Share mechanic
 
 - Every configuration is a URL. The address bar always holds a shareable link: `/s/<machine>/<model>/?…` when that pair has a card (the query carries usage, context, the price you paid and the rest), otherwise `/?…`.
