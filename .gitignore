@@ -19,3 +19,6 @@ public/robots.txt
 # built from data/*.json for scripts/build-share-pages.ts
 .generated/
 .netlify/
+
+# wrangler pages dev local state
+.wrangler/
