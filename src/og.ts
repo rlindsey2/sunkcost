@@ -29,7 +29,8 @@ const FIGURES_H = 158;
 
 export function renderOgCard(i: OgCardInput): string {
   const font = i.fontFamily ?? '"IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif';
-  const headerH = 72;
+  // no header bar: the sky runs to the top edge, and the site and data date sit in the figures strip
+  const headerH = 0;
   const waterH = OG_HEIGHT - FIGURES_H - headerH;
   const verdictSize = i.verdict.length > 34 ? 50 : 60;
   const textBlockH = 34 + verdictSize + (i.subLine ? 34 : 0) + 34;
@@ -77,8 +78,7 @@ export function renderOgCard(i: OgCardInput): string {
   <stop offset="0.45" stop-color="#05121e" stop-opacity="0.55"/>
   <stop offset="1" stop-color="#05121e" stop-opacity="0.85"/>
 </linearGradient></defs>
-<text x="56" y="44" font-size="20" font-weight="700" fill="#0e1720" letter-spacing="0.2">${esc(i.siteName ?? 'Sunk Cost')}</text>
-<text x="${OG_WIDTH - 56}" y="44" font-size="16" text-anchor="end" fill="#4f5e68">sunkcost.ai${i.dataChecked ? ` · data checked ${esc(i.dataChecked)}` : ''}</text>
+<text x="${OG_WIDTH - 56}" y="${OG_HEIGHT - 22}" font-size="15" text-anchor="end" fill="#6b7a84">${esc(i.siteName ?? 'Sunk Cost')} · sunkcost.ai${i.dataChecked ? ` · data checked ${esc(i.dataChecked)}` : ''}</text>
 <text x="56" y="${textTop + verdictSize * 0.78}" font-size="${verdictSize}" font-weight="700" fill="${never ? '#f0a75a' : '#ffffff'}" letter-spacing="-1.6">${esc(i.verdict)}</text>
 <text x="56" y="${textTop + verdictSize * 0.78 + 34}" font-size="22" fill="#cfe0ee">${esc(i.configLine)} · ${esc(i.usageLine)}</text>
 ${i.subLine ? `<text x="56" y="${textTop + verdictSize * 0.78 + 64}" font-size="20" fill="rgba(207,224,238,0.8)">${esc(i.subLine)}</text>` : ''}

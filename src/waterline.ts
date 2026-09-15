@@ -113,6 +113,8 @@ export function renderWaterline(o: WaterlineOptions): string {
   const T = g.horizonDays;
   const pos = (days: number) => positionAfterDays(price, o.dailySaving, days, o.decay);
   const endValue = pos(T);
+  /** the day at the right edge: the curve runs past the window's end to the edge, so nothing stops short */
+  const TEdge = T * (W - padX) / innerW;
 
   const yMinVal = Math.min(-price * 1.04, endValue * 1.04);
   const yMaxVal = g.surfacesOnChart ? Math.max(endValue * 1.18, price * 0.22) : price * 0.24;
@@ -154,7 +156,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       <stop offset="0" stop-color="var(--curve-under, #a9d3f2)" stop-opacity="0.34"/>
       <stop offset="1" stop-color="var(--curve-under, #a9d3f2)" stop-opacity="0.03"/>
     </linearGradient>
-    <clipPath id="${id}-clip"><rect x="${padX}" y="${padT}" width="${innerW}" height="${innerH}"/></clipPath>
+    <clipPath id="${id}-clip"><rect x="${padX}" y="${padT}" width="${W - padX}" height="${innerH}"/></clipPath>
   </defs>`);
 
   if (!o.transparentBg) {
@@ -180,7 +182,7 @@ export function renderWaterline(o: WaterlineOptions): string {
 
   // the mass of water you have climbed through: area under the curve
   const clip = `clip-path="url(#${id}-clip)"`;
-  p.push(`<path ${clip} d="M ${x0} ${plotBottom.toFixed(1)} L ${pathFrom(0, T).slice(2)} L ${x1} ${plotBottom.toFixed(1)} Z" fill="url(#${id}-mass)"/>`);
+  p.push(`<path ${clip} d="M ${x0} ${plotBottom.toFixed(1)} L ${pathFrom(0, TEdge).slice(2)} L ${W} ${plotBottom.toFixed(1)} Z" fill="url(#${id}-mass)"/>`);
 
   // the surface: a bright line edge to edge, with light scattering just above it
   p.push(`<rect x="0" y="${(surfaceY - 7 * s).toFixed(1)}" width="${W}" height="${7 * s}" fill="var(--surface, #9cc7ee)" opacity="0.16"/>`);
@@ -200,7 +202,7 @@ export function renderWaterline(o: WaterlineOptions): string {
 
   if (beX !== null) {
     p.push(seg(0, o.breakevenDays!, curveUnder));
-    p.push(seg(o.breakevenDays!, T, curveAbove));
+    p.push(seg(o.breakevenDays!, TEdge, curveAbove));
     p.push(`<circle cx="${beX.toFixed(1)}" cy="${surfaceY.toFixed(1)}" r="${6 * s}" fill="var(--curve-above, #f0a75a)" stroke="#fff" stroke-width="${2 * s}"/>`);
     if (showLabels) {
       const anchor = beX > padX + innerW * 0.6 ? 'end' : 'start';
@@ -208,7 +210,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       p.push(`<text x="${lx.toFixed(1)}" y="${(surfaceY - 12 * s).toFixed(1)}" text-anchor="${anchor}" font-size="${12 * s}" font-weight="600" fill="var(--surface-ink, #4d7ea6)">surfaces at ${labelDays(o.breakevenDays!)}</text>`);
     }
   } else {
-    p.push(seg(0, T, curveUnder));
+    p.push(seg(0, TEdge, curveUnder));
     if (showLabels) {
       const msg = g.never ? 'never reaches the surface' : `surfaces at ${labelDays(o.breakevenDays!)} — far off this chart`;
       const my = Math.max(y1 - 14 * s, padT + 14 * s);
@@ -219,6 +221,7 @@ export function renderWaterline(o: WaterlineOptions): string {
   p.push(`<circle cx="${x0}" cy="${y0.toFixed(1)}" r="${3.5 * s}" fill="var(--curve-under, #a9d3f2)"/>`);
 
   // where you stand after a year
+  let markerBox: { x0: number; x1: number; y: number } | null = null;
   if (o.markerDays != null && o.markerDays > 0 && o.markerDays < T) {
     const mx = x(o.markerDays);
     const mv = pos(o.markerDays);
@@ -228,6 +231,8 @@ export function renderWaterline(o: WaterlineOptions): string {
     if (showLabels) {
       const anchor = mx > padX + innerW * 0.6 ? 'end' : 'start';
       const lx = anchor === 'end' ? mx - 9 * s : mx + 9 * s;
+      const labelW = (labelDays(o.markerDays).length + fmtUsd(mv).length + 13) * 6 * s;
+      markerBox = { x0: anchor === 'end' ? lx - labelW : lx, x1: anchor === 'end' ? lx : lx + labelW, y: my + 15 * s };
       p.push(`<text x="${lx.toFixed(1)}" y="${(my + 15 * s).toFixed(1)}" text-anchor="${anchor}" font-size="${11 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.9" style="font-variant-numeric: tabular-nums">${labelDays(o.markerDays)}: ${mv < 0 ? `${fmtUsd(mv)} underwater` : `${fmtUsd(mv)} clear`}</text>`);
     }
   }
@@ -243,6 +248,8 @@ export function renderWaterline(o: WaterlineOptions): string {
     for (const t of niceTimeTicks(T)) {
       const tx = x(t.days);
       if (tx > padX + innerW - 12 * s) continue;
+      // a tick label sitting under the year-one label would print on top of it
+      if (markerBox && Math.abs(markerBox.y - ty) < 13 * s && tx + 20 * s > markerBox.x0 && tx - 20 * s < markerBox.x1) continue;
       p.push(`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.55" style="font-variant-numeric: tabular-nums">${t.label}</text>`);
     }
   }

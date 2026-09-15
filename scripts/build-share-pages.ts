@@ -5,6 +5,7 @@
  * or iMessage without anything running at request time. Runs after `vite build`.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const dist = new URL('../dist/', import.meta.url);
 const defaults = JSON.parse(readFileSync(new URL('../data/defaults.json', import.meta.url), 'utf8'));
@@ -12,7 +13,8 @@ const site = String(defaults.site_url).replace(/\/$/, '');
 const manifest = JSON.parse(readFileSync(new URL('../.generated/share-manifest.json', import.meta.url), 'utf8')) as {
   pairs: Record<string, { image: string; headline: string; config: string }>;
 };
-const shell = readFileSync(new URL('index.html', dist), 'utf8');
+/** the image URL with a hash of its bytes, so X and others refetch a card that changed instead of showing a cached one */
+const versioned = (path: string) => `${site}${path}?v=${createHash('sha1').update(readFileSync(new URL(path.slice(1), dist))).digest('hex').slice(0, 10)}`;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 function setMeta(html: string, attr: 'property' | 'name', key: string, value: string): string {
@@ -20,6 +22,13 @@ function setMeta(html: string, attr: 'property' | 'name', key: string, value: st
   const tag = `<meta ${attr}="${key}" content="${esc(value)}" />`;
   return re.test(html) ? html.replace(re, tag) : html.replace('</head>', `  ${tag}\n</head>`);
 }
+
+const home = new URL('index.html', dist);
+const shell = ['og:image', 'twitter:image'].reduce(
+  (html, key) => setMeta(html, key === 'og:image' ? 'property' : 'name', key, versioned('/og/default.png')),
+  readFileSync(home, 'utf8'),
+);
+writeFileSync(home, shell);
 
 let n = 0;
 for (const [key, pair] of Object.entries(manifest.pairs)) {
@@ -32,8 +41,8 @@ for (const [key, pair] of Object.entries(manifest.pairs)) {
   html = setMeta(html, 'name', 'twitter:title', title);
   html = setMeta(html, 'property', 'og:description', description);
   html = setMeta(html, 'name', 'twitter:description', description);
-  html = setMeta(html, 'property', 'og:image', `${site}${pair.image}`);
-  html = setMeta(html, 'name', 'twitter:image', `${site}${pair.image}`);
+  html = setMeta(html, 'property', 'og:image', versioned(pair.image));
+  html = setMeta(html, 'name', 'twitter:image', versioned(pair.image));
   html = setMeta(html, 'property', 'og:image:alt', `${pair.headline} ${pair.config}`);
   html = setMeta(html, 'property', 'og:url', url);
   html = setMeta(html, 'name', 'twitter:card', 'summary_large_image');
