@@ -4,6 +4,7 @@ import { fit, kvCacheGbFromArchitecture, estimateTokensPerSec, contextSpeedFacto
 import { parseState, serializeState, sliderToUsage, usageToSlider, parseSharePath } from '../src/state';
 import { sharePath, cardQuery } from '../src/share';
 import { cardSvg, cardView } from '../src/card';
+import { bestByTier, bestUsageLevels } from '../src/best';
 import { waterlineGeometry, renderWaterline } from '../src/waterline';
 import { computeView } from '../src/compute';
 import type { Dataset, Hardware, Model } from '../src/types';
@@ -467,5 +468,27 @@ describe('cards for a link\'s own settings', () => {
 
   it('has nothing to draw when the model no longer fits', () => {
     expect(cardView({ ...base, ctx: 1_000_000 }, data)).toBeNull();
+  });
+});
+
+describe('best buys', () => {
+  it('lists quickest pay-backs per class: current, within capacity, one row per model, fastest first', () => {
+    for (const { usage } of bestUsageLevels(data)) {
+      const tiers = bestByTier(data, usage);
+      expect(tiers.map((t) => t.tier)).toEqual([...tiers.map((t) => t.tier)].sort((a, b) => b - a));
+      for (const t of tiers) {
+        const names = t.picks.map((c) => c.model.display_name);
+        expect(new Set(names).size).toBe(names.length);
+        expect(t.picks.length).toBeLessThanOrEqual(3);
+        t.picks.forEach((c, i) => {
+          expect(c.model.frontier_equivalent?.tier).toBe(t.tier);
+          expect(c.model.generation ?? 'current').toBe('current');
+          expect(c.hw.generation ?? 'current').toBe('current');
+          expect(c.view.capacity.capped).toBe(false);
+          expect(c.days).toBe(c.view.calc!.breakevenDays);
+          if (i) expect(c.days).toBeGreaterThanOrEqual(t.picks[i - 1].days);
+        });
+      }
+    }
   });
 });

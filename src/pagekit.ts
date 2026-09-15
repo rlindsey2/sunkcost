@@ -73,7 +73,7 @@ ${c.ogImage ? `<meta property="og:image" content="${esc(site + c.ogImage)}" />\n
 ${body}
 </main>
 <footer class="doc-foot">
-  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a></p>
+  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a></p>
 </footer>
 </body>
 </html>

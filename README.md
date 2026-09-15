@@ -91,6 +91,7 @@ That last assumption is the weak one: prompt processing is fast, not free. On a 
 
 | Path | What it answers |
 |---|---|
+| `/best/` | For each usage level the calculator names, the quickest pay-back at each capability class, one row per model on its quickest machine (`src/best.ts`) |
 | `/leaderboard/` | Every open model ranked on one intelligence index, with the hosted Anthropic and OpenAI models in the same table for scale |
 | `/models/<id>/` | What hardware you need to run it, cheapest and fastest and shortest pay-back, how good it is, what it costs either way |
 | `/hardware/<id>/` | Can this machine run local LLMs, what it runs, how fast, and whether it pays back |

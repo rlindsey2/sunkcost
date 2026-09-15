@@ -11,6 +11,8 @@ import {
   hardwareLabel, modelLabel, pageShell, runnersFor, slug, tierName, tierScale, verdictLine, CAP_SHORT,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
+import { bestByTier, bestUsageLevels } from '../src/best';
+import { sharePath } from '../src/share';
 import { kvCacheGb } from '../src/fit';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 
@@ -81,7 +83,7 @@ function leaderboard(): string {
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it.</p>
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>.</p>
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 <table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
@@ -97,6 +99,76 @@ ${gap != null ? `<p>The short version: the best open model here scores <b>${best
       canonical: '/leaderboard/',
       ogImage: '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Leaderboard' }],
+    },
+    body,
+    data,
+  );
+}
+
+/* ------------------------------ best buys ------------------------------ */
+
+function bestBuys(): string {
+  const d = data.defaults;
+  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage) }));
+  const anchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
+  // the headline: at the default usage, the most capable class with anything that pays back
+  const headLevel = levels.find((l) => l.usage >= d.usage.default_tokens_per_day) ?? levels[0];
+  const headTier = headLevel.tiers.find((t) => t.picks.length);
+  const head = headTier?.picks[0];
+
+  const sections = levels
+    .map((l) => {
+      const rows = l.tiers
+        .map((t) => {
+          const header = `<tr class="is-frontier"><th colspan="5">${esc(t.label)}${t.hosted.length ? ` <span class="dim">· alongside ${esc(t.hosted.join(', '))}</span>` : ''}</th></tr>`;
+          const counts = `${t.never ? `${t.never} never pay back` : ''}${t.never && t.overCapacity ? '; ' : ''}${t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : ''}`;
+          if (!t.picks.length) {
+            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage${counts ? ` (${counts}, of ${t.considered} pairs that fit)` : ''}.</td></tr>`;
+          }
+          return header + t.picks
+            .map((c) => {
+              const v = c.view;
+              const tp = v.throughput;
+              const ce = c.model.cloud_equivalent;
+              const state = { ...defaultState(data), hw: c.hw.id, model: c.model.id, usage: l.usage };
+              return `<tr>
+  <td class="c-model"><a href="/models/${esc(c.model.id)}/">${esc(c.model.display_name)}</a><span class="c-quant">score ${c.model.frontier_equivalent!.score}${c.model.frontier_equivalent?.estimated ? '*' : ''}</span>${ce.stand_in ? `<br><span class="dim">nobody rents it; priced as ${esc(ce.name)}</span>` : ''}</td>
+  <td class="c-hw"><a href="/hardware/${esc(c.hw.id)}/">${esc(hardwareLabel(c.hw))}</a> <span class="dim">${fmtUsd(c.hw.price_usd)}</span></td>
+  <td>${tp?.tokensPerSec != null ? `${fmtNum(tp.tokensPerSec, 0)} tok/s` : '?'}${tp?.measurement && tp.measurement !== 'measured' ? ` <span class="dim">${esc(tp.measurement)}</span>` : ''}</td>
+  <td><b>${esc(fmtDuration(c.days))}</b></td>
+  <td><a href="${esc(sharePath(state, c.model.id, data))}">Open in the calculator</a></td>
+</tr>`;
+            })
+            .join('') + (counts ? `<tr><td colspan="5" class="dim">Also in this class: ${counts}, of ${t.considered} pairs that fit.</td></tr>` : '');
+        })
+        .join('');
+      return `<section id="${anchor(l.usage)}">
+<h2>${esc(fmtTokens(l.usage))} tokens a day <span class="dim">· ${esc(l.label)}</span></h2>
+<table class="board">
+<thead><tr><th>Model</th><th>Machine</th><th>Speed</th><th>Pays back in</th><th></th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+</section>`;
+    })
+    .join('\n');
+
+  const body = `<article class="prose">
+<h1>Best buys: the quickest pay-back at each level of capability</h1>
+<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each model appears once, on its quickest machine.</p>
+${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
+<p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
+${sections}
+<p class="note">Current machines at list price and current models only. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: 'Best buys for running LLMs at home, by usage — Sunk Cost',
+      description: 'For each amount of daily use, the machine and open model that pay back soonest at each level of capability, with the working one click away.',
+      canonical: '/best/',
+      ogImage: '/og/default.png',
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/best/', label: 'Best buys' }],
     },
     body,
     data,
@@ -357,6 +429,7 @@ ${capRows}
 /* --------------------------------- build --------------------------------- */
 
 write('/leaderboard/', leaderboard());
+write('/best/', bestBuys());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
