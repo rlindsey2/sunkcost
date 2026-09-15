@@ -71,6 +71,14 @@ Layout: the machine is a sentence, everything else hangs off it. "I'm looking at
 - **Model list** with a family filter, capability dots, the cloud equivalent and its OpenRouter price, a frontier-comparison bar, and a sources line (weights, price, speed, comparison) on every card.
 - **How smart is it, really?** A number line placing the selected model's Artificial Analysis Intelligence Index score against the current Anthropic and OpenAI models, with tier labels defined in `defaults.json` (`frontier_tiers`, `frontier_reference`).
 
+## Your own numbers
+
+Three inputs replace a figure of ours with yours, and every view that uses one says so. All three live in the link, so a shared link keeps them, and share cards are drawn with them.
+
+- **Your own machine** (`hw=custom`, with `cn` name, `cm` GB models can use, `cw` watts under load, `cb` memory bandwidth, and the price in `p`). For anything not on the list: used GPUs, multi-GPU rigs, a Ryzen box. Nothing is guessed: until the price, memory and power are entered, the verdict lists what is missing. With a bandwidth, every model gets a labelled estimate; the efficiency is calibrated on Apple Silicon and DGX Spark, so a measured speed is better.
+- **Your measured speed** (`tps`), for the selected model on the selected machine. It replaces ours as given, without the context adjustment, is tagged *yours*, and clears when you switch model or machine. The note beside it links to a prefilled GitHub issue (label `measurement`), so a reported speed arrives with the runtime, context and a link, and can go into `throughput.json` with its source.
+- **A monthly bill** (`sub`) instead of per-token prices, for people weighing a machine against a subscription. `cloud_cost_per_day` becomes the bill × 12 ÷ 365.25; falling API prices are switched off in this mode, and the small print says the bill buys a different model.
+
 ## Share mechanic
 
 - Every configuration is a URL. The address bar always holds a shareable link: `/s/<machine>/<model>/?…` when that pair has a card (the query carries usage, context, the price you paid and the rest), otherwise `/?…`.

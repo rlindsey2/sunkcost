@@ -23,7 +23,19 @@ export interface State {
   decline: number;
   /** show superseded models in the list */
   showOlder: boolean;
+  /** your measured tokens/sec for the selected model on this machine; null = ours */
+  tps: number | null;
+  /** a monthly bill (a subscription) to weigh the machine against instead of per-token prices */
+  sub: number | null;
+  /** your own machine, when hw is CUSTOM_HW */
+  customName: string;
+  customMem: number | null;
+  customWatts: number | null;
+  customBw: number | null;
 }
+
+/** The hardware id for a machine you describe yourself: a used GPU box, a rig, anything not on the list. */
+export const CUSTOM_HW = 'custom';
 
 const KEYS: Record<keyof State, string> = {
   hw: 'hw',
@@ -38,6 +50,12 @@ const KEYS: Record<keyof State, string> = {
   price: 'p',
   decline: 'd',
   showOlder: 'old',
+  tps: 'tps',
+  sub: 'sub',
+  customName: 'cn',
+  customMem: 'cm',
+  customWatts: 'cw',
+  customBw: 'cb',
 };
 
 function num(v: string | null, fallback: number, min?: number, max?: number): number {
@@ -47,6 +65,13 @@ function num(v: string | null, fallback: number, min?: number, max?: number): nu
   if (min != null && n < min) return min;
   if (max != null && n > max) return max;
   return n;
+}
+
+/** An optional number you typed: missing, unparseable or out of range means "not given". */
+function opt(v: string | null, min: number, max: number): number | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= min && n <= max ? n : null;
 }
 
 /** A hand-entered price. Anything unparseable or out of range falls back to the list price. */
@@ -73,6 +98,12 @@ export function defaultState(data: Dataset): State {
     price: null,
     decline: data.defaults.api_decline.default_on ? data.defaults.api_decline.default_rate_per_year : 0,
     showOlder: false,
+    tps: null,
+    sub: null,
+    customName: '',
+    customMem: null,
+    customWatts: null,
+    customBw: null,
   };
 }
 
@@ -94,7 +125,7 @@ export function parseState(search: string, data: Dataset, pathname = '/'): State
   const hw = p.get(KEYS.hw);
   const model = p.get(KEYS.model);
   return {
-    hw: hw && data.hardware.some((h) => h.id === hw) ? hw : d.hw,
+    hw: hw && (hw === CUSTOM_HW || data.hardware.some((h) => h.id === hw)) ? hw : d.hw,
     model: model && data.models.some((m) => m.id === model) ? model : d.model,
     usage: num(p.get(KEYS.usage), d.usage, u.min_tokens_per_day, u.max_tokens_per_day),
     ratio: num(p.get(KEYS.ratio), d.ratio, u.min_input_to_output_ratio, u.max_input_to_output_ratio),
@@ -106,6 +137,12 @@ export function parseState(search: string, data: Dataset, pathname = '/'): State
     kwh: num(p.get(KEYS.kwh), d.kwh, 0, 5),
     ctx: num(p.get(KEYS.ctx), d.ctx, 1024, 1_000_000),
     cloudTps: num(p.get(KEYS.cloudTps), d.cloudTps, 1, 10000),
+    tps: opt(p.get(KEYS.tps), 0.1, 100_000),
+    sub: opt(p.get(KEYS.sub), 1, 1_000_000),
+    customName: (p.get(KEYS.customName) ?? '').slice(0, 40),
+    customMem: opt(p.get(KEYS.customMem), 1, 4000),
+    customWatts: opt(p.get(KEYS.customWatts), 1, 20_000),
+    customBw: opt(p.get(KEYS.customBw), 1, 5000),
   };
 }
 
@@ -123,6 +160,14 @@ export function serializeState(s: State): string {
   if (s.price != null) p.set(KEYS.price, String(Math.round(s.price)));
   if (s.decline > 0) p.set(KEYS.decline, String(s.decline));
   if (s.showOlder) p.set(KEYS.showOlder, '1');
+  if (s.tps != null) p.set(KEYS.tps, String(s.tps));
+  if (s.sub != null) p.set(KEYS.sub, String(s.sub));
+  if (s.hw === CUSTOM_HW) {
+    if (s.customName) p.set(KEYS.customName, s.customName);
+    if (s.customMem != null) p.set(KEYS.customMem, String(s.customMem));
+    if (s.customWatts != null) p.set(KEYS.customWatts, String(s.customWatts));
+    if (s.customBw != null) p.set(KEYS.customBw, String(s.customBw));
+  }
   return p.toString();
 }
 

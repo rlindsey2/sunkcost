@@ -1,7 +1,7 @@
 import { calculate, DAYS_PER_YEAR, type CalcResult } from './calc';
 import { fit, resolveThroughput, type Fit, type ResolvedThroughput } from './fit';
 import { fmtVerdictDuration } from './format';
-import type { State } from './state';
+import { CUSTOM_HW, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
 
 export interface ModelRow {
@@ -44,7 +44,31 @@ export interface View {
 }
 
 export function hardwareLabel(h: Hardware): string {
+  if (h.id === CUSTOM_HW) return `${h.chip}, ${h.unified_memory_gb} GB`;
   return `${h.family} ${h.chip}, ${h.unified_memory_gb}GB`;
+}
+
+/** A machine you describe: every figure is yours, and anything left blank stays unknown. */
+export function customHardware(s: State): Hardware {
+  return {
+    id: CUSTOM_HW,
+    family: 'Your own machine',
+    chip: s.customName.trim() || 'Your own machine',
+    unified_memory_gb: s.customMem ?? 0,
+    usable_memory_gb: s.customMem,
+    memory_bandwidth_gbs: s.customBw,
+    price_usd: null,
+    idle_watts: null,
+    load_watts: s.customWatts,
+    load_watts_status: 'entered',
+    generation: 'current',
+    estimate_note: 'Estimated from the bandwidth you entered, with efficiency calibrated on Apple Silicon and DGX Spark; discrete GPUs usually do better, so a measured speed is more reliable',
+  };
+}
+
+/** Your measured speed, used as given: you measured at your own context, so it is not adjusted. */
+function yourThroughput(tps: number, ctx: number): ResolvedThroughput {
+  return { tokensPerSec: tps, baseTokensPerSec: tps, baseContext: ctx, contextFactor: 1, measurement: 'yours', source: 'your measurement, as entered', sourceUrl: null, detail: 'not adjusted for context' };
 }
 
 export function modelLabel(m: Model): string {
@@ -53,12 +77,13 @@ export function modelLabel(m: Model): string {
 
 export function computeView(state: State, data: Dataset): View {
   const d = data.defaults;
-  const hw = data.hardware.find((h) => h.id === state.hw) ?? data.hardware[0];
+  const hw = state.hw === CUSTOM_HW ? customHardware(state) : data.hardware.find((h) => h.id === state.hw) ?? data.hardware[0];
 
   const all = data.models.map<ModelRow>((m) => ({
     model: m,
     fit: fit(m, hw, state.ctx, d.nearly_fits_ratio),
-    throughput: resolveThroughput(m, hw, data.throughput, d, state.ctx),
+    // your own measurement wins for the model it was taken on
+    throughput: m.id === state.model && state.tps != null ? yourThroughput(state.tps, state.ctx) : resolveThroughput(m, hw, data.throughput, d, state.ctx),
   }));
   const order: Record<string, number> = { fits: 0, nearly: 1, context: 2, unknown: 3, no: 4 };
   // every model stays in the list — the ones that don't fit are greyed with the reason, so a
@@ -89,14 +114,14 @@ export function computeView(state: State, data: Dataset): View {
   const blockers: string[] = [];
   if (price == null) blockers.push('no price for this machine yet — enter what you paid to see the break-even');
   if (!model) blockers.push('no model in the list fits this configuration at the chosen context length');
-  if (model) {
+  if (model && state.sub == null) {
     const ce = model.cloud_equivalent;
     if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) {
       blockers.push(`nobody hosts ${model.display_name}, so there is no rental price to weigh the hardware against`);
     }
   }
-  if (row && row.throughput.tokensPerSec == null) blockers.push('local speed is unknown and cannot be estimated');
-  if (hw.load_watts == null) blockers.push('power draw under load is unknown (TODO in hardware.json)');
+  if (row && row.throughput.tokensPerSec == null) blockers.push(hw.id === CUSTOM_HW ? 'enter your measured speed, or the memory bandwidth to estimate it' : 'local speed is unknown and cannot be estimated');
+  if (hw.load_watts == null) blockers.push(hw.id === CUSTOM_HW ? 'enter its power draw under load' : 'power draw under load is unknown (TODO in hardware.json)');
 
   // capacity: the machine can only generate so many tokens in 24 hours
   const tps = row?.throughput.tokensPerSec ?? null;
@@ -112,19 +137,29 @@ export function computeView(state: State, data: Dataset): View {
       devicePriceUsd: price!,
       dailyTokens: effectiveUsage,
       inputRatio: state.ratio,
-      inputPricePerMtok: model.cloud_equivalent.input_price_per_mtok!,
-      outputPricePerMtok: model.cloud_equivalent.output_price_per_mtok!,
+      inputPricePerMtok: model.cloud_equivalent.input_price_per_mtok ?? 0,
+      outputPricePerMtok: model.cloud_equivalent.output_price_per_mtok ?? 0,
       localTokensPerSec: row.throughput.tokensPerSec!,
       cloudTokensPerSec: state.cloudTps,
       loadWatts: hw.load_watts!,
       pricePerKwh: state.kwh,
       typicalTaskOutputTokens: d.typical_task_output_tokens,
-      apiDeclinePerYear: state.decline,
+      // a bill you pay is not a token price that keeps falling
+      apiDeclinePerYear: state.sub != null ? 0 : state.decline,
+      cloudCostPerDayOverride: state.sub != null ? (state.sub * 12) / DAYS_PER_YEAR : undefined,
     });
   }
 
   let verdict: View['verdict'];
-  if (!calc && model && (model.cloud_equivalent.input_price_per_mtok == null || model.cloud_equivalent.output_price_per_mtok == null)) {
+  const isCustom = hw.id === CUSTOM_HW;
+  const missing = isCustom
+    ? [price == null ? 'what it cost' : '', state.customMem == null ? 'how much memory models can use' : '', state.customWatts == null ? 'its power draw under load' : ''].filter(Boolean)
+    : [];
+  if (!calc && missing.length) {
+    verdict = { kind: 'unpriced', headline: 'Describe your machine.', sub: `Still needed: ${missing.join(', ')}.` };
+  } else if (!calc && isCustom && model && row && row.throughput.tokensPerSec == null) {
+    verdict = { kind: 'unknown', headline: `How fast does ${model.display_name} run on it?`, sub: 'Enter your measured speed under the assumptions, or the machine’s memory bandwidth to estimate it.' };
+  } else if (!calc && model && (model.cloud_equivalent.input_price_per_mtok == null || model.cloud_equivalent.output_price_per_mtok == null)) {
     // no one rents this model, so there is no bill to beat: local is the only way to run it at all
     const speed = row?.throughput.tokensPerSec;
     verdict = {
@@ -168,7 +203,7 @@ export function computeView(state: State, data: Dataset): View {
     verdict = {
       kind: 'surfaces',
       headline: `You’re underwater for ${fmtVerdictDuration(calc.breakevenDays)}.`,
-      sub: `${calc.apiDeclinePerYear > 0 ? `With the API getting ${Math.round(calc.apiDeclinePerYear * 100)}% cheaper a year, s` : 'S'}aving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day today, on ${price ? `$${price.toLocaleString('en-US')}` : ''} of hardware${priceIsCustom ? ' at the price you paid' : ''}.`,
+      sub: `${calc.apiDeclinePerYear > 0 ? `With the API getting ${Math.round(calc.apiDeclinePerYear * 100)}% cheaper a year, s` : 'S'}aving ${perDay >= 0.01 ? `$${perDay.toFixed(2)}` : `${(perDay * 100).toFixed(2)}c`} a day today${state.sub != null ? ` against your $${state.sub.toLocaleString('en-US')}-a-month bill` : ''}, on ${price ? `$${price.toLocaleString('en-US')}` : ''} of hardware${priceIsCustom ? ' at the price you paid' : ''}.`,
     };
   }
 

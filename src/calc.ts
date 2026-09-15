@@ -29,6 +29,8 @@ export interface CalcInputs {
   typicalTaskOutputTokens: number;
   /** fraction the API price falls each year, e.g. 0.4 for 40%/yr; 0 = hold today's prices */
   apiDeclinePerYear?: number;
+  /** a flat daily cost to beat (a monthly bill spread over the days) instead of per-token prices */
+  cloudCostPerDayOverride?: number;
 }
 
 export interface CalcResult {
@@ -116,7 +118,7 @@ export function calculate(i: CalcInputs): CalcResult {
   const { input, output } = splitTokens(i.dailyTokens, i.inputRatio);
 
   const cloudCostPerDay =
-    (input / 1e6) * i.inputPricePerMtok + (output / 1e6) * i.outputPricePerMtok;
+    i.cloudCostPerDayOverride ?? (input / 1e6) * i.inputPricePerMtok + (output / 1e6) * i.outputPricePerMtok;
 
   const localGenerationHoursPerDay = output / i.localTokensPerSec / 3600;
   const localKwhPerDay = (localGenerationHoursPerDay * i.loadWatts) / 1000;

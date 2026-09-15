@@ -29,7 +29,7 @@ export interface Hardware {
   idle_watts: number | null;
   load_watts: number | null;
   /** published = manufacturer figure; third_party_measured = a review's meter; stand_in = a flagged proxy from a previous chip */
-  load_watts_status?: 'published' | 'third_party_measured' | 'stand_in';
+  load_watts_status?: 'published' | 'third_party_measured' | 'stand_in' | 'entered';
   load_watts_note?: string;
   /** overrides defaults.estimate.efficiency_moe for this machine */
   estimate_efficiency_moe?: number | null;

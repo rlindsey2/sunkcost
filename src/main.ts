@@ -1,9 +1,10 @@
 import { data } from './data';
 import { drawWaterline, layoutNumberLine, renderAll, shareUrl } from './render';
 import { onSiteHost, sharePath } from './share';
-import { parseState, serializeState, sliderToUsage, usageToSlider, type State } from './state';
-import { renderOgCard, ogFigures, OG_WIDTH, OG_HEIGHT } from './og';
-import { fmtDuration, fmtNum } from './format';
+import { CUSTOM_HW, parseState, serializeState, sliderToUsage, usageToSlider, type State } from './state';
+import { OG_WIDTH, OG_HEIGHT } from './og';
+import { fmtNum } from './format';
+import { cardSvg } from './card';
 import type { View } from './compute';
 import './styles.css';
 
@@ -69,20 +70,30 @@ $<HTMLInputElement>('#cloud-tps').addEventListener('input', (e) => {
 });
 $<HTMLSelectElement>('#family').addEventListener('change', (e) => {
   const fam = (e.target as HTMLSelectElement).value;
+  if (fam === CUSTOM_HW) {
+    useCustomMachine();
+    return;
+  }
   const first = data.hardware.find((h) => h.family === fam && h.price_usd != null) ?? data.hardware.find((h) => h.family === fam);
-  if (first) update({ hw: first.id, price: null });
+  if (first) update({ hw: first.id, price: null, tps: null });
 });
+
+/** Switch to a machine you describe; a speed measured on another machine doesn't carry over. */
+function useCustomMachine() {
+  update({ hw: CUSTOM_HW, price: null, tps: null });
+  document.querySelector<HTMLInputElement>('#custom-name')?.focus();
+}
 $<HTMLSelectElement>('#chip').addEventListener('change', (e) => {
   const chip = (e.target as HTMLSelectElement).value;
   const fam = view.hw.family;
   const same = data.hardware.filter((h) => h.family === fam && h.chip === chip);
   const pick = same.find((h) => h.unified_memory_gb === view.hw.unified_memory_gb) ?? same.find((h) => h.price_usd != null) ?? same[0];
-  if (pick) update({ hw: pick.id, price: null });
+  if (pick) update({ hw: pick.id, price: null, tps: null });
 });
 $<HTMLSelectElement>('#memory').addEventListener('change', (e) => {
   const wrap = document.querySelector<HTMLElement>('#price-wrap');
   if (wrap) delete wrap.dataset.open;
-  update({ hw: (e.target as HTMLSelectElement).value, price: null });
+  update({ hw: (e.target as HTMLSelectElement).value, price: null, tps: null });
 });
 $<HTMLInputElement>('#decline-on').addEventListener('change', (e) => {
   const rate = Number($<HTMLSelectElement>('#decline-rate').value) || data.defaults.api_decline.default_rate_per_year;
@@ -97,7 +108,38 @@ $<HTMLInputElement>('#price').addEventListener('input', (e) => {
   update({ price: raw === '' || !Number.isFinite(n) || n <= 0 ? null : Math.round(n) });
 });
 
+/** A number you may leave blank: blank or nonsense means "not given". */
+function numberOrNull(el: HTMLInputElement, round: boolean): number | null {
+  const raw = el.value.trim();
+  const n = Number(raw);
+  if (raw === '' || !Number.isFinite(n) || n <= 0) return null;
+  return round ? Math.round(n) : n;
+}
+const onNumber = (sel: string, key: 'customMem' | 'customWatts' | 'customBw' | 'tps' | 'sub', round: boolean) =>
+  $<HTMLInputElement>(sel).addEventListener('input', (e) => update({ [key]: numberOrNull(e.target as HTMLInputElement, round) } as Partial<State>));
+onNumber('#custom-mem', 'customMem', false);
+onNumber('#custom-watts', 'customWatts', true);
+onNumber('#custom-bw', 'customBw', true);
+onNumber('#your-tps', 'tps', false);
+onNumber('#sub', 'sub', true);
+$<HTMLInputElement>('#custom-name').addEventListener('input', (e) => update({ customName: (e.target as HTMLInputElement).value.slice(0, 40) }));
+
 document.addEventListener('click', (e) => {
+  // shortcuts to an input: open the assumptions it lives in and put the cursor there
+  const focusBtn = (e.target as HTMLElement).closest<HTMLElement>('[data-focus]');
+  if (focusBtn) {
+    const input = document.getElementById(focusBtn.dataset.focus!) as HTMLInputElement | null;
+    const details = input?.closest('details');
+    if (details) details.open = true;
+    input?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    input?.focus({ preventScroll: true });
+    return;
+  }
+  if ((e.target as HTMLElement).closest('[data-custom]')) {
+    useCustomMachine();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-hw],[data-model],#price-reset,#price-toggle,#show-older,#hide-older');
   if (t?.id === 'show-older' || t?.id === 'hide-older') {
     update({ showOlder: t.id === 'show-older' });
@@ -118,9 +160,10 @@ document.addEventListener('click', (e) => {
     return;
   }
   // a price you paid for one machine says nothing about another, so it clears on switch
-  if (t.dataset.hw) update({ hw: t.dataset.hw, price: null });
+  if (t.dataset.hw) update({ hw: t.dataset.hw, price: null, tps: null });
   if (t.dataset.model && t.getAttribute('aria-disabled') !== 'true' && !(e.target as HTMLElement).closest('a')) {
-    update({ model: t.dataset.model });
+    // a speed you measured belongs to the model you measured it on
+    update({ model: t.dataset.model, ...(t.dataset.model !== state.model ? { tps: null } : {}) });
     document.querySelector<HTMLElement>(`[data-model="${t.dataset.model}"]`)?.focus();
   }
 });
@@ -129,7 +172,7 @@ document.addEventListener('keydown', (e) => {
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-model]');
   if (t && t.getAttribute('aria-disabled') !== 'true') {
     e.preventDefault();
-    update({ model: t.dataset.model! });
+    update({ model: t.dataset.model!, ...(t.dataset.model !== state.model ? { tps: null } : {}) });
     document.querySelector<HTMLElement>(`[data-model="${t.dataset.model}"]`)?.focus();
   }
 });
@@ -150,26 +193,9 @@ $('#copy-link').addEventListener('click', async () => {
 // absent in the single-file build: sandboxed hosts cannot save a file the page makes
 document.querySelector('#download-card')?.addEventListener('click', async () => {
   if (!view.calc || view.price == null) return;
-  const c = view.calc;
-  const svg = renderOgCard({
-    configLine: view.configLine,
-    usageLine: view.usageLine,
-    verdict: view.verdict.headline,
-    subLine: view.verdict.sub,
-    devicePriceUsd: view.price,
-    dailySaving: c.dailySaving,
-    breakevenDays: c.breakevenDays,
-    maxYears: data.defaults.waterline_max_years,
-    dataChecked: data.defaults.data_last_checked,
-    figures: ogFigures({
-      devicePriceUsd: view.price,
-      cloudCostPerMonth: c.cloudCostPerMonth,
-      localTokensPerSec: view.throughput?.tokensPerSec ?? null,
-      measurement: view.throughput?.measurement ?? 'unknown',
-      breakevenLabel: c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays),
-    }),
-    fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
-  });
+  // the same card the share links preview, drawn for exactly what is on screen
+  const svg = cardSvg({ ...state, model: view.model!.id }, data);
+  if (!svg) return;
   const png = await svgToPng(svg, OG_WIDTH, OG_HEIGHT);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(png);

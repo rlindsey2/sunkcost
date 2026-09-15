@@ -41,6 +41,7 @@ export function cardSvg(state: State, data: Dataset, fontFamily = CARD_FONT): st
       localTokensPerSec: view.throughput?.tokensPerSec ?? null,
       measurement: view.throughput?.measurement ?? 'unknown',
       breakevenLabel: c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays),
+      cloudLabel: state.sub != null ? 'Your bill / month' : undefined,
     }),
   });
 }

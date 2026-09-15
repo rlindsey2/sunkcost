@@ -43,7 +43,8 @@ export function onSiteHost(data: Dataset): boolean {
 
 /**
  * The query for the card a state draws, when its settings differ from the pair's pre-built card:
- * usage, input:output ratio, electricity, context, the price paid and the API price decline.
+ * usage, input:output ratio, electricity, context, the price paid, the API price decline, your
+ * measured speed and a monthly bill.
  * Sort, filters and cloud speed never reach the card, so they are left out; null means the
  * pre-built card already shows exactly this.
  */
@@ -56,6 +57,9 @@ export function cardQuery(state: State, data: Dataset): string | null {
     q.set('ctx', String(Math.round(s.ctx)));
     if (s.price != null) q.set('p', String(Math.round(s.price)));
     q.set('d', String(s.decline));
+    // your measured speed and your monthly bill both change what the card says
+    if (s.tps != null) q.set('tps', String(s.tps));
+    if (s.sub != null) q.set('sub', String(s.sub));
     return q.toString();
   };
   const mine = pick(state);

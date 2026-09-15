@@ -637,3 +637,10 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
 @media (prefers-reduced-motion: no-preference) {
   .model, .btn, .seg, .icon-btn, .select select, .input { transition: background-color 130ms ease, border-color 130ms ease, box-shadow 130ms ease, color 130ms ease; }
 }
+
+/* your own machine: the figures sit in the sentence as inputs */
+.custom-machine { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.custom-machine label { display: inline-flex; align-items: center; gap: 6px; }
+.input-inline { width: 12em; padding-block: 4px; }
+.input-inline.input-num { width: 5.5em; }
+.tweaks { margin: 10px 0 0; }

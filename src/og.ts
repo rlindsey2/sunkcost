@@ -97,10 +97,12 @@ export function ogFigures(x: {
   localTokensPerSec: number | null;
   measurement: string;
   breakevenLabel: string;
+  /** what the cloud figure is: per-token API cost by default, or a bill you entered */
+  cloudLabel?: string;
 }): { label: string; value: string }[] {
   return [
     { label: 'Hardware', value: fmtUsd(x.devicePriceUsd) },
-    { label: 'API cost / month', value: fmtUsd(x.cloudCostPerMonth) },
+    { label: x.cloudLabel ?? 'API cost / month', value: fmtUsd(x.cloudCostPerMonth) },
     { label: `Local speed (${x.measurement})`, value: x.localTokensPerSec == null ? 'unknown' : `${fmtNum(x.localTokensPerSec, 0)} tok/s` },
     { label: 'Break-even', value: x.breakevenLabel },
   ];

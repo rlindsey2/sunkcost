@@ -48,11 +48,17 @@
     <p class="sentence-line">
       <span>I’m looking at a</span>
       <span class="inline-select"><select id="family" aria-label="Device family"></select></span>
-      <span>, the</span>
-      <span class="inline-select"><select id="chip" aria-label="Chip or system"></select></span>
-      <span>with</span>
-      <span class="inline-select"><select id="memory" aria-label="Memory"></select></span>
-      <span>of memory.</span>
+      <span class="std-only">, the</span>
+      <span class="inline-select std-only"><select id="chip" aria-label="Chip or system"></select></span>
+      <span class="std-only">with</span>
+      <span class="inline-select std-only"><select id="memory" aria-label="Memory"></select></span>
+      <span class="std-only">of memory.</span>
+    </p>
+    <p class="sentence-meta custom-machine" id="custom-machine" hidden>
+      <label>Called <input class="input input-inline" id="custom-name" type="text" maxlength="40" placeholder="e.g. 2× RTX 3090" /></label>
+      <label>with <input class="input input-inline input-num" id="custom-mem" type="number" min="1" step="1" inputmode="decimal" aria-label="Memory models can use, in GB" /> GB models can use,</label>
+      <label>drawing <input class="input input-inline input-num" id="custom-watts" type="number" min="1" step="1" inputmode="numeric" aria-label="Power draw under load, in watts" /> W under load,</label>
+      <label>with <input class="input input-inline input-num" id="custom-bw" type="number" min="1" step="1" inputmode="numeric" aria-label="Memory bandwidth in GB/s, optional" /> GB/s memory bandwidth <span class="dim">(optional)</span></label>
     </p>
     <p class="sentence-meta">
       <a class="deep-link" id="hw-page-link" href="/leaderboard/">About this machine</a>
@@ -102,13 +108,19 @@
             <label class="label" for="ratio">Custom input to output ratio</label>
             <input type="range" id="ratio" step="0.25" aria-describedby="ratio-readout" />
           </div>
-          <details class="disclose">
+          <details class="disclose" id="assumptions">
             <summary>Assumptions you can change</summary>
             <div class="stack tight">
               <div class="row-2">
                 <label class="field"><span class="label">Electricity, $/kWh</span><input class="input" type="number" id="kwh" min="0" step="0.01" /></label>
                 <label class="field"><span class="label">API speed, tok/s</span><input class="input" type="number" id="cloud-tps" min="1" step="5" /></label>
               </div>
+              <div class="row-2">
+                <label class="field"><span class="label">Your measured speed, tok/s</span><input class="input" type="number" id="your-tps" min="0.1" step="0.1" inputmode="decimal" placeholder="use ours" /></label>
+                <label class="field"><span class="label">Or your monthly bill, $</span><input class="input" type="number" id="sub" min="1" step="1" inputmode="numeric" placeholder="per-token price" /></label>
+              </div>
+              <p class="note dim" id="tps-note"></p>
+              <p class="note dim" id="sub-note"></p>
               <label class="switch">
                 <input type="checkbox" id="decline-on" />
                 <span class="switch-box" aria-hidden="true"></span>
@@ -127,6 +139,7 @@
       <section class="card" id="zone-breakeven" aria-label="The figures">
         <div class="card-body stack">
           <div class="figures" id="figures"></div>
+          <p class="note tweaks" id="tweaks"></p>
           <div id="smarts"></div>
           <div id="time-cost"></div>
           <details class="disclose">

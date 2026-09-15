@@ -1,7 +1,7 @@
 import { computeView, formatUsageShort, hardwareLabel, modelLabel, ratioLabel, usageLabel, type ModelRow, type View } from './compute';
 import { esc, fmtDuration, fmtGb, fmtHours, fmtInt, fmtNum, fmtSeconds, fmtTokens, fmtUsd } from './format';
 import { kvCacheGb } from './fit';
-import { serializeState, type State } from './state';
+import { CUSTOM_HW, serializeState, type State } from './state';
 import { CAPABILITY_KEYS, CAPABILITY_LABELS, type Dataset, type Hardware, type Model, type Rating } from './types';
 import { renderWaterline } from './waterline';
 import { onSiteHost, sharePath } from './share';
@@ -44,22 +44,44 @@ function setOptions(sel: HTMLSelectElement, html: string, value: string) {
 /* ---------------- zone 1: machine ---------------- */
 
 function renderMachine(state: State, data: Dataset, view: View) {
+  const isCustom = view.hw.id === CUSTOM_HW;
   const families = [...new Set(data.hardware.map((h) => h.family))];
-  setOptions($<HTMLSelectElement>('#family'), families.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join(''), view.hw.family);
+  setOptions(
+    $<HTMLSelectElement>('#family'),
+    families.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join('') + `<option value="${CUSTOM_HW}">Your own machine…</option>`,
+    isCustom ? CUSTOM_HW : view.hw.family,
+  );
+  for (const el of document.querySelectorAll<HTMLElement>('.std-only')) el.hidden = isCustom;
+  $('#custom-machine').hidden = !isCustom;
+  const hwLink = document.querySelector<HTMLAnchorElement>('#hw-page-link');
+  const wrap = $<HTMLElement>('#price-wrap');
+  const priceInput = $<HTMLInputElement>('#price');
+  syncInput('#price', state.price);
+
+  if (isCustom) {
+    syncInput('#custom-name', state.customName);
+    syncInput('#custom-mem', state.customMem);
+    syncInput('#custom-watts', state.customWatts);
+    syncInput('#custom-bw', state.customBw);
+    if (hwLink) hwLink.hidden = true;
+    wrap.hidden = false;
+    priceInput.placeholder = 'what it cost';
+    $('#price-line').textContent = 'It cost';
+    $('#hw-status').textContent = state.customBw != null
+      ? `Speeds for every model are estimated from your ${state.customBw} GB/s, with efficiency calibrated on Apple Silicon and DGX Spark. Discrete GPUs usually beat that, so a measured speed is better.`
+      : 'Your figures, not ours. Add the memory bandwidth to estimate speeds for every model, or enter a measured speed for one under the assumptions.';
+    return;
+  }
+  if (hwLink) hwLink.hidden = false;
 
   const inFamily = data.hardware.filter((h) => h.family === view.hw.family);
-  const chipKey = (h: Hardware) => `${h.chip}`;
-  const groups: Array<['current' | 'previous', string]> = [['current', 'Current lineup'], ['previous', 'Previous generation (discontinued, launch price)']];
   const hasPrev = inFamily.some((h) => h.generation === 'previous');
+  const groups: Array<['current' | 'previous', string]> = [['current', 'Current lineup'], ['previous', 'Previous generation (discontinued, launch price)']];
   const chipHtml = groups
     .map(([gen, label]) => {
-      const chips = [...new Set(inFamily.filter((h) => (h.generation ?? 'current') === gen).map(chipKey))];
+      const chips = [...new Set(inFamily.filter((h) => (h.generation ?? 'current') === gen).map((h) => h.chip))];
       if (!chips.length) return '';
-      const opts = chips.map((c) => {
-        const bw = [...new Set(inFamily.filter((h) => chipKey(h) === c).map((h) => h.memory_bandwidth_gbs))].filter(Boolean);
-        void bw;
-        return `<option value="${esc(c)}">${esc(c)}</option>`;
-      }).join('');
+      const opts = chips.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
       return hasPrev ? `<optgroup label="${esc(label)}">${opts}</optgroup>` : opts;
     })
     .join('');
@@ -74,11 +96,7 @@ function renderMachine(state: State, data: Dataset, view: View) {
 
   // the price reads as a clause after the sentence; the input only appears when asked for
   const listPrice = view.hw.price_usd;
-  const wrap = $<HTMLElement>('#price-wrap');
-  const priceInput = $<HTMLInputElement>('#price');
   priceInput.placeholder = listPrice == null ? 'what you paid' : String(listPrice);
-  const wanted = state.price == null ? '' : String(state.price);
-  if (priceInput.value !== wanted && document.activeElement !== priceInput) priceInput.value = wanted;
   wrap.hidden = !(view.priceIsCustom || wrap.dataset.open === '1');
   $('#price-line').innerHTML = view.priceIsCustom
     ? `You paid <b class="num">${fmtUsd(view.price)}</b>${listPrice == null ? '' : ` · list is ${fmtUsd(listPrice)}`} · <button type="button" class="linkish" id="price-reset">use the list price</button>`
@@ -91,12 +109,18 @@ function renderMachine(state: State, data: Dataset, view: View) {
   if (view.hw.memory_bandwidth_gbs) bits.push(`${view.hw.memory_bandwidth_gbs} GB/s`);
   if (view.hw.usable_memory_gb != null) bits.push(`${view.hw.usable_memory_gb} GB usable by the GPU`);
   if (view.hw.status) bits.push(view.hw.status);
-  const hwLink = document.querySelector<HTMLAnchorElement>('#hw-page-link');
   if (hwLink) {
     hwLink.href = `/hardware/${view.hw.id}/`;
     hwLink.textContent = `About the ${hardwareLabel(view.hw)}`;
   }
   $('#hw-status').innerHTML = `${esc(bits.join(' · '))}${view.hw.TODO ? ` <span class="todo">TODO: ${esc(view.hw.TODO)}</span>` : ''}`;
+}
+
+/** Put a value into an input unless you are typing in it. */
+function syncInput(sel: string, value: string | number | null) {
+  const el = $<HTMLInputElement>(sel);
+  const want = value == null ? '' : String(value);
+  if (el.value !== want && document.activeElement !== el) el.value = want;
 }
 
 
@@ -158,6 +182,21 @@ function renderControls(state: State, data: Dataset, view: View) {
     ? `Break-even below assumes the API gets ${Math.round(state.decline * 100)}% cheaper every year.`
     : 'Off: today’s prices, held flat forever. That flatters the machine.';
 
+  // your own speed and a monthly bill: both replace a figure of ours, and say so
+  syncInput('#your-tps', state.tps);
+  syncInput('#sub', state.sub);
+  const m = view.model;
+  const report = reportSpeedUrl(state, data, view);
+  $('#tps-note').innerHTML = m
+    ? `${state.tps != null
+      ? `Using your ${fmtNum(state.tps, 1)} tok/s for ${esc(m.display_name)} on this machine, not adjusted for context. Clear it to use ours.`
+      : `For ${esc(m.display_name)} on this machine.${view.throughput?.tokensPerSec != null ? ` Ours is ${fmtNum(view.throughput.tokensPerSec, 1)} tok/s, ${esc(view.throughput.measurement)}.` : ''}`}${report ? ` <a href="${esc(report)}" target="_blank" rel="noopener">Send in your measurement</a> and it can go into the data for everyone, with its source.` : ''}`
+    : 'Pick a model that fits to enter a speed for it.';
+  $('#sub-note').textContent = state.sub != null
+    ? `Break-even now uses your $${state.sub.toLocaleString('en-US')} a month instead of ${m ? `${m.display_name}’s` : 'the model’s'} per-token price. It assumes the local model can do the work you pay for, and more usage only adds electricity.`
+    : 'Blank prices this model by the token. Enter what a subscription costs you each month to see what replacing it would take.';
+  if (state.sub != null) $('#decline-note').textContent = 'Not used while comparing against a monthly bill.';
+
   $('#kwh-note').textContent = `Default $${d.electricity.default_price_per_kwh_usd.toFixed(2)}/kWh is the ${d.electricity.country} residential average.`;
 }
 
@@ -194,7 +233,7 @@ function sourcesLine(m: Model, view: View, data: Dataset): string {
   parts.push(ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">price</a>${ce.checked ? ` (${esc(ce.checked)})` : ''}` : 'price: models.json');
   if (t) {
     const adj = t.contextFactor < 0.95 ? `, adjusted for ${fmtCtx(view.contextTokens)} context` : '';
-    parts.push(t.measurement === 'measured' && t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">speed</a> (${esc(t.source)}${adj})` : t.measurement === 'estimated' ? `speed: estimate from ${view.hw.memory_bandwidth_gbs} GB/s bandwidth${adj}` : 'speed: unknown');
+    parts.push(t.measurement === 'yours' ? 'speed: yours, as entered' : t.measurement === 'measured' && t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">speed</a> (${esc(t.source)}${adj})` : t.measurement === 'estimated' ? `speed: estimate from ${view.hw.memory_bandwidth_gbs} GB/s bandwidth${adj}` : 'speed: unknown');
   }
   const basis = data.defaults.frontier_basis;
   parts.push(m.frontier_equivalent?.basis ? `comparison: ${esc(m.frontier_equivalent.basis)}` : basis?.url ? `<a href="${esc(basis.url)}" rel="noopener">comparison basis</a>` : 'ratings: our judgement');
@@ -232,7 +271,9 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
   const speed = t.tokensPerSec == null
     ? '<span class="todo">speed unknown</span>'
     : `<span class="m-tps"><b>${fmtNum(t.tokensPerSec, t.tokensPerSec < 10 ? 1 : 0)}</b><i>tok/s</i></span>`;
-  const tag = t.measurement === 'measured'
+  const tag = t.measurement === 'yours'
+    ? '<span class="tag tag-measured">yours</span>'
+    : t.measurement === 'measured'
     ? '<span class="tag tag-measured">measured</span>'
     : t.measurement === 'estimated' ? '<span class="tag tag-estimated">estimated</span>' : '';
 
@@ -254,7 +295,7 @@ function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, dat
   // the link matters most on a model that does not fit, so greyed-out cards keep it, clickable
   const runLink = `<a href="/models/${esc(m.id)}/">What it takes to run ${esc(m.display_name)}</a>`;
   const sources = selected
-    ? `<p class="m-src">${runLink} · ${sourcesLine(m, view, data)}</p>`
+    ? `<p class="m-src">${runLink} · ${sourcesLine(m, view, data)} · <button type="button" class="linkish" data-focus="your-tps">use your own speed</button></p>`
     : disabled
       ? `<p class="m-src">${runLink}</p>`
       : '';
@@ -341,14 +382,20 @@ function renderFigures(state: State, data: Dataset, view: View) {
   const t = view.throughput;
   const figs: [string, string, string?][] = [
     ['Hardware', view.price == null ? 'unknown' : fmtUsd(view.price), view.priceIsCustom ? 'the price you paid' : view.hw.generation === 'previous' ? 'launch price' : undefined],
-    ['API cost per month', c ? fmtUsd(c.cloudCostPerMonth) : '—', view.model ? (view.model.cloud_equivalent.stand_in ? `nobody rents it; priced as ${view.model.cloud_equivalent.name}` : `${view.model.cloud_equivalent.name} on OpenRouter`) : undefined],
-    ['Electricity per month', c ? fmtUsd(c.localCostPerMonth) : '—', view.hw.load_watts ? `${view.hw.load_watts} W under load${view.hw.load_watts_status === 'stand_in' ? ' (stand-in figure)' : ''}` : undefined],
-    ['Local speed', t?.tokensPerSec == null ? 'unknown' : `${fmtNum(t.tokensPerSec, 0)} tok/s`, t ? t.measurement : undefined],
+    state.sub != null
+      ? ['Your bill per month', fmtUsd(state.sub), 'what you entered; it buys a different model']
+      : ['API cost per month', c ? fmtUsd(c.cloudCostPerMonth) : '—', view.model ? (view.model.cloud_equivalent.stand_in ? `nobody rents it; priced as ${view.model.cloud_equivalent.name}` : `${view.model.cloud_equivalent.name} on OpenRouter`) : undefined],
+    ['Electricity per month', c ? fmtUsd(c.localCostPerMonth) : '—', view.hw.load_watts ? `${view.hw.load_watts} W under load${view.hw.load_watts_status === 'stand_in' ? ' (stand-in figure)' : view.hw.load_watts_status === 'entered' ? ', yours' : ''}` : undefined],
+    ['Local speed', t?.tokensPerSec == null ? 'unknown' : `${fmtNum(t.tokensPerSec, 0)} tok/s`, t ? (t.measurement === 'yours' ? 'your measurement' : t.measurement) : undefined],
     ['Break-even', c ? (c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays)) : '—', c?.breakevenTokens != null ? `${fmtTokens(c.breakevenTokens)} tokens` : undefined],
     ['After 12 months', c ? fmtUsd(-view.price! + c.dailySaving * 365.25) : '—', c ? (-view.price! + c.dailySaving * 365.25 < 0 ? 'still underwater' : 'clear of the surface') : undefined],
   ];
   $('#figures').innerHTML = figs.map(([k, v, sub]) => `<div class="fig"><div class="fig-k">${esc(k)}</div><div class="fig-v num">${esc(v)}</div>${sub ? `<div class="fig-s">${esc(sub)}</div>` : ''}</div>`).join('');
-  void state; void data;
+  $('#tweaks').innerHTML = [
+    `<button type="button" class="linkish" data-focus="your-tps">${state.tps != null ? 'Change your measured speed' : 'Use your own measured speed'}</button>`,
+    `<button type="button" class="linkish" data-focus="sub">${state.sub != null ? 'Change your monthly bill' : 'Compare against a subscription instead'}</button>`,
+    view.hw.id === CUSTOM_HW ? '' : '<button type="button" class="linkish" data-custom="1">Enter your own machine</button>',
+  ].filter(Boolean).join(' · ');
 }
 
 
@@ -448,9 +495,12 @@ function renderMath(state: State, data: Dataset, view: View) {
   const be = c.breakevenDays;
   const usage = view.capacity.effective;
   el.innerHTML = `
-<pre class="formula">cloud_cost_per_day  = (${fmtInt(c.dailyInputTokens)} / 1,000,000 × $${ce.input_price_per_mtok})
+<pre class="formula">${state.sub != null
+    ? `cloud_cost_per_day  = $${state.sub} × 12 / 365.25     (your monthly bill; token prices not used)
+                    = ${fmtUsd(c.cloudCostPerDay, { cents: true })}`
+    : `cloud_cost_per_day  = (${fmtInt(c.dailyInputTokens)} / 1,000,000 × $${ce.input_price_per_mtok})
                     + (${fmtInt(c.dailyOutputTokens)} / 1,000,000 × $${ce.output_price_per_mtok})
-                    = ${fmtUsd(c.cloudCostPerDay, { cents: true })}
+                    = ${fmtUsd(c.cloudCostPerDay, { cents: true })}`}
 
 local_cost_per_day  = (${fmtInt(c.dailyOutputTokens)} / ${fmtNum(tps, 1)} tok/s / 3600) h
                       × ${hw.load_watts} W / 1000 × $${state.kwh}/kWh
@@ -466,13 +516,13 @@ breakeven_days      = the T where saved_by(T) = ${fmtUsd(view.price)} → ${be =
 breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)} = ${fmtTokens(c.breakevenTokens)} tokens`}</pre>
 <dl class="sources">
   <dt>Hardware price</dt><dd>${view.priceIsCustom
-    ? `${fmtUsd(view.price)} — <b>the price you entered</b>. ${hw.price_usd == null ? 'No list price is recorded for this configuration.' : `The list price in hardware.json is ${fmtUsd(hw.price_usd)}${hw.sources?.length ? ` (${links(hw.sources)})` : ''}.`}`
+    ? `${fmtUsd(view.price)} — <b>the price you entered</b>. ${hw.id === CUSTOM_HW ? 'Your own machine.' : hw.price_usd == null ? 'No list price is recorded for this configuration.' : `The list price in hardware.json is ${fmtUsd(hw.price_usd)}${hw.sources?.length ? ` (${links(hw.sources)})` : ''}.`}`
     : `${fmtUsd(view.price)} — hardware.json, <code>${esc(hw.id)}</code>${hw.sources?.length ? ` · ${links(hw.sources)}` : ''}`}</dd>
-  <dt>Power under load</dt><dd>${hw.load_watts} W, <b>${esc((hw.load_watts_status ?? 'published').replace(/_/g, ' '))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}</dd>
-  <dt>Usable memory</dt><dd>${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}</dd>
+  <dt>Power under load</dt><dd>${hw.id === CUSTOM_HW ? `${hw.load_watts} W, <b>entered by you</b>.` : `${hw.load_watts} W, <b>${esc((hw.load_watts_status ?? 'published').replace(/_/g, ' '))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}`}</dd>
+  <dt>Usable memory</dt><dd>${hw.id === CUSTOM_HW ? `${hw.usable_memory_gb} GB, entered by you.` : `${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}`}</dd>
   <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}</dd>
   <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} <b>output</b> tokens a day, generating without a break; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} once the input at ${esc(ratioLabel(state.ratio))} is counted.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} ${esc(data.defaults.capacity_note ?? '')}</dd>
-  <dt>API price</dt><dd>${ce.stand_in ? `${esc(ce.note ?? '')} ${esc(ce.name)}` : `${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}`}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
+  <dt>${state.sub != null ? 'What you pay instead' : 'API price'}</dt><dd>${state.sub != null ? `$${state.sub} a month, entered by you. For reference, the per-token price is ` : ''}${ce.stand_in ? `${esc(ce.note ?? '')} ${esc(ce.name)}` : `${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}`}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
   ${c.apiDeclinePerYear > 0 ? `<dt>Falling API prices</dt><dd>Assuming ${Math.round(c.apiDeclinePerYear * 100)}% a year. ${esc(data.defaults.api_decline.source)}${data.defaults.api_decline.source_url ? ` <a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">Source</a>.` : ''}${c.bestPosition ? ` The saving peaks ${fmtDuration(c.bestPosition.days)} in; after that the API is cheaper than the electricity and the position sinks.` : ''}</dd>` : ''}
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
@@ -495,8 +545,33 @@ function renderSmallPrint(state: State, data: Dataset, view: View) {
       ? `<b>API prices fall — and you have said so.</b> This is calculated with the API getting ${Math.round(state.decline * 100)}% cheaper a year. ${esc(data.defaults.api_decline.source)}`
       : `<b>API prices fall.</b> This is calculated at today’s prices (checked ${esc(data.defaults.data_last_checked)}), held flat forever. They have not behaved that way. Turn on “${esc(data.defaults.api_decline.label)}” under the assumptions to see what that does — it is usually the difference between a long pay-back and none.`,
     `<b>Frontier models aren’t on the list.</b> The best cloud models can’t be run locally at any of these price points. This compares like with like on open models; it is not an apples-to-apples swap for a frontier API.`,
+    `<b>Money isn’t the only reason to buy.</b> Prompts and files never leave the machine. Nobody can change, throttle or withdraw the model, you choose its guardrails and can fine-tune it, and the same box plays games, renders and runs builds. None of that is priced in here.`,
   ];
+  if (state.sub != null && view.model) {
+    const tier = view.model.frontier_equivalent?.tier;
+    items.unshift(`<b>Your bill buys a different model.</b> A subscription usually comes with the lab’s own models. This assumes ${esc(view.model.display_name)}${tier != null ? ` (${esc(data.defaults.frontier_tiers[tier].label)})` : ''} can do the work you pay it for.`);
+  }
   $('#small-print').innerHTML = items.map((i) => `<li>${i}</li>`).join('');
+}
+
+/** A prefilled GitHub issue for a measured speed, so a report arrives with what it takes to cite it. */
+export function reportSpeedUrl(state: State, data: Dataset, view: View): string | null {
+  const repo = data.defaults.repo_url;
+  const m = view.model;
+  if (!repo || !m) return null;
+  const machine = hardwareLabel(view.hw);
+  const ours = view.throughput;
+  const body = [
+    `**Machine:** ${machine}${view.hw.id === CUSTOM_HW ? ' (please describe the GPUs, CPU and RAM)' : ` (\`${view.hw.id}\`)`}`,
+    `**Model:** ${m.display_name} ${m.quantisation} (\`${m.id}\`)`,
+    `**Generation speed, tok/s:** ${state.tps ?? ''}`,
+    '**Context length when measured:** ',
+    '**Runtime, version and flags (llama.cpp, MLX, vLLM…):** ',
+    '**Link to the run, benchmark or screenshot:** ',
+    '',
+    ours?.tokensPerSec != null && ours.measurement !== 'yours' ? `Sunk Cost currently shows ${fmtNum(ours.tokensPerSec, 1)} tok/s (${ours.measurement}).` : '',
+  ].join('\n');
+  return `${repo}/issues/new?${new URLSearchParams({ title: `Measured speed: ${m.display_name} on ${machine}`, body, labels: 'measurement' }).toString()}`;
 }
 
 export { modelLabel };

@@ -492,3 +492,42 @@ describe('best buys', () => {
     }
   });
 });
+
+describe('your own numbers', () => {
+  const base = parseState('', data);
+
+  it('round-trips a custom machine, a measured speed and a monthly bill through the link', () => {
+    const s = { ...base, hw: 'custom', model: 'qwen3.8-27b-q4', price: 1000, customName: '2× RTX 3090', customMem: 48, customWatts: 700, customBw: 936, tps: 50, sub: 100 };
+    expect(parseState(serializeState(s), data)).toMatchObject({ hw: 'custom', model: 'qwen3.8-27b-q4', price: 1000, customName: '2× RTX 3090', customMem: 48, customWatts: 700, customBw: 936, tps: 50, sub: 100 });
+  });
+
+  it('works a custom machine out from what you enter, using your measured speed', () => {
+    const v = computeView({ ...base, hw: 'custom', model: 'qwen3.8-27b-q4', price: 1000, customName: 'Used 3090 box', customMem: 24, customWatts: 450, tps: 50 }, data);
+    expect(v.model?.id).toBe('qwen3.8-27b-q4');
+    expect(v.throughput).toMatchObject({ tokensPerSec: 50, measurement: 'yours' });
+    expect(v.calc?.breakevenDays).not.toBeNull();
+    expect(v.configLine).toContain('Used 3090 box');
+  });
+
+  it('asks for what is still missing on a custom machine instead of guessing', () => {
+    const v = computeView({ ...base, hw: 'custom', customMem: 24 }, data);
+    expect(v.calc).toBeNull();
+    expect(v.verdict.sub).toContain('what it cost');
+    expect(v.verdict.sub).toContain('power draw');
+  });
+
+  it('uses a measured speed only for the model it was measured on', () => {
+    const v = computeView({ ...base, hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4', tps: 40 }, data);
+    expect(v.throughput?.measurement).toBe('yours');
+    expect(v.rows.filter((r) => r.throughput.measurement === 'yours').map((r) => r.model.id)).toEqual(['qwen3.8-27b-q4']);
+  });
+
+  it('weighs the machine against a monthly bill, with falling prices off, and the card follows', () => {
+    const s = { ...base, hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4', sub: 100, decline: 0.4 };
+    const v = computeView(s, data);
+    expect(v.calc!.cloudCostPerDay).toBeCloseTo((100 * 12) / 365.25, 6);
+    expect(v.calc!.apiDeclinePerYear).toBe(0);
+    expect(cardQuery(s, data)).toContain('sub=100');
+    expect(cardSvg(s, data)).toContain('Your bill / month');
+  });
+});

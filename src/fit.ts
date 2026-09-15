@@ -95,7 +95,7 @@ export interface ResolvedThroughput {
   baseContext: number;
   /** tokensPerSec / baseTokensPerSec; < 1 means context slowed it down */
   contextFactor: number;
-  measurement: Measurement | 'unknown';
+  measurement: Measurement | 'unknown' | 'yours';
   source: string;
   sourceUrl: string | null;
   detail: string;
