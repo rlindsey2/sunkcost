@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, priceRivals,
-  type LdNode,
+  brandOf, cheapestThatHolds, familyHeading, familyRange, fmtGb1, gbRange, hardwareProduct, jsonLd, kvWorking, median,
+  modelsInBand, otherQuantisations, pageGraph, priceRivals, SIZE_BANDS, type LdNode,
 } from '../src/pagekit';
+import { kvCacheGb } from '../src/fit';
 import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
@@ -186,5 +187,79 @@ describe('related machines', () => {
         data.hardware.some((x) => familyRange(x, data).some((r) => r.id === h.id) || priceRivals(x, data).some((r) => r.id === h.id)),
         `${h.id} is linked from no other machine page`,
       ).toBe(true);
+  });
+});
+
+describe('the memory question', () => {
+  const m = (id: string) => data.models.find((x) => x.id === id)!;
+  const CTX = 32768;
+
+  it('writes a decimal only where there is one', () => {
+    expect(fmtGb1(42.52)).toBe('42.5 GB');
+    expect(fmtGb1(24)).toBe('24 GB');
+    expect(fmtGb1(10.5)).toBe('10.5 GB');
+    expect(fmtGb1(null)).toBe('—');
+  });
+
+  it('gives a range only when the two ends differ', () => {
+    expect(gbRange([4.9, 42.52])).toBe('4.9 GB to 42.5 GB');
+    expect(gbRange([8, 8])).toBe('8 GB');
+    expect(gbRange([])).toBe('—');
+    expect(median([3, 1, 2])).toBe(2);
+    expect(median([4, 1, 2, 3])).toBe(2.5);
+    expect(median([])).toBeNull();
+  });
+
+  it('holds a model only in a machine that is current, priced and big enough', () => {
+    for (const need of [3, 12.8, 53.3, 96, 500]) {
+      const hw = cheapestThatHolds(need, data);
+      if (!hw) continue;
+      expect(hw.usable_memory_gb).toBeGreaterThanOrEqual(need);
+      expect(hw.generation ?? 'current').toBe('current');
+      expect(hw.price_usd).not.toBeNull();
+      // nothing cheaper on the list would have done
+      for (const other of data.hardware)
+        if (
+          other.price_usd != null &&
+          (other.generation ?? 'current') === 'current' &&
+          (other.usable_memory_gb ?? 0) >= need
+        )
+          expect(other.price_usd).toBeGreaterThanOrEqual(hw.price_usd!);
+    }
+  });
+
+  it('says nothing holds a model no machine can hold', () => {
+    const biggest = Math.max(...data.hardware.map((h) => h.usable_memory_gb ?? 0));
+    expect(cheapestThatHolds(biggest + 1, data)).toBeNull();
+    expect(cheapestThatHolds(null, data)).toBeNull();
+  });
+
+  it('puts every model in exactly one size band', () => {
+    const counted = SIZE_BANDS.flatMap((b) => modelsInBand(b, data).map((x) => x.id));
+    expect(counted.length).toBe(data.models.length);
+    expect(new Set(counted).size).toBe(counted.length);
+    for (const band of SIZE_BANDS)
+      for (const x of modelsInBand(band, data)) {
+        expect(x.params_b).toBeGreaterThanOrEqual(band.min);
+        expect(x.params_b).toBeLessThan(band.max);
+      }
+  });
+
+  it('shows the cache working only where that working is the whole story', () => {
+    // plain multi-head attention: 2 × 8 heads × 128 × 2 bytes × 80 layers × 32768 tokens
+    const working = kvWorking(m('llama-3.3-70b-q4'), CTX);
+    expect(working).toContain('327,680 bytes');
+    expect(working).toContain('10.7 GB');
+    // a hybrid caches the full context in only some layers, so the one-line sum would lie
+    expect(kvWorking(m('qwen3-coder-next-q4'), CTX)).toBeNull();
+    expect(kvWorking(m('gpt-oss-120b-mxfp4'), CTX)).toBeNull();
+  });
+
+  it('never prints working that disagrees with the figure the site uses', () => {
+    for (const model of data.models) {
+      const working = kvWorking(model, CTX);
+      if (working == null) continue;
+      expect(working).toContain(`${kvCacheGb(model, CTX)!.toFixed(1)} GB`);
+    }
   });
 });

@@ -8,6 +8,7 @@
  * may depend on JavaScript running.
  */
 import { computeView, hardwareLabel, modelLabel, type View } from './compute';
+import { kvCacheGb } from './fit';
 import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 import { defaultState, serializeState, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
@@ -230,7 +231,7 @@ ${jsonLd(pageGraph(c, data))}
 ${body}
 </main>
 <footer class="doc-foot">
-  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a></p>
+  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a> · <a href="/how-much-memory/">How much memory you need</a></p>
 </footer>
 </body>
 </html>
@@ -341,6 +342,102 @@ export function familyHeading(hw: Hardware): string {
 /** The same model at another quantisation: a different download, a different memory bill. */
 export function otherQuantisations(m: Model, data: Dataset): Model[] {
   return data.models.filter((x) => x.display_name === m.display_name && x.id !== m.id);
+}
+
+/**
+ * The memory question: weights plus cache, and what holds the total.
+ */
+
+/**
+ * A decimal where there is one. A page that adds 42.5 and 10.7 together cannot
+ * round each figure to a whole gigabyte first, or the column stops adding up in
+ * front of the reader; a machine with 24 GB does not need the nought either.
+ */
+export function fmtGb1(gb: number | null | undefined): string {
+  if (gb == null || !Number.isFinite(gb)) return '—';
+  return `${gb.toFixed(1).replace(/\.0$/, '')} GB`;
+}
+
+/**
+ * The cheapest machine whose usable memory holds this much, on the same terms as
+ * the rest of the site: current generation, price published. Cheapest rather than
+ * smallest, because the machine with the least memory that clears the bar is
+ * often not the one you would buy.
+ */
+export function cheapestThatHolds(needGb: number | null | undefined, data: Dataset): Hardware | null {
+  if (needGb == null || !Number.isFinite(needGb)) return null;
+  return (
+    data.hardware
+      .filter(
+        (h) =>
+          h.price_usd != null &&
+          (h.generation ?? 'current') === 'current' &&
+          h.usable_memory_gb != null &&
+          h.usable_memory_gb >= needGb,
+      )
+      .sort((a, b) => a.price_usd! - b.price_usd!)[0] ?? null
+  );
+}
+
+/** "42.5 GB", or "4.9 GB to 42.5 GB" when the two ends differ. */
+export function gbRange(values: number[]): string {
+  const real = values.filter((v) => Number.isFinite(v));
+  if (!real.length) return '—';
+  const lo = Math.min(...real);
+  const hi = Math.max(...real);
+  return fmtGb1(lo) === fmtGb1(hi) ? fmtGb1(lo) : `${fmtGb1(lo)} to ${fmtGb1(hi)}`;
+}
+
+export function median(values: number[]): number | null {
+  const xs = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (!xs.length) return null;
+  const mid = Math.floor(xs.length / 2);
+  return xs.length % 2 ? xs[mid] : (xs[mid - 1] + xs[mid]) / 2;
+}
+
+/**
+ * The parameter bands people search by. The boundaries are editorial, the numbers
+ * inside each one are not: every figure on the page is computed from the models
+ * that land in the band.
+ */
+export interface SizeBand {
+  question: string;
+  min: number;
+  max: number;
+}
+
+export const SIZE_BANDS: SizeBand[] = [
+  { question: 'How much memory for a 7B or 8B model?', min: 0, max: 10 },
+  { question: 'How much memory for a 14B to 32B model?', min: 10, max: 40 },
+  { question: 'How much memory for a 70B model?', min: 40, max: 100 },
+  { question: 'How much memory for a 100B model or larger?', min: 100, max: Infinity },
+];
+
+export function modelsInBand(band: SizeBand, data: Dataset): Model[] {
+  return data.models
+    .filter((m) => m.params_b >= band.min && m.params_b < band.max)
+    .sort((a, b) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0));
+}
+
+/**
+ * The cache arithmetic written out for one model, so the figure in the table has
+ * its working next to it. Only for the plain multi-head case: an architecture
+ * that caches a compressed vector, or caches different lengths per layer, does
+ * not reduce to one line of multiplication.
+ */
+export function kvWorking(m: Model, contextTokens: number): string | null {
+  const a = m.architecture;
+  if (!a || a.n_layers == null || a.n_kv_heads == null || a.head_dim == null) return null;
+  const bytes = a.kv_bytes_per_value ?? 2;
+  const perLayer = 2 * a.n_kv_heads * a.head_dim * bytes;
+  const perToken = perLayer * a.n_layers;
+  const total = (perToken * contextTokens) / 1e9;
+  // If this line of multiplication does not reproduce the figure the site uses,
+  // the model caches something else and the working would be a lie.
+  const actual = kvCacheGb(m, contextTokens);
+  if (actual == null || Math.abs(actual - total) > 0.01) return null;
+  const n = (v: number) => v.toLocaleString('en-US');
+  return `2 (a key and a value) × ${a.n_kv_heads} key-value heads × ${a.head_dim} numbers per head × ${bytes} bytes = ${n(perLayer)} bytes per token, per layer. Over ${a.n_layers} layers that is ${n(perToken)} bytes for every token in the window. Fill ${n(contextTokens)} tokens of context and the cache is ${fmtGb1(total)}.`;
 }
 
 export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc };
