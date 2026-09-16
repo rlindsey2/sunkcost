@@ -160,17 +160,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       reaches main. It is infrastructure rather than SEO, so it is Ryan's call, but it is cheap and
       it protects the thing every other item on this list depends on.
 
-- [ ] Two model counts are live on the site and they do not match: the machine pages count
-      against the 39 current models that `computeView` puts in `rows`, and /how-much-memory/
-      counts all 55, because the model people mean by "a 70B" is Llama 3.3 70B and that one is
-      marked legacy. Both pages say which denominator they use, so neither is wrong, but a
-      reader moving between them sees "48 models fit" on one page and "38" on another for the
-      same machine. Worth settling on one rule, which is a judgement call for Ryan rather than
-      an SEO fix.
-- [ ] `/hardware/geforce-rtx-3060-12/` shows as "NVIDIA GeForce RTX 3060 12GB, 12GB" everywhere
-      its label is rendered, because `chip` in data/hardware.json ends in the memory size that
-      `hardwareLabel()` then appends again. The fix is a data edit, which the agent may not make.
-      Cosmetic, but it is on a page people do search for.
+- [x] The two model counts that did not match. Ryan handed the judgement call to the agent on
+      2026-09-16 and the rule is: **a count of what a machine holds uses the 39 current models**,
+      the set the calculator shows before you ask for the older ones and the set every machine
+      page already counted. What a model *needs* is a different question and a superseded model
+      needs it just the same, so /how-much-memory/'s tables by size still cover all 55, marked
+      where superseded. Fixed on the PR #1 branch, where that page lives, and held by
+      `checkCounts()` at build time: every priced machine still sold must come out the same on
+      its own page and on that one, or the build stops.
+- [x] The RTX 3060's doubled label. Done 2026-09-16 with Ryan's say-so, which is what the data
+      edit needed. `chip` is now "GeForce RTX 3060", the way every other card is entered, and the
+      label builder supplies the ", 12GB" as it always did. Six pages changed and nothing else;
+      the page's title lost 6 characters and now fits the brand suffix as well. The validator
+      refuses any chip that ends in its own memory size, so it cannot come back.
 - [x] The generated pages on a phone. Measured, and the premise was wrong: no page overflows the
       window at 320, 360, 390 or 430px, then or now. The full-height screenshot that raised it
       renders a scrolling table at its full width, which reads as the page running off the edge.
@@ -191,12 +193,80 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       proportions are checked at 768px: a 34% label column is right at 358px and probably too
       wide at 724.
 
+- [ ] Every graphics card page opens "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?" — "a"
+      before a label that wants "an". It reads as a typo on the first line of the page, on seven
+      pages. The h1 in `hardwarePage()` is where it is built; the rule has to cover the letters
+      pronounced with a vowel sound (an NVIDIA, an AMD, an RTX), not just the vowels.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the RTX 3060 label, and one rule for counting what a machine holds
+
+Ryan replied for the first time in days, asked what needed him, took two items and handed one back:
+**"model count: don't care - you pick"** and **"yeah fix the geforce issue"**. Both are done. He also
+asked for something the site cannot give him yet, which is the most useful thing in this entry.
+
+**He asked for preview URLs of the two open PRs, and there are none.** `deploy.yml` runs on push to
+`main` and on `workflow_dispatch` only, and publishes with `--branch=main`, which Cloudflare treats
+as production, so a PR gets no build, no checks and nothing to look at. The agent built both
+branches here and sent screenshots instead. **This makes the `pull_request` workflow item above
+worth more than it looked**: the same file that would run `npm ci`, `npm test` and `npm run build`
+on a PR can publish the result with `pages deploy dist --branch=$HEAD_REF`, which Cloudflare serves
+at a preview URL of its own. Same secrets, same job, one extra step, and Ryan gets to look at a page
+before merging rather than after. Still his call, because it is CI and it spends his Cloudflare
+token, but he has now asked for what it provides, which is a different answer to "is it worth it".
+
+**The RTX 3060.** `chip` was "GeForce RTX 3060 12GB" while every other card is entered without its
+memory, so the label builder's ", 12GB" landed on top of it: "NVIDIA GeForce RTX 3060 12GB, 12GB",
+in the h1, the title, the description, the breadcrumb, the Product node and every link to the page.
+`chip` is now "GeForce RTX 3060". Built before and after: **6 pages differ and nothing else** — the
+card's own page and the five other NVIDIA cards that link to it — and the title, 6 characters
+shorter, now fits the brand suffix it had been losing. The validator refuses any chip ending in its
+own memory size, proved by putting the old name back and watching it fail by name. NVIDIA does sell
+an 8GB 3060 and the 12GB was part of the retail name, which is presumably why it was entered that
+way; the label carries the memory either way, so nothing is lost.
+
+**The counting rule, which was the judgement call.** A count of what a machine holds now uses the
+39 current models everywhere — the set the calculator shows before you ask for the older ones, and
+the set every machine page already counted. What a model *needs* is a different question, and a
+superseded model needs the same memory, so /how-much-memory/'s tables by size still cover all 55
+and mark the superseded ones. One denominator everywhere was the wrong goal: it would have taken
+Llama 3.3 70B out of the 70B section of the page that exists to answer "how much RAM for a 70B".
+The two tables there that count what a machine holds now read 10, 13, 19, 24, 27 where they read
+13, 18, 26, 32, 35, which is exactly what the Mac mini M6 16GB, 24GB and 32GB, the Framework Desktop
+32GB and the Mac Studio M5 Max say on their own pages. That page lives on the PR #1 branch, so the
+fix went there: commit `7a1af80` on `seo/how-much-memory`.
+
+`checkCounts()` holds it at build time rather than by good intentions: every priced machine still
+sold has to come out the same on its own page and on the memory page, or the build stops. Proved by
+reverting the rule and watching it name the Mac mini M6 and both numbers.
+
+**Two runs were in the air at once, and the other one was right.** The 22:48 run measured the
+phone-width item this session had raised and found the premise wrong: no page overflows the window,
+and the full-height screenshot that raised it renders a scrolling table at its full width. This
+session had then read the same artefact a second time, at 1100px on the memory page, and was about
+to log "wide tables are cut off on desktop too" — which is the same misreading. It is not in the
+backlog, because what is real is in that run's two follow-up items above. **Worth keeping: a
+full-height headless screenshot cannot be used to judge whether anything overflows.** Where the two
+runs touched the same file, this one rebased onto theirs.
+
+Also seen while reading a card page and worth an item: every graphics card page opens "Can a NVIDIA
+…", which wants "an".
+
+Commit `93fcbb6` on main: the data edit, the validator check and this log. `npm test` (130 passing),
+`npm run validate`, `npm run typecheck` and `npm run build:pages` clean here, and the memory page
+branch's own suite (126 passing) before pushing to it.
+
+**Continue next:** the two table items above are the live work and they are the other run's to
+continue — the narrower-columns one is `scripts/build-pages.ts` rather than CSS. If Ryan has merged
+either PR by then, the merged one comes first: after PR #1, the next question page ("best GPU for
+local LLMs"); after PR #2, nothing, it is done when it lands. If he says yes to previews, that
+workflow is the highest-value hour on the list, because it unblocks his review of everything else.
 
 ### 2026-09-16 — the head-to-head tables now fit a phone
 
