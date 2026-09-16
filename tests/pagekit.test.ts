@@ -1,6 +1,8 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, priceRivals,
+  brandOf, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, pageShell, priceRivals,
+  FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
 import type { Dataset, Hardware } from '../src/types';
@@ -186,5 +188,50 @@ describe('related machines', () => {
         data.hardware.some((x) => familyRange(x, data).some((r) => r.id === h.id) || priceRivals(x, data).some((r) => r.id === h.id)),
         `${h.id} is linked from no other machine page`,
       ).toBe(true);
+  });
+});
+
+describe('fonts', () => {
+  const shell = pageShell(
+    {
+      title: 'A page',
+      description: 'A description.',
+      canonical: '/hardware/mac-mini-m6-16/',
+      ogImage: null,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }],
+    },
+    '<p>Body.</p>',
+    data,
+  );
+  const css = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8');
+
+  it('makes the browser wait on no other origin before it can paint', () => {
+    expect(shell).not.toContain('fonts.googleapis.com');
+    expect(shell).not.toContain('fonts.gstatic.com');
+    expect([...shell.matchAll(/rel="stylesheet" href="([^"]+)"/g)].map((m) => m[1])).toEqual(['/page.css']);
+  });
+
+  it('preloads the two faces that paint first, and only those', () => {
+    const preloads = [...shell.matchAll(/<link rel="preload" href="([^"]+)" as="font"[^>]*>/g)].map((m) => m[1]);
+    expect(preloads).toEqual([FONT_PRELOAD.sans, FONT_PRELOAD.mono]);
+    // a font request goes out anonymously whatever the origin, so without this
+    // the preloaded file is fetched a second time when the stylesheet asks
+    expect(shell).toContain(`href="${FONT_PRELOAD.sans}" as="font" type="font/woff2" crossorigin`);
+  });
+
+  it('serves every face the pages ask for from this origin, latin and latin-ext', () => {
+    const faces = [...css.matchAll(/url\((\/fonts\/[^)]+)\)/g)].map((m) => m[1]);
+    expect(faces).toHaveLength(10);
+    for (const f of faces) expect(existsSync(new URL(`../public${f}`, import.meta.url))).toBe(true);
+    // the weights and the one italic the pages actually use
+    expect(css).toContain("font-family: 'Instrument Sans'");
+    expect(css).toContain('font-weight: 400 700');
+    expect(css.match(/font-style: italic/g)).toHaveLength(2);
+    for (const w of [400, 500, 600]) expect(css).toContain(`/fonts/ibm-plex-mono-v20-${w}-latin.woff2`);
+  });
+
+  it('lets the text show in a fallback face while a font is still coming', () => {
+    expect(css.match(/@font-face/g)).toHaveLength(10);
+    expect(css.match(/font-display: swap/g)).toHaveLength(10);
   });
 });

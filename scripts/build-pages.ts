@@ -5,12 +5,12 @@
  * These are the pages someone lands on from a search. Everything they need is
  * in the HTML; the calculator is a link away with the configuration pre-filled.
  */
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, familyHeading, familyRange, fmtDuration, fmtGb,
   fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, lowerFirst, modelLabel, otherQuantisations, pageShell,
   priceRivals, runnersFor, shortHardwareLabel, slug, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX,
-  TITLE_MAX,
+  FONT_PRELOAD, TITLE_MAX,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -37,6 +37,11 @@ function write(path: string, html: string) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
   paths.push(path);
+  // Nothing in the head may make the browser wait on another origin before it
+  // can paint. The fonts are served from here; a stylesheet somewhere else puts
+  // a DNS lookup, a handshake and a round trip in front of the first word.
+  const offsite = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="(https?:[^"]+)"/g)].map((m) => m[1]);
+  if (offsite.length) throw new Error(`${path} loads a stylesheet from another origin: ${offsite[0]}`);
   // Structured data a search engine cannot parse is worse than none, and a
   // stray character in a machine name is all it takes.
   const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
@@ -96,6 +101,29 @@ function checkLinks() {
   }
   const counts = paths.map((p) => inbound.get(p)!.size);
   console.log(`  every page is linked from at least ${Math.min(...counts)} other page${Math.min(...counts) === 1 ? '' : 's'}`);
+}
+
+/**
+ * The fonts are files in the repository now, not a URL somebody else serves, so
+ * a renamed or missing one is a page that silently falls back to the system
+ * face. Every file page.css names has to be there, and the two the pages
+ * preload have to be among them: preloading a file that does not exist wastes a
+ * request and logs a warning in every visitor's console.
+ */
+function checkFonts() {
+  const css = readFileSync(new URL('page.css', outRoot), 'utf8');
+  const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
+  const missing = declared.filter((f) => !existsSync(new URL(`.${f}`, outRoot)));
+  const undeclared = Object.values(FONT_PRELOAD).filter((f) => !declared.includes(f));
+  const problems = [
+    ...missing.map((f) => `page.css names ${f}, which is not in public/`),
+    ...undeclared.map((f) => `the pages preload ${f}, which no @font-face in page.css uses`),
+  ];
+  if (problems.length) {
+    console.error(problems.map((p) => `  ${p}`).join('\n'));
+    throw new Error(`${problems.length} font files are missing or unused`);
+  }
+  console.log(`  ${declared.length} font files, all present, ${Object.keys(FONT_PRELOAD).length} preloaded`);
 }
 
 const ratingWord: Record<string, string> = { green: 'good', amber: 'usable', red: 'don’t', unknown: 'not rated' };
@@ -657,4 +685,5 @@ writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UT
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
 checkMeta();
 checkLinks();
+checkFonts();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
