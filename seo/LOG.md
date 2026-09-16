@@ -111,6 +111,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the same thing in different words is the duplicate this site should not create). Each
       answers in the first paragraph with the site's own numbers, links into the calculator with
       the configuration prefilled, and cites sources.
+- [ ] The head-to-head OG cards carry the same bare price the pages carried until 2026-09-16.
+      `src/versus-card.ts:246` draws `Price` as `fmtUsd(a.price_usd)` on both sides, so a card
+      for a graphics card pair previews `$18,000` against `$1,499` with nothing saying the first
+      is the card alone; 13 of the 28 machine cards are affected. `src/versus-card.ts:264` does
+      the same for the cheapest machine on a model card. Small and self-contained: the page fix
+      that shipped this morning added `priceWithScope()` in `src/pagekit.ts` and the card needs
+      the plain-text half of it. Costs a full `build:og` (about 4 minutes) to verify by eye.
+
 - [ ] The 47 model head-to-heads are the thin half that is left. The 28 machine ones were
       rewritten on 2026-09-16 (see the top run entry); the model ones were deliberately left
       alone that run and are still ~190 words with no subheading, though they do at least compute
@@ -250,6 +258,18 @@ cross-check above is what caught it.
 says "up to date with origin/main" *before* fetching, so it looks fine. `npm test` reporting 61
 passing instead of 113, or `seo/LOG.md` being 2 KB instead of 40 KB, is that and nothing worse.
 Fetch and fast-forward before reading anything.
+
+**Deploy.** Run 41, on the log commit, with both commits in one push, so there is one run on the
+tip and nothing was cancelled. `npm ci` and `npm test` passed on the runner; `npm run build` was
+still reported in progress thirteen minutes in when this run ended. That is most likely the API
+staleness the canonical run recorded (it reported `in_progress` for a quarter of an hour after the
+job had finished) rather than a slow build, but it was not confirmed green from here, so **the
+next run should check run 41 first** and say so in its entry. Everything in it passed locally,
+including the same full `npm run build`.
+
+Also found while checking the cards, not fixed this run because it is a second change: the
+head-to-head OG cards print the same bare price these pages did. It is a backlog item above with
+the line numbers.
 
 Nothing else on main changed this run.
 
