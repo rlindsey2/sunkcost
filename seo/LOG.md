@@ -223,6 +223,9 @@ Ryan was pinged once, about PR #2 rather than PR #1: it is a second PR, and it c
 something visitors see on the live site today. His list says not to ping about either again.
 
 Nothing visitors see changed on main this run, so there was nothing to check on the live site.
+Deploy run 39, on this log commit, finished green at 19:51 UTC and republished. PR #2 is clean
+against main and has no checks, because nothing triggers on `pull_request`; that backlog item is
+now protecting two PRs rather than one.
 
 **Continue next:** two PRs now wait on Ryan and the rule stands, so take something that goes
 straight to main. The best of it is an index at `/compare/` — except that is a new page type and so
