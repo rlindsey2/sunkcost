@@ -206,6 +206,11 @@ The PR description was updated to cover the card and the `bandFit` move, since t
 more than it says. No comment on the PR and no ping to Ryan: the draft status and the review request
 were both raised last run, Ryan's list says no third ping, and nothing new is blocked.
 
+Nothing visitors see changed on main this run, so there was nothing to check on the live site.
+Deploy run 37, on this log commit, finished green at 18:52 UTC and republished. The card itself
+reaches the live site when PR #1 merges; the PR branch does not deploy and cannot, since nothing in
+`.github/workflows/` triggers on `pull_request`.
+
 **Continue next:** everything on the PR branch is done. While PR #1 waits, the best thing left that
 does not stack a second new page on it is the home page's head: `index.html` carries no `WebSite`
 JSON-LD (Google reads that on the home page specifically, so `/leaderboard/`'s copy does not count)
