@@ -6,8 +6,8 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 ## Ryan's side (needs the site owner)
 
 - [ ] Review and merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
-      `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason five
-      runs in a row have taken smaller items on main instead of the top backlog entry, which is
+      `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason six
+      runs in a row have taken smaller items instead of the top backlog entry, which is
       question pages. **It is a draft**, so the merge button is disabled until it is marked ready
       for review — that is one click, and it may be the whole reason nothing has moved. It also
       stopped merging at some point during those five runs, which the 2026-09-16 merge run fixed;
@@ -94,9 +94,9 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 - [x] Internal linking: no generated page is an orphan any more, and the build fails if one
       appears. Done 2026-09-16; the run entry has what was actually wrong, which was worse than
       this item assumed.
-- [ ] Question pages for the searches people actually type. The memory one shipped on 2026-09-16
-      as /how-much-memory/ and covers "how much RAM to run a 70B model" and its variants; the
-      page type and its helpers are in place, so the next one is much less work than the first.
+- [ ] Question pages for the searches people actually type. The memory one is written and waiting
+      in PR #1 as /how-much-memory/ and covers "how much RAM to run a 70B model" and its variants;
+      the page type and its helpers are in place, so the next one is much less work than the first.
       Still open, roughly in the order they are worth writing: "best GPU for local LLMs" (nothing
       here filters the list to cards, and /best/ answers by usage rather than by part), "local
       LLM vs API cost" (the site's whole thesis, and the home page is the only thing that states
@@ -128,14 +128,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the run entry has what was actually wrong, which was the 45 links out of /best/ rather
       than anything in the page set. One part is not checkable from here and is on Ryan's side
       below: whether the apex and www serve one URL at the edge.
-- [ ] Open Graph images, continued. Every page on main now has a card that answers its own
-      question: model and machine pages from `cardSvg`, the 75 comparisons from `versusCardSvg`
-      (2026-09-16), and `/leaderboard/` and `/best/` from the new `listCardSvg` (2026-09-16).
-      What is left is `/how-much-memory/`, which is still on the PR branch and still points at
-      `/og/default.png`. Its card wants the weights-plus-cache sum for a model in each size band,
-      which `listCardSvg` in src/list-card.ts can draw as it stands: name, the sum as the middle
-      column, the cheapest machine that holds it as the figure. Do it in the PR branch rather
-      than on main, since the page is not on main yet.
+- [x] Open Graph images. Every page has a card that answers its own question: model and machine
+      pages from `cardSvg`, the 75 comparisons from `versusCardSvg`, `/leaderboard/` and `/best/`
+      from `listCardSvg`, and `/how-much-memory/` from `memoryCard` (2026-09-16, on the PR branch,
+      so it reaches main when PR #1 does). No page anywhere now falls back to `/og/default.png`,
+      and `checkOgCards` fails the build if a new one tries to.
 - [ ] Nothing in `.github/workflows/` triggers on `pull_request`. `deploy.yml` is the only
       workflow and it runs on push to `main` and on `workflow_dispatch`, so a PR from this agent
       gets no test run, no build and no signal at all: the first time CI sees the code is the
@@ -162,6 +159,60 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the last page still borrowing a card
+
+PR #1 is still open, still a draft and still unreviewed, so the standing rule holds: no second new
+page while it waits. This run took the item the last entry said to continue, which is the one piece
+of work left on the PR itself. Commit `94d1f73`, pushed to `seo/how-much-memory`. Nothing went to
+main this run except this log.
+
+`/how-much-memory/` was the last page anywhere on the site still previewing as `/og/default.png` —
+one machine's pay-back curve, which answers nothing that page asks. It now has a card drawn by
+`memoryCard()` in `src/list-card.ts`, one line per size band:
+
+| Model size | Cheapest that holds it | Weights + cache |
+|---|---|---|
+| 7B and 8B, Llama 3.1 8B Instruct at Q8_0 | Mac mini M6, 24GB · $1,099 | 12.8 GB |
+| 14B to 32B, Qwen3 32B at Q8_0 | Corsair AI Workstation 300, 64GB · $1,700 | 43.4 GB |
+| 70B, Llama 3.3 70B Instruct at Q4_K_M | Framework Desktop, 128GB · $3,449 | 53.3 GB |
+| 100B and larger, GLM-5.3-Flash at UD-Q4_K_M | Mac Studio M5 Ultra, 256GB · $10,799 | 189.5 GB |
+
+That climb, 12.8 GB on a $1,099 box to 189.5 GB on a $10,799 one, is the page's argument, and now
+it is the picture as well. The rule for which model stands for a band is the page's own: the
+hungriest model in the band that a machine on this list can hold, which is the hungriest full stop
+wherever one holds it. The card says so in its footer, and every row names the model and its
+quantisation, so nobody reads 12.8 GB as the answer for a four-bit 8B.
+
+**The band reading moved into `bandFit()` in `src/pagekit.ts`**, so the page's section and the card
+read the same models, the same totals and the same machines. That is the same guard the other list
+cards have: a card cannot quietly say something the page does not.
+
+**Verified by building the page set from both sides of that move.** All 189 pages are byte-identical
+except this one, and on this one exactly two things differ: the `og:image` tag and its copy in the
+JSON-LD. Nothing a reader sees changed. Read the card as a PNG out of the real build: no truncation,
+no overlap, every figure matching the page. Also `npm test` (126 passing, 6 new covering the band
+rule, the totals against `footprintGb`, and a check that no row names a machine too small for the
+figure beside it or a dearer one than the cheapest that fits), `npm run typecheck`, `npm run validate`,
+and the full `npm run build` including `build:og` and `build:functions`, all clean here. The build's
+own `checkOgCards` guard now counts 184 cards named and all drawn, up from 183.
+
+One layout note for whoever touches this next: the column heading was "Cheapest machine that holds
+it" and came out clipped, because `heading()` in `listCardSvg` clamps at 260px. It reads "Cheapest
+that holds it" now. Two of the four machine names wrap onto a second line, which the row centres
+and which the best-buys card does too, so it was left.
+
+The PR description was updated to cover the card and the `bandFit` move, since the PR now contains
+more than it says. No comment on the PR and no ping to Ryan: the draft status and the review request
+were both raised last run, Ryan's list says no third ping, and nothing new is blocked.
+
+**Continue next:** everything on the PR branch is done. While PR #1 waits, the best thing left that
+does not stack a second new page on it is the home page's head: `index.html` carries no `WebSite`
+JSON-LD (Google reads that on the home page specifically, so `/leaderboard/`'s copy does not count)
+and still loads both fonts from Google with two preconnects and a render-blocking stylesheet, when
+the files are already in `public/fonts/` and the `@font-face` rules are already in `public/page.css`.
+Two backlog items, one file, one small PR, and no overlap with the files PR #1 touches. If PR #1 has
+merged by the next run, the next question page is "best GPU for local LLMs" instead.
 
 ### 2026-09-16 — the waiting PR had stopped being mergeable
 
