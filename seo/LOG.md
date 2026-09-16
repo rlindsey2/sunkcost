@@ -72,10 +72,17 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 - [x] Internal linking: no generated page is an orphan any more, and the build fails if one
       appears. Done 2026-09-16; the run entry has what was actually wrong, which was worse than
       this item assumed.
-- [ ] Question pages for the searches people actually type: "is a Mac mini good for local LLMs",
-      "RTX 3090 for local LLM worth it", "best GPU for local LLMs", "local LLM vs API cost",
-      "how much RAM to run a 70B model". Each answers in the first paragraph with the site's own
-      numbers, links into the calculator with the configuration prefilled, and cites sources.
+- [ ] Question pages for the searches people actually type. The memory one shipped on 2026-09-16
+      as /how-much-memory/ and covers "how much RAM to run a 70B model" and its variants; the
+      page type and its helpers are in place, so the next one is much less work than the first.
+      Still open, roughly in the order they are worth writing: "best GPU for local LLMs" (nothing
+      here filters the list to cards, and /best/ answers by usage rather than by part), "local
+      LLM vs API cost" (the site's whole thesis, and the home page is the only thing that states
+      it), "RTX 3090 for local LLM worth it" and "is a Mac mini good for local LLMs" (both need a
+      hard look first: the per-machine pages may already answer them, and a second page saying
+      the same thing in different words is the duplicate this site should not create). Each
+      answers in the first paragraph with the site's own numbers, links into the calculator with
+      the configuration prefilled, and cites sources.
 - [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
       are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
       queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
@@ -90,9 +97,17 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Fonts in the head, which is the obvious first suspect.
 - [ ] Canonical and duplicate control: /s/ share pages stay noindex; comparison pages A-vs-B and
       B-vs-A must not both exist; www and trailing-slash variants resolve to one URL.
-- [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages
-      and /best/ and /leaderboard/ all point at the same default card; the model and hardware
-      pages already get a real one. A comparison card would want the two machines side by side.
+- [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages,
+      /best/, /leaderboard/ and /how-much-memory/ all point at the same default card; the model
+      and hardware pages already get a real one. A comparison card would want the two machines
+      side by side, and the memory page wants the weights-plus-cache sum on it.
+- [ ] Two model counts are live on the site and they do not match: the machine pages count
+      against the 39 current models that `computeView` puts in `rows`, and /how-much-memory/
+      counts all 55, because the model people mean by "a 70B" is Llama 3.3 70B and that one is
+      marked legacy. Both pages say which denominator they use, so neither is wrong, but a
+      reader moving between them sees "48 models fit" on one page and "38" on another for the
+      same machine. Worth settling on one rule, which is a judgement call for Ryan rather than
+      an SEO fix.
 - [ ] `/hardware/geforce-rtx-3060-12/` shows as "NVIDIA GeForce RTX 3060 12GB, 12GB" everywhere
       its label is rendered, because `chip` in data/hardware.json ends in the memory size that
       `hardwareLabel()` then appends again. The fix is a data edit, which the agent may not make.
@@ -103,6 +118,77 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the memory question, answered with the site's own arithmetic
+
+Took the top backlog item, question pages, and wrote the first one. New page type, so this went
+to a **PR, not a push**: [#1](https://github.com/rlindsey2/sunkcost/pull/1), branch
+`seo/how-much-memory`, commit `98e367c`. The page is `/how-much-memory/`, "How much memory do you
+need to run a local LLM?".
+
+Why this question first, out of the five on the backlog. "How much RAM to run a 70B model" and
+its variants are the most typed question in this subject, nothing on the site answered it, and
+the data to answer it properly was already here and is better than what is published elsewhere:
+weights per model, a KV cache worked out from each model's architecture, and the usable memory
+of every machine. Most of the published answers ignore both the cache and the gap between
+installed and usable memory, which is exactly where this site is strong. The other four are
+weaker for now, and the backlog entry above says why.
+
+What the page does, all computed at build time from `data/*.json`:
+
+- **The sum**, with the cache arithmetic written out for a model where one line of
+  multiplication is the whole story: 2 × 8 key-value heads × 128 per head × 2 bytes × 80 layers ×
+  32,768 tokens = 10.7 GB.
+- **A section per size band** (7B/8B, 14B to 32B, 70B, 100B and up), each headed with the
+  question people type, each listing every model in the band with its weights, cache at 32k, the
+  total, the cheapest machine on the list that holds it, and a prefilled calculator link. 56
+  calculator links on the page.
+- **A context table**: how many of the 55 models fit three real machines as the window grows
+  from 4k to 128k. The 32 GB box goes from 36 models to 15.
+- **A memory ladder**: one row per level of usable memory, cheapest machine at that level, how
+  many models fit, the strongest of them.
+
+Three findings on it that are worth knowing and are the data talking, not me:
+
+- Context decides the machine. Llama 3.3 70B needs 45.2 GB at 8k, which a $1,700 box holds, and
+  53.3 GB at 32k, which takes a $3,449 one.
+- Size is a poor guide to the cache. Two models here have the same 125 billion parameters and
+  want 47.2 GB and 3.2 GB of cache at 128k.
+- **From 21 GB of usable memory up to 119.5 GB, the strongest model you can run does not
+  change.** More memory buys more models, more context and more room, not a cleverer one. The
+  next step up is a $10,799 machine. This one fell out of the ladder table and is the most
+  interesting thing on the page.
+
+Three sentences did not survive the honesty rule. "Doubling the context doubles the cache" is
+false for the sliding-window models on the same page, so it now says only models with those
+layers stop growing partway. "The cheapest machine that runs the largest of them" was wrong on
+the 100B band, where the hungriest model is the one with the biggest cache rather than the
+biggest weights and nothing on the list holds it at all; that band now names it, says nothing
+fits, and gives the largest that does. And `kvWorking()` refuses to print its working unless the
+multiplication reproduces the figure the rest of the site uses, so a hybrid or latent-attention
+model gets no plausible-looking false sum rather than a wrong one.
+
+Verified: `npm test` (86 passing, 7 new), `npm run typecheck`, `npm run build:pages` and the
+full `npm run build` including `build:functions`, all clean in this environment. 189 generated
+pages now, sitemap 190 URLs. No duplicate or missing titles or descriptions; every page still
+linked from at least one other. Read the built page end to end as text: no maintainer language,
+no `undefined` or `NaN`, no em dashes, every tag balanced, JSON-LD parses and carries the
+breadcrumb. Title 59 characters with the brand, description 143.
+
+Also linked into: the footer of every generated page, each model page's KV cache row, each
+machine page's memory table note, and the leaderboard's note under the table. That is four
+contextual entry points plus site-wide reach, which is what a new page needs to get crawled.
+
+Nothing was pushed to main this run except this log. `data/*.json`, `src/calc.ts`,
+`src/compute.ts` and `src/fit.ts` were not touched.
+
+**Continue next:** the PR needs Ryan to merge it, and this session is subscribed to it, so CI
+failures and review comments will come back here. After that, "best GPU for local LLMs" is the
+next question page and the cheapest one to build now that the page type and its helpers exist:
+filter the machine list to the cards, which is `family === 'NVIDIA' || family === 'AMD'`, and
+note that the card-only price needs a PC around it before it compares with a Mac. If the PR is
+still open next run, do not start a second page on top of it; take a smaller item that goes
+straight to main instead.
 
 ### 2026-09-16 — 63 orphan pages, now none
 
