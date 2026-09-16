@@ -191,6 +191,9 @@ anonymous project every keyless caller shares has spent its daily quota, so ther
 before-and-after Lighthouse number to put here. The reachability note above says what would fix
 that.
 
+Deploy run 26 finished green at 13:50 UTC, so this is live. Both commits went up in one push
+again, so there was one run on the tip and nothing was cancelled.
+
 **Continue next:** PR #1 still needs Ryan. If it is open again next run, the smallest useful
 thing left on main is the canonical and duplicate-control item — in particular whether any
 comparison exists as both A-vs-B and B-vs-A, which `build-pages.ts` generates from ordered pairs
