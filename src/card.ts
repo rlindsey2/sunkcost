@@ -41,6 +41,9 @@ export function cardSvg(state: State, data: Dataset, fontFamily = CARD_FONT): st
       localTokensPerSec: view.throughput?.tokensPerSec ?? null,
       measurement: view.throughput?.measurement ?? 'unknown',
       breakevenLabel: c.breakevenDays === null ? 'never' : fmtDuration(c.breakevenDays),
+      // the list price of a graphics card buys the card alone; a price somebody
+      // entered themselves is whatever they paid, so it is left unlabelled
+      priceScope: view.priceIsCustom ? undefined : view.hw.price_scope,
       cloudLabel: state.sub != null ? 'Your bill / month' : undefined,
     }),
   });

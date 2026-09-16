@@ -4,6 +4,7 @@ import {
   modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT, VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
+import { runnersFor } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
 import type { Dataset } from '../src/types';
@@ -90,6 +91,29 @@ describe('the head-to-head card', () => {
     const t = text(hardwareVersusCard(a, b, data));
     expect(t).toContain(fits(a.id));
     expect(t).toContain(fits(b.id));
+  });
+
+  it('says when a price is a graphics card and not a whole computer', () => {
+    const isCard = (h: { price_scope?: string }) => h.price_scope === 'card_only';
+    const pairs = hardwarePairs(data);
+    const withCard = pairs.filter(([a, b]) => isCard(a) || isCard(b));
+    expect(withCard.length).toBeGreaterThan(0);
+    for (const [a, b] of pairs) {
+      const t = text(hardwareVersusCard(a, b, data)).replace(/\s+/g, ' ');
+      expect(t.includes('card only'), hardwareComparePath(a, b)).toBe(isCard(a) || isCard(b));
+    }
+  });
+
+  it('says it on a model card too, where the cheapest machine that runs one is a card', () => {
+    const cheapest = (m: Parameters<typeof modelVersusCard>[0]) => runnersFor(m, data)[0]?.hw;
+    let seen = 0;
+    for (const [a, b] of modelPairs(data)) {
+      const onACard = [a, b].some((m) => cheapest(m)?.price_scope === 'card_only');
+      const t = text(modelVersusCard(a, b, data)).replace(/\s+/g, ' ');
+      expect(t.includes('card only'), modelComparePath(a, b)).toBe(onACard);
+      if (onACard) seen++;
+    }
+    expect(seen).toBeGreaterThan(0);
   });
 
   it('never ships a truncated name or an empty figure', () => {

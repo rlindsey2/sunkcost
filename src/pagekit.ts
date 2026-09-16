@@ -409,6 +409,17 @@ export function priceWithScope(hw: Hardware): string {
 }
 
 /**
+ * The same price where there is no markup to hang the scope on: a description
+ * a search engine prints, or a share card drawn as one picture. A graphics
+ * card's price buys the card and nothing to put it in, and $1,299 beside a
+ * machine name reads as a whole computer unless the line says otherwise.
+ */
+export function priceWithScopeText(hw: Hardware): string {
+  if (hw.price_usd == null) return 'not published';
+  return `${fmtUsd(hw.price_usd)}${hw.price_scope === 'card_only' ? ', card only' : ''}`;
+}
+
+/**
  * A speed as the page prints it. Anything said about two speeds is worked out
  * from these rather than from the full precision behind them, so that a reader
  * dividing one figure on the page by another gets the third figure on the page.
