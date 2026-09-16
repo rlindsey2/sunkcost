@@ -171,14 +171,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       its label is rendered, because `chip` in data/hardware.json ends in the memory size that
       `hardwareLabel()` then appends again. The fix is a data edit, which the agent may not make.
       Cosmetic, but it is on a page people do search for.
-- [ ] The generated pages may not fit a phone. Screenshotted at a 390px viewport, both a machine
-      head-to-head from the live build and a model one render wider than the window: the body
-      text, the tables and the h1 all run off the right edge. It is the same on pages that have
-      not been touched for weeks, so it is old and it is site-wide rather than anything a recent
-      change did, and it was noticed while checking a new page rather than measured properly.
-      Most search traffic is on a phone, so this is worth an hour with a real mobile viewport:
-      find what sets the minimum width (the `.board` tables are the first suspect), and fix it in
-      `public/page.css`, which goes straight to main. Measure before and after.
+- [x] The generated pages on a phone. Measured, and the premise was wrong: no page overflows the
+      window at 320, 360, 390 or 430px, then or now. The full-height screenshot that raised it
+      renders a scrolling table at its full width, which reads as the page running off the edge.
+      What was real was inside the tables, and that is fixed. Done 2026-09-16; the run entry has
+      the figures. What is left of it is the two items below.
+
+- [ ] 230 of the 362 tables still need a sideways swipe on a phone, the widest being a machine
+      page's own range table at 806px against 358 of screen. They now fade at the edge, so the
+      swipe is at least visible, but `/best/` still hides the pay-back column, which is the
+      column that page is for. A sticky first column was tried and dropped: the model name is
+      290px of the 358, so sticking it leaves a sliver to scroll in, and a full-width section
+      heading row (`<th colspan="5">`) sticks as an empty band. The way through is fewer or
+      narrower columns on a phone, which is `scripts/build-pages.ts` rather than CSS.
+
+- [ ] Between 641 and about 900px the comparison tables go back to holding each name on one line
+      and scrolling, because the three-way split is inside the site's 640px breakpoint. A phone
+      in landscape and a tablet in portrait both land in that band. Worth extending once the
+      proportions are checked at 768px: a 34% label column is right at 358px and probably too
+      wide at 724.
 
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
@@ -186,6 +197,65 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the head-to-head tables now fit a phone
+
+The last entry offered `/compare/` as an index, which is a new page type and would have made a
+third PR waiting on Ryan, or the phone-width item, which goes straight to main. Took the phone
+one. Commit `f86bbd4`, pushed to main.
+
+**Measured first, and the backlog item was wrong.** Every one of the 188 pages was loaded in
+Chromium at 390px and checked for anything sticking out past the window: `documentElement.scrollWidth`
+equals the viewport on all 188, and no element outside a scroll container reaches past the right
+edge. Same at 320, 360 and 430px. The earlier reading came from a full-height screenshot, which
+renders a horizontally scrolling table at its full width rather than at the window's, so the page
+looks like it runs off the edge when it does not.
+
+**What was real was one level down.** All 362 tables across the page set were cut off at the right
+edge, and on the 132 comparison tables the cut fell inside the second column: at 390px the
+head-to-head table wanted up to 918px, so a phone reader saw the first machine, the row labels and
+a sliver of the second — on pages whose whole purpose is two machines side by side. 40% of the
+site's pages are comparisons.
+
+What changed, all in `public/page.css`, all inside the existing 640px breakpoint bar one rule:
+
+- Comparison tables drop the sideways scroll on a phone, split the width three ways (34% for the
+  row label) and wrap the names. All 132 now fit whole, from 320px up. Long unbroken names
+  (`DeepSeek-R1-Distill-Qwen-32B`) and the "priced as …" note needed `overflow-wrap: anywhere`
+  and a wrapping `.c-quant`, or the fixed layout pushed them past the edge again.
+- List tables let long machine and model names wrap, which is right on a phone and wrong on a
+  desktop, so it is scoped to the breakpoint. The leaderboard goes 1,225px → 761, `/best/`
+  874 → 576, a machine page's model table 663 → 633, against 358px of screen.
+- A table still wider than the window fades at the edge nobody has reached yet. It rides a scroll
+  timeline (`animation-timeline: scroll(self inline)`), so the fade is there while there is more
+  to see, gone at the end of the scroll, and absent on a table that fits — checked by reading the
+  computed `mask-image` at the start, the middle and the end of a scroll. It is wrapped in
+  `@supports`, so a browser without scroll timelines gets nothing rather than something wrong.
+
+**Verified by measurement, not by eye alone.** All 188 pages swept again at 320, 360, 390 and
+430px: no page overflows, and 0 of the 132 comparison tables are clipped, down from 132. Tables
+needing a sideways swipe: 362 → 230. Desktop was checked for collateral damage by screenshotting
+six representative pages at 1200px against `page.css` as it was: five are byte-identical and the
+sixth is the leaderboard, which is the one table wide enough to scroll at 1200px and now says so.
+Read the rendered pages at 390px: a machine head-to-head, a model head-to-head with the longest
+names on the site, `/best/` and a machine page. The head-to-heads now read as two columns of a
+comparison rather than one column and a hint.
+
+`npm test` (130 passing, none new — this is CSS, and the suite has no browser), `npm run typecheck`
+and the full `npm run build` including `build:og`, `build:share` and `build:functions`, all clean
+here. No test was added: a layout claim needs a real viewport, and nothing in the suite has one.
+That is why every figure above comes with the width it was measured at.
+
+A sticky first column was tried for the 230 tables that still scroll, and dropped rather than
+shipped: the name column is 290px of the 358 available, so sticking it leaves almost nothing to
+scroll in, and the full-width section heading rows stick as empty bands. Both new backlog items
+above came out of this run.
+
+**Continue next:** `/compare/` as an index is still the best of what is left, and it is still a new
+page type, so it is still a PR. If three PRs waiting is one too many, the `pull_request` CI
+workflow is unwritten and protects every one of them, and the head-to-head OG cards still print a
+graphics card's price as if it were a whole computer's, which is the last place on the site that
+does.
 
 ### 2026-09-16 — the 47 model head-to-heads say what each model costs to run
 
