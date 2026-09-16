@@ -9,7 +9,7 @@
 import { esc, fmtDuration, fmtGb, fmtNum, fmtUsd } from './format';
 import { computeView, hardwareLabel } from './compute';
 import { defaultState } from './state';
-import { runnersFor, shortHardwareLabel, slug } from './pagekit';
+import { priceWithScopeText, runnersFor, shortHardwareLabel, slug } from './pagekit';
 import type { Dataset, Hardware, Model } from './types';
 
 export const VS_WIDTH = 1200;
@@ -243,7 +243,9 @@ export function hardwareVersusCard(a: Hardware, b: Hardware, data: Dataset, font
     aTitle: shortHardwareLabel(a),
     bTitle: shortHardwareLabel(b),
     rows: [
-      { label: 'Price', a: fmtUsd(a.price_usd), b: fmtUsd(b.price_usd) },
+      // a graphics card is priced without the PC around it, and a card that does
+      // not say so previews $18,000 against $1,499 as if both bought a computer
+      { label: 'Price', a: priceWithScopeText(a), b: priceWithScopeText(b) },
       { label: 'Memory', a: `${a.unified_memory_gb} GB`, b: `${b.unified_memory_gb} GB` },
       { label: 'Models that fit', a: `${fa.length} of ${va.rows.length}`, b: `${fb.length} of ${vb.rows.length}` },
       { label: 'Best model it runs', a: best(fa), b: best(fb) },
@@ -261,7 +263,7 @@ export function modelVersusCard(a: Model, b: Model, data: Dataset, fontFamily?: 
   // the same list, in the same order, as the "cheapest machine that runs it" row on the page
   const cheapest = (m: Model) => {
     const r = runnersFor(m, data)[0];
-    return r ? `${shortHardwareLabel(r.hw)}, ${fmtUsd(r.hw.price_usd)}` : 'none listed';
+    return r ? `${shortHardwareLabel(r.hw)}, ${priceWithScopeText(r.hw)}` : 'none listed';
   };
   const params = (m: Model) =>
     `${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? ` (${fmtNum(m.active_params_b, 1)}B active)` : ''}`;

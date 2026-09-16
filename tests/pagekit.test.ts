@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   brandOf, calcLink, cheapestRunsBoth, cheapestThatHolds, computeView, familyHeading, familyRange, fitsOf,
   fmtDuration, fmtGb1, fmtNum, fmtUsd, gbRange, hardwareProduct, jsonLd, kvWorking, machinesConsidered, machineVerdict,
-  median, modelsInBand, modelVerdict, otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope,
+  median, modelsInBand, modelVerdict, otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, priceWithScopeText,
   runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis, strongestShared, FONT_PRELOAD,
   SIZE_BANDS,
   type LdNode,
@@ -380,6 +380,14 @@ describe('machine head-to-heads', () => {
     const box = data.hardware.find((h) => h.price_scope !== 'card_only' && h.price_usd != null)!;
     expect(priceWithScope(card)).toContain('card only');
     expect(priceWithScope(box)).not.toContain('card only');
+  });
+
+  it('says it in plain text too, where a description or a card has no markup', () => {
+    const card = data.hardware.find((h) => h.price_scope === 'card_only')!;
+    const box = data.hardware.find((h) => h.price_scope !== 'card_only' && h.price_usd != null)!;
+    expect(priceWithScopeText(card)).toBe(`${fmtUsd(card.price_usd)}, card only`);
+    expect(priceWithScopeText(box)).toBe(fmtUsd(box.price_usd));
+    expect(priceWithScopeText(card)).not.toContain('<');
   });
 
   it('works the speed ratio out of the figures it prints, so the page divides out', () => {

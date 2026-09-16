@@ -99,9 +99,11 @@ export function ogFigures(x: {
   breakevenLabel: string;
   /** what the cloud figure is: per-token API cost by default, or a bill you entered */
   cloudLabel?: string;
+  /** 'card_only' where the price is a graphics card without the PC around it */
+  priceScope?: 'system' | 'card_only';
 }): { label: string; value: string }[] {
   return [
-    { label: 'Hardware', value: fmtUsd(x.devicePriceUsd) },
+    { label: x.priceScope === 'card_only' ? 'Hardware (card only)' : 'Hardware', value: fmtUsd(x.devicePriceUsd) },
     { label: x.cloudLabel ?? 'API cost / month', value: fmtUsd(x.cloudCostPerMonth) },
     { label: `Local speed (${x.measurement})`, value: x.localTokensPerSec == null ? 'unknown' : `${fmtNum(x.localTokensPerSec, 0)} tok/s` },
     { label: 'Break-even', value: x.breakevenLabel },

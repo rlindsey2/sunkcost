@@ -10,7 +10,7 @@ import {
   bandFit, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, descOf, dotRow, esc,
   familyHeading, familyRange, fitsOf, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange, hardwareLabel,
   hardwareProduct, kvWorking, lowerFirst, machineVerdict, machinesConsidered, median, modelLabel, modelVerdict,
-  otherQuantisations, pageShell, priceRivals, priceWithScope, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
+  otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
   shortHardwareLabel, slug, speedWithBasis, strongestShared, tierName, tierScale, titleOf, verdictLine, CAP_SHORT,
   DESC_MAX, FONT_PRELOAD, SIZE_BANDS, TITLE_MAX, type Runner,
 } from '../src/pagekit';
@@ -42,7 +42,7 @@ const paths: string[] = [];
 const cardFor = (hwId: string | undefined, modelId: string | null | undefined) =>
   hwId && modelId && hasShareCard(hwId, modelId, data) ? `/og/${hwId}--${modelId}.png` : '/og/default.png';
 
-const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[] }[] = [];
+const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string }[] = [];
 /** which pages link to each page, so the build can refuse to ship one nothing links to */
 const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
@@ -76,6 +76,7 @@ function write(path: string, html: string) {
     canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
     ogImage: unesc(html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '').replace(site, ''),
     links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
+    html,
   });
 }
 
@@ -222,6 +223,52 @@ function checkCounts() {
   console.log(`  ${buyable.length} machines, each counted the same on its own page and on /how-much-memory/`);
 }
 
+/**
+ * A graphics card is priced without the PC around it. Set beside a machine
+ * name, that price reads as a whole computer: the $1,299 that buys a Radeon AI
+ * PRO R9700 also buys a Mac mini M6 with 32 GB, and the two sit in the same
+ * tables here. So wherever a card's price is printed, the row, sentence or
+ * description it sits in has to say what it buys.
+ */
+function checkCardPrices() {
+  const cards = data.hardware.filter((h) => h.price_scope === 'card_only' && h.price_usd != null);
+  if (!cards.length) return;
+  // one row, sentence or answer at a time: the scope has to be where the price
+  // is, not further down the page where the reader has already gone
+  const chunks = /<tr>[\s\S]*?<\/tr>|<p[^>]*>[\s\S]*?<\/p>|<div class="answer-row">[\s\S]*?<\/div>|<li>[\s\S]*?<\/li>|<h[12][^>]*>[\s\S]*?<\/h[12]>/g;
+  const saysScope = (text: string) => /card only|card alone|cards are priced/.test(text);
+  const priceOf = (id: string) => data.hardware.find((h) => h.id === id)?.price_usd;
+  const problems: string[] = [];
+  for (const p of meta) {
+    const ownId = p.path.startsWith('/hardware/') ? p.path.slice('/hardware/'.length, -1) : null;
+    const places: [string, string][] = [
+      ['description', p.description],
+      ...[...p.html.matchAll(chunks)].map((m) => ['line', m[0]] as [string, string]),
+    ];
+    for (const [what, text] of places) {
+      if (saysScope(text)) continue;
+      const named = new Set([...text.matchAll(/\/hardware\/([a-z0-9.-]+)\//g)].map((m) => m[1]));
+      for (const c of cards) {
+        const price = fmtUsd(c.price_usd);
+        if (!text.includes(price)) continue;
+        const isSubject = named.has(c.id) || text.includes(shortHardwareLabel(c)) || (ownId === c.id && !named.size);
+        if (!isSubject) continue;
+        // a complete computer at the same price on the same line: the figure is that one's
+        const sharedWith = data.hardware.filter(
+          (h) => h.id !== c.id && h.price_usd === c.price_usd && (named.has(h.id) || text.includes(shortHardwareLabel(h))),
+        );
+        if (sharedWith.length) continue;
+        problems.push(`${p.path} prints ${price} for the ${shortHardwareLabel(c)} in a ${what} that does not say it is the card alone`);
+      }
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 10).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} card prices are printed as if they bought a whole computer`);
+  }
+  console.log(`  ${cards.length} card-priced machines, every price of one says so`);
+}
+
 function checkFonts() {
   const css = readFileSync(new URL('page.css', outRoot), 'utf8');
   const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
@@ -293,7 +340,7 @@ function leaderboard(): string {
   <td class="c-tier">${tierScale(m, data)} ${esc(tierName(m, data))}</td>
   <td class="c-caps">${dotRow(m)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
-  <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <span class="dim">${fmtUsd(cheapest.hw.price_usd)}</span>` : '<span class="dim">nothing on the list</span>'}</td>
+  <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <span class="dim">${fmtUsd(cheapest.hw.price_usd)}${cheapest.hw.price_scope === 'card_only' ? ', card only' : ''}</span>` : '<span class="dim">nothing on the list</span>'}</td>
   <td class="c-vs">${next ? `<a href="/compare/${slug(m.id)}-vs-${slug(next.id)}/">vs ${esc(next.display_name)}</a>` : ''}</td>
 </tr>`;
     })
@@ -441,7 +488,7 @@ function modelPage(m: Model): string {
       const t = r.view.throughput;
       return `<tr>
   <td><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a></td>
-  <td>${fmtUsd(r.hw.price_usd)}</td>
+  <td>${priceWithScope(r.hw)}</td>
   <td>${t?.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(t.tokensPerSec, t.tokensPerSec < 10 ? 1 : 0)} tok/s <span class="dim">${esc(t.measurement)}</span>`}</td>
   <td>${esc(verdictLine(r.view))}</td>
   <td><a href="${esc(calcLink({ hw: r.hw.id, model: m.id }, data))}">Run the numbers</a></td>
@@ -459,7 +506,7 @@ function modelPage(m: Model): string {
 
 ${cheapest
       ? `<div class="answer">
-  <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${fmtUsd(cheapest.hw.price_usd)}</span></div>
+  <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${priceWithScope(cheapest.hw)}</span></div>
   ${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
   ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — ${fmtNum(fastest.view.throughput!.tokensPerSec, 0)} tok/s at ${Math.round(ctx / 1024)}k context</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
@@ -498,12 +545,17 @@ ${hwRows ? `<h2>Machines that run it</h2>
   const usage = fmtTokens(defaultState(data).usage);
   // The pay-back clause is only written where there is a pay-back to state.
   const lead = cheapest
-    ? `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. The cheapest machine that runs it is ${shortHardwareLabel(cheapest.hw)} at ${fmtUsd(cheapest.hw.price_usd)}`
+    ? `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. The cheapest machine that runs it is ${shortHardwareLabel(cheapest.hw)} at ${priceWithScopeText(cheapest.hw)}`
     : '';
   const verdict = cheapest?.view.calc ? lowerFirst(verdictLine(cheapest.view)) : null;
+  // a terser way of saying the same thing, so a long model name or a price that
+  // has to state its scope costs the pay-back clause rather than keeping the wording
+  const shortLead = `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. Cheapest that runs it: ${cheapest ? `${shortHardwareLabel(cheapest.hw)} at ${priceWithScopeText(cheapest.hw)}` : ''}`;
   const desc = cheapest
     ? descOf([
-        ...(verdict ? [`${lead}, where it ${verdict} at ${usage} tokens a day.`, `${lead}, where it ${verdict}.`] : []),
+        ...(verdict
+          ? [`${lead}, where it ${verdict} at ${usage} tokens a day.`, `${lead}, where it ${verdict}.`, `${shortLead}, where it ${verdict}.`]
+          : []),
         `${lead}.`,
         `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. Cheapest machine that runs it: ${shortHardwareLabel(cheapest.hw)}.`,
       ])
@@ -574,10 +626,10 @@ function hardwarePage(hw: Hardware): string {
   const best = fits[0];
   const body = `<article class="prose">
 <h1>Can a ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in.` : ''}</p>
 
 <div class="answer">
-  <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}</span></div>
+  <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
   <div class="answer-row"><span class="answer-k">Memory</span><span class="answer-v">${hw.unified_memory_gb} GB${hw.usable_memory_gb != null ? `, about ${hw.usable_memory_gb} GB of it addressable by the GPU` : ''}${hw.memory_bandwidth_gbs ? ` at ${hw.memory_bandwidth_gbs} GB/s` : ''}</span></div>
   ${best ? `<div class="answer-row"><span class="answer-k">Best model it runs</span><span class="answer-v"><a href="/models/${esc(best.model.id)}/">${esc(best.model.display_name)}</a> — ${esc(tierName(best.model, data))}${best.throughput.tokensPerSec ? `, ${fmtNum(best.throughput.tokensPerSec, 0)} tok/s` : ''}</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Pay-back against the API</span><span class="answer-v">${view.calc ? esc(verdictLine(view)) : 'cannot be computed yet'}${view.calc?.breakevenDays != null ? ` at ${fmtTokens(state.usage)} tokens a day` : ''}</span></div>
@@ -1210,4 +1262,5 @@ checkCanonicals();
 checkOgCards();
 checkFonts();
 checkCounts();
+checkCardPrices();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
