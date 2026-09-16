@@ -5,6 +5,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 ## Ryan's side (needs the site owner)
 
+- [ ] Review and merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
+      `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason four
+      runs in a row have taken smaller items on main instead of the top backlog entry, which is
+      question pages. Ryan was notified once, on 2026-09-16 after the list cards shipped. **Do not
+      notify about it again** — one ping is enough, and the queue below is all still doable.
+
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
 - [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
