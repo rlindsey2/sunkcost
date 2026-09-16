@@ -5,16 +5,20 @@
  * These are the pages someone lands on from a search. Everything they need is
  * in the HTML; the calculator is a link away with the configuration pre-filled.
  */
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   calcLink, cheapestPerFamily, cheapestThatHolds, computeView, descOf, dotRow, esc, familyHeading, familyRange,
   fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange, hardwareLabel, hardwareProduct, kvWorking, lowerFirst,
   median, modelLabel, modelsInBand, otherQuantisations, pageShell, priceRivals, runnersFor, shortHardwareLabel, slug,
-  tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, SIZE_BANDS, TITLE_MAX,
+  tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, SIZE_BANDS, TITLE_MAX,
 } from '../src/pagekit';
+import {
+  flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
+} from '../src/versus-card';
+import { BEST_CARD, LEADERBOARD_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
+import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
-import { sharePath } from '../src/share';
 import { fit, footprintGb, kvCacheGb } from '../src/fit';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 
@@ -26,7 +30,16 @@ const outRoot = new URL('../public/', import.meta.url);
 const site = data.defaults.site_url.replace(/\/$/, '');
 const paths: string[] = [];
 
-const meta: { path: string; title: string; description: string }[] = [];
+/**
+ * The card for a machine and a model, where there is one. `build:og` draws a card
+ * only where the arithmetic behind it exists — a machine with no price, or a model
+ * too big for it, has nothing honest to put on a card — so a page for one of those
+ * falls back to the site's own card rather than naming an image nobody drew.
+ */
+const cardFor = (hwId: string | undefined, modelId: string | null | undefined) =>
+  hwId && modelId && hasShareCard(hwId, modelId, data) ? `/og/${hwId}--${modelId}.png` : '/og/default.png';
+
+const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[] }[] = [];
 /** which pages link to each page, so the build can refuse to ship one nothing links to */
 const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
@@ -37,6 +50,11 @@ function write(path: string, html: string) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
   paths.push(path);
+  // Nothing in the head may make the browser wait on another origin before it
+  // can paint. The fonts are served from here; a stylesheet somewhere else puts
+  // a DNS lookup, a handshake and a round trip in front of the first word.
+  const offsite = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="(https?:[^"]+)"/g)].map((m) => m[1]);
+  if (offsite.length) throw new Error(`${path} loads a stylesheet from another origin: ${offsite[0]}`);
   // Structured data a search engine cannot parse is worse than none, and a
   // stray character in a machine name is all it takes.
   const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
@@ -52,6 +70,9 @@ function write(path: string, html: string) {
     path,
     title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
     description: unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? ''),
+    canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
+    ogImage: unesc(html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '').replace(site, ''),
+    links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
   });
 }
 
@@ -98,6 +119,102 @@ function checkLinks() {
   console.log(`  every page is linked from at least ${Math.min(...counts)} other page${Math.min(...counts) === 1 ? '' : 's'}`);
 }
 
+/**
+ * One page, one address. A search engine that reaches the same content at two
+ * URLs splits it in two and ranks neither, so four things have to hold across
+ * every generated page:
+ *
+ *   - each page's canonical is its own address, and no two pages claim the same
+ *     one, since a canonical pointing anywhere else takes the page out of the
+ *     results it was written for;
+ *   - a head-to-head exists in one direction only — A vs B and B vs A are the
+ *     same table with the columns swapped;
+ *   - the sitemap and the pages on disk are the same set, so nothing is
+ *     announced that does not exist and nothing exists unannounced;
+ *   - every internal link is the address the page's own canonical uses. A
+ *     missing trailing slash is a redirect in front of the reader, a link to a
+ *     page that is not there is a dead end, and a link to /s/ spends a link on
+ *     a page this site asks search engines to ignore.
+ */
+function checkCanonicals() {
+  const problems: string[] = [];
+  const own = new Set(paths);
+  for (const p of meta) {
+    if (p.canonical !== site + p.path) problems.push(`${p.path} says its address is ${p.canonical || '(none)'}`);
+    for (const href of p.links) {
+      if (!href.startsWith('/')) continue;
+      const target = href.split(/[?#]/)[0];
+      if (target === '/' || target === '') continue;
+      if (!target.endsWith('/')) problems.push(`${p.path} links to ${href}, which redirects before it arrives`);
+      else if (target.startsWith('/s/')) problems.push(`${p.path} links to ${href}, a share page search engines are told to ignore`);
+      else if (!own.has(target)) problems.push(`${p.path} links to ${href}, which no page here writes`);
+    }
+  }
+  const claimed = new Map<string, string[]>();
+  for (const p of meta) claimed.set(p.canonical, [...(claimed.get(p.canonical) ?? []), p.path]);
+  for (const [url, ps] of claimed) if (ps.length > 1) problems.push(`${ps.length} pages claim ${url}: ${ps.join(', ')}`);
+  for (const p of paths) {
+    const pair = p.match(/^\/compare\/(.+)-vs-(.+)\/$/);
+    if (pair && own.has(`/compare/${pair[2]}-vs-${pair[1]}/`)) problems.push(`${p} also exists with the two sides swapped`);
+  }
+  const announced = [...readFileSync(new URL('sitemap.xml', outRoot), 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const shouldBe = new Set(['/', ...paths].map((p) => site + p));
+  if (announced.length !== new Set(announced).size) problems.push('the sitemap lists a URL twice');
+  for (const u of announced) if (!shouldBe.has(u)) problems.push(`the sitemap announces ${u}, which is not a page here`);
+  for (const u of shouldBe) if (!announced.includes(u)) problems.push(`${u} is a page here and is missing from the sitemap`);
+  if (problems.length) {
+    console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
+    throw new Error(`${problems.length} pages are reachable at more than one address, or link to one`);
+  }
+  console.log(`  ${meta.length} pages, one address each, ${announced.length} in the sitemap`);
+}
+
+/**
+ * The fonts are files in the repository now, not a URL somebody else serves, so
+ * a renamed or missing one is a page that silently falls back to the system
+ * face. Every file page.css names has to be there, and the two the pages
+ * preload have to be among them: preloading a file that does not exist wastes a
+ * request and logs a warning in every visitor's console.
+ */
+/**
+ * A card a page names that nothing drew shows up as a broken image in every
+ * preview of that link, and only ever where nobody is looking: in somebody
+ * else's chat window. The cards come from `npm run build:og`, which runs before
+ * this script in the full build; when they have not been drawn at all there is
+ * nothing to compare against and the check stands aside.
+ */
+function checkOgCards() {
+  const dir = new URL('og/', outRoot);
+  const drawn = new Set(existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.png')) : []);
+  const named = new Set(meta.map((p) => p.ogImage).filter(Boolean));
+  if (!drawn.size) {
+    console.log(`  ${named.size} OG cards named, none drawn yet (they come from build:og)`);
+    return;
+  }
+  const missing = meta.filter((p) => p.ogImage && !drawn.has(p.ogImage.replace('/og/', '')));
+  if (missing.length) {
+    console.error(missing.slice(0, 5).map((p) => `  ${p.path} names ${p.ogImage}, which build:og did not draw`).join('\n'));
+    throw new Error(`${missing.length} pages name an OG card that does not exist`);
+  }
+  console.log(`  ${named.size} OG cards named, all drawn`);
+}
+
+function checkFonts() {
+  const css = readFileSync(new URL('page.css', outRoot), 'utf8');
+  const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
+  const missing = declared.filter((f) => !existsSync(new URL(`.${f}`, outRoot)));
+  const undeclared = Object.values(FONT_PRELOAD).filter((f) => !declared.includes(f));
+  const problems = [
+    ...missing.map((f) => `page.css names ${f}, which is not in public/`),
+    ...undeclared.map((f) => `the pages preload ${f}, which no @font-face in page.css uses`),
+  ];
+  if (problems.length) {
+    console.error(problems.map((p) => `  ${p}`).join('\n'));
+    throw new Error(`${problems.length} font files are missing or unused`);
+  }
+  console.log(`  ${declared.length} font files, all present, ${Object.keys(FONT_PRELOAD).length} preloaded`);
+}
+
 const ratingWord: Record<string, string> = { green: 'good', amber: 'usable', red: 'don’t', unknown: 'not rated' };
 
 // Where the same model is listed at two quantisations, the quantisation is the
@@ -114,22 +231,15 @@ const fitsOn = (hw: Hardware) => hwViews.get(hw.id)!.rows.filter((r) => r.fit.st
 
 // The machine most people cross-shop in each family: the middle of the range by
 // price. These are the pairs that get a head-to-head page, and the machine pages
-// link to the ones they appear in.
-const flagships = [...new Set(data.hardware.map((h) => h.family))]
-  .map((fam) => {
-    const inFam = data.hardware.filter((h) => h.family === fam && h.price_usd != null && (h.generation ?? 'current') === 'current');
-    return inFam.sort((a, b) => a.price_usd! - b.price_usd!)[Math.floor(inFam.length / 2)];
-  })
-  .filter(Boolean) as Hardware[];
+// link to the ones they appear in. The pairing lives in src/versus-card.ts, so
+// that the card build and the page build cut the same list and agree on names.
+const flagships = flagshipMachines(data);
 
 const headToHeads = new Map<string, { href: string; other: Hardware }[]>();
-for (let i = 0; i < flagships.length; i++) {
-  for (let j = i + 1; j < flagships.length; j++) {
-    const [a, b] = [flagships[i], flagships[j]];
-    const href = `/compare/${slug(hardwareLabel(a))}-vs-${slug(hardwareLabel(b))}/`;
-    for (const [self, other] of [[a, b], [b, a]] as const)
-      headToHeads.set(self.id, [...(headToHeads.get(self.id) ?? []), { href, other }]);
-  }
+for (const [a, b] of hardwarePairs(data)) {
+  const href = hardwareComparePath(a, b);
+  for (const [self, other] of [[a, b], [b, a]] as const)
+    headToHeads.set(self.id, [...(headToHeads.get(self.id) ?? []), { href, other }]);
 }
 
 /* ------------------------------ leaderboard ------------------------------ */
@@ -206,7 +316,7 @@ ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this
         `${unique.length} open models you can run at home, ranked against Claude and GPT on one intelligence index, each with the cheapest machine that runs it.`,
       ]),
       canonical: '/leaderboard/',
-      ogImage: '/og/default.png',
+      ogImage: LEADERBOARD_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Leaderboard' }],
     },
     body,
@@ -246,7 +356,7 @@ function bestBuys(): string {
   <td class="c-hw"><a href="/hardware/${esc(c.hw.id)}/">${esc(hardwareLabel(c.hw))}</a> <span class="dim">${fmtUsd(c.hw.price_usd)}${c.hw.price_scope === 'card_only' ? ', card only' : ''}</span></td>
   <td>${tp?.tokensPerSec != null ? `${fmtNum(tp.tokensPerSec, 0)} tok/s` : '?'}${tp?.measurement && tp.measurement !== 'measured' ? ` <span class="dim">${esc(tp.measurement)}</span>` : ''}</td>
   <td><b>${esc(fmtDuration(c.days))}</b></td>
-  <td><a href="${esc(sharePath(state, c.model.id, data))}">Open in the calculator</a></td>
+  <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
             .join('') + (counts ? `<tr><td colspan="5" class="dim">Also in this class: ${counts}, of ${t.considered} pairs that fit.</td></tr>` : '');
@@ -278,7 +388,7 @@ ${sections}
         'For each amount of daily use, the machine and open model that pay back soonest at each level of capability, with the working one click away.',
       ]),
       canonical: '/best/',
-      ogImage: '/og/default.png',
+      ogImage: BEST_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/best/', label: 'Best buys' }],
     },
     body,
@@ -395,7 +505,7 @@ ${hwRows ? `<h2>Machines that run it</h2>
       ),
       description: desc,
       canonical: `/models/${m.id}/`,
-      ogImage: cheapest ? `/og/${cheapest.hw.id}--${m.id}.png` : '/og/default.png',
+      ogImage: cardFor(cheapest?.hw.id, m.id),
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Models' }, { href: `/models/${m.id}/`, label: m.display_name }],
     },
     body,
@@ -500,7 +610,7 @@ ${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.
         `${fits.length} open models fit a ${short}. What it runs, how fast, and whether it pays back.`,
       ]),
       canonical: `/hardware/${hw.id}/`,
-      ogImage: view.model ? `/og/${hw.id}--${view.model.id}.png` : '/og/default.png',
+      ogImage: cardFor(hw.id, view.model?.id),
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: `/hardware/${hw.id}/`, label: label }],
       about: hardwareProduct(hw, `${site}/hardware/${hw.id}/`),
     },
@@ -548,8 +658,8 @@ ${row('Pay-back', esc(verdictLine(va)), esc(verdictLine(vb)))}
         `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
         `${shortHardwareLabel(a)} against ${shortHardwareLabel(b)}: memory, speed, what each runs and which pays back sooner.`,
       ]),
-      canonical: `/compare/${slug(hardwareLabel(a))}-vs-${slug(hardwareLabel(b))}/`,
-      ogImage: '/og/default.png',
+      canonical: hardwareComparePath(a, b),
+      ogImage: versusCardPath(hardwareComparePath(a, b)),
       crumbs: [
         { href: '/', label: 'Sunk Cost' },
         { href: '#', label: `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}` },
@@ -891,8 +1001,8 @@ ${capRows}
         `${a.display_name} scores ${sa ?? '?'}, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence, API price and the cheapest machine that runs each.`,
         `${a.display_name} scores ${sa ?? '?'}, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence and the cheapest machine for each.`,
       ]),
-      canonical: `/compare/${slug(a.id)}-vs-${slug(b.id)}/`,
-      ogImage: '/og/default.png',
+      canonical: modelComparePath(a, b),
+      ogImage: versusCardPath(modelComparePath(a, b)),
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Models' }, { href: '#', label: `${a.display_name} vs ${b.display_name}` }],
     },
     body,
@@ -910,21 +1020,11 @@ for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
 // comparisons: the flagship current config of each family against every other,
 // the pairs `headToHeads` above already worked out and linked from both sides
-for (let i = 0; i < flagships.length; i++) {
-  for (let j = i + 1; j < flagships.length; j++) {
-    write(`/compare/${slug(hardwareLabel(flagships[i]))}-vs-${slug(hardwareLabel(flagships[j]))}/`, comparePage(flagships[i], flagships[j]));
-  }
-}
+for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), comparePage(a, b));
 
 // model head-to-heads: each model against the next one down the leaderboard,
 // which is the comparison someone actually has to make
-const ranked = data.models
-  .filter((m) => m.frontier_equivalent?.score != null)
-  .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
-  .filter((m, i, xs) => xs.findIndex((x) => x.display_name === m.display_name) === i);
-for (let i = 0; i + 1 < ranked.length; i++) {
-  write(`/compare/${slug(ranked[i].id)}-vs-${slug(ranked[i + 1].id)}/`, modelComparePage(ranked[i], ranked[i + 1]));
-}
+for (const [a, b] of modelPairs(data)) write(modelComparePath(a, b), modelComparePage(a, b));
 
 const urls = ['/', ...paths]
   .map((p) => `  <url><loc>${site}${p}</loc><lastmod>${data.defaults.data_last_checked}</lastmod></url>`)
@@ -933,4 +1033,7 @@ writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UT
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
 checkMeta();
 checkLinks();
+checkCanonicals();
+checkOgCards();
+checkFonts();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

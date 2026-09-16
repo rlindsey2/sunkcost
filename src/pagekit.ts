@@ -93,6 +93,22 @@ export function brandOf(hw: Hardware): string {
   return BRAND_BY_FAMILY[hw.family] ?? hw.chip.split(' ')[0];
 }
 
+/**
+ * The two faces that paint first: body text and the figures in the tables. Both
+ * live on this origin, declared in page.css, so the browser could find them by
+ * parsing that stylesheet. Preloading starts the download alongside the CSS
+ * instead of after it. The rest of the faces (the other mono weights, the
+ * italic, the latin-ext subsets) are left to the stylesheet, because preloading
+ * a file the page may never need only takes bandwidth from the ones it does.
+ *
+ * A change to either filename has to be made here as well, and the build checks
+ * that both files exist.
+ */
+export const FONT_PRELOAD = {
+  sans: '/fonts/instrument-sans-v4-400-700-latin.woff2',
+  mono: '/fonts/ibm-plex-mono-v20-400-latin.woff2',
+} as const;
+
 export type LdNode = Record<string, unknown>;
 
 /**
@@ -202,9 +218,8 @@ export function pageShell(c: PageChrome, body: string, data: Dataset): string {
 ${c.ogImage ? `<meta property="og:image" content="${esc(site + c.ogImage)}" />\n<meta property="og:image:width" content="1200" />\n<meta property="og:image:height" content="630" />\n<meta name="twitter:card" content="summary_large_image" />` : '<meta name="twitter:card" content="summary" />'}
 <meta name="twitter:title" content="${esc(c.title)}" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+<link rel="preload" href="${FONT_PRELOAD.sans}" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="${FONT_PRELOAD.mono}" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="/page.css" />
 ${jsonLd(pageGraph(c, data))}
 </head>

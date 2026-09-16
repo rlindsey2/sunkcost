@@ -1,9 +1,13 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, cheapestThatHolds, familyHeading, familyRange, fmtGb1, gbRange, hardwareProduct, jsonLd, kvWorking, median,
-  modelsInBand, otherQuantisations, pageGraph, priceRivals, SIZE_BANDS, type LdNode,
+  brandOf, calcLink, cheapestThatHolds, familyHeading, familyRange, fmtGb1, gbRange, hardwareProduct, jsonLd,
+  kvWorking, median, modelsInBand, otherQuantisations, pageGraph, pageShell, priceRivals, FONT_PRELOAD, SIZE_BANDS,
+  type LdNode,
 } from '../src/pagekit';
 import { kvCacheGb } from '../src/fit';
+import { defaultState } from '../src/state';
+import { sharePath } from '../src/share';
 import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
@@ -261,5 +265,70 @@ describe('the memory question', () => {
       if (working == null) continue;
       expect(working).toContain(`${kvCacheGb(model, CTX)!.toFixed(1)} GB`);
     }
+  });
+});
+
+describe('links into the calculator', () => {
+  const state = { ...defaultState(data), hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4', usage: 50_000 };
+
+  it('sends a reader to the calculator itself, not to a share page', () => {
+    // /s/ pages carry noindex on purpose. A page written to be found should not
+    // spend its links on addresses the site asks search engines to ignore.
+    const link = calcLink(state, data);
+    expect(link.startsWith('/?')).toBe(true);
+    expect(link).not.toContain('/s/');
+    expect(sharePath(state, state.model, data)).toContain('/s/');
+  });
+
+  it('carries the machine, the model and the usage the page was showing', () => {
+    const q = new URLSearchParams(calcLink(state, data).slice(2));
+    expect(q.get('hw')).toBe('mac-mini-m6-32');
+    expect(q.get('m')).toBe('qwen3.8-27b-q4');
+    expect(q.get('u')).toBe('50000');
+  });
+});
+
+describe('fonts', () => {
+  const shell = pageShell(
+    {
+      title: 'A page',
+      description: 'A description.',
+      canonical: '/hardware/mac-mini-m6-16/',
+      ogImage: null,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }],
+    },
+    '<p>Body.</p>',
+    data,
+  );
+  const css = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8');
+
+  it('makes the browser wait on no other origin before it can paint', () => {
+    expect(shell).not.toContain('fonts.googleapis.com');
+    expect(shell).not.toContain('fonts.gstatic.com');
+    expect([...shell.matchAll(/rel="stylesheet" href="([^"]+)"/g)].map((m) => m[1])).toEqual(['/page.css']);
+  });
+
+  it('preloads the two faces that paint first, and only those', () => {
+    const preloads = [...shell.matchAll(/<link rel="preload" href="([^"]+)" as="font"[^>]*>/g)].map((m) => m[1]);
+    expect(preloads).toEqual([FONT_PRELOAD.sans, FONT_PRELOAD.mono]);
+    // a font request goes out anonymously whatever the origin, so without this
+    // the preloaded file is fetched a second time when the stylesheet asks
+    expect(shell).toContain(`href="${FONT_PRELOAD.sans}" as="font" type="font/woff2" crossorigin`);
+  });
+
+  it('serves every face the pages ask for from this origin, latin and latin-ext', () => {
+    const faces = [...css.matchAll(/url\((\/fonts\/[^)]+)\)/g)].map((m) => m[1]);
+    expect(faces).toHaveLength(10);
+    for (const f of faces) expect(existsSync(new URL(`../public${f}`, import.meta.url))).toBe(true);
+    // the weights and the one italic the pages actually use
+    expect(css).toContain("font-family: 'Instrument Sans'");
+    expect(css).toContain('font-weight: 400 700');
+    expect(css.match(/font-style: italic/g)).toHaveLength(2);
+    for (const w of [400, 500, 600]) expect(css).toContain(`/fonts/ibm-plex-mono-v20-${w}-latin.woff2`);
+  });
+
+  it('lets the text show in a fallback face while a font is still coming', () => {
+    expect(css.match(/@font-face/g)).toHaveLength(10);
+    expect(css.match(/font-display: swap/g)).toHaveLength(10);
   });
 });
