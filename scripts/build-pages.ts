@@ -199,6 +199,26 @@ function checkOgCards() {
   console.log(`  ${named.size} OG cards named, all drawn`);
 }
 
+/**
+ * One machine, one number. The memory page counts what a machine holds with fitCount,
+ * and every machine page counts the rows computeView hands it. Both are meant to be the
+ * current models at the default context, and a reader moving between the two pages sees
+ * both, so the build stops if they ever drift apart.
+ */
+function checkCounts() {
+  const st = defaultState(data);
+  for (const hw of buyable) {
+    const onMachinePage = fitsOn(hw).length;
+    const onMemoryPage = fitCount(hw, st.ctx);
+    if (onMachinePage !== onMemoryPage) {
+      throw new Error(
+        `${hw.id}: its own page counts ${onMachinePage} models that fit, /how-much-memory/ counts ${onMemoryPage}`,
+      );
+    }
+  }
+  console.log(`  ${buyable.length} machines, each counted the same on its own page and on /how-much-memory/`);
+}
+
 function checkFonts() {
   const css = readFileSync(new URL('page.css', outRoot), 'utf8');
   const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
@@ -681,9 +701,18 @@ const buyable = data.hardware.filter(
   (h) => h.price_usd != null && (h.generation ?? 'current') === 'current' && h.usable_memory_gb != null,
 );
 const holds = (hw: Hardware, m: Model, ctx: number) => fit(m, hw, ctx, NEARLY).status === 'fits';
-const fitCount = (hw: Hardware, ctx: number) => data.models.filter((m) => holds(hw, m, ctx)).length;
+
+/**
+ * What a machine holds is a claim about what to buy it for, so it counts the models
+ * you would choose today: the same set the calculator shows before you ask for the
+ * older ones, and the same set every machine page counts. What a model *needs* is a
+ * different question, and a superseded model needs it just the same, so the tables by
+ * size below count everything listed here and mark the superseded ones.
+ */
+const currentModels = data.models.filter((m) => m.generation !== 'legacy');
+const fitCount = (hw: Hardware, ctx: number) => currentModels.filter((m) => holds(hw, m, ctx)).length;
 const strongestThatFits = (hw: Hardware, ctx: number) =>
-  data.models
+  currentModels
     .filter((m) => holds(hw, m, ctx) && m.frontier_equivalent?.score != null)
     .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)[0] ?? null;
 
@@ -887,7 +916,7 @@ ${working && anchor ? `<p>For ${esc(anchor.display_name)}: ${working}</p>` : ''}
 ${bands}
 
 <h2>Context is the part people miss</h2>
-<p>A longer window costs memory before it costs anything else. Here is how many of the ${data.models.length} models on this site fit three machines as the window grows, counting a model only where its own context ceiling allows it.</p>
+<p>A longer window costs memory before it costs anything else. Here is how many of the ${currentModels.length} current models fit three machines as the window grows, counting a model only where its own context ceiling allows it.</p>
 <table class="board compare">
 <thead><tr><th>Context</th>${columns.map((hw) => `<th><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a><span class="c-quant">${fmtGb1(hw.usable_memory_gb)} usable</span></th>`).join('')}</tr></thead>
 <tbody>${ctxRows}</tbody>
@@ -905,7 +934,7 @@ ${
 <p>You can also make the cache smaller. ${esc(kv?.note ?? '')}${kv?.source_url ? ` (<a href="${esc(kv.source_url)}" rel="noopener">source</a>)` : ''} The calculator has that switch, and every figure on this page is at the 16-bit default.</p>
 
 <h2>Installed memory is not usable memory</h2>
-<p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level.</p>
+<p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level, counted against the ${currentModels.length} current models.</p>
 <table class="board">
 <thead><tr><th>Usable</th><th>Installed</th><th>Cheapest machine at that level</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th></tr></thead>
 <tbody>${ladderRows}</tbody>
@@ -920,7 +949,7 @@ ${
       : ''
   }
 
-<p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. Counts cover all ${data.models.length} models listed here, superseded ones included, because people still run them. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
+<p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. The tables by size cover all ${data.models.length} models listed here, superseded ones included and marked, because people still run them. The two tables of what a machine holds count the ${currentModels.length} current ones instead, which is what every machine page and the calculator count. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
 </article>`;
 
   return pageShell(
@@ -1030,4 +1059,5 @@ checkLinks();
 checkCanonicals();
 checkOgCards();
 checkFonts();
+checkCounts();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
