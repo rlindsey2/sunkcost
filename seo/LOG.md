@@ -187,6 +187,13 @@ Also `npm test` (85 passing, 2 new), `npm run typecheck`, and the full `npm run 
 including `build:functions`, all clean here. Read the rendered `/best/` page end to end: the
 copy is unchanged, no maintainer language, no `undefined` or `NaN`.
 
+Deploy run 28 finished green at 14:51 UTC, so this is live. Both commits went up in one push,
+so there was one run on the tip and nothing was cancelled. Worth knowing for a future run that
+waits on a deploy: the run-level status the API returns goes stale, and the job's own steps are
+where the truth is. This one reported `in_progress` for a quarter of an hour after the job had
+finished. `npm run build:og` draws 1,894 cards and takes about four minutes on its own, which
+is most of any deploy's time.
+
 Not done, because this environment cannot see it: whether `www.sunkcost.ai` answers, and with
 what. The egress policy refuses `sunkcost.ai`, so the edge behaviour of the apex, www and a
 missing trailing slash is one curl on Ryan's side, and it is now on his list above with the
