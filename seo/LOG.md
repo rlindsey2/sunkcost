@@ -248,6 +248,13 @@ they are not. Three of those tests run over **all 47 pairs**, not a chosen few â
 tested three hand-picked pairs, and when the ratio rule was broken on purpose all three still
 passed, which is how that got caught.
 
+**Deploy confirmed from here this time.** One push, one run: run 44, on `b7fbdcc`, finished green
+at 21:58 UTC with `npm ci`, `npm test` and the full `npm run build` all passing on the runner, and
+republished. The 47 pages are live. Worth knowing for the next run that waits on a deploy: the
+GitHub API's `updated_at` looks frozen because the run really is still going, and `api.github.com`
+answers an unauthenticated `curl` from this environment, so an `until` loop on the run's `status` is
+a better way to wait than repeated calls that return the same in-progress snapshot.
+
 Read the finished page in Chromium, full height, at 900px and at 390px. It reads as a buying
 decision rather than a spec sheet. The 390px shot turned up something older and larger, which is now
 a backlog item: these pages do not fit a phone, and pages untouched for weeks do the same.
