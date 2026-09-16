@@ -117,10 +117,13 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the run entry has what was actually wrong, which was the 45 links out of /best/ rather
       than anything in the page set. One part is not checkable from here and is on Ryan's side
       below: whether the apex and www serve one URL at the edge.
-- [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages,
-      /best/, /leaderboard/ and /how-much-memory/ all point at the same default card; the model
-      and hardware pages already get a real one. A comparison card would want the two machines
-      side by side, and the memory page wants the weights-plus-cache sum on it.
+- [ ] Open Graph images, continued. The 75 comparison pages got their own cards on 2026-09-16,
+      and the build now refuses a page that names a card nobody drew. Still on the default card:
+      `/leaderboard/`, `/best/` and (on the PR branch) `/how-much-memory/`. Those are three
+      one-off cards rather than a template — a leaderboard card wants the top few models against
+      the frontier score, a best-buys card wants the quickest pay-back at each usage level, and
+      the memory page wants the weights-plus-cache sum. `versusCardSvg` in src/versus-card.ts is
+      the nearest thing to a starting point.
 - [ ] Two model counts are live on the site and they do not match: the machine pages count
       against the 39 current models that `computeView` puts in `rows`, and /how-much-memory/
       counts all 55, because the model people mean by "a 70B" is Llama 3.3 70B and that one is
@@ -138,6 +141,71 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — 75 comparisons, 75 cards, and two broken previews found
+
+PR #1 is still open and unreviewed, and the previous two entries said not to stack another page
+on top of it, so this run took the next item that goes straight to main: the Open Graph cards.
+Commit `fe6c98e`, pushed to main.
+
+Every one of the 75 comparison pages pointed at `/og/default.png`. A link to "Mac Studio vs RTX
+PRO 6000" posted in a chat window previewed as the site's default card, which is a picture of one
+unrelated machine's pay-back curve. That is 40% of the site's pages sharing one picture that
+answers none of them.
+
+Each comparison page now has its own card, drawn at build time from `data/*.json` by the new
+`src/versus-card.ts`: the two names either side of a "vs", then five rows of the page's own
+figures. Machines get price, memory, models that fit, best model it runs and pay-back; models get
+index score, parameters, weights, max context and the cheapest machine that runs each. Nothing on
+a card is computed differently from the page it belongs to — the fit counts come from the same
+`computeView` rows the page counts, the pay-back from the same `breakevenDays`, and the cheapest
+machine from the same `runnersFor` list.
+
+Speed was deliberately left off the machine card. Most speeds on this site are estimated from
+bandwidth and need the sentence beside them that says so, and a card has nowhere to put that
+sentence. Same reason speeds stay out of the meta descriptions.
+
+**The build caught a real fault the moment the new guard went in.** `checkOgCards()` compares
+every `og:image` a page names against the cards `build:og` actually drew, and it failed on two
+pages: `/hardware/mac-studio-m5-ultra-512/` and `/hardware/framework-desktop-495-192/`. Both
+machines have `price_usd: null`, so there is no pay-back to draw and `build:og` never wrote them a
+card — but the page named one anyway. Those two pages have been serving a broken preview image
+for as long as they have existed. They now ask `hasShareCard`, the same rule `build:og` uses to
+decide which cards exist, and fall back to the default card when the answer is no.
+
+The pairing that decides which comparisons exist moved out of `scripts/build-pages.ts` into the
+new module, so the card build and the page build cut the same list from the same code. Two scripts
+agreeing by coincidence on a file name is how 75 broken previews would have happened quietly.
+
+Also in: `build:og` now loads the bold cut of whichever system face it finds. It was loading one
+regular file, so every `font-weight: 700` on every card — the verdict headline on all 1,894 of
+them — was being drawn in the regular face. The default card's headline is now bold, as the design
+intends.
+
+**Verified by looking at the cards and by diffing the pages.** Rendered cards to PNG through the
+real build and read four of them: a Mac pair, the DGX Spark against an RTX PRO 6000, a model pair,
+and the worst case for length. No truncation, no overlap, every figure matching the page. Then
+built the whole page set twice, once from `HEAD` and once with the change, and compared all 188
+pages: **0 pages differ in the body**, 0 differ in the head apart from the card address, and the
+only structured-data field that changed anywhere is `primaryImageOfPage`. Nothing a reader sees
+changed, which is what this change was supposed to be.
+
+Long names were the real work. `DeepSeek-R1-Distill-Qwen-32B` is one hyphenated word, and resvg
+cannot measure a string before it draws it, so the layout estimates width and was cutting those
+three cards short. The wrap now breaks at a hyphen where there is no space, and drops a font size
+rather than cutting a name. Audited all 75: no ellipsis, no `undefined`, no `NaN`.
+
+Also `npm test` (99 passing, 14 new in `tests/versus-card.test.ts`), `npm run typecheck`, and the
+full `npm run build` including `build:og` (1,894 + 75 cards) and `build:functions`, all clean here.
+Cards average 54 KB, 4.2 MB for the 75, all gitignored and drawn on each deploy. The whole
+`build:og` step is about 3.5 minutes, which is most of any deploy.
+
+**Continue next:** watch the deploy, then `/leaderboard/` and `/best/` are the last two pages on
+main still using the default card — see the backlog item, which now says what each one would show.
+PR #1 still needs Ryan, and the rule stands: while it is open, no second new page. If it has
+merged by the next run, the next question page is "best GPU for local LLMs": filter the machine
+list to `family === 'NVIDIA' || family === 'AMD'` and say plainly that a card's price needs a PC
+around it before it compares with a Mac.
 
 ### 2026-09-16 — 45 links into pages we ask Google to ignore
 
