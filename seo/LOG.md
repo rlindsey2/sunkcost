@@ -187,6 +187,10 @@ truncation, no overlap, no `undefined`, and every figure matching the page it be
 to the scores and every figure checked back against the data), `npm run typecheck`, and the full
 `npm run build` including `build:og` and `build:functions`, all clean here.
 
+Deploy run 32 finished green at 16:50 UTC and published, so both cards are live. Both commits
+went up in one push, so there was one run on the tip and nothing was cancelled. The build step
+took 3m05s on the runner, two cards more than last time and no slower.
+
 **Continue next:** every page on main now has its own card, so that item is down to
 `/how-much-memory/` on the PR branch. PR #1 still needs Ryan, and the rule stands: while it is
 open, no second new page. If it has merged by the next run, the next question page is "best GPU
