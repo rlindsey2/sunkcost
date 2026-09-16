@@ -8,10 +8,36 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 - [ ] Verify sunkcost.ai in Google Search Console and Bing Webmaster Tools, submit
       https://sunkcost.ai/sitemap.xml, and share the Search Console CSV exports (queries, pages)
       by committing them under seo/exports/. Until then the agent works without query data.
+      The Indexing → Pages export is worth as much as the query one: it says which of the 188
+      generated pages Google has actually indexed, which is the first thing to fix if the answer
+      is "not many".
 - [ ] Run Google's Rich Results Test on https://sunkcost.ai/hardware/geforce-rtx-3090-24/ and
-      confirm the breadcrumb is detected. The agent cannot do this: its environment is not
-      allowed to make outbound requests to sunkcost.ai. Structured data was verified against the
-      local build instead, which is the build the deploy runs.
+      confirm the breadcrumb is detected. Structured data was verified against the local build,
+      which is the build the deploy runs, so this is a confirmation rather than a check.
+- [ ] Commit `npm run submissions` output under seo/exports/ when there is enough of it. The
+      agent has no database access by design, and that file is the only route to a page built
+      from what people actually entered.
+
+### What the agent can and cannot reach (checked 2026-09-16)
+
+Outbound HTTPS goes through an egress proxy that answers 403 to anything not on the
+environment's allow-list. Both `curl` and WebFetch go through it; WebSearch does not, and works.
+A policy change does not reach a session already running — the environment sets it at container
+start — so a run that finds a host blocked should note it and move on rather than retry.
+
+Hosts worth having on the list, and what each unlocks:
+
+- `sunkcost.ai` — reading the site's own live pages: confirming a deploy actually served the
+  markup, checking headers and canonicals as delivered rather than as built. The most useful
+  one by far.
+- `www.googleapis.com` — the PageSpeed Insights API
+  (`/pagespeedonline/v5/runPagespeed?url=…&strategy=mobile`), which returns Core Web Vitals as
+  JSON and needs no key at this volume. This is the practical form of the Core Web Vitals
+  backlog item; pagespeed.web.dev itself is a JavaScript app and cannot be read by fetching it.
+- `validator.schema.org` — structured data validation.
+
+Google's Rich Results Test has no public API and its page is a JavaScript app, so allow-listing
+`search.google.com` would not make it usable by the agent. That check stays on Ryan's side.
 
 ## Backlog (ordered; the agent keeps this list current)
 
@@ -35,8 +61,10 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       index.html, which means a PR, not a push.
 - [ ] A "what people entered" page updated from `npm run submissions` output that Ryan commits
       under seo/exports/ (never from live database access; the agent has none).
-- [ ] Core Web Vitals: check https://pagespeed.web.dev results for the home page and one
-      hardware page via WebFetch; fix render-blocking font loading and image sizing.
+- [ ] Core Web Vitals: run the PageSpeed Insights API against the home page and one hardware
+      page (see the reachability note above for the endpoint); fix render-blocking font loading
+      and image sizing. The generated pages load Instrument Sans and IBM Plex Mono from Google
+      Fonts in the head, which is the obvious first suspect.
 - [ ] Canonical and duplicate control: /s/ share pages stay noindex; comparison pages A-vs-B and
       B-vs-A must not both exist; www and trailing-slash variants resolve to one URL.
 - [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages
