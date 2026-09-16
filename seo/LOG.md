@@ -14,8 +14,8 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 - [x] Audit every generated page's `<title>` and meta description (scripts/build-pages.ts,
       src/pagekit.ts): each title unique, under 60 characters, leading with the words people
       search; each description a plain answer under 155 characters. Done 2026-09-16.
-- [ ] Structured data: Product/Offer or FAQPage JSON-LD on hardware and model pages, and
-      BreadcrumbList everywhere. Validate the output with Google's Rich Results test via WebFetch.
+- [x] Structured data: BreadcrumbList everywhere and Product on hardware pages. Done 2026-09-16.
+      No Offer and no FAQPage — reasons in the run entry below.
 - [ ] Internal linking: every hardware page links to the 3 models it runs best and the best-buys
       page; every model page links to the 3 cheapest machines that run it; the leaderboard links
       to hardware pages. Check for orphan pages in dist/sitemap.xml.
@@ -23,6 +23,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       "RTX 3090 for local LLM worth it", "best GPU for local LLMs", "local LLM vs API cost",
       "how much RAM to run a 70B model". Each answers in the first paragraph with the site's own
       numbers, links into the calculator with the configuration prefilled, and cites sources.
+- [ ] The 75 comparison pages are reachable only from a "next down" link on the leaderboard and
+      from nothing at all in the hardware case: no page lists them. An index at /compare/ would
+      fix the crawl path and is a page people search for directly. New page type, so a PR.
+- [ ] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
+      home page specifically, so /leaderboard/'s copy of it does not count. Small change to
+      index.html, which means a PR, not a push.
 - [ ] A "what people entered" page updated from `npm run submissions` output that Ryan commits
       under seo/exports/ (never from live database access; the agent has none).
 - [ ] Core Web Vitals: check https://pagespeed.web.dev results for the home page and one
@@ -38,6 +44,64 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — JSON-LD on all 188 generated pages
+
+Took the top backlog item, structured data. Commit `52db55e`, pushed to main.
+
+Every generated page now emits one `@graph` from `pageGraph()` in `src/pagekit.ts`:
+
+- **WebSite** the page belongs to, **WebPage** carrying the page's own title and description,
+  its OG card as `primaryImageOfPage`, and **BreadcrumbList**. The breadcrumb is the piece with
+  a visible effect on a result — Google draws the trail in place of the raw URL — and the trail
+  was already rendered as a `<nav>`, so this only states it in a form a crawler reads.
+- **Product** on the 56 hardware pages, referenced from the WebPage's `about`.
+
+Three judgement calls, all on the honesty side:
+
+- **No `Offer`, anywhere.** Product/Offer markup says you can buy the thing from this page. The
+  site sells nothing; the prices are list prices read off a maker's page on a stated date. The
+  cost of leaving it out is that hardware pages are not eligible for a price rich result. That
+  is the right trade. It also keeps Search Console clean of merchant-listing warnings once Ryan
+  verifies the property.
+- **Power is published only where the maker published it.** `load_watts_status` is `published`
+  on 14 machines, and `stand_in` or `third_party_measured` on the other 42. A stand-in figure
+  needs the sentence beside it that says what it is, and a `PropertyValue` has nowhere to put
+  that sentence. Those machines get memory and bandwidth only; the power figure and its caveat
+  stay on the page where they already are.
+- **No FAQPage.** Google stopped showing FAQ rich results for sites like this one, so the gain
+  is close to nil, and the markup has to mirror visible Q&A exactly or it is a liability. The
+  hardware pages have exactly one real question in a heading ("Can a … run local LLMs?"). Not
+  worth it. Dropped from the backlog rather than left open.
+
+A machine's Product `name` is the maker's name for it — "Framework Desktop, 128GB", not "Strix
+Halo Framework Desktop, 128GB" — with the site's own label as `alternateName` so both match.
+`brandOf()` maps family to maker, falling back to the first word of the chip field, which is
+where a Strix Halo box is named.
+
+Also fixed: a breadcrumb step with no page of its own (the leaf on all 75 comparison pages) was
+rendering as a link to `#` that went nowhere. It is now plain text with a `.here` class, and in
+the markup it carries a `name` with no `item`, which is what schema.org asks for. The hardware
+comparison leaf said "Comparison" on all 28 of them; it now names the two machines.
+
+Verified: `npm test` (70 passing, 9 of them new in `tests/pagekit.test.ts`), `npm run typecheck`,
+and the full `npm run build` including `build:functions` — all clean in this environment. Then
+parsed the JSON-LD back out of all 189 built pages: 188 of 188 generated pages have a graph that
+parses, 188 BreadcrumbLists, 56 Products, 75 with a name-only last step, every `@id` absolute,
+every breadcrumb position sequential from 1. The one page without a graph is `dist/index.html`,
+the calculator itself, which is out of bounds for a push. Read a rendered hardware page and a
+rendered comparison page: visible copy is unchanged apart from the breadcrumb leaf.
+
+`scripts/build-pages.ts` now parses the JSON-LD out of each page as it writes it and fails the
+build on a page with none or one that does not parse, so a stray character in a machine name
+cannot ship broken markup.
+
+**Continue next:** internal linking (backlog item 2), which is the largest remaining structural
+gap. Before that, one quick job now possible that was not before: the pages are live with this
+markup within minutes of the push, so run Google's Rich Results Test against
+`https://sunkcost.ai/hardware/geforce-rtx-3090-24/` and one comparison page and confirm the
+breadcrumb is detected. If WebFetch cannot drive that page, `https://validator.schema.org/`
+takes a URL too.
 
 ### 2026-09-16 — titles and descriptions for all 188 generated pages
 
