@@ -8,6 +8,10 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 - [ ] Verify sunkcost.ai in Google Search Console and Bing Webmaster Tools, submit
       https://sunkcost.ai/sitemap.xml, and share the Search Console CSV exports (queries, pages)
       by committing them under seo/exports/. Until then the agent works without query data.
+- [ ] Run Google's Rich Results Test on https://sunkcost.ai/hardware/geforce-rtx-3090-24/ and
+      confirm the breadcrumb is detected. The agent cannot do this: its environment is not
+      allowed to make outbound requests to sunkcost.ai. Structured data was verified against the
+      local build instead, which is the build the deploy runs.
 
 ## Backlog (ordered; the agent keeps this list current)
 
@@ -96,12 +100,19 @@ rendered comparison page: visible copy is unchanged apart from the breadcrumb le
 build on a page with none or one that does not parse, so a stray character in a machine name
 cannot ship broken markup.
 
+Deploy run 18 (`0294ebd`) finished green, so this is live. Run 17, on the code commit itself,
+shows as *cancelled*: the workflow sets `cancel-in-progress` on a `deploy-production`
+concurrency group, and pushing the log a minute later superseded it. Nothing failed.
+
+One thing this environment cannot do: outbound HTTPS to `sunkcost.ai` is refused by the egress
+policy (403 on CONNECT), so the agent cannot read its own live pages. Verification above is
+against the local build, which is the same build the deploy runs. Worth knowing before a future
+run plans anything that depends on fetching the live site.
+
 **Continue next:** internal linking (backlog item 2), which is the largest remaining structural
-gap. Before that, one quick job now possible that was not before: the pages are live with this
-markup within minutes of the push, so run Google's Rich Results Test against
-`https://sunkcost.ai/hardware/geforce-rtx-3090-24/` and one comparison page and confirm the
-breadcrumb is detected. If WebFetch cannot drive that page, `https://validator.schema.org/`
-takes a URL too.
+gap: hardware pages do not link to the models they run best, model pages do not link to the
+cheapest machines that run them, and the 75 comparison pages have almost nothing pointing at
+them. Check `public/sitemap.xml` against the links actually emitted to find the orphans.
 
 ### 2026-09-16 — titles and descriptions for all 188 generated pages
 
