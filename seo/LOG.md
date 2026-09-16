@@ -220,7 +220,7 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 The top item said the head-to-head cards were the last place the site printed a graphics card's
 price as if it bought a computer. Measured it before writing anything, and the item was wrong in
 the direction that mattered: **57 of the 188 pages were still doing it**, the cards as well.
-Commit `06772af`, pushed to main.
+Commit `d36958d`, pushed to main.
 
 $1,299 buys an AMD Radeon AI PRO R9700, and it also buys a Mac mini M6 with 32GB. Both sit in the
 same tables here. The pages fixed the head-to-head tables this morning and left the rest:
@@ -256,6 +256,11 @@ a terser second wording added so that stating the scope costs the wording rather
 "Cheapest that runs it: Framework Desktop, 128GB at $3,449, where it pays back in 27 years."
 Titles, canonicals and card addresses are untouched, so nothing needs re-indexing.
 
+**The deploy was still running when this was written.** Run 52, on `b96831e`, started at 23:55
+and had not finished by 00:10; the push carrying this correction supersedes it, so the run to read
+is whichever one carries the newest commit. Everything in it passed here first, and the runner
+runs the same `npm ci`, `npm test` and `npm run build`.
+
 `npm test` (136 passing, 3 new), `npm run typecheck` and the full `npm run build` including
 `build:og`, `build:share` and `build:functions`, all clean here. Each new test was proved by
 breaking what it holds and watching it fail by name: the machine card's price, the model card's
@@ -278,8 +283,17 @@ back; `git checkout` is not an undo when the work is not committed yet.
 Both PRs were read at the start of this run and both are now out of draft, waiting only on the
 merge button. A second run was working on PR #1's staleness at the same time and its entry is
 below; where the two touched `seo/LOG.md` this one rebased onto theirs. Neither PR has been pinged
-about again, as the notes above ask. This push puts two more commits on main, so **both branches
-are behind again** and the next run should check they still merge.
+about again, as the notes above ask.
+
+**This push made PR #1 stale for the third time today, and this run put it back.** `git merge-tree`
+against the new main: `seo/home-head` still merges, `seo/how-much-memory` did not. Merged main into
+it (`34cfe3c`), and the three conflicts were the same shape the entry below describes — two import
+lists and, this time, the two build checks sitting next to each other — so every resolution is the
+union and nothing had to be chosen between. The merged tree: 149 tests passing, typecheck clean,
+189 pages built with **both** `checkCounts()` and `checkCardPrices()` passing, which is the useful
+part: the memory page prints prices too, and it does not print a card's bare. Both branches merge
+cleanly as of this run. `git merge-tree --write-tree origin/main origin/<branch>` answers it in a
+second and needs no checkout.
 
 **Continue next:** the share card's config line, the new item above, is the biggest unfixed thing
 on a picture that every shared link previews as, and the fitting code it needs is already written.
