@@ -10,6 +10,9 @@ import { cardSvg, CARD_FONT } from '../src/card';
 import { hasShareCard } from '../src/share';
 import { defaultState } from '../src/state';
 import { OG_WIDTH, OG_HEIGHT } from '../src/og';
+import {
+  hardwareComparePath, hardwarePairs, hardwareVersusCard, modelComparePath, modelPairs, modelVersusCard, versusCardPath,
+} from '../src/versus-card';
 import type { Dataset } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -29,11 +32,24 @@ const FONT_CANDIDATES = [
   '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
   '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
 ];
+/** The bold cut of each candidate above, so a heading comes out at the weight it asks for. */
+const BOLD_CANDIDATES: Record<string, string> = {
+  '/System/Library/Fonts/Supplemental/Arial.ttf': '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+  '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf': '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+  '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf': '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+};
 const fontOpts = (() => {
   const dir = FONT_CANDIDATES[0];
   if (existsSync(dir)) return { loadSystemFonts: false, fontDirs: [dir], defaultFontFamily: 'sans-serif' };
   const file = FONT_CANDIDATES.slice(1).find((f) => existsSync(f));
-  if (file) return { loadSystemFonts: false, fontFiles: [file], defaultFontFamily: file.includes('Arial') ? 'Arial' : file.includes('Helvetica') ? 'Helvetica' : 'sans-serif' };
+  if (file) {
+    const bold = BOLD_CANDIDATES[file];
+    return {
+      loadSystemFonts: false,
+      fontFiles: [file, ...(bold && existsSync(bold) ? [bold] : [])],
+      defaultFontFamily: file.includes('Arial') ? 'Arial' : file.includes('Helvetica') ? 'Helvetica' : 'sans-serif',
+    };
+  }
   return { loadSystemFonts: true, defaultFontFamily: 'sans-serif' };
 })();
 
@@ -63,6 +79,17 @@ for (const hw of data.hardware) {
     n++;
   }
 }
+// head-to-head cards: one per comparison page, so a link to a comparison previews
+// as that comparison instead of as the site's default card. Same file names the
+// pages ask for, both sides derived from the page's own address.
+let vs = 0;
+const versus = (page: string, svg: string) => {
+  writeFileSync(new URL(versusCardPath(page).replace('/og/', ''), outDir), toPng(svg));
+  vs++;
+};
+for (const [a, b] of hardwarePairs(data)) versus(hardwareComparePath(a, b), hardwareVersusCard(a, b, data, FONT));
+for (const [a, b] of modelPairs(data)) versus(modelComparePath(a, b), modelVersusCard(a, b, data, FONT));
+
 // default card: the default state
 const ds = defaultState(data);
 const dv = computeView(ds, data);
@@ -73,4 +100,4 @@ writeFileSync(new URL('manifest.json', outDir), JSON.stringify(manifest, null, 2
 const genDir = new URL('../.generated/', import.meta.url);
 mkdirSync(genDir, { recursive: true });
 writeFileSync(new URL('share-manifest.json', genDir), JSON.stringify(shareManifest));
-console.log(`wrote ${n} OG cards${def ? ' + default.png' : ''} to public/og/ (${OG_WIDTH}×${OG_HEIGHT})`);
+console.log(`wrote ${n} OG cards + ${vs} head-to-head cards${def ? ' + default.png' : ''} to public/og/ (${OG_WIDTH}×${OG_HEIGHT})`);
