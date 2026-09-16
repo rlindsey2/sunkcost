@@ -16,6 +16,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       notify about this PR again** — the queue below is all doable without it, and a third ping
       would be nagging.
 
+- [ ] Review and merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the
+      calculator's own head: self-hosted fonts and the home page's `WebSite` markup. Also a
+      draft, so the same one click applies. It is independent of PR #1 and touches none of the
+      same files, so the two can be merged in either order. Ryan has been pinged once about it,
+      which is the first ping on this PR; do not ping about it again.
+
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
 - [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
@@ -105,12 +111,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the same thing in different words is the duplicate this site should not create). Each
       answers in the first paragraph with the site's own numbers, links into the calculator with
       the configuration prefilled, and cites sources.
+- [ ] The head-to-head OG cards carry the same bare price the pages carried until 2026-09-16.
+      `src/versus-card.ts:246` draws `Price` as `fmtUsd(a.price_usd)` on both sides, so a card
+      for a graphics card pair previews `$18,000` against `$1,499` with nothing saying the first
+      is the card alone; 13 of the 28 machine cards are affected. `src/versus-card.ts:264` does
+      the same for the cheapest machine on a model card. Small and self-contained: the page fix
+      that shipped this morning added `priceWithScope()` in `src/pagekit.ts` and the card needs
+      the plain-text half of it. Costs a full `build:og` (about 4 minutes) to verify by eye.
+
+- [x] The 47 model head-to-heads. Done 2026-09-16: median 157 words to 634, no subheading to
+      three, and every one now carries the machine bill the two models differ by. The run entry
+      below has what the rewrite turned up, including a price gap that printed in cents.
+
 - [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
       are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
       queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
-- [ ] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
-      home page specifically, so /leaderboard/'s copy of it does not count. Small change to
-      index.html, which means a PR, not a push.
+- [~] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
+      home page specifically, so /leaderboard/'s copy of it does not count. Written and waiting in
+      PR #2, with a test holding it identical to the node `pageGraph()` builds. Reaches the site
+      when that PR merges.
 - [ ] A "what people entered" page updated from `npm run submissions` output that Ryan commits
       under seo/exports/ (never from live database access; the agent has none).
 - [x] Core Web Vitals on the generated pages. The fonts were the whole of it and they are now
@@ -118,12 +137,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       generated pages carry no `<img>` and no inline `<svg>` between them, so there is no image
       to size. What is left of this item is the calculator's own head, which is the next entry
       below, and a measurement this environment cannot take (see the PageSpeed note above).
-- [ ] The calculator at index.html still loads both fonts from Google, with the same two
-      preconnects and the same render-blocking stylesheet the generated pages had until
-      2026-09-16. The files are already in the repo under public/fonts/ and the @font-face rules
-      are already written in public/page.css, so this is four lines in the head and an import,
-      but index.html is the calculator, so it is a PR rather than a push. Worth pairing with the
-      home-page JSON-LD item above, since both are small changes to the same file.
+- [~] The calculator at index.html loading both fonts from Google. Done on the branch and waiting
+      in PR #2, paired with the JSON-LD item above as planned. The faces are now in src/fonts.css,
+      which styles.css imports and Vite folds into the bundle; a test keeps that block identical to
+      the one in public/page.css. The 1,894 /s/ share pages inherit the same head, so they stop
+      asking Google too. Reaches the site when that PR merges.
 - [x] Canonical and duplicate control. Audited and now enforced by the build. Done 2026-09-16;
       the run entry has what was actually wrong, which was the 45 links out of /best/ rather
       than anything in the page set. One part is not checkable from here and is on Ryan's side
@@ -142,23 +160,433 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       reaches main. It is infrastructure rather than SEO, so it is Ryan's call, but it is cheap and
       it protects the thing every other item on this list depends on.
 
-- [ ] Two model counts are live on the site and they do not match: the machine pages count
-      against the 39 current models that `computeView` puts in `rows`, and /how-much-memory/
-      counts all 55, because the model people mean by "a 70B" is Llama 3.3 70B and that one is
-      marked legacy. Both pages say which denominator they use, so neither is wrong, but a
-      reader moving between them sees "48 models fit" on one page and "38" on another for the
-      same machine. Worth settling on one rule, which is a judgement call for Ryan rather than
-      an SEO fix.
-- [ ] `/hardware/geforce-rtx-3060-12/` shows as "NVIDIA GeForce RTX 3060 12GB, 12GB" everywhere
-      its label is rendered, because `chip` in data/hardware.json ends in the memory size that
-      `hardwareLabel()` then appends again. The fix is a data edit, which the agent may not make.
-      Cosmetic, but it is on a page people do search for.
+- [x] The two model counts that did not match. Ryan handed the judgement call to the agent on
+      2026-09-16 and the rule is: **a count of what a machine holds uses the 39 current models**,
+      the set the calculator shows before you ask for the older ones and the set every machine
+      page already counted. What a model *needs* is a different question and a superseded model
+      needs it just the same, so /how-much-memory/'s tables by size still cover all 55, marked
+      where superseded. Fixed on the PR #1 branch, where that page lives, and held by
+      `checkCounts()` at build time: every priced machine still sold must come out the same on
+      its own page and on that one, or the build stops.
+- [x] The RTX 3060's doubled label. Done 2026-09-16 with Ryan's say-so, which is what the data
+      edit needed. `chip` is now "GeForce RTX 3060", the way every other card is entered, and the
+      label builder supplies the ", 12GB" as it always did. Six pages changed and nothing else;
+      the page's title lost 6 characters and now fits the brand suffix as well. The validator
+      refuses any chip that ends in its own memory size, so it cannot come back.
+- [x] The generated pages on a phone. Measured, and the premise was wrong: no page overflows the
+      window at 320, 360, 390 or 430px, then or now. The full-height screenshot that raised it
+      renders a scrolling table at its full width, which reads as the page running off the edge.
+      What was real was inside the tables, and that is fixed. Done 2026-09-16; the run entry has
+      the figures. What is left of it is the two items below.
+
+- [ ] 230 of the 362 tables still need a sideways swipe on a phone, the widest being a machine
+      page's own range table at 806px against 358 of screen. They now fade at the edge, so the
+      swipe is at least visible, but `/best/` still hides the pay-back column, which is the
+      column that page is for. A sticky first column was tried and dropped: the model name is
+      290px of the 358, so sticking it leaves a sliver to scroll in, and a full-width section
+      heading row (`<th colspan="5">`) sticks as an empty band. The way through is fewer or
+      narrower columns on a phone, which is `scripts/build-pages.ts` rather than CSS.
+
+- [ ] Between 641 and about 900px the comparison tables go back to holding each name on one line
+      and scrolling, because the three-way split is inside the site's 640px breakpoint. A phone
+      in landscape and a tablet in portrait both land in that band. Worth extending once the
+      proportions are checked at 768px: a 34% label column is right at 358px and probably too
+      wide at 724.
+
+- [ ] Every graphics card page opens "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?" — "a"
+      before a label that wants "an". It reads as a typo on the first line of the page, on seven
+      pages. The h1 in `hardwarePage()` is where it is built; the rule has to cover the letters
+      pronounced with a vowel sound (an NVIDIA, an AMD, an RTX), not just the vowels.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the RTX 3060 label, and one rule for counting what a machine holds
+
+Ryan replied for the first time in days, asked what needed him, took two items and handed one back:
+**"model count: don't care - you pick"** and **"yeah fix the geforce issue"**. Both are done. He also
+asked for something the site cannot give him yet, which is the most useful thing in this entry.
+
+**He asked for preview URLs of the two open PRs, and there are none.** `deploy.yml` runs on push to
+`main` and on `workflow_dispatch` only, and publishes with `--branch=main`, which Cloudflare treats
+as production, so a PR gets no build, no checks and nothing to look at. The agent built both
+branches here and sent screenshots instead. **This makes the `pull_request` workflow item above
+worth more than it looked**: the same file that would run `npm ci`, `npm test` and `npm run build`
+on a PR can publish the result with `pages deploy dist --branch=$HEAD_REF`, which Cloudflare serves
+at a preview URL of its own. Same secrets, same job, one extra step, and Ryan gets to look at a page
+before merging rather than after. Still his call, because it is CI and it spends his Cloudflare
+token, but he has now asked for what it provides, which is a different answer to "is it worth it".
+
+**The RTX 3060.** `chip` was "GeForce RTX 3060 12GB" while every other card is entered without its
+memory, so the label builder's ", 12GB" landed on top of it: "NVIDIA GeForce RTX 3060 12GB, 12GB",
+in the h1, the title, the description, the breadcrumb, the Product node and every link to the page.
+`chip` is now "GeForce RTX 3060". Built before and after: **6 pages differ and nothing else** — the
+card's own page and the five other NVIDIA cards that link to it — and the title, 6 characters
+shorter, now fits the brand suffix it had been losing. The validator refuses any chip ending in its
+own memory size, proved by putting the old name back and watching it fail by name. NVIDIA does sell
+an 8GB 3060 and the 12GB was part of the retail name, which is presumably why it was entered that
+way; the label carries the memory either way, so nothing is lost.
+
+**The counting rule, which was the judgement call.** A count of what a machine holds now uses the
+39 current models everywhere — the set the calculator shows before you ask for the older ones, and
+the set every machine page already counted. What a model *needs* is a different question, and a
+superseded model needs the same memory, so /how-much-memory/'s tables by size still cover all 55
+and mark the superseded ones. One denominator everywhere was the wrong goal: it would have taken
+Llama 3.3 70B out of the 70B section of the page that exists to answer "how much RAM for a 70B".
+The two tables there that count what a machine holds now read 10, 13, 19, 24, 27 where they read
+13, 18, 26, 32, 35, which is exactly what the Mac mini M6 16GB, 24GB and 32GB, the Framework Desktop
+32GB and the Mac Studio M5 Max say on their own pages. That page lives on the PR #1 branch, so the
+fix went there: commit `7a1af80` on `seo/how-much-memory`.
+
+`checkCounts()` holds it at build time rather than by good intentions: every priced machine still
+sold has to come out the same on its own page and on the memory page, or the build stops. Proved by
+reverting the rule and watching it name the Mac mini M6 and both numbers.
+
+**Two runs were in the air at once, and the other one was right.** The 22:48 run measured the
+phone-width item this session had raised and found the premise wrong: no page overflows the window,
+and the full-height screenshot that raised it renders a scrolling table at its full width. This
+session had then read the same artefact a second time, at 1100px on the memory page, and was about
+to log "wide tables are cut off on desktop too" — which is the same misreading. It is not in the
+backlog, because what is real is in that run's two follow-up items above. **Worth keeping: a
+full-height headless screenshot cannot be used to judge whether anything overflows.** Where the two
+runs touched the same file, this one rebased onto theirs.
+
+Also seen while reading a card page and worth an item: every graphics card page opens "Can a NVIDIA
+…", which wants "an".
+
+Commit `93fcbb6` on main: the data edit, the validator check and this log. `npm test` (130 passing),
+`npm run validate`, `npm run typecheck` and `npm run build:pages` clean here, and the memory page
+branch's own suite (126 passing) before pushing to it.
+
+**Continue next:** the two table items above are the live work and they are the other run's to
+continue — the narrower-columns one is `scripts/build-pages.ts` rather than CSS. If Ryan has merged
+either PR by then, the merged one comes first: after PR #1, the next question page ("best GPU for
+local LLMs"); after PR #2, nothing, it is done when it lands. If he says yes to previews, that
+workflow is the highest-value hour on the list, because it unblocks his review of everything else.
+
+### 2026-09-16 — the head-to-head tables now fit a phone
+
+The last entry offered `/compare/` as an index, which is a new page type and would have made a
+third PR waiting on Ryan, or the phone-width item, which goes straight to main. Took the phone
+one. Commit `f86bbd4`, pushed to main.
+
+**Measured first, and the backlog item was wrong.** Every one of the 188 pages was loaded in
+Chromium at 390px and checked for anything sticking out past the window: `documentElement.scrollWidth`
+equals the viewport on all 188, and no element outside a scroll container reaches past the right
+edge. Same at 320, 360 and 430px. The earlier reading came from a full-height screenshot, which
+renders a horizontally scrolling table at its full width rather than at the window's, so the page
+looks like it runs off the edge when it does not.
+
+**What was real was one level down.** All 362 tables across the page set were cut off at the right
+edge, and on the 132 comparison tables the cut fell inside the second column: at 390px the
+head-to-head table wanted up to 918px, so a phone reader saw the first machine, the row labels and
+a sliver of the second — on pages whose whole purpose is two machines side by side. 40% of the
+site's pages are comparisons.
+
+What changed, all in `public/page.css`, all inside the existing 640px breakpoint bar one rule:
+
+- Comparison tables drop the sideways scroll on a phone, split the width three ways (34% for the
+  row label) and wrap the names. All 132 now fit whole, from 320px up. Long unbroken names
+  (`DeepSeek-R1-Distill-Qwen-32B`) and the "priced as …" note needed `overflow-wrap: anywhere`
+  and a wrapping `.c-quant`, or the fixed layout pushed them past the edge again.
+- List tables let long machine and model names wrap, which is right on a phone and wrong on a
+  desktop, so it is scoped to the breakpoint. The leaderboard goes 1,225px → 761, `/best/`
+  874 → 576, a machine page's model table 663 → 633, against 358px of screen.
+- A table still wider than the window fades at the edge nobody has reached yet. It rides a scroll
+  timeline (`animation-timeline: scroll(self inline)`), so the fade is there while there is more
+  to see, gone at the end of the scroll, and absent on a table that fits — checked by reading the
+  computed `mask-image` at the start, the middle and the end of a scroll. It is wrapped in
+  `@supports`, so a browser without scroll timelines gets nothing rather than something wrong.
+
+**Verified by measurement, not by eye alone.** All 188 pages swept again at 320, 360, 390 and
+430px: no page overflows, and 0 of the 132 comparison tables are clipped, down from 132. Tables
+needing a sideways swipe: 362 → 230. Desktop was checked for collateral damage by screenshotting
+six representative pages at 1200px against `page.css` as it was: five are byte-identical and the
+sixth is the leaderboard, which is the one table wide enough to scroll at 1200px and now says so.
+Read the rendered pages at 390px: a machine head-to-head, a model head-to-head with the longest
+names on the site, `/best/` and a machine page. The head-to-heads now read as two columns of a
+comparison rather than one column and a hint.
+
+`npm test` (130 passing, none new — this is CSS, and the suite has no browser), `npm run typecheck`
+and the full `npm run build` including `build:og`, `build:share` and `build:functions`, all clean
+here. No test was added: a layout claim needs a real viewport, and nothing in the suite has one.
+That is why every figure above comes with the width it was measured at.
+
+A sticky first column was tried for the 230 tables that still scroll, and dropped rather than
+shipped: the name column is 290px of the 358 available, so sticking it leaves almost nothing to
+scroll in, and the full-width section heading rows stick as empty bands. Both new backlog items
+above came out of this run.
+
+**Deploy confirmed.** Two pushes again, the change and then this log, so run 46 was cancelled by
+the concurrency rule as it queued and run 47, on `0f0f3c4`, finished green at 22:55 UTC with
+`npm ci`, `npm test` and the full build passing on the runner. Everything from both commits is
+live. The site's own pages still cannot be read from here, so this is the runner's word, not a
+fetch of sunkcost.ai.
+
+**Continue next:** `/compare/` as an index is still the best of what is left, and it is still a new
+page type, so it is still a PR. If three PRs waiting is one too many, the `pull_request` CI
+workflow is unwritten and protects every one of them, and the head-to-head OG cards still print a
+graphics card's price as if it were a whole computer's, which is the last place on the site that
+does.
+
+### 2026-09-16 — the 47 model head-to-heads say what each model costs to run
+
+The last entry asked for two things and both are done. **The deploy question first: runs 41 and 42
+were cancelled, not stuck.** Both were superseded by the next push while they queued, which is the
+concurrency rule working as intended and exactly what the doubled push that run risked. Run 43, on
+`fde77db`, finished green at 21:04 UTC and republished, so everything from the head-to-head rewrite
+and both log commits is live. Nothing was lost and nothing needed re-running. The habit stands: one
+push, not two.
+
+Then the item that entry named to continue, the 47 model head-to-heads, which were the thin half of
+the site once the machine ones were fixed. Median 157 words, no `<h2>` on any of them, 5 internal
+links, and **not one link into the calculator on any of the 47**. Commit `e2ff694`, pushed to main.
+
+A model head-to-head was a specification table with a sentence about the intelligence index on top.
+It said which model was cleverer and nothing about what running either one costs, which is the only
+question this site exists to answer. The numbers for it were already there: `runnersFor` knows every
+machine that holds a model, and the gap between the cheapest machine that runs each is the buying
+decision nothing on the site stated.
+
+What the pages do now. The lede answers in four sentences: which model is ahead on the index, what
+the cheapest machine that runs each one costs and what the difference between them is, which model
+is quicker **on the cheapest machine that runs both** and by how much, and whether that machine ever
+pays for itself running either. Then a side-by-side section on the machine they share — speed,
+pay-back and the API bill for the same month's work — because the main table gives each model the
+cheapest machine that runs *it*, and on most pairs those are two different machines, so nothing in
+it is a race. Then the machines that run one model and not the other, which is what the difference
+in footprint costs at the till: on gpt-oss-120b against Ling 3.0 tiny, that is 24 of the 37 machines
+priced here, starting $2,550 lower down the range.
+
+**Two things were wrong rather than thin, and both are fixed.** A price gap under $100 printed in
+cents beside whole-dollar prices — "$1,299 and $1,269, $30.00 less" — because `fmtUsd` switches to
+cents below $100. No machine pair is that close today, so it never showed on the live pages, but
+`machineVerdict` had the same line and now takes the same fix. And the table printed API prices for
+models nobody rents by the token without saying whose prices they were; where the price stands in
+for another model, the hosted model is now named beside it, in the table and under the monthly
+figure.
+
+**Verified against the previous build, page by page.** Built the whole set twice, once from a
+worktree at `origin/main` and once with the change: **47 pages differ and 143 are byte-identical**,
+the 47 being exactly the model head-to-heads. The `<head>` is **byte-identical on all 47**, so every
+title, description, canonical and card address is what it was and nothing needs re-indexing. Median
+words in `<main>` 157 → 634, minimum 135 → 390, `<h2>` 0 → 3, internal links 5 → 20, and every page
+now has at least two links into the calculator with the machine and the model prefilled.
+
+Then checked the claims against the tables they sit with, by parsing the built pages: **276 prose
+claims cross-checked on 47 pages, and every one matches the row beside it** — the index figures and
+which model is named as ahead, both prices and the gap between them, the two speeds and the ratio,
+the pay-back durations, the count of machines one model runs on and the other does not against the
+difference in the counts, the "starting at" price against the first row of the table under it, and
+the memory each needs against its own row. No speed anywhere without its basis, no `undefined`, no
+`NaN`, no maintainer language, no link out of canonical form, every table balanced.
+
+`npm test` (130 passing, 9 new), `npm run typecheck`, and the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, all clean here. The guarantees are held by tests
+rather than by good intentions, and each was proved by breaking it on purpose and watching its own
+test fail by name: a ratio worked out from precision the page does not show, a price gap printed in
+cents, a machine named as running both when it runs only one, and two speeds called the same when
+they are not. Three of those tests run over **all 47 pairs**, not a chosen few — the first draft
+tested three hand-picked pairs, and when the ratio rule was broken on purpose all three still
+passed, which is how that got caught.
+
+**Deploy confirmed from here this time.** One push, one run: run 44, on `b7fbdcc`, finished green
+at 21:58 UTC with `npm ci`, `npm test` and the full `npm run build` all passing on the runner, and
+republished. The 47 pages are live. Worth knowing for the next run that waits on a deploy: the
+GitHub API's `updated_at` looks frozen because the run really is still going, and `api.github.com`
+answers an unauthenticated `curl` from this environment, so an `until` loop on the run's `status` is
+a better way to wait than repeated calls that return the same in-progress snapshot.
+
+Read the finished page in Chromium, full height, at 900px and at 390px. It reads as a buying
+decision rather than a spec sheet. The 390px shot turned up something older and larger, which is now
+a backlog item: these pages do not fit a phone, and pages untouched for weeks do the same.
+
+**Continue next:** `/compare/` as an index is the best of what is left, and it is a new page type so
+it goes to a PR, which would make three waiting on Ryan. If that is one too many, the phone-width
+item above is the biggest thing on main's own list — most search traffic is mobile and every
+generated page is affected — and it is measurement first, CSS second. Failing both, the `pull_request`
+CI workflow is still unwritten and still protects every PR in the queue.
+
+### 2026-09-16 — the 28 head-to-heads say which machine wins
+
+Two PRs now wait on Ryan and the rule holds, so this run took something that goes straight to
+main. The last entry offered the `pull_request` CI workflow or a research hour. It turned out
+there was something better, found by measuring the page set rather than reading the backlog:
+**the 75 comparison pages are the thin half of this site.** Median 191 words against 453 on model
+pages and 709 on machine pages, no `<h2>` on any of them, and 11 internal links. That is 40% of
+the site's pages. Commit `3cbcbe3`, pushed to main.
+
+Looking at why they were thin turned up three figures that were worse than thin. A head-to-head is
+read as a buying decision, so every number on one has to survive being set beside its opposite:
+
+- **All 56 speeds on the 28 machine pages were estimated from memory bandwidth, and this was the
+  one place on the site that printed one without saying so.** The leaderboard labels it, the model
+  pages label it, the OG cards leave speed off entirely for exactly this reason (see the cards
+  run below). These pages did not.
+- **On 12 of the 28 pairs the two speed cells were for different models.** Each column took the
+  strongest model its own machine could hold, so under a row headed "Speed on that model" the
+  $1,699 Mac mini M5 Pro read 29 tok/s against the $5,099 Mac Studio's 25. The mini was running
+  Gemma 4 12B and the Studio Qwen3.8 27B. Side by side under one row label that is a speed
+  comparison, and it was not one.
+- **A graphics card priced without the PC around it sat next to a complete computer's price on 13
+  pages.** `/best/`, the leaderboard and the machine pages all say "card only"; this table said
+  `$18,000` next to `$1,499` and left the reader to it.
+
+What the pages do now. The shared lede ("Two machines people weigh against each other…", the same
+sentence on all 28) is gone, and each page opens with the answer: what each machine holds, what it
+costs, which is quicker on a model they both run, and whether either ever pays for itself. Then
+either a side-by-side section on the strongest model both hold — the race the main table cannot
+give when the two columns are running different models — or nothing, where the columns already
+match. Then what the extra memory actually buys, named model by model with weights, what each
+needs at 32k and how fast it runs, or a line saying memory is not what separates these two.
+
+**The pay-back it now shows is the unflattering kind this site is for.** On the MacBook Air against
+the RTX PRO 6000, the card is 13× faster on the model both hold, and on that model it pays back in
+1,343 years against the Air's 118, because $18,000 of card saves no more per day than $1,499 of
+laptop does. The old page showed one pay-back figure each, on different models, and said nothing.
+
+One rule worth keeping: anything the prose says about two speeds is worked out from the **rounded
+figures the page prints**, not from the precision behind them. The first build said "about 7.6×
+faster: 78 tok/s against 10", and 78 ÷ 10 is 7.8. A reader dividing one figure on the page by
+another now gets the third.
+
+**Verified against the previous build, page by page.** Built the whole set twice, once from a
+worktree at `origin/main` and once with the change, and compared all 188 pages: **28 differ and
+160 are byte-identical**, the 28 being exactly the machine head-to-heads. The 47 model
+head-to-heads, all 55 model pages, all 56 machine pages, `/leaderboard/`, `/best/` and
+`sitemap.xml` are untouched. On the 28 that changed, the `<head>` is **byte-identical on all 28**,
+so every title, description, canonical and card address is what it was and nothing needs
+re-indexing. Median words in `<main>` 153 → 454, internal links 11 → 21, minimum 0 `<h2>` → 2.
+
+Then checked the claims against the tables they sit with, by parsing the built pages: 132 prose
+claims cross-checked on 28 pages, and every one matches the row beside it — the model counts
+against "Models that fit", the price gap against the Price row, the speed figures and the ratio
+against the row they describe, the pay-back durations against the pay-back row, and "holds N
+models the other cannot" against the difference in the counts. No speed anywhere without its
+basis, no `undefined`, no `NaN`, no maintainer language, no internal link out of canonical form,
+every table and heading balanced. Read three finished pages end to end as text: a Mac pair, a Mac
+against a card, and a Strix Halo box against a card.
+
+Also `npm test` (121 passing, 8 new), `npm run typecheck`, and the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, all clean here. The three guarantees that matter
+are held by tests rather than by good intentions, and each was proved by breaking it on purpose
+and watching its own test fail by name: a speed printed without its basis, a ratio worked out from
+precision the page does not show, and the "each on its own strongest model" caveat appearing on a
+page where both columns run the same model.
+
+One thing found and fixed mid-run rather than shipped: the first draft put that caveat on every
+page, including the 16 where both columns run the same model, where it is simply false. The
+cross-check above is what caught it.
+
+**Worth knowing for the next run that starts here.** The container's local `main` was stale at
+`94aa957`, the seed commit, while `origin/main` had all fourteen SEO commits. `git checkout main`
+says "up to date with origin/main" *before* fetching, so it looks fine. `npm test` reporting 61
+passing instead of 113, or `seo/LOG.md` being 2 KB instead of 40 KB, is that and nothing worse.
+Fetch and fast-forward before reading anything.
+
+**Deploy, and this needs checking next run.** The code commit and the log went up in one push as
+run 41, which is the right way round; the card note below then went up separately as run 42, so
+that habit was broken this time and run 41 may have been superseded. Neither could be confirmed
+from here. On run 41 `npm ci` and `npm test` passed on the runner and `npm run build` was still
+reported in progress thirteen minutes later; run 42 sat `pending` for twelve minutes without
+starting, with both runs' `updated_at` frozen at the minute they were created. The canonical run
+recorded the same thing (`in_progress` for a quarter of an hour after the job had finished), so
+this is most likely the API going stale rather than anything wrong, but it is not evidence of
+green. **The first thing the next run should do is confirm runs 41 and 42 and record the result**,
+and if neither published, re-run the workflow by hand. Everything in the commit passed locally,
+including the same full `npm run build` with `build:og`, `build:share` and `build:functions`, and
+`npm test` passed on the runner itself, so the risk is in the publish rather than in the code.
+
+A habit worth keeping, which this run broke: put the code commit and the log commit in **one**
+push. A second push a minute later makes a second run that supersedes the first.
+
+Also found while checking the cards, not fixed this run because it is a second change: the
+head-to-head OG cards print the same bare price these pages did. It is a backlog item above with
+the line numbers.
+
+Nothing else on main changed this run.
+
+**Continue next:** the same treatment for the 47 model head-to-heads is the obvious follow-on and
+is now a backlog item — they already compute a real lede, so they are in better shape than these
+were, but they are still ~190 words with no subheading and they are the larger half. Failing that,
+the `pull_request` CI workflow is still unwritten and still protects both waiting PRs. If PR #1
+has merged, the next question page is "best GPU for local LLMs" instead of either.
+
+### 2026-09-16 — the calculator's own head
+
+PR #1 is still open, still a draft and still unreviewed, so the standing rule holds: no second new
+page while it waits. This run took what the last entry said to continue, which is the two backlog
+items that live in one file's head and overlap nothing on that branch. Commit `e92a086`, pushed to
+`seo/home-head`, opened as [PR #2](https://github.com/rlindsey2/sunkcost/pull/2). Nothing went to
+main this run except this log.
+
+**The fonts.** The generated pages have served their own since this morning. The calculator still
+opened with two preconnects and a render-blocking stylesheet on `fonts.googleapis.com`: two origins
+and three round trips in front of the first word, on the site's most-linked page, whose own HTML and
+CSS were already on the way from a connection that was open. The woff2 files were already in
+`public/fonts/`. `src/fonts.css` now carries the same ten `@font-face` rules `public/page.css`
+declares, `src/styles.css` imports it, and Vite folds it into the bundle at no extra request. The
+same two faces the generated pages preload are preloaded here.
+
+**The markup.** `index.html` carried no JSON-LD at all. Google reads a site's name from `WebSite`
+markup on the home page specifically, so `/leaderboard/`'s copy does not count. The home page now
+emits the same `WebSite` node `pageGraph()` builds, plus a `WebPage` for itself.
+
+Two copies of a thing is how two things drift, so both are held by tests rather than by good
+intentions: one compares the app's `@font-face` block with `page.css`'s rule by rule, the other
+compares the home page's `WebSite` node with the one the build emits for every other page.
+
+**The share pages needed handling, and this is the part worth knowing.** All 1,894 `/s/` pages are
+built from the home page's head, so adding a graph to `index.html` would have given every one of
+them a `WebPage` node claiming the home page's address, name and description. `build-share-pages.ts`
+now strips it, and throws if any page still has one. They also stop requesting Google Fonts, which
+is 1,894 more pages off somebody else's server.
+
+**What the verification found is better than what it was checking.** Chromium against both builds,
+the old one genuinely reaching Google Fonts through this environment's egress proxy. Force a redraw
+once the fonts have arrived and the two pages are pixel for pixel identical: 2,274,560 pixels
+compared, **0 differ**, worst channel delta 0. On *first paint* they differ, and only inside the
+hero panel, and the new one is right. The waterline chart is sized from the measured height of the
+verdict text. The old page measured that in the fallback face while Google's stylesheet was still in
+flight, and nothing redraws it when the real face swaps in, so the chart shipped about 38px short of
+its intended height to every first-time visitor. The new page's first paint already matches its own
+redrawn state. That is live on sunkcost.ai today and the fix is in PR #2.
+
+Also verified: the new page's network log shows no request to any other origin at all, two font
+files, both 200, all four faces loaded; the same 40px string measures 652.2, 661.3 and 678.8 pixels
+at weights 400, 500 and 700 on *both* builds, so one variable file is carrying what Google served as
+four. `npm test` (117 passing, 4 new), `npm run typecheck`, and the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, all clean here. Parsed the graph back out of
+`dist/index.html`; `validator.schema.org` is refused by the egress policy, so it was checked against
+the graph the 188 generated pages already emit instead.
+
+One thing left alone deliberately: `build:single` drops the head, so the standalone artifact has
+never had the Google Fonts link and now has `@font-face` rules pointing at `/fonts/…`, which a file
+opened from disk cannot resolve. It falls back to the system face either way, exactly as it did
+before, so nothing changed for it.
+
+Ryan was pinged once, about PR #2 rather than PR #1: it is a second PR, and it carries a fix for
+something visitors see on the live site today. His list says not to ping about either again.
+
+Nothing visitors see changed on main this run, so there was nothing to check on the live site.
+Deploy run 39, on this log commit, finished green at 19:51 UTC and republished. PR #2 is clean
+against main and has no checks, because nothing triggers on `pull_request`; that backlog item is
+now protecting two PRs rather than one.
+
+**Continue next:** two PRs now wait on Ryan and the rule stands, so take something that goes
+straight to main. The best of it is an index at `/compare/` — except that is a new page type and so
+a PR itself, which would make three. Failing that, the honest answer is that main's own backlog is
+thin: what is left there is the model-count mismatch (Ryan's judgement call), the RTX 3060 label
+(a data edit, out of bounds) and seven long head-to-head titles (probably leave). So the next run
+should either write the `pull_request` CI workflow, which is cheap, is the thing protecting every
+PR in the queue, and is infrastructure rather than a page, or spend the hour on research: WebSearch
+what people actually ask about local LLM hardware cost, and turn it into concrete question-page
+briefs in the backlog so that the moment PR #1 merges the next page is a writing job rather than a
+thinking one.
 
 ### 2026-09-16 — the last page still borrowing a card
 

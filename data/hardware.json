@@ -1156,7 +1156,7 @@
   {
     "id": "geforce-rtx-3060-12",
     "family": "NVIDIA",
-    "chip": "GeForce RTX 3060 12GB",
+    "chip": "GeForce RTX 3060",
     "chip_variant": "Ampere · 12 GB GDDR6",
     "unified_memory_gb": 12,
     "memory_bandwidth_gbs": 360,

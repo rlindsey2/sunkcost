@@ -168,6 +168,18 @@ a:hover { color: var(--ink); }
 .c-tier, .c-gb, .c-hw { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
 .compare td { font-size: 14px; }
 
+/* A table too wide for the window fades at the edge people have not reached
+   yet, so nobody takes the visible half for the whole table. The timeline
+   only runs while the table really does scroll, so a table that fits keeps
+   its square edges. */
+@supports (animation-timeline: scroll()) {
+  .board { animation: board-edge linear both; animation-timeline: scroll(self inline); }
+  @keyframes board-edge {
+    0%, 90% { mask-image: linear-gradient(to right, #000 calc(100% - 34px), transparent 100%); }
+    100% { mask-image: linear-gradient(to right, #000 100%, transparent 100%); }
+  }
+}
+
 .scale { display: inline-grid; grid-template-columns: repeat(4, 14px); gap: 2px; vertical-align: middle; margin-right: 5px; }
 .scale i { height: 5px; border-radius: 2px; background: var(--line-2); }
 .scale i.on { background: var(--w-2); }
@@ -194,4 +206,22 @@ a:hover { color: var(--ink); }
   .answer-k { flex-basis: 100%; }
   .specs { grid-template-columns: 1fr; gap: 2px; }
   .specs dd { margin-bottom: 10px; }
+
+  /* Long machine and model names hold one line on a wide screen, which is
+     right there and wrong here: on a phone it pushed the speed and the
+     pay-back, the two figures people came for, past the right edge. */
+  .board thead th, .c-tier, .c-gb, .c-hw { white-space: normal; }
+  .board thead th, .board td, .board tbody th { padding: 8px 7px; }
+  .c-model { min-width: 118px; }
+
+  /* A head-to-head is two columns read against each other, so both have to be
+     on the screen at once. Here the table drops its sideways scroll, splits the
+     width three ways and wraps, instead of holding each name on one line and
+     pushing the second machine out of sight. */
+  .board.compare { display: table; table-layout: fixed; overflow-x: visible; white-space: normal; }
+  .board.compare thead th, .board.compare tbody th { white-space: normal; }
+  .board.compare thead th, .board.compare td { overflow-wrap: anywhere; }
+  .board.compare tbody th { padding-left: 0; }
+  .board.compare thead th:first-child { width: 34%; }
+  .board.compare .c-quant { display: block; margin-left: 0; white-space: normal; }
 }
