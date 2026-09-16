@@ -259,13 +259,21 @@ says "up to date with origin/main" *before* fetching, so it looks fine. `npm tes
 passing instead of 113, or `seo/LOG.md` being 2 KB instead of 40 KB, is that and nothing worse.
 Fetch and fast-forward before reading anything.
 
-**Deploy.** Run 41, on the log commit, with both commits in one push, so there is one run on the
-tip and nothing was cancelled. `npm ci` and `npm test` passed on the runner; `npm run build` was
-still reported in progress thirteen minutes in when this run ended. That is most likely the API
-staleness the canonical run recorded (it reported `in_progress` for a quarter of an hour after the
-job had finished) rather than a slow build, but it was not confirmed green from here, so **the
-next run should check run 41 first** and say so in its entry. Everything in it passed locally,
-including the same full `npm run build`.
+**Deploy, and this needs checking next run.** The code commit and the log went up in one push as
+run 41, which is the right way round; the card note below then went up separately as run 42, so
+that habit was broken this time and run 41 may have been superseded. Neither could be confirmed
+from here. On run 41 `npm ci` and `npm test` passed on the runner and `npm run build` was still
+reported in progress thirteen minutes later; run 42 sat `pending` for twelve minutes without
+starting, with both runs' `updated_at` frozen at the minute they were created. The canonical run
+recorded the same thing (`in_progress` for a quarter of an hour after the job had finished), so
+this is most likely the API going stale rather than anything wrong, but it is not evidence of
+green. **The first thing the next run should do is confirm runs 41 and 42 and record the result**,
+and if neither published, re-run the workflow by hand. Everything in the commit passed locally,
+including the same full `npm run build` with `build:og`, `build:share` and `build:functions`, and
+`npm test` passed on the runner itself, so the risk is in the publish rather than in the code.
+
+A habit worth keeping, which this run broke: put the code commit and the log commit in **one**
+push. A second push a minute later makes a second run that supersedes the first.
 
 Also found while checking the cards, not fixed this run because it is a second change: the
 head-to-head OG cards print the same bare price these pages did. It is a backlog item above with
