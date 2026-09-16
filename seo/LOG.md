@@ -136,6 +136,11 @@ orphan guard was checked by breaking it on purpose: a build with the new section
 and names the pages. Read the rendered machine pages for an NVIDIA card, a Mac mini and the
 DGX Spark: the table reads as a buying comparison, and no maintainer language reached the copy.
 
+Deploy run 21 finished green at 11:49 UTC, so this is live. Both commits went up in one push, so
+GitHub made a single run on the tip and there was no cancelled run this time — worth doing that
+way round, since the previous two runs each cancelled their own code-commit run by pushing the
+log a minute later.
+
 Pre-existing, not touched: `/hardware/geforce-rtx-3060-12/` renders its name as "NVIDIA GeForce
 RTX 3060 12GB, 12GB" because the chip field in the data carries the memory size. That is a
 `data/hardware.json` figure, which is out of bounds, so it is a backlog item rather than an edit.
