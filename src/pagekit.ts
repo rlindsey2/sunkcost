@@ -282,10 +282,19 @@ export interface Runner {
   fits: boolean;
 }
 
+/**
+ * The machines every "cheapest machine that runs it" on the site is chosen
+ * from: the ones with a published price that are still sold. A discontinued
+ * machine is not an answer to what to buy, and one with no price cannot be
+ * weighed against an API bill.
+ */
+export function machinesConsidered(data: Dataset): Hardware[] {
+  return data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
+}
+
 export function runnersFor(m: Model, data: Dataset, opts: { ctx?: number } = {}): Runner[] {
   const ctx = opts.ctx ?? data.defaults.context.default_tokens;
-  return data.hardware
-    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+  return machinesConsidered(data)
     .map((hw) => {
       const view = computeView({ ...defaultState(data), hw: hw.id, model: m.id, ctx }, data);
       return { hw, view, fits: view.model?.id === m.id };
@@ -457,7 +466,7 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
         : '';
     out.push(gap === 0
       ? `They cost the same${caveat}.`
-      : `The ${a.price_usd < b.price_usd ? la : lb} costs ${fmtUsd(gap)} less${caveat}.`);
+      : `The ${a.price_usd < b.price_usd ? la : lb} costs ${fmtUsd(gap, { cents: false })} less${caveat}.`);
   }
 
   const shared = strongestShared(va, vb);
@@ -492,6 +501,171 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
       out.push(`Both pay for themselves in ${fmtDuration(da)} at ${usage} tokens a day${onEachOwn}.`);
     } else {
       out.push(`The ${da < db ? la : lb} pays for itself sooner, in ${fmtDuration(Math.min(da, db))} against ${fmtDuration(Math.max(da, db))} at ${usage} tokens a day${onEachOwn}.`);
+    }
+  }
+
+  return out.join(' ');
+}
+
+/* --------------------- model head-to-heads --------------------- */
+
+/**
+ * Two models are compared by people deciding which to run, and running one
+ * costs what the machine for it costs. The specification table answers which
+ * is cleverer; these builders answer what each one takes to run, where the two
+ * meet on the same hardware, and which of them gets more out of it.
+ */
+
+/** This model's row in a view built around it. */
+export function rowFor(view: View, m: Model): ModelRow | undefined {
+  return view.rows.find((r) => r.model.id === m.id);
+}
+
+export interface SharedMachine {
+  hw: Hardware;
+  a: Runner;
+  b: Runner;
+  rowA: ModelRow;
+  rowB: ModelRow;
+}
+
+/**
+ * The cheapest machine on the list that runs both, with each model's row on it.
+ * The main table gives each model the cheapest machine that runs *it*, and
+ * those are usually two different machines, so nothing in it is a race. This is.
+ */
+export function cheapestRunsBoth(a: Model, b: Model, ra: Runner[], rb: Runner[]): SharedMachine | null {
+  const inB = new Map(rb.map((r) => [r.hw.id, r]));
+  // ra is cheapest first, so the first machine that runs both is the cheapest that does
+  for (const r of ra) {
+    const other = inB.get(r.hw.id);
+    if (!other) continue;
+    const rowA = rowFor(r.view, a);
+    const rowB = rowFor(other.view, b);
+    if (rowA && rowB) return { hw: r.hw, a: r, b: other, rowA, rowB };
+  }
+  return null;
+}
+
+/** The machines that run the first model and not the second, cheapest first. */
+export function runsOnlyThere(ra: Runner[], rb: Runner[]): Runner[] {
+  const inB = new Set(rb.map((r) => r.hw.id));
+  return ra.filter((r) => !inB.has(r.hw.id));
+}
+
+/** Named prices where one of them is a graphics card without the PC around it. */
+function cardPriceNote(hardware: Hardware[]): string {
+  const cards = [...new Map(hardware.filter((h) => h.price_scope === 'card_only').map((h) => [h.id, h])).values()];
+  if (!cards.length) return '';
+  if (cards.length === 1) return ` The ${shortHardwareLabel(cards[0])} is priced as the card alone, without the PC around it.`;
+  return ' Both are priced as the card alone, without the PC around either.';
+}
+
+/**
+ * The answer, in the first paragraph: which model is ahead, what machine each
+ * one needs and what that costs, which is quicker where they meet, and whether
+ * that machine ever pays for itself. Every figure is one the page itself shows,
+ * and anything worked out from two speeds uses the rounded figures the page
+ * prints, so a reader dividing one by the other gets the third.
+ */
+export function modelVerdict(
+  a: Model,
+  b: Model,
+  ra: Runner[],
+  rb: Runner[],
+  shared: SharedMachine | null,
+  data: Dataset,
+): string {
+  const out: string[] = [];
+  const sa = a.frontier_equivalent?.score ?? null;
+  const sb = b.frontier_equivalent?.score ?? null;
+  const ctxK = Math.round(data.defaults.context.default_tokens / 1024);
+
+  if (sa != null && sb != null) {
+    out.push(
+      sa === sb
+        ? `${a.display_name} and ${b.display_name} both score ${sa} on the intelligence index.`
+        : `${sa > sb ? a.display_name : b.display_name} scores higher on the intelligence index, ${Math.max(sa, sb)} against ${Math.min(sa, sb)}.`,
+    );
+  } else if (sa != null || sb != null) {
+    const [placed, score, other] = sa != null ? [a.display_name, sa, b.display_name] : [b.display_name, sb!, a.display_name];
+    out.push(`${placed} scores ${score} on the intelligence index, and ${other} has not been placed on it.`);
+  } else {
+    out.push('Neither model has been placed on the intelligence index.');
+  }
+
+  const ca = ra[0];
+  const cb = rb[0];
+  if (ca && cb) {
+    const la = shortHardwareLabel(ca.hw);
+    const lb = shortHardwareLabel(cb.hw);
+    const pa = ca.hw.price_usd!;
+    const pb = cb.hw.price_usd!;
+    if (ca.hw.id === cb.hw.id) {
+      out.push(`Both take the same machine to start: the cheapest here that runs either is the ${la}, at ${fmtUsd(pa)}.${cardPriceNote([ca.hw])}`);
+    } else if (pa === pb) {
+      out.push(`Both start at ${fmtUsd(pa)}: the ${la} for ${a.display_name}, the ${lb} for ${b.display_name}.${cardPriceNote([ca.hw, cb.hw])}`);
+    } else {
+      const dear = pa > pb ? { name: a.display_name, l: la, p: pa } : { name: b.display_name, l: lb, p: pb };
+      const cheap = pa > pb ? { name: b.display_name, l: lb, p: pb } : { name: a.display_name, l: la, p: pa };
+      out.push(
+        `The cheapest machine here that runs ${dear.name} is the ${dear.l}, at ${fmtUsd(dear.p)}. ${cheap.name} runs on the ${cheap.l} at ${fmtUsd(cheap.p)}, ${fmtUsd(dear.p - cheap.p, { cents: false })} less.${cardPriceNote([ca.hw, cb.hw])}`,
+      );
+    }
+  } else if (ca || cb) {
+    const runner = (ca ?? cb)!;
+    const [runs, missing] = ca ? [a.display_name, b.display_name] : [b.display_name, a.display_name];
+    out.push(
+      `No machine on this list runs ${missing} at ${ctxK}k of context. ${runs} runs on the ${shortHardwareLabel(runner.hw)}, from ${fmtUsd(runner.hw.price_usd)}.${cardPriceNote([runner.hw])}`,
+    );
+  } else {
+    out.push(`No machine on this list runs either model at ${ctxK}k of context.`);
+  }
+
+  const sameStart = !!ca && !!cb && ca.hw.id === cb.hw.id;
+  const ta = shownTps(shared?.rowA);
+  const tb = shownTps(shared?.rowB);
+  const label = shared ? shortHardwareLabel(shared.hw) : '';
+  if (shared && ta != null && tb != null && ta > 0 && tb > 0) {
+    const hi = Math.max(ta, tb);
+    const lo = Math.min(ta, tb);
+    const num = (t: number) => fmtNum(t, t < 10 ? 1 : 0);
+    const clause = basisClause(shared.rowA, shared.rowB, a.display_name, b.display_name);
+    const where = sameStart ? 'On it,' : `On the ${label}, the cheapest machine here that runs both,`;
+    out.push(
+      hi / lo < 1.05
+        ? `${where} they run at much the same speed: ${num(ta)} and ${num(tb)} tok/s${clause}.`
+        : `${where} ${ta > tb ? a.display_name : b.display_name} is about ${fmtNum(hi / lo, 1)}× quicker: ${num(hi)} tok/s against ${num(lo)}${clause}.`,
+    );
+  }
+
+  const usage = fmtTokens(defaultState(data).usage);
+  if (shared && shared.a.view.calc && shared.b.view.calc) {
+    const da = shared.a.view.calc.breakevenDays;
+    const db = shared.b.view.calc.breakevenDays;
+    if (da === null && db === null) {
+      out.push(`At ${usage} tokens a day the ${label} never pays for itself on either.`);
+    } else if (da === null || db === null) {
+      const [payer, days, never] = da === null ? [b.display_name, db!, a.display_name] : [a.display_name, da!, b.display_name];
+      out.push(`At ${usage} tokens a day the ${label} pays for itself in ${fmtDuration(days)} running ${payer}, and never running ${never}.`);
+    } else if (fmtDuration(da) === fmtDuration(db)) {
+      out.push(`At ${usage} tokens a day the ${label} pays for itself in ${fmtDuration(da)} running either.`);
+    } else {
+      const [sooner, later] = da < db ? [a.display_name, b.display_name] : [b.display_name, a.display_name];
+      out.push(
+        `At ${usage} tokens a day the ${label} pays for itself in ${fmtDuration(Math.min(da, db))} running ${sooner}, against ${fmtDuration(Math.max(da, db))} running ${later}.`,
+      );
+    }
+  } else if (!shared && (ca || cb)) {
+    const runner = (ca ?? cb)!;
+    const name = ca ? a.display_name : b.display_name;
+    const days = runner.view.calc?.breakevenDays;
+    if (runner.view.calc) {
+      out.push(
+        days === null
+          ? `At ${usage} tokens a day that machine never pays for itself running ${name}.`
+          : `At ${usage} tokens a day that machine pays for itself in ${fmtDuration(days!)} running ${name}.`,
+      );
     }
   }
 

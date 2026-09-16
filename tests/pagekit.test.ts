@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, computeView, familyHeading, familyRange, fitsOf, fmtUsd, hardwareProduct, jsonLd, machineVerdict,
-  otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, runsOnlyOn, shownTps, speedWithBasis,
+  brandOf, calcLink, cheapestRunsBoth, computeView, familyHeading, familyRange, fitsOf, fmtDuration, fmtNum, fmtUsd,
+  hardwareProduct, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
+  priceRivals, priceWithScope, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
   strongestShared, FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
+import { modelPairs } from '../src/versus-card';
 import { defaultState } from '../src/state';
 import { sharePath } from '../src/share';
 import type { Dataset, Hardware } from '../src/types';
@@ -342,5 +344,131 @@ describe('machine head-to-heads', () => {
     expect(verdict).toContain(`costs ${fmtUsd(Math.abs(a.price_usd! - b.price_usd!))} less`);
     // a bare card beside a whole computer is not a like-for-like price, and has to say so
     expect(verdict).toContain('priced as the card alone');
+  });
+});
+
+describe('model head-to-heads', () => {
+  const model = (id: string) => data.models.find((m) => m.id === id)!;
+  const runners = (id: string) => runnersFor(model(id), data);
+  // one pair whose two models start on different machines, one pair that starts on the
+  // same machine, one where the cheaper start is a bare graphics card, and one where
+  // nothing on the list runs one of the two
+  const apart = ['gpt-oss-120b-mxfp4', 'ling-3.0-tiny-q4'] as const;
+  const together = ['qwen3-30b-a3b-2507-q4', 'qwen3-coder-30b-a3b-q4'] as const;
+  const card = ['granite-4.2-30b-q4', 'glm-4.7-flash-q4'] as const;
+  const unrunnable = ['hunyuan-hy3-q4', 'ling-3.0-flash-q4'] as const;
+  const verdictFor = ([ida, idb]: readonly [string, string]) => {
+    const [a, b] = [model(ida), model(idb)];
+    const [ra, rb] = [runners(ida), runners(idb)];
+    return modelVerdict(a, b, ra, rb, cheapestRunsBoth(a, b, ra, rb), data);
+  };
+  // the guarantees below hold for every pair the site builds a page for, not for a
+  // chosen few: a rule kept on three pages is not a rule
+  const every = modelPairs(data).map(([a, b]) => {
+    const [ra, rb] = [runnersFor(a, data), runnersFor(b, data)];
+    const shared = cheapestRunsBoth(a, b, ra, rb);
+    return { a, b, ra, rb, shared, verdict: modelVerdict(a, b, ra, rb, shared, data) };
+  });
+
+  it('considers only machines that are still sold and have a price', () => {
+    for (const hw of machinesConsidered(data)) {
+      expect(hw.price_usd).not.toBeNull();
+      expect(hw.generation ?? 'current').toBe('current');
+    }
+    expect(machinesConsidered(data).length).toBeLessThan(data.hardware.length);
+  });
+
+  it('finds the cheapest machine that runs both, not the cheapest that runs either', () => {
+    const [a, b] = apart.map(model);
+    const [ra, rb] = apart.map(runners);
+    const shared = cheapestRunsBoth(a, b, ra, rb)!;
+    expect(shared).not.toBeNull();
+    // it runs both, and every machine cheaper than it fails one of them
+    expect(shared.rowA.fit.status).toBe('fits');
+    expect(shared.rowB.fit.status).toBe('fits');
+    const runsBoth = new Set(rb.map((r) => r.hw.id));
+    for (const r of ra) {
+      if (r.hw.id === shared.hw.id) break;
+      expect(runsBoth.has(r.hw.id)).toBe(false);
+    }
+    expect(shared.hw.price_usd).toBeGreaterThanOrEqual(ra[0].hw.price_usd!);
+  });
+
+  it('lists only machines that run the one model and not the other', () => {
+    const [ra, rb] = apart.map(runners);
+    const inA = new Set(ra.map((r) => r.hw.id));
+    const only = runsOnlyThere(rb, ra);
+    for (const r of only) expect(inA.has(r.hw.id)).toBe(false);
+    expect(only.length).toBe(rb.length - ra.filter((r) => rb.some((x) => x.hw.id === r.hw.id)).length);
+  });
+
+  it('works every speed ratio out of the figures it prints, so each page divides out', () => {
+    let checked = 0;
+    for (const { shared, verdict } of every) {
+      const m = verdict.match(/about ([\d.]+)× quicker: ([\d.]+) tok\/s against ([\d.]+)/);
+      if (!m) continue;
+      checked++;
+      const [hi, lo] = [Number(m[2]), Number(m[3])];
+      // the ratio is the two printed figures divided, rounded the way the site rounds,
+      // and nothing else: a reader dividing one figure on the page by the other gets it
+      expect(m[1]).toBe(fmtNum(hi / lo, 1));
+      expect(hi).toBe(Math.max(shownTps(shared!.rowA)!, shownTps(shared!.rowB)!));
+      expect(lo).toBe(Math.min(shownTps(shared!.rowA)!, shownTps(shared!.rowB)!));
+    }
+    expect(checked).toBeGreaterThan(30);
+  });
+
+  it('calls two speeds the same only where the printed figures are within a twentieth', () => {
+    for (const { shared, verdict } of every) {
+      if (!shared) continue;
+      const [ta, tb] = [shownTps(shared.rowA)!, shownTps(shared.rowB)!];
+      expect(verdict.includes('much the same speed')).toBe(Math.max(ta, tb) / Math.min(ta, tb) < 1.05);
+    }
+  });
+
+  it('never names a machine that does not run both, and never leaves a figure blank', () => {
+    for (const { a, b, ra, rb, shared, verdict } of every) {
+      if (shared) {
+        expect(ra.some((r) => r.hw.id === shared.hw.id)).toBe(true);
+        expect(rb.some((r) => r.hw.id === shared.hw.id)).toBe(true);
+        expect(verdict).toContain(shortHardwareLabel(shared.hw));
+      } else {
+        expect(verdict).toContain('No machine on this list runs');
+      }
+      expect(verdict).not.toMatch(/undefined|NaN|—|\$[\d,]+\.\d\d less/);
+      expect(verdict).toContain(a.display_name);
+      expect(verdict).toContain(b.display_name);
+    }
+  });
+
+  it('names the cheaper start, the real gap in whole dollars, and a card-only price', () => {
+    const verdict = verdictFor(card);
+    const [pa, pb] = card.map((id) => runners(id)[0].hw.price_usd!);
+    expect(verdict).toContain(`${fmtUsd(Math.abs(pa - pb), { cents: false })} less`);
+    expect(verdict).not.toMatch(/\$[\d,]+\.\d\d less/);
+    // a bare graphics card is not a machine you can switch on, and the price says so
+    expect(verdict).toContain('priced as the card alone');
+  });
+
+  it('pays back on the machine both models share, not on each one\'s own', () => {
+    const [a, b] = apart.map(model);
+    const [ra, rb] = apart.map(runners);
+    const shared = cheapestRunsBoth(a, b, ra, rb)!;
+    const verdict = modelVerdict(a, b, ra, rb, shared, data);
+    expect(verdict).toContain(`the ${shortHardwareLabel(shared.hw)} pays for itself in`);
+    for (const side of [shared.a, shared.b]) {
+      const days = side.view.calc!.breakevenDays;
+      if (days !== null) expect(verdict).toContain(fmtDuration(days));
+    }
+    // the machine each model starts on is cheaper than the one they share, and that
+    // figure is a different one, so it must not be the one the pay-back sentence uses
+    expect(ra[0].hw.id === rb[0].hw.id).toBe(false);
+  });
+
+  it('claims no machine where none runs one of the models', () => {
+    const verdict = verdictFor(unrunnable);
+    expect(runners(unrunnable[0]).length).toBe(0);
+    expect(verdict).toContain(`No machine on this list runs ${model(unrunnable[0]).display_name}`);
+    expect(verdict).toContain(`${model(unrunnable[1]).display_name} runs on the`);
   });
 });
