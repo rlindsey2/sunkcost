@@ -111,6 +111,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the same thing in different words is the duplicate this site should not create). Each
       answers in the first paragraph with the site's own numbers, links into the calculator with
       the configuration prefilled, and cites sources.
+- [ ] The 47 model head-to-heads are the thin half that is left. The 28 machine ones were
+      rewritten on 2026-09-16 (see the top run entry); the model ones were deliberately left
+      alone that run and are still ~190 words with no subheading, though they do at least compute
+      their own lede rather than sharing one. What they lack is the same thing: a section that
+      says what the difference between two models actually buys, in the site's own numbers.
+      `runnersFor` already gives the machines each one needs, and the price gap between the
+      cheapest machine that runs each is the buying decision nothing on the site states.
+
 - [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
       are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
       queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
@@ -165,6 +173,91 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the 28 head-to-heads say which machine wins
+
+Two PRs now wait on Ryan and the rule holds, so this run took something that goes straight to
+main. The last entry offered the `pull_request` CI workflow or a research hour. It turned out
+there was something better, found by measuring the page set rather than reading the backlog:
+**the 75 comparison pages are the thin half of this site.** Median 191 words against 453 on model
+pages and 709 on machine pages, no `<h2>` on any of them, and 11 internal links. That is 40% of
+the site's pages. Commit `3cbcbe3`, pushed to main.
+
+Looking at why they were thin turned up three figures that were worse than thin. A head-to-head is
+read as a buying decision, so every number on one has to survive being set beside its opposite:
+
+- **All 56 speeds on the 28 machine pages were estimated from memory bandwidth, and this was the
+  one place on the site that printed one without saying so.** The leaderboard labels it, the model
+  pages label it, the OG cards leave speed off entirely for exactly this reason (see the cards
+  run below). These pages did not.
+- **On 12 of the 28 pairs the two speed cells were for different models.** Each column took the
+  strongest model its own machine could hold, so under a row headed "Speed on that model" the
+  $1,699 Mac mini M5 Pro read 29 tok/s against the $5,099 Mac Studio's 25. The mini was running
+  Gemma 4 12B and the Studio Qwen3.8 27B. Side by side under one row label that is a speed
+  comparison, and it was not one.
+- **A graphics card priced without the PC around it sat next to a complete computer's price on 13
+  pages.** `/best/`, the leaderboard and the machine pages all say "card only"; this table said
+  `$18,000` next to `$1,499` and left the reader to it.
+
+What the pages do now. The shared lede ("Two machines people weigh against each other…", the same
+sentence on all 28) is gone, and each page opens with the answer: what each machine holds, what it
+costs, which is quicker on a model they both run, and whether either ever pays for itself. Then
+either a side-by-side section on the strongest model both hold — the race the main table cannot
+give when the two columns are running different models — or nothing, where the columns already
+match. Then what the extra memory actually buys, named model by model with weights, what each
+needs at 32k and how fast it runs, or a line saying memory is not what separates these two.
+
+**The pay-back it now shows is the unflattering kind this site is for.** On the MacBook Air against
+the RTX PRO 6000, the card is 13× faster on the model both hold, and on that model it pays back in
+1,343 years against the Air's 118, because $18,000 of card saves no more per day than $1,499 of
+laptop does. The old page showed one pay-back figure each, on different models, and said nothing.
+
+One rule worth keeping: anything the prose says about two speeds is worked out from the **rounded
+figures the page prints**, not from the precision behind them. The first build said "about 7.6×
+faster: 78 tok/s against 10", and 78 ÷ 10 is 7.8. A reader dividing one figure on the page by
+another now gets the third.
+
+**Verified against the previous build, page by page.** Built the whole set twice, once from a
+worktree at `origin/main` and once with the change, and compared all 188 pages: **28 differ and
+160 are byte-identical**, the 28 being exactly the machine head-to-heads. The 47 model
+head-to-heads, all 55 model pages, all 56 machine pages, `/leaderboard/`, `/best/` and
+`sitemap.xml` are untouched. On the 28 that changed, the `<head>` is **byte-identical on all 28**,
+so every title, description, canonical and card address is what it was and nothing needs
+re-indexing. Median words in `<main>` 153 → 454, internal links 11 → 21, minimum 0 `<h2>` → 2.
+
+Then checked the claims against the tables they sit with, by parsing the built pages: 132 prose
+claims cross-checked on 28 pages, and every one matches the row beside it — the model counts
+against "Models that fit", the price gap against the Price row, the speed figures and the ratio
+against the row they describe, the pay-back durations against the pay-back row, and "holds N
+models the other cannot" against the difference in the counts. No speed anywhere without its
+basis, no `undefined`, no `NaN`, no maintainer language, no internal link out of canonical form,
+every table and heading balanced. Read three finished pages end to end as text: a Mac pair, a Mac
+against a card, and a Strix Halo box against a card.
+
+Also `npm test` (121 passing, 8 new), `npm run typecheck`, and the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, all clean here. The three guarantees that matter
+are held by tests rather than by good intentions, and each was proved by breaking it on purpose
+and watching its own test fail by name: a speed printed without its basis, a ratio worked out from
+precision the page does not show, and the "each on its own strongest model" caveat appearing on a
+page where both columns run the same model.
+
+One thing found and fixed mid-run rather than shipped: the first draft put that caveat on every
+page, including the 16 where both columns run the same model, where it is simply false. The
+cross-check above is what caught it.
+
+**Worth knowing for the next run that starts here.** The container's local `main` was stale at
+`94aa957`, the seed commit, while `origin/main` had all fourteen SEO commits. `git checkout main`
+says "up to date with origin/main" *before* fetching, so it looks fine. `npm test` reporting 61
+passing instead of 113, or `seo/LOG.md` being 2 KB instead of 40 KB, is that and nothing worse.
+Fetch and fast-forward before reading anything.
+
+Nothing else on main changed this run.
+
+**Continue next:** the same treatment for the 47 model head-to-heads is the obvious follow-on and
+is now a backlog item — they already compute a real lede, so they are in better shape than these
+were, but they are still ~190 words with no subheading and they are the larger half. Failing that,
+the `pull_request` CI workflow is still unwritten and still protects both waiting PRs. If PR #1
+has merged, the next question page is "best GPU for local LLMs" instead of either.
 
 ### 2026-09-16 — the calculator's own head
 
