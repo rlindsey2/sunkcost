@@ -231,6 +231,10 @@ PR, against the previous entry's "do not notify again", and the reason for overr
 the draft status is new information and a ten-second fix, not a repeat of "please review". Ryan's
 list above now says no third ping.
 
+Nothing visitors see changed on main this run, so there was nothing to check on the live site.
+Deploy run 35, on this log commit, finished green at 17:45 UTC and republished. The PR branch does
+not deploy and cannot: see the CI note above.
+
 **Continue next:** the branch is mergeable and every check this environment can run is green on
 it. The remaining work on the PR itself is the Open Graph card for `/how-much-memory/`, which
 still points at `/og/default.png`; the backlog entry says what it should show and
