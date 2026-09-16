@@ -200,7 +200,11 @@ full `npm run build` including `build:og` (1,894 + 75 cards) and `build:function
 Cards average 54 KB, 4.2 MB for the 75, all gitignored and drawn on each deploy. The whole
 `build:og` step is about 3.5 minutes, which is most of any deploy.
 
-**Continue next:** watch the deploy, then `/leaderboard/` and `/best/` are the last two pages on
+Deploy run 30 finished green at 15:58 UTC and published, so the 75 cards are live. Both commits
+went up in one push, so there was one run on the tip and nothing was cancelled. The build step
+took 4m33s on the runner, up from about 3m: 75 more cards to draw.
+
+**Continue next:** `/leaderboard/` and `/best/` are the last two pages on
 main still using the default card — see the backlog item, which now says what each one would show.
 PR #1 still needs Ryan, and the rule stands: while it is open, no second new page. If it has
 merged by the next run, the next question page is "best GPU for local LLMs": filter the machine
