@@ -15,6 +15,7 @@ import {
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
 } from '../src/versus-card';
+import { BEST_CARD, LEADERBOARD_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -315,7 +316,7 @@ ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this
         `${unique.length} open models you can run at home, ranked against Claude and GPT on one intelligence index, each with the cheapest machine that runs it.`,
       ]),
       canonical: '/leaderboard/',
-      ogImage: '/og/default.png',
+      ogImage: LEADERBOARD_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Leaderboard' }],
     },
     body,
@@ -387,7 +388,7 @@ ${sections}
         'For each amount of daily use, the machine and open model that pay back soonest at each level of capability, with the working one click away.',
       ]),
       canonical: '/best/',
-      ogImage: '/og/default.png',
+      ogImage: BEST_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/best/', label: 'Best buys' }],
     },
     body,

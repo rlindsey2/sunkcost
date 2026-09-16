@@ -13,6 +13,7 @@ import { OG_WIDTH, OG_HEIGHT } from '../src/og';
 import {
   hardwareComparePath, hardwarePairs, hardwareVersusCard, modelComparePath, modelPairs, modelVersusCard, versusCardPath,
 } from '../src/versus-card';
+import { BEST_CARD, bestBuysCard, LEADERBOARD_CARD, leaderboardCard } from '../src/list-card';
 import type { Dataset } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -90,6 +91,14 @@ const versus = (page: string, svg: string) => {
 for (const [a, b] of hardwarePairs(data)) versus(hardwareComparePath(a, b), hardwareVersusCard(a, b, data, FONT));
 for (const [a, b] of modelPairs(data)) versus(modelComparePath(a, b), modelVersusCard(a, b, data, FONT));
 
+// the two ranked pages get a card of their own top rows, for the same reason: a
+// link to the leaderboard should preview as the leaderboard.
+const list: [string, string][] = [
+  [LEADERBOARD_CARD, leaderboardCard(data, FONT)],
+  [BEST_CARD, bestBuysCard(data, FONT)],
+];
+for (const [path, svg] of list) writeFileSync(new URL(path.replace('/og/', ''), outDir), toPng(svg));
+
 // default card: the default state
 const ds = defaultState(data);
 const dv = computeView(ds, data);
@@ -100,4 +109,4 @@ writeFileSync(new URL('manifest.json', outDir), JSON.stringify(manifest, null, 2
 const genDir = new URL('../.generated/', import.meta.url);
 mkdirSync(genDir, { recursive: true });
 writeFileSync(new URL('share-manifest.json', genDir), JSON.stringify(shareManifest));
-console.log(`wrote ${n} OG cards + ${vs} head-to-head cards${def ? ' + default.png' : ''} to public/og/ (${OG_WIDTH}×${OG_HEIGHT})`);
+console.log(`wrote ${n} OG cards + ${vs} head-to-head cards + ${list.length} list cards${def ? ' + default.png' : ''} to public/og/ (${OG_WIDTH}×${OG_HEIGHT})`);

@@ -21,9 +21,9 @@ export const VS_HEIGHT = 630;
  * 0.6 em per character. Deliberately pessimistic, because a name that runs off
  * the edge of the card is worse than one that breaks a line early.
  */
-const EM = 0.58;
+export const EM = 0.58;
 /** Bold and medium faces set wider, and a name that runs off the card is worse than one that breaks early. */
-const EM_BOLD = 0.66;
+export const EM_BOLD = 0.66;
 
 export function fitsIn(s: string, size: number, maxPx: number, em = EM): boolean {
   return s.length * size * em <= maxPx;
@@ -96,10 +96,15 @@ export interface VersusCardInput {
   fontFamily?: string;
 }
 
-const INK = '#0e1720';
-const DIM = '#4f5e68';
-const DEEP = '#05121e';
-const HAIR = '#e2e7e9';
+/** One palette for every card the build draws, so a leaderboard card and a head-to-head match. */
+export const INK = '#0e1720';
+export const DIM = '#4f5e68';
+export const DEEP = '#05121e';
+export const HAIR = '#e2e7e9';
+/** the band's own text, and the fill for a bar that stands for something you cannot download */
+export const STEEL = '#9fb3c2';
+/** the water in the site's own chart, and the fill for a bar that stands for an open model */
+export const WATER = '#1f5479';
 
 /** A run of lines centred on `centerY`, so a two-line value sits level with a one-line label. */
 function lines(xs: string[], x: number, centerY: number, size: number, attrs: string): string {
@@ -150,14 +155,14 @@ ${value(xB, r.b)}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${VS_WIDTH}" height="${VS_HEIGHT}" viewBox="0 0 ${VS_WIDTH} ${VS_HEIGHT}" font-family='${font}'>
 <rect width="${VS_WIDTH}" height="${VS_HEIGHT}" fill="#f2f4f3"/>
 <rect width="${VS_WIDTH}" height="${bandH}" fill="${DEEP}"/>
-<text x="56" y="62" font-size="22" font-weight="600" fill="#9fb3c2" letter-spacing="3">${esc(i.eyebrow.toUpperCase())}</text>
-<text x="${VS_WIDTH - 56}" y="62" font-size="22" text-anchor="end" fill="#9fb3c2">sunkcost.ai</text>
+<text x="56" y="62" font-size="22" font-weight="600" fill="${STEEL}" letter-spacing="3">${esc(i.eyebrow.toUpperCase())}</text>
+<text x="${VS_WIDTH - 56}" y="62" font-size="22" text-anchor="end" fill="${STEEL}">sunkcost.ai</text>
 <rect x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" rx="20" fill="#ffffff"/>
 <line x1="${xB - 36}" y1="${panel.y + 24}" x2="${xB - 36}" y2="${panel.y + panel.h - 24}" stroke="${HAIR}" stroke-width="1"/>
 ${head(xA, i.aTitle)}
 ${head(xB, i.bTitle)}
 <circle cx="${xB - 36}" cy="${headTop - 9}" r="21" fill="#ffffff"/>
-<text x="${xB - 36}" y="${headTop}" font-size="23" font-weight="700" text-anchor="middle" fill="#9fb3c2">vs</text>
+<text x="${xB - 36}" y="${headTop}" font-size="23" font-weight="700" text-anchor="middle" fill="${STEEL}">vs</text>
 ${rows}
 <text x="56" y="${VS_HEIGHT - 30}" font-size="19" fill="${DIM}">${esc(clampText(i.note, 19, 800))}</text>
 <text x="${VS_WIDTH - 56}" y="${VS_HEIGHT - 30}" font-size="19" text-anchor="end" fill="${DIM}">Data checked ${esc(i.dataChecked)}</text>
