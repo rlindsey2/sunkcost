@@ -25,6 +25,54 @@ export function slug(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+/**
+ * Search results cut a title at about 60 characters and a description at about
+ * 155, so anything past that is written for nobody. Rather than truncate a
+ * sentence mid-word, every title and description is written as a few complete
+ * variants, richest first, and the first one that fits is used.
+ */
+export const TITLE_MAX = 60;
+export const DESC_MAX = 155;
+
+export function fit(variants: string[], max: number): string {
+  return variants.find((v) => v.length <= max) ?? variants[variants.length - 1];
+}
+
+const BRAND = ' · Sunk Cost';
+
+/**
+ * The fullest title that fits, then the brand on the end if there is still room.
+ * Saying more about the page beats saying the name of the site, which is in the
+ * result as a domain either way.
+ */
+export function titleOf(variants: string[]): string {
+  const core = fit(variants, TITLE_MAX);
+  return core.length + BRAND.length <= TITLE_MAX ? core + BRAND : core;
+}
+
+export function descOf(variants: string[]): string {
+  return fit(variants, DESC_MAX);
+}
+
+/**
+ * A compact machine name for titles and descriptions, where a long one gets cut
+ * before the reader reaches the point. Vendor and platform prefixes are dropped
+ * where the chip already names the product, and kept where the family is the
+ * product. The full name stays on the page itself.
+ */
+const CHIP_NAMES_THE_PRODUCT = new Set(['NVIDIA', 'AMD', 'Strix Halo']);
+
+export function shortHardwareLabel(h: Hardware): string {
+  if (h.family === 'DGX Spark') return `${h.family}, ${h.unified_memory_gb}GB`;
+  if (CHIP_NAMES_THE_PRODUCT.has(h.family)) return `${h.chip}, ${h.unified_memory_gb}GB`;
+  return hardwareLabel(h);
+}
+
+/** "Pays back in two years" as a clause inside a sentence. */
+export function lowerFirst(s: string): string {
+  return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
 export interface PageChrome {
   title: string;
   description: string;

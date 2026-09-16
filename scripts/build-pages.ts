@@ -7,8 +7,9 @@
  */
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  calcLink, cheapestPerFamily, computeView, dotRow, esc, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd,
-  hardwareLabel, modelLabel, pageShell, runnersFor, slug, tierName, tierScale, verdictLine, CAP_SHORT,
+  calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd,
+  hardwareLabel, lowerFirst, modelLabel, pageShell, runnersFor, shortHardwareLabel, slug, tierName, tierScale,
+  titleOf, verdictLine, CAP_SHORT, DESC_MAX, TITLE_MAX,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -24,14 +25,57 @@ const outRoot = new URL('../public/', import.meta.url);
 const site = data.defaults.site_url.replace(/\/$/, '');
 const paths: string[] = [];
 
+const meta: { path: string; title: string; description: string }[] = [];
+const unesc = (s: string) =>
+  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+
 function write(path: string, html: string) {
   const dir = new URL(`.${path}`, outRoot);
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
   paths.push(path);
+  meta.push({
+    path,
+    title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
+    description: unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? ''),
+  });
+}
+
+/**
+ * Two pages sharing a title or a description is a real fault: it tells a search
+ * engine they are the same page. Over-length is a softer one, so it is reported
+ * rather than fatal, since a longer machine or model name can cause it.
+ */
+function checkMeta() {
+  const dupes = (key: 'title' | 'description') =>
+    [...meta.reduce((m, p) => m.set(p[key], [...(m.get(p[key]) ?? []), p.path]), new Map<string, string[]>())]
+      .filter(([, ps]) => ps.length > 1);
+  const problems: string[] = [];
+  for (const key of ['title', 'description'] as const) {
+    for (const [text, ps] of dupes(key))
+      problems.push(`${ps.length} pages share a ${key}: "${text.slice(0, 60)}" (${ps.slice(0, 3).join(', ')}…)`);
+    for (const p of meta.filter((p) => !p[key].trim())) problems.push(`${p.path} has no ${key}`);
+  }
+  if (problems.length) {
+    console.error(problems.map((p) => `  ${p}`).join('\n'));
+    throw new Error(`${problems.length} duplicate or missing page titles/descriptions`);
+  }
+  const longT = meta.filter((p) => p.title.length > TITLE_MAX);
+  const longD = meta.filter((p) => p.description.length > DESC_MAX);
+  for (const [what, list, max] of [['titles', longT, TITLE_MAX], ['descriptions', longD, DESC_MAX]] as const)
+    if (list.length)
+      console.warn(
+        `  note: ${list.length} ${what} over ${max} characters and will be cut in search results, longest ${Math.max(...list.map((p) => p[what === 'titles' ? 'title' : 'description'].length))} (${list[0].path})`,
+      );
 }
 
 const ratingWord: Record<string, string> = { green: 'good', amber: 'usable', red: 'don’t', unknown: 'not rated' };
+
+// Where the same model is listed at two quantisations, the quantisation is the
+// thing that tells the two pages apart, so it goes in the title.
+const sharedNames = new Set(
+  data.models.map((m) => m.display_name).filter((n, i, xs) => xs.indexOf(n) !== i),
+);
 
 /* ------------------------------ leaderboard ------------------------------ */
 
@@ -94,8 +138,11 @@ ${gap != null ? `<p>The short version: the best open model here scores <b>${best
 
   return pageShell(
     {
-      title: 'Every open model against the frontier — Sunk Cost',
-      description: `${unique.length} open models you can run at home, ranked against Claude and GPT on one intelligence index, each with the cheapest machine that runs it.`,
+      title: titleOf(['Open LLM leaderboard: every model you can run at home', 'Open LLM leaderboard']),
+      description: descOf([
+        `${unique.length} open models you can download and run at home, ranked against Claude and GPT on one intelligence index, each with the cheapest machine that runs it.`,
+        `${unique.length} open models you can run at home, ranked against Claude and GPT on one intelligence index, each with the cheapest machine that runs it.`,
+      ]),
       canonical: '/leaderboard/',
       ogImage: '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Leaderboard' }],
@@ -164,8 +211,10 @@ ${sections}
 
   return pageShell(
     {
-      title: 'Best buys for running LLMs at home, by usage — Sunk Cost',
-      description: 'For each amount of daily use, the machine and open model that pay back soonest at each level of capability, with the working one click away.',
+      title: titleOf(['Best hardware for local LLMs, by how much you use it', 'Best hardware for local LLMs']),
+      description: descOf([
+        'For each amount of daily use, the machine and open model that pay back soonest at each level of capability, with the working one click away.',
+      ]),
       canonical: '/best/',
       ogImage: '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/best/', label: 'Best buys' }],
@@ -250,12 +299,37 @@ ${hwRows ? `<h2>Machines that run it</h2>
 </dl>
 </article>`;
 
+  const usage = fmtTokens(defaultState(data).usage);
+  // The pay-back clause is only written where there is a pay-back to state.
+  const lead = cheapest
+    ? `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. The cheapest machine that runs it is ${shortHardwareLabel(cheapest.hw)} at ${fmtUsd(cheapest.hw.price_usd)}`
+    : '';
+  const verdict = cheapest?.view.calc ? lowerFirst(verdictLine(cheapest.view)) : null;
   const desc = cheapest
-    ? `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. The cheapest machine that runs it is ${hardwareLabel(cheapest.hw)} at ${fmtUsd(cheapest.hw.price_usd)}. Here is how fast it goes and whether it ever pays for itself.`
-    : `${m.display_name} does not fit any machine on this list at the default context length.`;
+    ? descOf([
+        ...(verdict ? [`${lead}, where it ${verdict} at ${usage} tokens a day.`, `${lead}, where it ${verdict}.`] : []),
+        `${lead}.`,
+        `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. Cheapest machine that runs it: ${shortHardwareLabel(cheapest.hw)}.`,
+      ])
+    : descOf([
+        `${m.display_name} needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))} at ${Math.round(ctx / 1024)}k context, more than any machine on this list offers. What it would take, and what renting it costs instead.`,
+        `${m.display_name} needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))} at ${Math.round(ctx / 1024)}k context, more than any machine on this list offers.`,
+      ]);
   return pageShell(
     {
-      title: `What hardware do you need to run ${m.display_name} ${m.quantisation}? — Sunk Cost`,
+      title: titleOf(
+        sharedNames.has(m.display_name)
+          ? [
+              `${m.display_name} ${m.quantisation}: hardware to run it locally`,
+              `${m.display_name} ${m.quantisation}: hardware and cost`,
+              `${m.display_name} ${m.quantisation}`,
+            ]
+          : [
+              `${m.display_name}: the hardware that runs it, and the cost`,
+              `${m.display_name}: hardware to run it locally`,
+              `${m.display_name}: hardware and cost`,
+            ],
+      ),
       description: desc,
       canonical: `/models/${m.id}/`,
       ogImage: cheapest ? `/og/${cheapest.hw.id}--${m.id}.png` : '/og/default.png',
@@ -273,6 +347,8 @@ function hardwarePage(hw: Hardware): string {
   const view = computeView(state, data);
   const fits = view.rows.filter((r) => r.fit.status === 'fits');
   const label = hardwareLabel(hw);
+  const short = shortHardwareLabel(hw);
+  const hwVerdict = view.calc ? lowerFirst(verdictLine(view)) : null;
 
   const rows = fits
     .slice(0, 12)
@@ -319,8 +395,22 @@ ${fits.length > 12 ? `<p class="note">${fits.length - 12} more fit; the calculat
 
   return pageShell(
     {
-      title: `${label} — how long until local AI pays for itself? — Sunk Cost`,
-      description: `${fits.length} open models fit a ${label}. ${view.calc ? verdictLine(view) : ''} — the speeds, the models and the arithmetic.`,
+      title: titleOf([
+        `${short}: can it run local LLMs, and does it pay back?`,
+        `${short}: can it run local LLMs?`,
+        `${short} for local LLMs`,
+      ]),
+      description: descOf([
+        ...(best && hwVerdict
+          ? [
+              `${fits.length} of the ${view.rows.length} open models here fit a ${short}. On ${best.model.display_name}, the strongest of them, it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+              `${fits.length} of the ${view.rows.length} open models here fit a ${short}. On the strongest of them it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+              `${fits.length} of the ${view.rows.length} open models here fit a ${short}, and on the strongest of them it ${hwVerdict}.`,
+            ]
+          : []),
+        `${fits.length} of the ${view.rows.length} open models here fit a ${short}. What it runs, how fast, and whether buying it beats paying an API.`,
+        `${fits.length} open models fit a ${short}. What it runs, how fast, and whether it pays back.`,
+      ]),
       canonical: `/hardware/${hw.id}/`,
       ogImage: view.model ? `/og/${hw.id}--${view.model.id}.png` : '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: `/hardware/${hw.id}/`, label: label }],
@@ -360,8 +450,15 @@ ${row('Pay-back', esc(verdictLine(va)), esc(verdictLine(vb)))}
 </article>`;
   return pageShell(
     {
-      title: `${hardwareLabel(a)} vs ${hardwareLabel(b)} for local AI — Sunk Cost`,
-      description: `Side by side: what each runs, how fast, and which pays back sooner against the API.`,
+      title: titleOf([
+        `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)} for local LLMs`,
+        `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`,
+      ]),
+      description: descOf([
+        `${fa.length} of the ${va.rows.length} open models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
+        `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
+        `${shortHardwareLabel(a)} against ${shortHardwareLabel(b)}: memory, speed, what each runs and which pays back sooner.`,
+      ]),
       canonical: `/compare/${slug(hardwareLabel(a))}-vs-${slug(hardwareLabel(b))}/`,
       ogImage: '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '#', label: 'Comparison' }],
@@ -415,8 +512,18 @@ ${capRows}
 </article>`;
   return pageShell(
     {
-      title: `${a.display_name} vs ${b.display_name} — which should you run? — Sunk Cost`,
-      description: `Side by side: intelligence score, size, context, licence, API price and the cheapest machine that runs each.`,
+      title: titleOf([
+        `${a.display_name} vs ${b.display_name}: which should you run?`,
+        `${a.display_name} vs ${b.display_name}`,
+      ]),
+      description: descOf([
+        ...(sa != null && sa === sb
+          ? [`${a.display_name} and ${b.display_name} both score ${sa} on the intelligence index. Size, context, licence, API price and the cheapest machine that runs each.`]
+          : []),
+        `${a.display_name} scores ${sa ?? '?'} on the intelligence index, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence, API price and the cheapest machine that runs each.`,
+        `${a.display_name} scores ${sa ?? '?'}, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence, API price and the cheapest machine that runs each.`,
+        `${a.display_name} scores ${sa ?? '?'}, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence and the cheapest machine for each.`,
+      ]),
       canonical: `/compare/${slug(a.id)}-vs-${slug(b.id)}/`,
       ogImage: '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Models' }, { href: '#', label: `${a.display_name} vs ${b.display_name}` }],
@@ -462,4 +569,5 @@ const urls = ['/', ...paths]
   .join('\n');
 writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
+checkMeta();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
