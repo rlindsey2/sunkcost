@@ -113,7 +113,7 @@ function renderMachine(state: State, data: Dataset, view: View) {
     hwLink.href = `/hardware/${view.hw.id}/`;
     hwLink.textContent = `About the ${hardwareLabel(view.hw)}`;
   }
-  $('#hw-status').innerHTML = `${esc(bits.join(' · '))}${view.hw.TODO ? ` <span class="todo">TODO: ${esc(view.hw.TODO)}</span>` : ''}`;
+  $('#hw-status').textContent = bits.join(' · ');
 }
 
 /** Put a value into an input unless you are typing in it. */

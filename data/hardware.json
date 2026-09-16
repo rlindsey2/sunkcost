@@ -1044,8 +1044,8 @@
   },
   {
     "id": "geforce-rtx-5090-32",
-    "family": "NVIDIA GeForce",
-    "chip": "RTX 5090",
+    "family": "NVIDIA",
+    "chip": "GeForce RTX 5090",
     "chip_variant": "Blackwell · 32 GB GDDR7",
     "unified_memory_gb": 32,
     "memory_bandwidth_gbs": 1792,
@@ -1057,7 +1057,7 @@
     "load_watts_status": "published",
     "load_watts_note": "575 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating. NVIDIA recommends a 1000 W system power supply.",
     "generation": "current",
-    "status": "Card only, at NVIDIA's launch MSRP; the PC around it is not included. NVIDIA Marketplace listed the Founders Edition at $1,999 but out of stock when checked 2026-09-16, and partner cards well above it.",
+    "status": "Launch price. Founders Edition out of stock at NVIDIA when checked 2026-09-16; partner cards sell for more.",
     "notes": "Bandwidth: 28 Gbps × 512-bit bus ÷ 8 = 1,792 GB/s, which NVIDIA's compare page also publishes. Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "sources": [
       "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/",
@@ -1073,8 +1073,8 @@
   },
   {
     "id": "geforce-rtx-4090-24",
-    "family": "NVIDIA GeForce",
-    "chip": "RTX 4090",
+    "family": "NVIDIA",
+    "chip": "GeForce RTX 4090",
     "chip_variant": "Ada Lovelace · 24 GB GDDR6X",
     "unified_memory_gb": 24,
     "memory_bandwidth_gbs": 1008,
@@ -1086,7 +1086,7 @@
     "load_watts_status": "published",
     "load_watts_note": "450 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating. NVIDIA lists 315 W average gaming power. A whole Intel 265K + RTX 4090 PC measured 464-509 W at peak across llama.cpp runs, prompt processing included (Jeff Geerling).",
     "generation": "previous",
-    "status": "Card only, at NVIDIA's launch MSRP; the PC around it is not included. Superseded by the RTX 50 series, so now mostly bought used; enter what you paid.",
+    "status": "Launch price. Superseded by the RTX 50 series, so usually bought used for less: enter what you paid.",
     "notes": "Bandwidth: 21 Gbps × 384-bit bus ÷ 8 = 1,008 GB/s (21 Gbps from TechPowerUp, 384-bit from NVIDIA). Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "sources": [
       "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/",
@@ -1101,8 +1101,8 @@
   },
   {
     "id": "geforce-rtx-3090-24",
-    "family": "NVIDIA GeForce",
-    "chip": "RTX 3090",
+    "family": "NVIDIA",
+    "chip": "GeForce RTX 3090",
     "chip_variant": "Ampere · 24 GB GDDR6X",
     "unified_memory_gb": 24,
     "memory_bandwidth_gbs": 936,
@@ -1114,7 +1114,7 @@
     "load_watts_status": "published",
     "load_watts_note": "350 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating. NVIDIA recommends a 750 W system power supply.",
     "generation": "previous",
-    "status": "Card only, at NVIDIA's launch MSRP; the PC around it is not included. Two generations old and realistically a used purchase, well below launch price; enter what you paid.",
+    "status": "Launch price. Two generations old and usually bought used for far less: enter what you paid.",
     "notes": "Bandwidth: 19.5 Gbps × 384-bit bus ÷ 8 = 936 GB/s (19.5 Gbps from TechPowerUp, 384-bit from NVIDIA). Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "sources": [
       "https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090-3090ti/",
@@ -1128,8 +1128,8 @@
   },
   {
     "id": "geforce-rtx-4080-16",
-    "family": "NVIDIA GeForce",
-    "chip": "RTX 4080",
+    "family": "NVIDIA",
+    "chip": "GeForce RTX 4080",
     "chip_variant": "Ada Lovelace · 16 GB GDDR6X",
     "unified_memory_gb": 16,
     "memory_bandwidth_gbs": 716.8,
@@ -1141,7 +1141,7 @@
     "load_watts_status": "published",
     "load_watts_note": "320 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating. NVIDIA lists 251 W average gaming power.",
     "generation": "previous",
-    "status": "Card only, at NVIDIA's launch MSRP; the PC around it is not included. Replaced by the $999 RTX 4080 SUPER and then the RTX 50 series.",
+    "status": "Launch price. Replaced by the $999 RTX 4080 SUPER and then the RTX 50 series.",
     "notes": "Bandwidth: 22.4 Gbps × 256-bit bus ÷ 8 = 716.8 GB/s (22.4 Gbps from TechPowerUp, 256-bit from NVIDIA). The 4080 SUPER has the same 16 GB and bus but 23 Gbps memory (736 GB/s) and a different price, so it is not this entry. Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "sources": [
       "https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4080-family/",
@@ -1155,8 +1155,8 @@
   },
   {
     "id": "geforce-rtx-3060-12",
-    "family": "NVIDIA GeForce",
-    "chip": "RTX 3060",
+    "family": "NVIDIA",
+    "chip": "GeForce RTX 3060 12GB",
     "chip_variant": "Ampere · 12 GB GDDR6",
     "unified_memory_gb": 12,
     "memory_bandwidth_gbs": 360,
@@ -1168,7 +1168,7 @@
     "load_watts_status": "published",
     "load_watts_note": "170 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating. A whole Intel 265K + RTX 3060 PC measured 214-229 W at peak during llama.cpp runs, prompt processing included (Jeff Geerling).",
     "generation": "previous",
-    "status": "Card only, at NVIDIA's announced starting price; the PC around it is not included. Two generations old; realistically a used or clearance purchase. The 8 GB RTX 3060 has a narrower bus and is not this card.",
+    "status": "Launch price. Two generations old; usually a used or clearance purchase.",
     "notes": "Bandwidth: 15 Gbps × 192-bit bus ÷ 8 = 360 GB/s (15 Gbps from TechPowerUp, 192-bit from NVIDIA). Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "TODO": "$329 is NVIDIA's announced starting price for partner cards; no Founders Edition price was found.",
     "sources": [
@@ -1183,7 +1183,7 @@
   },
   {
     "id": "rtx-pro-6000-blackwell-96",
-    "family": "NVIDIA RTX PRO",
+    "family": "NVIDIA",
     "chip": "RTX PRO 6000 Blackwell",
     "chip_variant": "Blackwell · 96 GB GDDR7 ECC",
     "unified_memory_gb": 96,
@@ -1196,7 +1196,7 @@
     "load_watts_status": "published",
     "load_watts_note": "600 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating. One llama.cpp user saw about 390 W while benchmarking gpt-oss-120b on this card.",
     "generation": "current",
-    "status": "Card only; the PC around it is not included. $17,999.99 at Newegg (sold by Newegg, in stock) when checked 2026-09-16. NVIDIA publishes no MSRP. A 300 W Max-Q version exists and is not this entry.",
+    "status": "Newegg price on 2026-09-16; NVIDIA publishes no list price. Not the 300 W Max-Q version.",
     "notes": "Bandwidth: 28 Gbps × 512-bit bus ÷ 8 = 1,792 GB/s (Puget Systems; NVIDIA lists 1792 GB/sec). Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "TODO": "Price is a retailer's, not an MSRP. A reported $16,000 NVIDIA Marketplace listing could not be confirmed.",
     "sources": [
@@ -1213,7 +1213,7 @@
   },
   {
     "id": "radeon-ai-pro-r9700-32",
-    "family": "AMD Radeon",
+    "family": "AMD",
     "chip": "Radeon AI PRO R9700",
     "chip_variant": "RDNA 4 · 32 GB GDDR6",
     "unified_memory_gb": 32,
@@ -1226,7 +1226,7 @@
     "load_watts_status": "published",
     "load_watts_note": "300 W is the maker's rated board power for the card alone. The rest of the PC adds more, and LLM decoding usually draws less than the full rating.",
     "generation": "current",
-    "status": "Card only; the PC around it is not included. $1,299 is AMD's launch price (announced 23 October 2025); sold through partners, whose street prices vary.",
+    "status": "AMD's launch price, October 2025. Sold through partners, whose prices vary.",
     "notes": "Bandwidth: 20 Gbps × 256-bit bus ÷ 8 = 640 GB/s (AMD lists 256-bit and 640 GB/s; XFX and ASUS give 20 Gbps). In llama.cpp, Vulkan (RADV) beat ROCm on decode on this card. Usable memory is the VRAM less 1 GB: the margin llama.cpp's automatic fitting (--fit) leaves free on each device by default (common/common.h, fit_params_target = 1 GiB). Treated as nominal GB, like the other machines here.",
     "TODO": "AMD's launch price is quoted via Wccftech; AMD's own announcement was not fetched.",
     "sources": [
@@ -1254,7 +1254,7 @@
     "load_watts_status": "stand_in",
     "load_watts_note": "No wall measurement for this unit; stand-in is the Framework Desktop's measured 133 W on the same chip (Jeff Geerling). Tom's Hardware reports Corsair's firmware profiles give the chip about 85 W (Balanced, default), 120 W (Max) or 55 W (Quiet).",
     "generation": "current",
-    "status": "128 GB / 1 TB $4,699.99 on Corsair's store when checked 2026-09-16, backordered. Tom's Hardware saw $2,999.99 at Corsair in February 2026.",
+    "status": "Corsair's price on 2026-09-16, backordered. Was $2,999.99 in February 2026.",
     "notes": "Corsair lists up to 96 GB VRAM for this configuration, the Windows 75% split used for the other Strix Halo machines. On Linux the GTT pool can be raised to roughly 108-120 GB. Measured GPU bandwidth is ~212-215 GB/s of the 256 GB/s theoretical, so estimates here run a little high.",
     "estimate_efficiency_moe": 0.55,
     "estimate_note": "MoE decode on Strix Halo reaches ~50-65% of the bandwidth ceiling; Tom's Hardware's runs on this machine agree (Qwen3 30B-A3B 0.56, gpt-oss-120b 0.61).",
@@ -1279,7 +1279,7 @@
     "load_watts_status": "stand_in",
     "load_watts_note": "No measurement for the Max 385 system; stand-in is the Max+ 395 Framework board's measured 133 W, which likely overstates this smaller GPU.",
     "generation": "current",
-    "status": "64 GB / 1 TB $1,699.99 on Corsair's store, out of stock when checked 2026-09-16. The 64 GB tier is the smaller Ryzen AI Max 385 with a 32-CU GPU; Corsair lists up to 48 GB VRAM.",
+    "status": "Corsair's price on 2026-09-16, out of stock. This tier uses the smaller Ryzen AI Max 385.",
     "notes": "Windows lets you dedicate up to 75% of RAM to the GPU; Corsair lists up to 48 GB VRAM for this configuration. Measured GPU bandwidth on Strix Halo is ~212-215 GB/s of the 256 GB/s theoretical, so estimates here run a little high.",
     "estimate_efficiency_moe": 0.55,
     "estimate_note": "MoE decode on Strix Halo reaches ~50-65% of the bandwidth ceiling, measured on the Max+ 395; the Max 385's smaller GPU may fall lower.",
