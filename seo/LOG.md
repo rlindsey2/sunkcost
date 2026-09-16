@@ -6,10 +6,15 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 ## Ryan's side (needs the site owner)
 
 - [ ] Review and merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
-      `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason four
+      `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason five
       runs in a row have taken smaller items on main instead of the top backlog entry, which is
-      question pages. Ryan was notified once, on 2026-09-16 after the list cards shipped. **Do not
-      notify about it again** — one ping is enough, and the queue below is all still doable.
+      question pages. **It is a draft**, so the merge button is disabled until it is marked ready
+      for review — that is one click, and it may be the whole reason nothing has moved. It also
+      stopped merging at some point during those five runs, which the 2026-09-16 merge run fixed;
+      see the top run entry. Ryan has now been notified twice: once after the list cards shipped,
+      and once about the draft status, which was new information rather than a repeat. **Do not
+      notify about this PR again** — the queue below is all doable without it, and a third ping
+      would be nagging.
 
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
@@ -131,6 +136,15 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       which `listCardSvg` in src/list-card.ts can draw as it stands: name, the sum as the middle
       column, the cheapest machine that holds it as the figure. Do it in the PR branch rather
       than on main, since the page is not on main yet.
+- [ ] Nothing in `.github/workflows/` triggers on `pull_request`. `deploy.yml` is the only
+      workflow and it runs on push to `main` and on `workflow_dispatch`, so a PR from this agent
+      gets no test run, no build and no signal at all: the first time CI sees the code is the
+      merge, on the branch that deploys to the live site. Every PR here has therefore been
+      verified only by what the agent ran locally. A second workflow that runs `npm ci`, `npm test`
+      and `npm run build` on `pull_request` would cost one file and catch a bad PR before it
+      reaches main. It is infrastructure rather than SEO, so it is Ryan's call, but it is cheap and
+      it protects the thing every other item on this list depends on.
+
 - [ ] Two model counts are live on the site and they do not match: the machine pages count
       against the 39 current models that `computeView` puts in `rows`, and /how-much-memory/
       counts all 55, because the model people mean by "a 70B" is Llama 3.3 70B and that one is
@@ -148,6 +162,80 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the waiting PR had stopped being mergeable
+
+PR #1 has been open and unreviewed through five runs now, and the standing rule says not to stack
+a second new page on top of it. This run checked the PR itself before taking anything else off the
+backlog, and found the thing no previous run had looked for: **the branch no longer merged.**
+
+Main has moved fourteen commits since the branch was cut — the self-hosted fonts, the canonical
+guard, the 75 head-to-head cards, the two list cards — and every one of them touched the same two
+files the memory page touches. `git merge-tree` reports content conflicts in
+`scripts/build-pages.ts` and `tests/pagekit.test.ts`. So for some part of those five runs, Ryan
+could not have merged the PR even if he had reviewed it and wanted to. That is worth knowing
+before the next run adds anything else to the queue: a PR left sitting does not stay mergeable on
+its own.
+
+Merged `origin/main` into the branch and resolved it. Merge commit `1d69cb5`, pushed to
+`seo/how-much-memory`. Nothing was pushed to main this run except this log.
+
+Both conflicts were import lists and one test file, and both sides only ever added things, so the
+resolution is the union of the two:
+
+- **`scripts/build-pages.ts`** keeps the memory page's helpers and takes `FONT_PRELOAD` from main.
+  One import did not survive: `sharePath`. Main replaced the 45 `/best/` share links with
+  `calcLink` in the canonical run, so nothing in that file uses it any more, and keeping it would
+  have left an unused import behind.
+- **`tests/pagekit.test.ts`** keeps the seven memory-question tests beside main's calculator-link
+  and font tests. They are independent `describe` blocks that happened to land in the same place.
+
+A merge commit rather than a rebase, so anyone with the branch checked out keeps a valid checkout.
+
+**The page picks up everything main added while it waited**, which is the real reason this was
+worth doing properly rather than resolving it at merge time: `/how-much-memory/` now serves its
+fonts from this origin, carries the JSON-LD graph with its breadcrumb, and has a canonical, none
+of which existed when the page was written.
+
+**Verified against main, page by page.** Built the whole set twice — once from `origin/main` in a
+separate worktree, once from the merge — and compared all 190 files. One file is new
+(`how-much-memory/index.html`) and none was lost. 189 of the rest differ, which is expected and is
+the point: every page gains the footer link to the new page, model pages gain the line on the KV
+cache row, machine pages the note under the memory table, the leaderboard its note. Every changed
+region on every page contains a `/how-much-memory/` link and nothing else; read as diffs, each one
+is the old line with the link appended. `git diff origin/main HEAD` is 460 insertions and 11
+deletions across 4 files, which is exactly what the PR said before the merge, so the merge added
+nothing and dropped nothing.
+
+Also `npm test` (120 passing: main's 113 plus the branch's 7, with no test lost from either side),
+`npm run typecheck`, `npm run validate` and `npm run build:pages` — 189 pages, no orphans, one
+address each, 190 in the sitemap, no duplicate or missing titles or descriptions, all 10 font
+files present. Read the built page end to end: the head carries the canonical, the breadcrumb
+graph and the two font preloads, no request to any other origin; the body is 13,610 characters
+with 56 calculator links and 71 internal links, no maintainer language, no `undefined`, no `NaN`,
+no em dashes.
+
+**Worth knowing, and new:** `.github/workflows/deploy.yml` is the only workflow and it runs on
+push to `main` and on `workflow_dispatch`. Nothing triggers on `pull_request`, so **PR #1 has
+never had a CI run and never will** — the first time CI sees this code is the merge, on the branch
+that deploys. That raises the stakes on the local verification above, which is why this entry
+records it in that much detail. It is also a backlog item now.
+
+**The other thing five runs missed: the PR is a draft.** GitHub disables the merge button on a
+draft, so for the whole time this log has been asking Ryan to merge it, he could not have done so
+without first clicking "Ready for review". Between that and the conflict, the request the last
+five entries kept making was not actually actionable. I have not changed the draft state myself —
+the standing instruction is to open PRs as drafts, and promoting one is the author's call — but I
+have said so in a comment on the PR and pinged Ryan once about it. That is the second ping on this
+PR, against the previous entry's "do not notify again", and the reason for overriding it is that
+the draft status is new information and a ten-second fix, not a repeat of "please review". Ryan's
+list above now says no third ping.
+
+**Continue next:** the branch is mergeable and every check this environment can run is green on
+it. The remaining work on the PR itself is the Open Graph card for `/how-much-memory/`, which
+still points at `/og/default.png`; the backlog entry says what it should show and
+`listCardSvg` can draw it as it stands. Do that on the branch, not on main. If the PR has merged
+by the next run, the next question page is "best GPU for local LLMs".
 
 ### 2026-09-16 — the leaderboard and the best buys stop borrowing a card
 
