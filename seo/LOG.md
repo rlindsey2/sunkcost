@@ -5,24 +5,34 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 ## Ryan's side (needs the site owner)
 
-- [ ] Verify sunkcost.ai in Google Search Console: add a property, choose **Domain** rather than
-      URL prefix so it covers the apex and any subdomain at once, and take the auto-DNS
-      verification flow, which writes the TXT record into Cloudflare for you. Then submit
-      https://sunkcost.ai/sitemap.xml under Sitemaps. Bing Webmaster Tools comes after, not
-      before: it can import a verified property straight from Search Console.
-      Then commit the CSV exports under seo/exports/. The Indexing → Pages export is worth as
-      much as the query one: it says which of the 188 generated pages Google has actually
-      indexed, which is the first thing to fix if the answer is "not many". Until either exists
-      the agent works from the pages themselves, with no idea what anyone searched.
-- [ ] Run Google's Rich Results Test on https://sunkcost.ai/hardware/geforce-rtx-3090-24/ and
-      confirm the breadcrumb is detected. Structured data was verified against the local build,
-      which is the build the deploy runs, so this is a confirmation rather than a check.
+- [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
+      Analytics is on as of the same day, injected at the edge on each deploy.
+- [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
+      was 2026-09-16, so indexing data should appear within days and query data is worth looking
+      at from roughly mid-October. **Do not ask again before then**, and do not treat an empty
+      seo/exports/ as a blocker in the meantime — the backlog below is all doable without it.
+      When it arrives, the Indexing → Pages export is worth as much as the query one: it says
+      which of the 188 generated pages Google actually indexed, which is the first thing to fix
+      if the answer is "not many".
+- [ ] Bing Webmaster Tools, which can now import the verified property straight from Search
+      Console. Bing still shows breadcrumb rich results that Google has retired, so the
+      structured data shipped on 2026-09-16 has more upside there than on Google.
+- [ ] Confirm the breadcrumb markup is detected on a live page. Now that the property is
+      verified this is easiest inside Search Console: paste
+      https://sunkcost.ai/hardware/geforce-rtx-3090-24/ into the URL inspection bar at the top
+      and read the Enhancements section, which lists the structured data Google parsed. The
+      Breadcrumbs report under Enhancements fills in over the following weeks and covers all 188
+      pages at once, which is better than checking one. The markup was verified against the
+      local build, which is the build the deploy runs, so this is a confirmation, not a check.
 - [ ] Commit `npm run submissions` output under seo/exports/ when there is enough of it. The
       agent has no database access by design, and that file is the only route to a page built
       from what people actually entered.
-- [ ] Turn on Cloudflare Web Analytics: Workers & Pages → the project → Metrics → Enable. Free,
-      no cookie banner, injected on the next deploy. Search Console says what Google showed
-      people; this says what they did on arrival, which nothing here currently measures.
+
+What the reports should look like, so nothing alarming gets misread: the sitemap holds 189 URLs,
+the 188 generated pages plus the calculator. The ~1,900 /s/ share pages are deliberately absent
+from it and carry `noindex`, so any of them Google finds through a link will show as "Excluded
+by noindex" in the Pages report. That is the design working, not a fault, and nothing should be
+done about it.
 
 The Search Console API, with a GCP service account, was considered on 2026-09-16 and deferred.
 For one property, one person and a fortnightly pull, the CSV export is thirty seconds and the
