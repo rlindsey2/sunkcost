@@ -117,13 +117,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the run entry has what was actually wrong, which was the 45 links out of /best/ rather
       than anything in the page set. One part is not checkable from here and is on Ryan's side
       below: whether the apex and www serve one URL at the edge.
-- [ ] Open Graph images, continued. The 75 comparison pages got their own cards on 2026-09-16,
-      and the build now refuses a page that names a card nobody drew. Still on the default card:
-      `/leaderboard/`, `/best/` and (on the PR branch) `/how-much-memory/`. Those are three
-      one-off cards rather than a template — a leaderboard card wants the top few models against
-      the frontier score, a best-buys card wants the quickest pay-back at each usage level, and
-      the memory page wants the weights-plus-cache sum. `versusCardSvg` in src/versus-card.ts is
-      the nearest thing to a starting point.
+- [ ] Open Graph images, continued. Every page on main now has a card that answers its own
+      question: model and machine pages from `cardSvg`, the 75 comparisons from `versusCardSvg`
+      (2026-09-16), and `/leaderboard/` and `/best/` from the new `listCardSvg` (2026-09-16).
+      What is left is `/how-much-memory/`, which is still on the PR branch and still points at
+      `/og/default.png`. Its card wants the weights-plus-cache sum for a model in each size band,
+      which `listCardSvg` in src/list-card.ts can draw as it stands: name, the sum as the middle
+      column, the cheapest machine that holds it as the figure. Do it in the PR branch rather
+      than on main, since the page is not on main yet.
 - [ ] Two model counts are live on the site and they do not match: the machine pages count
       against the 39 current models that `computeView` puts in `rows`, and /how-much-memory/
       counts all 55, because the model people mean by "a 70B" is Llama 3.3 70B and that one is
@@ -141,6 +142,59 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the leaderboard and the best buys stop borrowing a card
+
+PR #1 is still open and unreviewed, and the standing rule says not to stack a second new page on
+top of it, so this run took the item the last entry said to continue: the two pages on main still
+previewing as `/og/default.png`. Commit `0643df3`, pushed to main.
+
+That default card is one machine's pay-back curve. On `/leaderboard/` it answered nothing the page
+asks, and `/best/` is the site's strongest commercial page. Both are pages people link to.
+
+Both now have a card drawn from the page's own rows by the new `src/list-card.ts`:
+
+- **`/leaderboard/`** shows the best hosted model, then the five strongest open ones, each with
+  its weights and its score as a bar on the site's own scale. Today that reads: GPT-6 Astra at 53
+  and "not downloadable", then GLM-5.3-Flash at 42 and 189 GB, down to Inkling Small at 26. The
+  distance between the first bar and the second is the page's whole argument, and now it is the
+  picture as well.
+- **`/best/`** gives one row to each level of daily use with that level's quickest pay-back, the
+  model and machine that get it, and the class that model is in: 166 years at 50k tokens a day
+  down to 5.0 months at 20M. That slope is what the page is for.
+
+The figures come from the same code the pages do — the leaderboard's de-duplication by display
+name, `bestByTier` for the picks, `shortHardwareLabel` for the machine names — so a card cannot
+quietly say something the page does not. The two file names are exported constants that both
+`build:og` and `build-pages` import, so the two scripts cannot disagree about them; `checkOgCards`
+was already there to catch it if they did, and was proved again this run by pointing the page at
+a card nobody draws and watching the build refuse it by name.
+
+One judgement call. The best-buys rows are the quickest pay-back at that usage **across every
+class**, not the quickest in the most capable class. On today's data they are the same pair, but
+they need not be, so each row carries the class beside the figure rather than leaving a reader to
+assume the quickest is also the cleverest.
+
+Also in: the palette and the text-fitting helpers moved out of `src/versus-card.ts` as exports,
+so both card types set type the same way and the colours live in one place. No pixel of a
+head-to-head card changed.
+
+**Verified by building the page set twice**, once from `HEAD` and once with the change, and
+comparing all 188 pages: exactly two differ, and only in the card address and its copy in the
+JSON-LD. Nothing a reader sees changed. Then read both cards as PNGs out of the real build: no
+truncation, no overlap, no `undefined`, and every figure matching the page it belongs to. Also
+`npm test` (113 passing, 14 new in `tests/list-card.test.ts`, including bar widths in proportion
+to the scores and every figure checked back against the data), `npm run typecheck`, and the full
+`npm run build` including `build:og` and `build:functions`, all clean here.
+
+**Continue next:** every page on main now has its own card, so that item is down to
+`/how-much-memory/` on the PR branch. PR #1 still needs Ryan, and the rule stands: while it is
+open, no second new page. If it has merged by the next run, the next question page is "best GPU
+for local LLMs": filter the machine list to `family === 'NVIDIA' || family === 'AMD'` and say
+plainly that a card's price needs a PC around it before it compares with a Mac. If it is still
+open, the next thing on main is an index at `/compare/` — which is a new page type and so a PR
+itself, so failing that, the home page's missing `WebSite` JSON-LD, also a PR since it is
+index.html, and worth pairing with the font item in the same file.
 
 ### 2026-09-16 — 75 comparisons, 75 cards, and two broken previews found
 
