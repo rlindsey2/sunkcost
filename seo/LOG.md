@@ -46,16 +46,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       search; each description a plain answer under 155 characters. Done 2026-09-16.
 - [x] Structured data: BreadcrumbList everywhere and Product on hardware pages. Done 2026-09-16.
       No Offer and no FAQPage — reasons in the run entry below.
-- [ ] Internal linking: every hardware page links to the 3 models it runs best and the best-buys
-      page; every model page links to the 3 cheapest machines that run it; the leaderboard links
-      to hardware pages. Check for orphan pages in dist/sitemap.xml.
+- [x] Internal linking: no generated page is an orphan any more, and the build fails if one
+      appears. Done 2026-09-16; the run entry has what was actually wrong, which was worse than
+      this item assumed.
 - [ ] Question pages for the searches people actually type: "is a Mac mini good for local LLMs",
       "RTX 3090 for local LLM worth it", "best GPU for local LLMs", "local LLM vs API cost",
       "how much RAM to run a 70B model". Each answers in the first paragraph with the site's own
       numbers, links into the calculator with the configuration prefilled, and cites sources.
-- [ ] The 75 comparison pages are reachable only from a "next down" link on the leaderboard and
-      from nothing at all in the hardware case: no page lists them. An index at /compare/ would
-      fix the crawl path and is a page people search for directly. New page type, so a PR.
+- [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
+      are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
+      queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
 - [ ] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
       home page specifically, so /leaderboard/'s copy of it does not count. Small change to
       index.html, which means a PR, not a push.
@@ -70,12 +70,79 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 - [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages
       and /best/ and /leaderboard/ all point at the same default card; the model and hardware
       pages already get a real one. A comparison card would want the two machines side by side.
+- [ ] `/hardware/geforce-rtx-3060-12/` shows as "NVIDIA GeForce RTX 3060 12GB, 12GB" everywhere
+      its label is rendered, because `chip` in data/hardware.json ends in the memory size that
+      `hardwareLabel()` then appends again. The fix is a data edit, which the agent may not make.
+      Cosmetic, but it is on a page people do search for.
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — 63 orphan pages, now none
+
+Took the top backlog item, internal linking. Commit `f69cd32`, pushed to main.
+
+The item assumed the gap was the 28 hardware comparison pages. It was more than twice that. Of
+the 188 generated pages, **63 had no inbound link from any other page** — they existed only in
+sitemap.xml, which tells a crawler a URL exists and gives it no reason to want it:
+
+- **30 of the 56 machine pages.** Every previous-generation machine, and most configurations
+  inside a family. `runnersFor()` filters to `generation === 'current'`, so the leaderboard and
+  the model pages only ever name current machines, and a family's cheapest current one at that.
+  The casualties include `/hardware/geforce-rtx-3090-24/`, `/hardware/geforce-rtx-4090-24/` and
+  the whole M3/M4 Mac range. The 3090 and the 4090 are the two machines people search for most
+  in this subject, and nothing on the site pointed at either.
+- **28 of the 75 comparison pages** — all the hardware head-to-heads, as the item said.
+- **5 of the 55 model pages.** Three have no index score, so the leaderboard leaves them out
+  and they are too big to reach the top-12 list on any machine page. The other two are the
+  second quantisation of Llama 3.1 8B and Qwen3 32B, which the leaderboard drops when it
+  de-duplicates by display name.
+
+Fixed in `scripts/build-pages.ts` and `src/pagekit.ts`:
+
+- **"Other machines to weigh against it"** on every machine page: the rest of that range (every
+  configuration, discontinued ones marked as such), then the nearest machine in price from each
+  other family. Each row carries price, memory, how many models fit and the pay-back, on the
+  same defaults as the rest of the page, so it is a table someone shopping can read rather than
+  a list of links. One rival per family, not the five nearest overall, because five Mac Studios
+  within $300 of each other answer nobody's question.
+- **"Head to head"** under it on the eight flagship machines, linking the comparison pages they
+  appear in. That is where the 28 orphaned comparisons get their two inbound links each.
+- **Model pages** now cross-link the two quantisations from the Quantisation row of the
+  specifics, with the other one's size, since that is the difference that matters.
+- **The leaderboard** names and links the five models with no index score in a line under the
+  table. "Not yet placed" is the site's own existing wording for them.
+- **`checkLinks()` fails the build** on any generated page with no inbound link, next to the
+  existing JSON-LD and duplicate-meta guards. Adding a machine or a model can no longer quietly
+  produce an orphan.
+
+Two things were deliberately cut on the honesty rule. The rival section was first headed
+"Similar money, a different machine", which is false on a page like the DGX Spark where the
+nearest NVIDIA card is $1,999 against $4,699; it now reads "Nearest in price elsewhere on the
+list", which is only what the code actually does. And a sentence claiming more memory moves a
+machine up to a better model "which is usually what changes the pay-back, not the speed" went in
+and came back out: the site's own numbers do not support it — a 12 GB RTX 3060 pays back in 26
+years and a 32 GB RTX 5090 in 25. Nothing replaced it.
+
+Verified: `npm test` (79 passing, 9 of them new), `npm run typecheck`, `npm run build:pages` and
+the full `npm run build`. Re-ran the link audit against the rebuilt `public/`: **0 orphans, down
+from 63**; every machine page has at least 5 inbound links, every comparison page at least 1,
+every model page at least 1. Breadth-first from `/leaderboard/`, which sits in every page's
+footer, the whole site is now within 4 clicks — before, 63 pages were at no depth at all. The
+orphan guard was checked by breaking it on purpose: a build with the new section removed fails
+and names the pages. Read the rendered machine pages for an NVIDIA card, a Mac mini and the
+DGX Spark: the table reads as a buying comparison, and no maintainer language reached the copy.
+
+Pre-existing, not touched: `/hardware/geforce-rtx-3060-12/` renders its name as "NVIDIA GeForce
+RTX 3060 12GB, 12GB" because the chip field in the data carries the memory size. That is a
+`data/hardware.json` figure, which is out of bounds, so it is a backlog item rather than an edit.
+
+**Continue next:** question pages (backlog item 2). The 3090 and 4090 pages now have a crawl
+path, which makes "RTX 3090 for local LLM worth it" worth writing next, and the site's own
+numbers answer it. Those are a new page type, so that run goes to a PR, not straight to main.
 
 ### 2026-09-16 — JSON-LD on all 188 generated pages
 
