@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, pageShell,
-  priceRivals, FONT_PRELOAD,
+  brandOf, calcLink, computeView, familyHeading, familyRange, fitsOf, fmtUsd, hardwareProduct, jsonLd, machineVerdict,
+  otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, runsOnlyOn, shownTps, speedWithBasis,
+  strongestShared, FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
@@ -255,5 +256,91 @@ describe('fonts', () => {
   it('lets the text show in a fallback face while a font is still coming', () => {
     expect(css.match(/@font-face/g)).toHaveLength(10);
     expect(css.match(/font-display: swap/g)).toHaveLength(10);
+  });
+});
+
+describe('machine head-to-heads', () => {
+  const view = (id: string) => computeView({ ...defaultState(data), hw: id }, data);
+  // one pair whose columns hold different models, one whose columns hold the same one,
+  // and one where a bare graphics card is set against a complete computer
+  const differ = ['mac-mini-m5-pro-24', 'mac-studio-m5-max-128'] as const;
+  const same = ['mac-studio-m5-max-128', 'nvidia-dgx-spark-128'] as const;
+
+  it('finds the strongest model both machines hold, not each machine\'s own best', () => {
+    const [va, vb] = differ.map(view);
+    const shared = strongestShared(va, vb)!;
+    expect(shared).not.toBeNull();
+    expect(fitsOf(va)[0].model.id).not.toBe(fitsOf(vb)[0].model.id);
+    // it fits both, and nothing stronger does
+    expect(shared.a.fit.status).toBe('fits');
+    expect(shared.b.fit.status).toBe('fits');
+    const stronger = fitsOf(va).slice(0, fitsOf(va).findIndex((r) => r.model.id === shared.model.id));
+    const heldByB = new Set(fitsOf(vb).map((r) => r.model.id));
+    for (const r of stronger) expect(heldByB.has(r.model.id)).toBe(false);
+  });
+
+  it('lists only models the roomier machine holds and the tighter one does not', () => {
+    const [va, vb] = differ.map(view);
+    const extra = runsOnlyOn(va, vb);
+    const inA = new Set(fitsOf(va).map((r) => r.model.id));
+    const inB = new Set(fitsOf(vb).map((r) => r.model.id));
+    for (const m of extra) {
+      expect(inA.has(m.id)).toBe(true);
+      expect(inB.has(m.id)).toBe(false);
+    }
+    expect(extra.length).toBe(fitsOf(va).length - fitsOf(vb).length + runsOnlyOn(vb, va).length);
+  });
+
+  it('never prints a speed without saying whether it was measured or estimated', () => {
+    const [va] = differ.map(view);
+    expect(speedWithBasis(fitsOf(va)[0])).toMatch(/tok\/s <span class="dim">(measured|estimated)<\/span>/);
+    expect(speedWithBasis(undefined)).toBe('<span class="dim">unknown</span>');
+  });
+
+  it('says when a price is for the card alone', () => {
+    const card = data.hardware.find((h) => h.price_scope === 'card_only')!;
+    const box = data.hardware.find((h) => h.price_scope !== 'card_only' && h.price_usd != null)!;
+    expect(priceWithScope(card)).toContain('card only');
+    expect(priceWithScope(box)).not.toContain('card only');
+  });
+
+  it('works the speed ratio out of the figures it prints, so the page divides out', () => {
+    for (const [ida, idb] of [differ, same]) {
+      const [va, vb] = [view(ida), view(idb)];
+      const shared = strongestShared(va, vb)!;
+      const verdict = machineVerdict(hw(ida), hw(idb), va, vb, data);
+      const m = verdict.match(/about ([\d.]+)× faster: ([\d.]+) tok\/s against ([\d.]+)/);
+      if (!m) continue;
+      const printed = Number(m[2]) / Number(m[3]);
+      expect(Math.abs(printed - Number(m[1]))).toBeLessThan(0.05);
+      expect(Number(m[2])).toBe(Math.max(shownTps(shared.a)!, shownTps(shared.b)!));
+      expect(Number(m[3])).toBe(Math.min(shownTps(shared.a)!, shownTps(shared.b)!));
+    }
+  });
+
+  it('claims a like-for-like pay-back only when both columns run the same model', () => {
+    for (const [ida, idb] of [differ, same]) {
+      const [va, vb] = [view(ida), view(idb)];
+      const verdict = machineVerdict(hw(ida), hw(idb), va, vb, data);
+      const sameModel = fitsOf(va)[0].model.id === fitsOf(vb)[0].model.id;
+      expect(/own strongest model/.test(verdict)).toBe(!sameModel);
+    }
+  });
+
+  it('counts the models each machine holds the way the table does', () => {
+    const [va, vb] = differ.map(view);
+    const verdict = machineVerdict(hw(differ[0]), hw(differ[1]), va, vb, data);
+    expect(verdict).toContain(`holds ${Math.max(fitsOf(va).length, fitsOf(vb).length)} of the ${va.rows.length} open models here`);
+    expect(verdict).toContain(`holds ${Math.min(fitsOf(va).length, fitsOf(vb).length)}`);
+  });
+
+  it('names the cheaper machine and the real gap, and flags a card-only price', () => {
+    const current = (h: Hardware) => h.price_usd != null && (h.generation ?? 'current') === 'current';
+    const a = data.hardware.find((h) => current(h) && h.price_scope !== 'card_only')!;
+    const b = data.hardware.find((h) => current(h) && h.price_scope === 'card_only')!;
+    const verdict = machineVerdict(a, b, view(a.id), view(b.id), data);
+    expect(verdict).toContain(`costs ${fmtUsd(Math.abs(a.price_usd! - b.price_usd!))} less`);
+    // a bare card beside a whole computer is not a like-for-like price, and has to say so
+    expect(verdict).toContain('priced as the card alone');
   });
 });

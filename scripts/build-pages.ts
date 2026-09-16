@@ -7,10 +7,11 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, familyHeading, familyRange, fmtDuration, fmtGb,
-  fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, lowerFirst, modelLabel, otherQuantisations, pageShell,
-  priceRivals, runnersFor, shortHardwareLabel, slug, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX,
-  FONT_PRELOAD, TITLE_MAX,
+  calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, familyHeading, familyRange, fitsOf, fmtDuration,
+  fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, lowerFirst, machineVerdict, modelLabel,
+  otherQuantisations, pageShell, priceRivals, priceWithScope, runnersFor, runsOnlyOn, shortHardwareLabel, slug,
+  speedWithBasis, strongestShared, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD,
+  TITLE_MAX,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
@@ -21,6 +22,7 @@ import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
 import { kvCacheGb } from '../src/fit';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
+import type { ModelRow } from '../src/compute';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
 const data: Dataset = {
@@ -622,30 +624,91 @@ ${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.
 /* ---------------------------- comparison pages ---------------------------- */
 
 function comparePage(a: Hardware, b: Hardware): string {
-  const va = computeView({ ...defaultState(data), hw: a.id }, data);
-  const vb = computeView({ ...defaultState(data), hw: b.id }, data);
-  const fa = va.rows.filter((r) => r.fit.status === 'fits');
-  const fb = vb.rows.filter((r) => r.fit.status === 'fits');
+  const st = defaultState(data);
+  const va = computeView({ ...st, hw: a.id }, data);
+  const vb = computeView({ ...st, hw: b.id }, data);
+  const fa = fitsOf(va);
+  const fb = fitsOf(vb);
+  const la = hardwareLabel(a);
+  const lb = hardwareLabel(b);
+  const ctxK = Math.round(st.ctx / 1024);
   const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
-  const body = `<article class="prose">
-<h1>${esc(hardwareLabel(a))} vs ${esc(hardwareLabel(b))} for local AI</h1>
-<p class="lede">Two machines people weigh against each other for running models at home. Same models, same prices, same arithmetic on both sides.</p>
+
+  // each column takes the strongest model its own machine holds, and on 12 of these
+  // pairs that is not the same model, so the speed cell names the model it belongs to
+  const differ = !!fa[0] && !!fb[0] && fa[0].model.id !== fb[0].model.id;
+  const speedCell = (r: ModelRow | undefined) =>
+    !r ? '—' : `${speedWithBasis(r)}${differ ? `<span class="c-quant">${esc(r.model.display_name)}</span>` : ''}`;
+
+  const shared = strongestShared(va, vb);
+  // the like-for-like race the table above cannot give when the two columns
+  // are running different models
+  const likeForLike = shared && differ
+    ? (() => {
+        const sa = computeView({ ...st, hw: a.id, model: shared.model.id }, data);
+        const sb = computeView({ ...st, hw: b.id, model: shared.model.id }, data);
+        return `<h2>Side by side on ${esc(shared.model.display_name)}</h2>
+<p>The table above gives each machine the strongest model it can hold, and those are not the same model, so the two speeds in it are not a race. <a href="/models/${esc(shared.model.id)}/">${esc(shared.model.display_name)}</a> is the strongest model both machines hold, so this is the pair running the same work.</p>
 <table class="board compare">
-<thead><tr><th></th><th><a href="/hardware/${esc(a.id)}/">${esc(hardwareLabel(a))}</a></th><th><a href="/hardware/${esc(b.id)}/">${esc(hardwareLabel(b))}</a></th></tr></thead>
+<thead><tr><th></th><th>${esc(la)}</th><th>${esc(lb)}</th></tr></thead>
 <tbody>
-${row('Price', fmtUsd(a.price_usd), fmtUsd(b.price_usd))}
+${row('Speed', speedWithBasis(shared.a), speedWithBasis(shared.b))}
+${row('Pay-back', esc(verdictLine(sa)), esc(verdictLine(sb)))}
+</tbody>
+</table>
+<p><a class="cta" href="${esc(calcLink({ hw: a.id, model: shared.model.id }, data))}">Run ${esc(shared.model.display_name)} on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id, model: shared.model.id }, data))}">or on the ${esc(lb)}</a></p>`;
+      })()
+    : '';
+
+  // fit turns only on usable memory, so one machine's list is a superset of the
+  // other's; whichever way round that falls, this is what the difference buys
+  const extraA = runsOnlyOn(va, vb);
+  const extraB = runsOnlyOn(vb, va);
+  const [roomier, tighter, extra, roomierView] = extraA.length >= extraB.length
+    ? [la, lb, extraA, va]
+    : [lb, la, extraB, vb];
+  const shown = extra.slice(0, 6);
+  const extraSection = extra.length
+    ? `<h2>What the extra memory buys</h2>
+<p>The ${esc(roomier)} holds ${extra.length} model${extra.length === 1 ? '' : 's'} the ${esc(tighter)} cannot at ${ctxK}k of context. ${extra.length === 1 ? 'That is' : 'The strongest of them are'} what the difference in memory actually buys.</p>
+<table class="board">
+<thead><tr><th>Model</th><th>Weights</th><th>Needs at ${ctxK}k</th><th>On the ${esc(roomier)}</th></tr></thead>
+<tbody>
+${shown
+  .map((m) => {
+    const r = roomierView.rows.find((x) => x.model.id === m.id)!;
+    return `<tr><td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(tierName(m, data))}</span></td><td>${fmtGb(m.weights_gb)}</td><td>${r.fit.needGb != null ? fmtGb(r.fit.needGb) : '<span class="dim">unknown</span>'}</td><td>${speedWithBasis(r)}</td></tr>`;
+  })
+  .join('\n')}
+</tbody>
+</table>
+${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}`
+    : `<h2>Memory is not what separates them</h2>
+<p>Every model on this list that fits one machine fits the other, at ${ctxK}k of context. So the choice between them is speed, price and power, not what they can hold.</p>`;
+
+  const body = `<article class="prose">
+<h1>${esc(la)} vs ${esc(lb)} for local AI</h1>
+<p class="lede">${machineVerdict(a, b, va, vb, data)}</p>
+<table class="board compare">
+<thead><tr><th></th><th><a href="/hardware/${esc(a.id)}/">${esc(la)}</a></th><th><a href="/hardware/${esc(b.id)}/">${esc(lb)}</a></th></tr></thead>
+<tbody>
+${row('Price', priceWithScope(a), priceWithScope(b))}
 ${row('Memory', `${a.unified_memory_gb} GB`, `${b.unified_memory_gb} GB`)}
 ${row('Usable by the GPU', `${a.usable_memory_gb ?? '?'} GB`, `${b.usable_memory_gb ?? '?'} GB`)}
 ${row('Memory bandwidth', a.memory_bandwidth_gbs ? `${a.memory_bandwidth_gbs} GB/s` : 'unknown', b.memory_bandwidth_gbs ? `${b.memory_bandwidth_gbs} GB/s` : 'unknown')}
 ${row('Power under load', `${a.load_watts ?? '?'} W`, `${b.load_watts ?? '?'} W`)}
 ${row('Models that fit', String(fa.length), String(fb.length))}
 ${row('Best model it runs', fa[0] ? `<a href="/models/${esc(fa[0].model.id)}/">${esc(fa[0].model.display_name)}</a>` : '—', fb[0] ? `<a href="/models/${esc(fb[0].model.id)}/">${esc(fb[0].model.display_name)}</a>` : '—')}
-${row('Speed on that model', fa[0]?.throughput.tokensPerSec ? `${fmtNum(fa[0].throughput.tokensPerSec, 0)} tok/s` : '—', fb[0]?.throughput.tokensPerSec ? `${fmtNum(fb[0].throughput.tokensPerSec, 0)} tok/s` : '—')}
-${row('Pay-back', esc(verdictLine(va)), esc(verdictLine(vb)))}
+${row('Speed on that model', speedCell(fa[0]), speedCell(fb[0]))}
+${row('Pay-back on that model', esc(verdictLine(va)), esc(verdictLine(vb)))}
 </tbody>
 </table>
-<p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(hardwareLabel(a))}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(hardwareLabel(b))}</a></p>
-<p class="note">Both columns use the same default usage: ${fmtTokens(defaultState(data).usage)} tokens a day at ${defaultState(data).ratio}:1 input to output, ${Math.round(defaultState(data).ctx / 1024)}k context, and each machine's strongest model that fits.</p>
+<p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(lb)}</a></p>
+${likeForLike}
+${extraSection}
+<h2>The assumptions behind both columns</h2>
+<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. Change any of it in the calculator.</p>
+<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
 </article>`;
   return pageShell(
     {

@@ -7,7 +7,7 @@
  * read by someone arriving from a search, and to be indexable, so nothing here
  * may depend on JavaScript running.
  */
-import { computeView, hardwareLabel, modelLabel, type View } from './compute';
+import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
 import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 import { defaultState, serializeState, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
@@ -359,3 +359,141 @@ export function otherQuantisations(m: Model, data: Dataset): Model[] {
 }
 
 export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc };
+
+/* --------------------- machine head-to-heads --------------------- */
+
+/**
+ * A head-to-head is read as a buying decision, so every figure on one has to
+ * survive being set beside its opposite number. Three of them did not: a card
+ * priced without the PC around it sat next to a complete computer's price, an
+ * estimated speed sat next to another estimated speed with neither said to be
+ * one, and the two speeds were for *different* models, because each column
+ * took the strongest model its own machine could hold. These builders exist so
+ * that each figure carries what it needs to be compared honestly.
+ */
+
+/** The models a machine holds, strongest first, in the site's own order. */
+export function fitsOf(view: View): ModelRow[] {
+  return view.rows.filter((r) => r.fit.status === 'fits');
+}
+
+/** The strongest model both machines hold, and each one's row for it. */
+export function strongestShared(va: View, vb: View): { model: Model; a: ModelRow; b: ModelRow } | null {
+  const inB = new Map(fitsOf(vb).map((r) => [r.model.id, r]));
+  for (const r of fitsOf(va)) {
+    const b = inB.get(r.model.id);
+    if (b) return { model: r.model, a: r, b };
+  }
+  return null;
+}
+
+/** The models the first machine holds and the second does not, strongest first. */
+export function runsOnlyOn(va: View, vb: View): Model[] {
+  const inB = new Set(fitsOf(vb).map((r) => r.model.id));
+  return fitsOf(va).filter((r) => !inB.has(r.model.id)).map((r) => r.model);
+}
+
+/** A price, with the note that a graphics card is priced without the PC around it. */
+export function priceWithScope(hw: Hardware): string {
+  if (hw.price_usd == null) return '<span class="dim">not published</span>';
+  return `${fmtUsd(hw.price_usd)}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}`;
+}
+
+/**
+ * A speed as the page prints it. Anything said about two speeds is worked out
+ * from these rather than from the full precision behind them, so that a reader
+ * dividing one figure on the page by another gets the third figure on the page.
+ */
+export function shownTps(row: ModelRow | null | undefined): number | null {
+  const tps = row?.throughput.tokensPerSec;
+  if (tps == null) return null;
+  return tps < 10 ? Math.round(tps * 10) / 10 : Math.round(tps);
+}
+
+/** A speed, always with how it was arrived at, the way every other page shows one. */
+export function speedWithBasis(row: ModelRow | null | undefined): string {
+  const tps = shownTps(row);
+  if (tps == null) return '<span class="dim">unknown</span>';
+  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(row!.throughput.measurement)}</span>`;
+}
+
+/** How a pair of speeds was arrived at, as a clause to hang off a sentence. */
+function basisClause(a: ModelRow, b: ModelRow, la: string, lb: string): string {
+  const ma = a.throughput.measurement;
+  const mb = b.throughput.measurement;
+  if (ma === 'estimated' && mb === 'estimated') return ', both estimated from memory bandwidth';
+  if (ma === 'measured' && mb === 'measured') return ', both measured';
+  const measured = ma === 'measured' ? la : lb;
+  return `, ${measured}'s measured and the other estimated from memory bandwidth`;
+}
+
+/**
+ * The answer, in the first paragraph: what each one runs, what it costs, which
+ * is quicker on a model they both hold, and whether either ever pays for
+ * itself. Every figure is one the table underneath shows.
+ */
+export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, data: Dataset): string {
+  const la = shortHardwareLabel(a);
+  const lb = shortHardwareLabel(b);
+  const fa = fitsOf(va);
+  const fb = fitsOf(vb);
+  const out: string[] = [];
+
+  if (fa.length === fb.length) {
+    out.push(`Both hold ${fa.length} of the ${va.rows.length} open models here.`);
+  } else {
+    const [more, mc, less, lc] = fa.length > fb.length ? [la, fa.length, lb, fb.length] : [lb, fb.length, la, fa.length];
+    out.push(`The ${more} holds ${mc} of the ${va.rows.length} open models here, and the ${less} holds ${lc}.`);
+  }
+
+  if (a.price_usd != null && b.price_usd != null) {
+    const gap = Math.abs(a.price_usd - b.price_usd);
+    const cards = [a, b].filter((h) => h.price_scope === 'card_only');
+    // one side a bare card and the other a whole computer is not a like-for-like price
+    const caveat = cards.length === 1
+      ? `, though the ${shortHardwareLabel(cards[0])} is priced as the card alone, without the PC around it`
+      : cards.length === 2
+        ? ', both priced as the card alone, without the PC around either'
+        : '';
+    out.push(gap === 0
+      ? `They cost the same${caveat}.`
+      : `The ${a.price_usd < b.price_usd ? la : lb} costs ${fmtUsd(gap)} less${caveat}.`);
+  }
+
+  const shared = strongestShared(va, vb);
+  const ta = shownTps(shared?.a);
+  const tb = shownTps(shared?.b);
+  if (shared && ta != null && tb != null && ta > 0 && tb > 0) {
+    const hi = Math.max(ta, tb);
+    const lo = Math.min(ta, tb);
+    const num = (t: number) => fmtNum(t, t < 10 ? 1 : 0);
+    const basis = basisClause(shared.a, shared.b, la, lb);
+    const both = `On ${shared.model.display_name}, the strongest model both hold,`;
+    out.push(hi / lo < 1.05
+      ? `${both} they run at much the same speed: ${num(ta)} and ${num(tb)} tok/s${basis}.`
+      : `${both} the ${ta > tb ? la : lb} is about ${fmtNum(hi / lo, 1)}× faster: ${num(hi)} tok/s against ${num(lo)}${basis}.`);
+  } else if (!shared) {
+    out.push('No model on this list fits both machines, so there is nothing to time them on side by side.');
+  }
+
+  const usage = fmtTokens(defaultState(data).usage);
+  const da = va.calc?.breakevenDays ?? null;
+  const db = vb.calc?.breakevenDays ?? null;
+  // each column's pay-back is for that machine's own strongest model. Where those are
+  // two different models the figures are not a race, and the sentence has to say so.
+  const sameModel = !!fa[0] && !!fb[0] && fa[0].model.id === fb[0].model.id;
+  const onEachOwn = sameModel ? '' : ', though that is each machine on its own strongest model rather than on the same one';
+  if (va.calc && vb.calc) {
+    if (da === null && db === null) out.push(`Neither pays for itself at ${usage} tokens a day.`);
+    else if (da === null || db === null) {
+      const [payer, days] = da === null ? [lb, db!] : [la, da!];
+      out.push(`At ${usage} tokens a day the ${payer} pays for itself in ${fmtDuration(days)}${sameModel ? '' : ', on its own strongest model'}; the other never does.`);
+    } else if (da === db) {
+      out.push(`Both pay for themselves in ${fmtDuration(da)} at ${usage} tokens a day${onEachOwn}.`);
+    } else {
+      out.push(`The ${da < db ? la : lb} pays for itself sooner, in ${fmtDuration(Math.min(da, db))} against ${fmtDuration(Math.max(da, db))} at ${usage} tokens a day${onEachOwn}.`);
+    }
+  }
+
+  return out.join(' ');
+}
