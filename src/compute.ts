@@ -1,5 +1,5 @@
 import { calculate, DAYS_PER_YEAR, type CalcResult } from './calc';
-import { fit, resolveThroughput, type Fit, type ResolvedThroughput } from './fit';
+import { contextSpeedFactor, fit, kvScaleFor, resolveThroughput, type Fit, type ResolvedThroughput } from './fit';
 import { fmtVerdictDuration } from './format';
 import { CUSTOM_HW, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
@@ -66,9 +66,22 @@ export function customHardware(s: State): Hardware {
   };
 }
 
-/** Your measured speed, used as given: you measured at your own context, so it is not adjusted. */
-function yourThroughput(tps: number, ctx: number): ResolvedThroughput {
-  return { tokensPerSec: tps, baseTokensPerSec: tps, baseContext: ctx, contextFactor: 1, measurement: 'yours', source: 'your measurement, as entered', sourceUrl: null, detail: 'not adjusted for context' };
+/**
+ * Your measured speed. Taken at a context you name, it is scaled to the context you're asking
+ * about, the same way our own measurements are; otherwise it is used as given.
+ */
+function yourThroughput(m: Model, tps: number, measuredAt: number | null, ctx: number, kvScale: number): ResolvedThroughput {
+  const factor = measuredAt == null ? 1 : contextSpeedFactor(m, measuredAt, ctx, kvScale);
+  return {
+    tokensPerSec: tps * factor,
+    baseTokensPerSec: tps,
+    baseContext: measuredAt ?? ctx,
+    contextFactor: factor,
+    measurement: 'yours',
+    source: 'your measurement, as entered',
+    sourceUrl: null,
+    detail: measuredAt == null ? 'taken as measured at this context' : `measured at ${Math.round(measuredAt / 1024)}k context, scaled to ${Math.round(ctx / 1024)}k`,
+  };
 }
 
 export function modelLabel(m: Model): string {
@@ -79,11 +92,12 @@ export function computeView(state: State, data: Dataset): View {
   const d = data.defaults;
   const hw = state.hw === CUSTOM_HW ? customHardware(state) : data.hardware.find((h) => h.id === state.hw) ?? data.hardware[0];
 
+  const kvScale = kvScaleFor(state.kv, d);
   const all = data.models.map<ModelRow>((m) => ({
     model: m,
-    fit: fit(m, hw, state.ctx, d.nearly_fits_ratio),
+    fit: fit(m, hw, state.ctx, d.nearly_fits_ratio, kvScale),
     // your own measurement wins for the model it was taken on
-    throughput: m.id === state.model && state.tps != null ? yourThroughput(state.tps, state.ctx) : resolveThroughput(m, hw, data.throughput, d, state.ctx),
+    throughput: m.id === state.model && state.tps != null ? yourThroughput(m, state.tps, state.tpsCtx, state.ctx, kvScale) : resolveThroughput(m, hw, data.throughput, d, state.ctx, kvScale),
   }));
   const order: Record<string, number> = { fits: 0, nearly: 1, context: 2, unknown: 3, no: 4 };
   // every model stays in the list — the ones that don't fit are greyed with the reason, so a

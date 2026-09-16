@@ -1,6 +1,6 @@
 import { computeView, formatUsageShort, hardwareLabel, modelLabel, ratioLabel, usageLabel, type ModelRow, type View } from './compute';
 import { esc, fmtDuration, fmtGb, fmtHours, fmtInt, fmtNum, fmtSeconds, fmtTokens, fmtUsd } from './format';
-import { kvCacheGb } from './fit';
+import { bandwidthCeilingTps, kvCacheGb, kvScaleFor } from './fit';
 import { CUSTOM_HW, serializeState, type State } from './state';
 import { CAPABILITY_KEYS, CAPABILITY_LABELS, type Dataset, type Hardware, type Model, type Rating } from './types';
 import { renderWaterline } from './waterline';
@@ -160,7 +160,7 @@ function renderControls(state: State, data: Dataset, view: View) {
   const idx = Math.max(0, opts.indexOf(state.ctx));
   if (Number(cs.value) !== idx) cs.value = String(idx);
   const sel = view.model;
-  const kv = sel ? kvCacheGb(sel, state.ctx) : null;
+  const kv = sel ? kvCacheGb(sel, state.ctx, kvScaleFor(state.kv, d)) : null;
   const limit = sel?.max_context_tokens;
   $('#ctx-readout').innerHTML = `<b class="num">${fmtCtx(state.ctx)}</b> tokens <span class="muted">— ${sel ? `${fmtGb(kv)} KV cache for ${esc(sel.display_name)}` : 'sets each model’s KV-cache memory'}${limit != null ? `; limit ${fmtCtx(limit)}` : ''}</span>`;
 
@@ -187,9 +187,30 @@ function renderControls(state: State, data: Dataset, view: View) {
   syncInput('#sub', state.sub);
   const m = view.model;
   const report = reportSpeedUrl(state, data, view);
+  const kvs = kvScaleFor(state.kv, d);
+  const ctxOpts = d.context.options;
+  setOptions($<HTMLSelectElement>('#tps-ctx'), `<option value="">the context above</option>` + ctxOpts.map((o) => `<option value="${o}">${fmtCtx(o)} tokens</option>`).join(''), state.tpsCtx == null ? '' : String(state.tpsCtx));
+  setOptions($<HTMLSelectElement>('#kv'), (d.kv_cache?.types ?? []).map((t) => `<option value="${esc(t.id)}">${esc(t.label)}</option>`).join(''), state.kv);
+  $('#kv-note').innerHTML = d.kv_cache?.note ? `${esc(d.kv_cache.note)}${d.kv_cache.source_url ? ` <a href="${esc(d.kv_cache.source_url)}" rel="noopener">Block sizes</a>.` : ''}` : '';
+  // a speed above what the memory bandwidth allows is almost always prompt processing
+  const measuredAt = state.tpsCtx ?? state.ctx;
+  // your speed belongs to the model you entered it for, which may not be the one that fits now
+  const tpsModel = state.tps != null ? data.models.find((x) => x.id === state.model) ?? null : null;
+  const tpsApplies = !!tpsModel && m?.id === tpsModel.id;
+  const ceiling = tpsModel ? bandwidthCeilingTps(tpsModel, view.hw, measuredAt, kvs) : null;
+  const tooFast = state.tps != null && ceiling != null && state.tps > ceiling * 1.5;
+  const yoursLine = tpsModel && state.tps != null && !tpsApplies
+    ? `Your ${fmtNum(state.tps, 1)} tok/s is for ${esc(tpsModel.display_name)}, which doesn’t fit at this context, so it isn’t used here.`
+    : tpsModel && state.tps != null
+    ? `Using your ${fmtNum(state.tps, 1)} tok/s for ${esc(tpsModel.display_name)}${state.tpsCtx == null
+      ? ', taken as measured at the context above'
+      : state.tpsCtx !== state.ctx && view.throughput?.tokensPerSec != null
+        ? `, measured at ${fmtCtx(state.tpsCtx)} context, which works out to ${fmtNum(view.throughput.tokensPerSec, 1)} tok/s at ${fmtCtx(state.ctx)}`
+        : ''}. Clear it to use ours.${tooFast ? ` <b>That is above what this machine’s memory bandwidth allows for this model, about ${fmtNum(ceiling!, 0)} tok/s at that context.</b> Check it is the generation speed, not prompt processing, which runs far faster.` : ''}`
+    : '';
   $('#tps-note').innerHTML = m
     ? `${state.tps != null
-      ? `Using your ${fmtNum(state.tps, 1)} tok/s for ${esc(m.display_name)} on this machine, not adjusted for context. Clear it to use ours.`
+      ? yoursLine
       : `For ${esc(m.display_name)} on this machine.${view.throughput?.tokensPerSec != null ? ` Ours is ${fmtNum(view.throughput.tokensPerSec, 1)} tok/s, ${esc(view.throughput.measurement)}.` : ''}`}${report ? ` <a href="${esc(report)}" target="_blank" rel="noopener">Send in your measurement</a> and it can go into the data for everyone, with its source.` : ''}`
     : 'Pick a model that fits to enter a speed for it.';
   $('#sub-note').textContent = state.sub != null
@@ -266,7 +287,7 @@ function renderModels(state: State, data: Dataset, view: View) {
 function modelCard({ model: m, fit, throughput: t }: ModelRow, state: State, data: Dataset, view: View): string {
   const selected = view.model?.id === m.id;
   const disabled = fit.status !== 'fits';
-  const kv = kvCacheGb(m, state.ctx);
+  const kv = kvCacheGb(m, state.ctx, kvScaleFor(state.kv, data.defaults));
   const slower = t.contextFactor < 0.95 && t.baseTokensPerSec != null;
   const speed = t.tokensPerSec == null
     ? '<span class="todo">speed unknown</span>'
@@ -526,7 +547,7 @@ breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)}
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
   ${c.apiDeclinePerYear > 0 ? `<dt>Falling API prices</dt><dd>Assuming ${Math.round(c.apiDeclinePerYear * 100)}% a year. ${esc(data.defaults.api_decline.source)}${data.defaults.api_decline.source_url ? ` <a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">Source</a>.` : ''}${c.bestPosition ? ` The saving peaks ${fmtDuration(c.bestPosition.days)} in; after that the API is cheaper than the electricity and the position sinks.` : ''}</dd>` : ''}
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
-  <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx))} KV cache at ${fmtCtx(state.ctx)} context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × 2 bytes × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
+  <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx, kvScaleFor(state.kv, data.defaults)))} KV cache at ${fmtCtx(state.ctx)} context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × ${(data.defaults.kv_cache?.types ?? []).find((t) => t.id === state.kv)?.bytes_per_value ?? 2} bytes (${esc((data.defaults.kv_cache?.types ?? []).find((t) => t.id === state.kv)?.label ?? '16-bit')} cache) × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
 </dl>
 <p class="note">Left out, all of which favour local slightly less than shown: prompt-processing time and its electricity, idle power when the machine is on but not generating, and API prompt caching, which cuts the input price on repeated context. Left out in local’s favour: resale value, and the other jobs the machine does.</p>`;
 }

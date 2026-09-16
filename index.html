@@ -116,10 +116,15 @@
                 <label class="field"><span class="label">API speed, tok/s</span><input class="input" type="number" id="cloud-tps" min="1" step="5" /></label>
               </div>
               <div class="row-2">
-                <label class="field"><span class="label">Your measured speed, tok/s</span><input class="input" type="number" id="your-tps" min="0.1" step="0.1" inputmode="decimal" placeholder="use ours" /></label>
+                <label class="field"><span class="label">Your generation speed, tok/s</span><input class="input" type="number" id="your-tps" min="0.1" step="0.1" inputmode="decimal" placeholder="use ours" /></label>
                 <label class="field"><span class="label">Or your monthly bill, $</span><input class="input" type="number" id="sub" min="1" step="1" inputmode="numeric" placeholder="per-token price" /></label>
               </div>
+              <div class="row-2">
+                <label class="field"><span class="label">Measured at</span><span class="select"><select id="tps-ctx" aria-label="Context your speed was measured at"></select></span></label>
+                <label class="field"><span class="label">Key-value cache</span><span class="select"><select id="kv" aria-label="Key-value cache type"></select></span></label>
+              </div>
               <p class="note dim" id="tps-note"></p>
+              <p class="note dim" id="kv-note"></p>
               <p class="note dim" id="sub-note"></p>
               <p class="note dim">Your own machine, speed and bill are sent to us once you stop typing, with no cookies and no IP address, only the country the request came from, so the options and estimates can get better. Browsers set not to be tracked send nothing.</p>
               <label class="switch">

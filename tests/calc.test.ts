@@ -557,3 +557,34 @@ describe('capturing what people enter', () => {
     expect(row.custom_name).toBe('bbox/b');
   });
 });
+
+describe('key-value cache type and measured context', () => {
+  const base = parseState('', data);
+  const s = { ...base, hw: 'mac-studio-m5-max-64', model: 'qwen3.8-27b-q4', ctx: 131072 };
+  const row = (v: ReturnType<typeof computeView>) => v.rows.find((r) => r.model.id === 'qwen3.8-27b-q4')!;
+
+  it('an 8-bit cache needs less memory and reads faster at long context', () => {
+    const f16 = computeView(s, data);
+    const q8 = computeView({ ...s, kv: 'q8_0' }, data);
+    expect(row(q8).fit.needGb!).toBeLessThan(row(f16).fit.needGb!);
+    expect(row(q8).throughput.tokensPerSec!).toBeGreaterThan(row(f16).throughput.tokensPerSec!);
+    expect(parseState(serializeState({ ...s, kv: 'q8_0', tpsCtx: 4096 }), data)).toMatchObject({ kv: 'q8_0', tpsCtx: 4096 });
+  });
+
+  it('scales a speed measured at a short context to the context asked about', () => {
+    const v = computeView({ ...s, tps: 40, tpsCtx: 4096 }, data);
+    expect(v.throughput!.measurement).toBe('yours');
+    expect(v.throughput!.tokensPerSec!).toBeLessThan(40);
+    expect(computeView({ ...s, tps: 40 }, data).throughput!.tokensPerSec).toBe(40);
+    const q = cardQuery({ ...s, tps: 40, tpsCtx: 4096, kv: 'q8_0' }, data)!;
+    expect(q).toContain('tctx=4096');
+    expect(q).toContain('kv=q8_0');
+  });
+
+  it('records the measured context and the bandwidth ceiling alongside a speed', () => {
+    const r = submissionRow({ hw: 'mac-mini-m4-32', model: 'qwen3.8-27b-q4', tps: 18, tpsCtx: 4096, kv: 'f16', usage: 500000, ratio: 15, ctx: 32768, kwh: 0.17 }, data)!;
+    expect(r).toMatchObject({ tps_ctx: 4096, kv: 'f16', our_measurement: 'estimated' });
+    // 120 GB/s over roughly 17 GB read per token: 18 tok/s cannot be a generation speed
+    expect(r.ceiling_tps as number).toBeLessThan(8);
+  });
+});

@@ -6,6 +6,7 @@
  * comparison can't be spoofed.
  */
 import { computeView } from './compute';
+import { bandwidthCeilingTps, kvScaleFor } from './fit';
 import { CUSTOM_HW, defaultState, type State } from './state';
 import type { Dataset } from './types';
 
@@ -23,6 +24,8 @@ export interface SubmissionPayload {
   ratio: number;
   ctx: number;
   kwh: number;
+  tpsCtx: number | null;
+  kv: string;
 }
 
 /** Which of your own numbers are in play: only these are worth recording. */
@@ -52,12 +55,15 @@ export function submissionPayload(s: State): SubmissionPayload | null {
     ratio: s.ratio,
     ctx: s.ctx,
     kwh: s.kwh,
+    tpsCtx: s.tpsCtx,
+    kv: s.kv,
   };
 }
 
 export const SUBMISSION_COLUMNS = [
   'kinds', 'hw', 'model', 'custom_name', 'custom_mem_gb', 'custom_watts', 'custom_bw_gbs', 'price_usd',
   'tps', 'our_tps', 'our_measurement', 'sub_usd', 'usage', 'ratio', 'ctx', 'kwh', 'breakeven_days', 'data_checked',
+  'tps_ctx', 'kv', 'ceiling_tps',
 ] as const;
 
 export type SubmissionRow = Record<(typeof SUBMISSION_COLUMNS)[number], string | number | null>;
@@ -84,7 +90,10 @@ export const SUBMISSIONS_SCHEMA = `CREATE TABLE IF NOT EXISTS submissions (
   kwh REAL,
   breakeven_days REAL,
   data_checked TEXT,
-  country TEXT
+  country TEXT,
+  tps_ctx INTEGER,
+  kv TEXT,
+  ceiling_tps REAL
 )`;
 
 const numIn = (v: unknown, min: number, max: number): number | null =>
@@ -119,12 +128,19 @@ export function submissionRow(input: unknown, data: Dataset): SubmissionRow | nu
     ctx: numIn(x.ctx, 1024, 1_000_000) ?? d.ctx,
     kwh: numIn(x.kwh, 0, 5) ?? d.kwh,
     decline: 0,
+    tpsCtx: typeof x.tpsCtx === 'number' && data.defaults.context.options.includes(x.tpsCtx) ? x.tpsCtx : null,
+    kv: typeof x.kv === 'string' && (data.defaults.kv_cache?.types ?? []).some((t) => t.id === x.kv) ? x.kv : d.kv,
   };
   const kinds = submissionKinds(state);
   if (!kinds.length) return null;
   const view = computeView(state, data);
   // what we would have shown without their speed, to see how far off our figure is
-  const ours = state.tps != null ? computeView({ ...state, tps: null }, data).throughput : null;
+  // compared where they measured: at their context and cache type, with their speed taken out
+  const measuredCtx = state.tpsCtx ?? state.ctx;
+  const oursView = state.tps != null ? computeView({ ...state, tps: null, ctx: measuredCtx }, data) : null;
+  const ours = oursView?.rows.find((r) => r.model.id === model)?.throughput ?? null;
+  const modelObj = data.models.find((m) => m.id === model);
+  const ceiling = oursView && modelObj ? bandwidthCeilingTps(modelObj, oursView.hw, measuredCtx, kvScaleFor(state.kv, data.defaults)) : null;
   return {
     kinds: kinds.join(','),
     hw,
@@ -144,5 +160,8 @@ export function submissionRow(input: unknown, data: Dataset): SubmissionRow | nu
     kwh: state.kwh,
     breakeven_days: view.calc?.breakevenDays ?? null,
     data_checked: data.defaults.data_last_checked,
+    tps_ctx: state.tps != null ? state.tpsCtx : null,
+    kv: state.kv,
+    ceiling_tps: ceiling,
   };
 }

@@ -76,12 +76,12 @@ $<HTMLSelectElement>('#family').addEventListener('change', (e) => {
     return;
   }
   const first = data.hardware.find((h) => h.family === fam && h.price_usd != null) ?? data.hardware.find((h) => h.family === fam);
-  if (first) update({ hw: first.id, price: null, tps: null });
+  if (first) update({ hw: first.id, price: null, tps: null, tpsCtx: null });
 });
 
 /** Switch to a machine you describe; a speed measured on another machine doesn't carry over. */
 function useCustomMachine() {
-  update({ hw: CUSTOM_HW, price: null, tps: null });
+  update({ hw: CUSTOM_HW, price: null, tps: null, tpsCtx: null });
   document.querySelector<HTMLInputElement>('#custom-name')?.focus();
 }
 $<HTMLSelectElement>('#chip').addEventListener('change', (e) => {
@@ -89,12 +89,12 @@ $<HTMLSelectElement>('#chip').addEventListener('change', (e) => {
   const fam = view.hw.family;
   const same = data.hardware.filter((h) => h.family === fam && h.chip === chip);
   const pick = same.find((h) => h.unified_memory_gb === view.hw.unified_memory_gb) ?? same.find((h) => h.price_usd != null) ?? same[0];
-  if (pick) update({ hw: pick.id, price: null, tps: null });
+  if (pick) update({ hw: pick.id, price: null, tps: null, tpsCtx: null });
 });
 $<HTMLSelectElement>('#memory').addEventListener('change', (e) => {
   const wrap = document.querySelector<HTMLElement>('#price-wrap');
   if (wrap) delete wrap.dataset.open;
-  update({ hw: (e.target as HTMLSelectElement).value, price: null, tps: null });
+  update({ hw: (e.target as HTMLSelectElement).value, price: null, tps: null, tpsCtx: null });
 });
 $<HTMLInputElement>('#decline-on').addEventListener('change', (e) => {
   const rate = Number($<HTMLSelectElement>('#decline-rate').value) || data.defaults.api_decline.default_rate_per_year;
@@ -127,6 +127,12 @@ onNumber('#custom-watts', 'customWatts', true);
 onNumber('#custom-bw', 'customBw', true);
 onNumber('#your-tps', 'tps', false);
 onNumber('#sub', 'sub', true);
+$<HTMLSelectElement>('#tps-ctx').addEventListener('change', (e) => {
+  const v = (e.target as HTMLSelectElement).value;
+  update({ tpsCtx: v === '' ? null : Number(v) });
+  queueSubmission();
+});
+$<HTMLSelectElement>('#kv').addEventListener('change', (e) => update({ kv: (e.target as HTMLSelectElement).value }));
 $<HTMLInputElement>('#custom-name').addEventListener('input', (e) => {
   update({ customName: (e.target as HTMLInputElement).value.slice(0, 40) });
   queueSubmission();
@@ -168,10 +174,10 @@ document.addEventListener('click', (e) => {
     return;
   }
   // a price you paid for one machine says nothing about another, so it clears on switch
-  if (t.dataset.hw) update({ hw: t.dataset.hw, price: null, tps: null });
+  if (t.dataset.hw) update({ hw: t.dataset.hw, price: null, tps: null, tpsCtx: null });
   if (t.dataset.model && t.getAttribute('aria-disabled') !== 'true' && !(e.target as HTMLElement).closest('a')) {
     // a speed you measured belongs to the model you measured it on
-    update({ model: t.dataset.model, ...(t.dataset.model !== state.model ? { tps: null } : {}) });
+    update({ model: t.dataset.model, ...(t.dataset.model !== state.model ? { tps: null, tpsCtx: null } : {}) });
     document.querySelector<HTMLElement>(`[data-model="${t.dataset.model}"]`)?.focus();
   }
 });
@@ -180,7 +186,7 @@ document.addEventListener('keydown', (e) => {
   const t = (e.target as HTMLElement).closest<HTMLElement>('[data-model]');
   if (t && t.getAttribute('aria-disabled') !== 'true') {
     e.preventDefault();
-    update({ model: t.dataset.model!, ...(t.dataset.model !== state.model ? { tps: null } : {}) });
+    update({ model: t.dataset.model!, ...(t.dataset.model !== state.model ? { tps: null, tpsCtx: null } : {}) });
     document.querySelector<HTMLElement>(`[data-model="${t.dataset.model}"]`)?.focus();
   }
 });

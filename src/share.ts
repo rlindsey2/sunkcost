@@ -60,6 +60,8 @@ export function cardQuery(state: State, data: Dataset): string | null {
     // your measured speed and your monthly bill both change what the card says
     if (s.tps != null) q.set('tps', String(s.tps));
     if (s.sub != null) q.set('sub', String(s.sub));
+    if (s.tps != null && s.tpsCtx != null) q.set('tctx', String(s.tpsCtx));
+    if (s.kv !== (data.defaults.kv_cache?.default ?? 'f16')) q.set('kv', s.kv);
     return q.toString();
   };
   const mine = pick(state);

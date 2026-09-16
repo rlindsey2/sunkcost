@@ -32,6 +32,10 @@ export interface State {
   customMem: number | null;
   customWatts: number | null;
   customBw: number | null;
+  /** the context your measured speed was taken at; null = the context slider's */
+  tpsCtx: number | null;
+  /** key-value cache type, an id from defaults.kv_cache.types */
+  kv: string;
 }
 
 /** The hardware id for a machine you describe yourself: a used GPU box, a rig, anything not on the list. */
@@ -56,6 +60,8 @@ const KEYS: Record<keyof State, string> = {
   customMem: 'cm',
   customWatts: 'cw',
   customBw: 'cb',
+  tpsCtx: 'tctx',
+  kv: 'kv',
 };
 
 function num(v: string | null, fallback: number, min?: number, max?: number): number {
@@ -104,6 +110,8 @@ export function defaultState(data: Dataset): State {
     customMem: null,
     customWatts: null,
     customBw: null,
+    tpsCtx: null,
+    kv: d.kv_cache?.default ?? 'f16',
   };
 }
 
@@ -143,6 +151,8 @@ export function parseState(search: string, data: Dataset, pathname = '/'): State
     customMem: opt(p.get(KEYS.customMem), 1, 4000),
     customWatts: opt(p.get(KEYS.customWatts), 1, 20_000),
     customBw: opt(p.get(KEYS.customBw), 1, 5000),
+    tpsCtx: data.defaults.context.options.includes(Number(p.get(KEYS.tpsCtx))) ? Number(p.get(KEYS.tpsCtx)) : null,
+    kv: (data.defaults.kv_cache?.types ?? []).some((t) => t.id === p.get(KEYS.kv)) ? p.get(KEYS.kv)! : d.kv,
   };
 }
 
@@ -162,6 +172,8 @@ export function serializeState(s: State): string {
   if (s.showOlder) p.set(KEYS.showOlder, '1');
   if (s.tps != null) p.set(KEYS.tps, String(s.tps));
   if (s.sub != null) p.set(KEYS.sub, String(s.sub));
+  if (s.tpsCtx != null) p.set(KEYS.tpsCtx, String(s.tpsCtx));
+  if (s.kv && s.kv !== 'f16') p.set(KEYS.kv, s.kv);
   if (s.hw === CUSTOM_HW) {
     if (s.customName) p.set(KEYS.customName, s.customName);
     if (s.customMem != null) p.set(KEYS.customMem, String(s.customMem));

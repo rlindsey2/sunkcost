@@ -33,6 +33,10 @@ export interface Hardware {
   load_watts_note?: string;
   /** overrides defaults.estimate.efficiency_moe for this machine */
   estimate_efficiency_moe?: number | null;
+  /** overrides defaults.estimate.efficiency_dense for this machine (calibrated on its measured dense pairs) */
+  estimate_efficiency_dense?: number | null;
+  /** 'card_only' for a graphics card priced without the PC around it */
+  price_scope?: 'system' | 'card_only';
   estimate_note?: string;
   generation?: 'current' | 'previous';
   status?: string;
@@ -173,6 +177,8 @@ export interface Defaults {
   cloud: { default_tokens_per_sec: number; note: string };
   estimate: { efficiency_dense: number; efficiency_moe: number; note: string };
   context: { default_tokens: number; options: number[]; note?: string };
+  /** key-value cache storage types, as runtimes offer them (llama.cpp --cache-type-k/-v) */
+  kv_cache?: { default: string; types: { id: string; label: string; bytes_per_value: number }[]; note?: string; source_url?: string };
   context_decay?: { model: string; why: string; accuracy_note: string; calibration?: unknown[] };
   sorts: { id: string; label: string }[];
   default_sort?: string;

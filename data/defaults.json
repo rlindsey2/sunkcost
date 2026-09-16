@@ -67,6 +67,16 @@
     ],
     "note": "The context window you want. It sets the KV-cache memory each model needs, and it slows generation down: every token generated has to read the whole cache back."
   },
+  "kv_cache": {
+    "default": "f16",
+    "types": [
+      { "id": "f16", "label": "16-bit (default)", "bytes_per_value": 2 },
+      { "id": "q8_0", "label": "8-bit (q8_0)", "bytes_per_value": 1.0625 },
+      { "id": "q4_0", "label": "4-bit (q4_0)", "bytes_per_value": 0.5625 }
+    ],
+    "note": "llama.cpp keeps the key-value cache at 16 bits unless you pass --cache-type-k and --cache-type-v. q8_0 stores 32 values in 34 bytes and q4_0 in 18, so the cache shrinks to about a half or about a quarter. Every generated token reads the whole cache, so a smaller one also speeds up long contexts. Both are lossy; 4-bit loses more.",
+    "source_url": "https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/ggml-common.h"
+  },
   "nearly_fits_ratio": 1.4,
   "waterline_max_years": 10,
   "typical_task_output_tokens": 1000,

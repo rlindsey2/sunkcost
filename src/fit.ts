@@ -43,15 +43,16 @@ export function kvCacheGbPer8kFromArchitecture(m: Model): number | null {
   return kvCacheGbFromArchitecture(m, 8192);
 }
 
-export function kvCacheGb(m: Model, contextTokens: number): number | null {
+/** kvScale shrinks the 16-bit cache for a quantised cache type; see kvScaleFor. */
+export function kvCacheGb(m: Model, contextTokens: number, kvScale = 1): number | null {
   const fromArch = kvCacheGbFromArchitecture(m, contextTokens);
-  if (fromArch != null) return fromArch;
+  if (fromArch != null) return fromArch * kvScale;
   if (m.kv_cache_gb_per_8k == null) return null;
-  return (m.kv_cache_gb_per_8k * contextTokens) / 8192;
+  return ((m.kv_cache_gb_per_8k * contextTokens) / 8192) * kvScale;
 }
 
-export function footprintGb(m: Model, contextTokens: number): number | null {
-  const kv = kvCacheGb(m, contextTokens);
+export function footprintGb(m: Model, contextTokens: number, kvScale = 1): number | null {
+  const kv = kvCacheGb(m, contextTokens, kvScale);
   if (m.weights_gb == null || kv == null) return null;
   return m.weights_gb + kv;
 }
@@ -65,8 +66,8 @@ export interface Fit {
   reason: string;
 }
 
-export function fit(m: Model, hw: Hardware, contextTokens: number, nearlyRatio: number): Fit {
-  const need = footprintGb(m, contextTokens);
+export function fit(m: Model, hw: Hardware, contextTokens: number, nearlyRatio: number, kvScale = 1): Fit {
+  const need = footprintGb(m, contextTokens, kvScale);
   const have = hw.usable_memory_gb;
   if (need == null || have == null) {
     return { status: 'unknown', needGb: need, haveGb: have, reason: need == null ? 'model size unknown' : 'usable memory unknown' };
@@ -107,11 +108,11 @@ export interface ResolvedThroughput {
  * the cache, so speed falls roughly in proportion to the extra bytes read.
  * See defaults.context_decay for the calibration against public benchmarks.
  */
-export function contextSpeedFactor(m: Model, fromContext: number, toContext: number): number {
+export function contextSpeedFactor(m: Model, fromContext: number, toContext: number, kvScale = 1): number {
   const weights = bytesReadPerTokenGb(m);
   if (weights == null) return 1;
-  const kvFrom = kvCacheGb(m, fromContext) ?? 0;
-  const kvTo = kvCacheGb(m, toContext) ?? 0;
+  const kvFrom = kvCacheGb(m, fromContext, kvScale) ?? 0;
+  const kvTo = kvCacheGb(m, toContext, kvScale) ?? 0;
   const denom = weights + kvTo;
   if (denom <= 0) return 1;
   return (weights + kvFrom) / denom;
@@ -130,7 +131,7 @@ export function isMoe(m: Model): boolean {
 
 export function estimateEfficiency(m: Model, hw: Hardware, defaults: Defaults): number {
   if (isMoe(m)) return hw.estimate_efficiency_moe ?? defaults.estimate.efficiency_moe;
-  return defaults.estimate.efficiency_dense;
+  return hw.estimate_efficiency_dense ?? defaults.estimate.efficiency_dense;
 }
 
 export function estimateTokensPerSec(m: Model, hw: Hardware, efficiency: number): number | null {
@@ -145,11 +146,12 @@ export function resolveThroughput(
   throughput: Throughput[],
   defaults: Defaults,
   contextTokens: number,
+  kvScale = 1,
 ): ResolvedThroughput {
   const row = throughput.find((t) => t.model_id === m.id && t.hardware_id === hw.id && t.tokens_per_sec != null);
   if (row && row.tokens_per_sec != null) {
     const from = row.measured_at_context ?? 0;
-    const factor = contextSpeedFactor(m, from, contextTokens);
+    const factor = contextSpeedFactor(m, from, contextTokens, kvScale);
     return {
       tokensPerSec: row.tokens_per_sec * factor,
       baseTokensPerSec: row.tokens_per_sec,
@@ -166,7 +168,7 @@ export function resolveThroughput(
   if (est == null) {
     return { tokensPerSec: null, baseTokensPerSec: null, baseContext: 0, contextFactor: 1, measurement: 'unknown', source: 'no measurement and not enough data to estimate', sourceUrl: null, detail: '' };
   }
-  const factor = contextSpeedFactor(m, 0, contextTokens);
+  const factor = contextSpeedFactor(m, 0, contextTokens, kvScale);
   const gb = bytesReadPerTokenGb(m)!;
   const moe = isMoe(m);
   return {
@@ -179,4 +181,22 @@ export function resolveThroughput(
     sourceUrl: null,
     detail: `bandwidth-bound estimate, not a measurement${moe && hw.estimate_note ? `. ${hw.estimate_note}` : ''}`,
   };
+}
+
+/** How much smaller a cache type is than the 16-bit default: its bytes per value over two. */
+export function kvScaleFor(type: string | null | undefined, defaults: Defaults): number {
+  const types = defaults.kv_cache?.types ?? [];
+  const t = types.find((x) => x.id === type) ?? types.find((x) => x.id === defaults.kv_cache?.default);
+  return t ? t.bytes_per_value / KV_BYTES_PER_VALUE : 1;
+}
+
+/**
+ * The most tokens a second this machine could generate with this model at this context:
+ * memory bandwidth over everything read per token (active weights plus the cache). A reported
+ * speed well above it is almost always prompt processing, not generation.
+ */
+export function bandwidthCeilingTps(m: Model, hw: Hardware, contextTokens: number, kvScale = 1): number | null {
+  const weights = bytesReadPerTokenGb(m);
+  if (weights == null || hw.memory_bandwidth_gbs == null) return null;
+  return hw.memory_bandwidth_gbs / (weights + (kvCacheGb(m, contextTokens, kvScale) ?? 0));
 }
