@@ -5,18 +5,31 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 ## Ryan's side (needs the site owner)
 
-- [ ] Verify sunkcost.ai in Google Search Console and Bing Webmaster Tools, submit
-      https://sunkcost.ai/sitemap.xml, and share the Search Console CSV exports (queries, pages)
-      by committing them under seo/exports/. Until then the agent works without query data.
-      The Indexing → Pages export is worth as much as the query one: it says which of the 188
-      generated pages Google has actually indexed, which is the first thing to fix if the answer
-      is "not many".
+- [ ] Verify sunkcost.ai in Google Search Console: add a property, choose **Domain** rather than
+      URL prefix so it covers the apex and any subdomain at once, and take the auto-DNS
+      verification flow, which writes the TXT record into Cloudflare for you. Then submit
+      https://sunkcost.ai/sitemap.xml under Sitemaps. Bing Webmaster Tools comes after, not
+      before: it can import a verified property straight from Search Console.
+      Then commit the CSV exports under seo/exports/. The Indexing → Pages export is worth as
+      much as the query one: it says which of the 188 generated pages Google has actually
+      indexed, which is the first thing to fix if the answer is "not many". Until either exists
+      the agent works from the pages themselves, with no idea what anyone searched.
 - [ ] Run Google's Rich Results Test on https://sunkcost.ai/hardware/geforce-rtx-3090-24/ and
       confirm the breadcrumb is detected. Structured data was verified against the local build,
       which is the build the deploy runs, so this is a confirmation rather than a check.
 - [ ] Commit `npm run submissions` output under seo/exports/ when there is enough of it. The
       agent has no database access by design, and that file is the only route to a page built
       from what people actually entered.
+- [ ] Turn on Cloudflare Web Analytics: Workers & Pages → the project → Metrics → Enable. Free,
+      no cookie banner, injected on the next deploy. Search Console says what Google showed
+      people; this says what they did on arrival, which nothing here currently measures.
+
+The Search Console API, with a GCP service account, was considered on 2026-09-16 and deferred.
+For one property, one person and a fortnightly pull, the CSV export is thirty seconds and the
+service account is an hour in IAM plus a live credential in an hourly agent's environment. Do
+not propose it again unless the manual export has become a chore, or the question being asked
+needs more than 25k rows or per-URL index status across all 188 pages — `urlInspection` is the
+one call worth the setup, and only then.
 
 ### What the agent can and cannot reach (checked 2026-09-16)
 
