@@ -257,3 +257,58 @@ describe('fonts', () => {
     expect(css.match(/font-display: swap/g)).toHaveLength(10);
   });
 });
+
+describe('the calculator’s own head', () => {
+  const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
+  const home = read('index.html');
+  const faces = (css: string) => [...css.matchAll(/@font-face\s*\{[^}]*\}/g)].map((m) => m[1] ?? m[0]);
+
+  it('asks no other origin for anything before it can paint', () => {
+    // a canonical names an address rather than fetching one, so it is not a request
+    const fetched = [...home.matchAll(/<(?:link|script)\b[^>]*>/g)].map((m) => m[0]).filter((t) => !t.includes('rel="canonical"'));
+    expect(fetched.filter((t) => /(?:href|src)="https?:\/\//.test(t))).toEqual([]);
+    expect(home).not.toContain('fonts.googleapis.com');
+    expect(home).not.toContain('fonts.gstatic.com');
+  });
+
+  it('preloads the same two faces the generated pages do, and only those', () => {
+    const preloads = [...home.matchAll(/<link rel="preload" href="([^"]+)" as="font"[^>]*>/g)].map((m) => m[1]);
+    expect(preloads).toEqual([FONT_PRELOAD.sans, FONT_PRELOAD.mono]);
+    for (const f of preloads) {
+      expect(home).toContain(`href="${f}" as="font" type="font/woff2" crossorigin`);
+      expect(existsSync(new URL(`../public${f}`, import.meta.url))).toBe(true);
+    }
+  });
+
+  it('sets type in the same faces as a search landing, from one set of rules', () => {
+    const app = read('src/fonts.css');
+    expect(read('src/styles.css')).toContain("@import './fonts.css';");
+    expect(faces(app)).toHaveLength(10);
+    expect(faces(app)).toEqual(faces(read('public/page.css')));
+    for (const f of [...app.matchAll(/url\((\/fonts\/[^)]+)\)/g)].map((m) => m[1]))
+      expect(existsSync(new URL(`../public${f}`, import.meta.url))).toBe(true);
+  });
+
+  it('tells a search engine what site this is, in the words the other pages use', () => {
+    const raw = home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+    const graph = JSON.parse(raw!)['@graph'] as Record<string, unknown>[];
+    const site = data.defaults.site_url.replace(/\/$/, '');
+    const website = graph.find((n) => n['@type'] === 'WebSite');
+    const page = graph.find((n) => n['@type'] === 'WebPage');
+
+    // Google reads the site name from the home page's own markup, so this node
+    // has to say exactly what all 188 generated pages say about the same site.
+    const fromPages = pageGraph(
+      { title: 'A page', description: 'A description.', canonical: '/best/', ogImage: null, crumbs: [{ href: '/', label: 'Sunk Cost' }] },
+      data,
+    ).find((n) => n['@type'] === 'WebSite');
+    expect(website).toEqual(fromPages);
+
+    expect(page!['@id']).toBe(`${site}/#webpage`);
+    expect(page!.url).toBe(`${site}/`);
+    expect(page!.isPartOf).toEqual({ '@id': website!['@id'] });
+    expect(page!.name).toBe(home.match(/<title>([^<]+)<\/title>/)![1]);
+    expect(page!.description).toBe(home.match(/<meta name="description" content="([^"]+)"/)![1]);
+    expect(home).toContain(`<link rel="canonical" href="${site}/" />`);
+  });
+});
