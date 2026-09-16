@@ -5,16 +5,17 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 ## Ryan's side (needs the site owner)
 
-- [ ] Review and merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
+- [ ] Merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
       `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason six
-      runs in a row have taken smaller items instead of the top backlog entry, which is
-      question pages. **It is a draft**, so the merge button is disabled until it is marked ready
-      for review — that is one click, and it may be the whole reason nothing has moved. It also
-      stopped merging at some point during those five runs, which the 2026-09-16 merge run fixed;
-      see the top run entry. Ryan has now been notified twice: once after the list cards shipped,
-      and once about the draft status, which was new information rather than a repeat. **Do not
-      notify about this PR again** — the queue below is all doable without it, and a third ping
-      would be nagging.
+      runs in a row have taken smaller items instead of the top backlog entry, which is question
+      pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
+      blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
+      time about the draft status; **do not notify again**.
+      **It has now gone un-mergeable twice in one day** — once during the afternoon, once while it
+      sat between 17:38 and 23:22 — and both times a run merged main into it. A future run that
+      finds it still open should re-check that it still merges before doing anything else: a
+      waiting branch does not stay mergeable on its own, and this one has the worst of it, because
+      it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly every run edits.
 
 - [ ] Merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the calculator's own
       head: self-hosted fonts and the home page's `WebSite` markup. **Ryan marked it ready for
@@ -207,6 +208,59 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — PR #1 out of draft, and stale again by the time it was
+
+Ryan marked PR #1 ready for review at 23:22, which woke this session on the PR event. The same
+fetch showed `mergeable_state: dirty`: **eighteen commits had landed on main in the five and a half
+hours since the afternoon merge**, and the branch no longer merged. So the click that was supposed
+to unblock it left it blocked on something else. Merged main in again: merge commit `7b785a1` on
+`seo/how-much-memory`, pushed, and it merges cleanly now.
+
+This is the second time in one day this branch has gone stale, and the reason is structural rather
+than bad luck: it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which is where nearly
+every run does its work. The head-to-head rewrites, the phone-width table fix and the RTX 3060
+label all landed in those two files while this waited.
+
+All three conflicts were import lists, in `scripts/build-pages.ts`, `src/pagekit.ts` and
+`tests/pagekit.test.ts`, and both sides only ever added, so each resolution is the union of the
+two. Nothing in either side's logic had to be chosen between, which is worth recording: an import
+list is what a conflict looks like when two runs add different things to the same file, and it is
+not the dangerous kind.
+
+**Verified the same way as the afternoon merge, plus the guard that matters here.** `npm test` 143
+passing, which is main's 130 and the branch's 13 with none lost from either side; typecheck clean;
+the full card and page build, 1,894 share cards, 75 head-to-heads, 3 list cards and `default.png`,
+189 pages, no orphans, one address each, 184 OG cards named and all drawn. The important one is
+`checkCounts()`, the guard the counting-rule run added: **37 machines, each counted the same on its
+own page and on /how-much-memory/**. The counting rule lives on this branch and the head-to-head
+rewrite lives on main, and both move numbers, so that guard passing on the merged tree is the real
+evidence the two agree.
+
+Then the page-set comparison: built main's 188 pages in a separate worktree and compared all 190
+files against the merge. One file is new, none lost, and across the 189 that differ there are
+**zero changed regions not explained by a `/how-much-memory/` link**. `git diff origin/main HEAD`
+is 644 insertions and 27 deletions across 7 files, and every removed line is either an import
+replaced by its union or one of the four lines this branch extends with its link.
+
+Also read the new `/og/how-much-memory.png` as an image rather than trusting the build: no
+truncation, no overlap, and the four bands climb 12.8 GB, 43.4 GB, 53.3 GB, 189.5 GB, matching the
+page's own sections.
+
+**Two runs were in the air again, and neither trod on the other.** The 23:21 run took PR #2, which
+Ryan marked ready one minute before this one, and found it in exactly the same state: out of draft
+and un-mergeable. Same diagnosis, same fix, different branch. Checked the branch tip had not moved
+before pushing, and main had (a log-only commit), which the merge already merges cleanly against.
+
+Ryan was not pinged. He was acting on the PRs at the time, the standing rule says no third ping on
+this one, and the useful detail belongs where he was already looking, so it went in a comment on
+the PR instead.
+
+**Continue next:** both PRs are green, mergeable and out of draft, so both are one click from
+Ryan and nothing about them is the agent's to advance. The live work is the two table items the
+counting-rule entry left, which are the other run's to continue. If either PR is still open next
+run, **check it still merges before anything else** — that is now twice in a day, and it takes
+one `git merge-tree` to find out.
 
 ### 2026-09-16 — the RTX 3060 label, and one rule for counting what a machine holds
 
