@@ -24,6 +24,13 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       Breadcrumbs report under Enhancements fills in over the following weeks and covers all 188
       pages at once, which is better than checking one. The markup was verified against the
       local build, which is the build the deploy runs, so this is a confirmation, not a check.
+- [ ] One request, once: does `https://www.sunkcost.ai/best/` answer, and with what? Everything
+      else about duplicate addresses was settled in the build on 2026-09-16, but the egress
+      policy here refuses `sunkcost.ai`, so this is the one part the agent cannot see.
+      `curl -sI https://www.sunkcost.ai/best/ | head -3` says it in a line. A 301 to the apex
+      is the answer wanted. A 200 means www is a second copy of the site, which the canonical
+      tag on every page already tells Google to ignore, so it is untidy rather than urgent; the
+      fix is a redirect rule on the Pages project, not in this repo.
 - [ ] Commit `npm run submissions` output under seo/exports/ when there is enough of it. The
       agent has no database access by design, and that file is the only route to a page built
       from what people actually entered.
@@ -106,8 +113,10 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       are already written in public/page.css, so this is four lines in the head and an import,
       but index.html is the calculator, so it is a PR rather than a push. Worth pairing with the
       home-page JSON-LD item above, since both are small changes to the same file.
-- [ ] Canonical and duplicate control: /s/ share pages stay noindex; comparison pages A-vs-B and
-      B-vs-A must not both exist; www and trailing-slash variants resolve to one URL.
+- [x] Canonical and duplicate control. Audited and now enforced by the build. Done 2026-09-16;
+      the run entry has what was actually wrong, which was the 45 links out of /best/ rather
+      than anything in the page set. One part is not checkable from here and is on Ryan's side
+      below: whether the apex and www serve one URL at the edge.
 - [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages,
       /best/, /leaderboard/ and /how-much-memory/ all point at the same default card; the model
       and hardware pages already get a real one. A comparison card would want the two machines
@@ -129,6 +138,70 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — 45 links into pages we ask Google to ignore
+
+PR #1 is still open, and the previous entry said not to stack a second page on top of it, so
+this run took the next item that goes straight to main: canonical and duplicate control. Commit
+`57fa18d`, pushed to main.
+
+The audit found the page set itself clean, and one real fault in the links.
+
+Clean, across all 188 generated pages: every canonical is the page's own address, no two pages
+claim the same one, the sitemap and the pages on disk are the same 189 URLs with nothing
+announced that does not exist and nothing existing unannounced, and no head-to-head exists in
+both directions. That last one the previous entry guessed at — the comparisons are built from
+ordered pairs, `i` then `j > i`, so a reversed twin cannot be written. It has now been checked
+rather than assumed.
+
+The fault was in the links out of `/best/`. Every one of its 45 "Open in the calculator" cells
+pointed at a `/s/` share page. Those carry `noindex` by design, so the site's strongest
+commercial page was spending all 45 of its calls to action on addresses search engines are
+told to drop: 45 crawl paths that end in nothing, and 45 internal links that convey nothing.
+They were the only such links on the site. They now use `calcLink`, which is what every other
+generated page already used.
+
+**Nothing a reader sees changes, and that was checked in a browser rather than argued.** With
+the built site served locally, Chromium opened the new link `/?hw=mac-mini-m6-32&m=…&u=50000…`
+and the old `/s/mac-mini-m6-32/qwen3.8-27b-q4/?u=50000…` in turn. Both finish on the *same*
+address — the app rewrites its own URL to the share path on load, so the share link was never
+telling the reader anything the calculator did not — with the same title and the same 17,028
+characters of rendered text. The two full-page screenshots are byte-for-byte identical. Then
+the link as a reader meets it: loaded `/best/`, clicked the first "Open in the calculator",
+landed on the share URL with the verdict on the page.
+
+`checkCanonicals()` in the build now states all of it as a rule, next to the existing meta,
+orphan and font guards, so what the audit found true cannot quietly stop being true. Five
+things fail the build: a canonical that is not the page's own address, two pages claiming one
+address, a head-to-head that exists both ways round, a sitemap that disagrees with the pages on
+disk, and an internal link that is not in canonical form — no trailing slash (a redirect in
+front of the reader), a target no page writes (a dead end), or a `/s/` page (the fault above,
+stated as a rule).
+
+Each of the five was proved by breaking it on purpose and watching the build refuse: a share
+link, a dropped trailing slash, a model page canonical pointed at the leaderboard, both
+directions of every hardware comparison, and a sitemap with a URL that does not exist plus a
+page missing from it. All five name the offending pages.
+
+Also `npm test` (85 passing, 2 new), `npm run typecheck`, and the full `npm run build`
+including `build:functions`, all clean here. Read the rendered `/best/` page end to end: the
+copy is unchanged, no maintainer language, no `undefined` or `NaN`.
+
+Not done, because this environment cannot see it: whether `www.sunkcost.ai` answers, and with
+what. The egress policy refuses `sunkcost.ai`, so the edge behaviour of the apex, www and a
+missing trailing slash is one curl on Ryan's side, and it is now on his list above with the
+command. It is untidy rather than urgent — every page already carries a canonical to the apex,
+and the app treats `www.` as its own host, so a www copy is consolidated rather than competing.
+
+**Continue next:** PR #1 still needs Ryan; this session is subscribed to it. If it is still
+open next run, do not start a second page on top of it. The smallest useful thing left on main
+is then the Open Graph item: `/best/`, `/leaderboard/`, `/how-much-memory/` and all 75
+comparison pages point at `/og/default.png`, while model and hardware pages get a real card. A
+comparison card wants the two machines side by side, and `scripts/build-og.ts` already knows
+how to draw a card from data, so it is a new template rather than new machinery. If PR #1 has
+merged, the next question page is "best GPU for local LLMs": filter the machine list to
+`family === 'NVIDIA' || family === 'AMD'` and say plainly that a card's price needs a PC around
+it before it compares with a Mac.
 
 ### 2026-09-16 — the fonts come from here now
 
