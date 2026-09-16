@@ -119,13 +119,9 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that shipped this morning added `priceWithScope()` in `src/pagekit.ts` and the card needs
       the plain-text half of it. Costs a full `build:og` (about 4 minutes) to verify by eye.
 
-- [ ] The 47 model head-to-heads are the thin half that is left. The 28 machine ones were
-      rewritten on 2026-09-16 (see the top run entry); the model ones were deliberately left
-      alone that run and are still ~190 words with no subheading, though they do at least compute
-      their own lede rather than sharing one. What they lack is the same thing: a section that
-      says what the difference between two models actually buys, in the site's own numbers.
-      `runnersFor` already gives the machines each one needs, and the price gap between the
-      cheapest machine that runs each is the buying decision nothing on the site states.
+- [x] The 47 model head-to-heads. Done 2026-09-16: median 157 words to 634, no subheading to
+      three, and every one now carries the machine bill the two models differ by. The run entry
+      below has what the rewrite turned up, including a price gap that printed in cents.
 
 - [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
       are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
@@ -175,12 +171,92 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       its label is rendered, because `chip` in data/hardware.json ends in the memory size that
       `hardwareLabel()` then appends again. The fix is a data edit, which the agent may not make.
       Cosmetic, but it is on a page people do search for.
+- [ ] The generated pages may not fit a phone. Screenshotted at a 390px viewport, both a machine
+      head-to-head from the live build and a model one render wider than the window: the body
+      text, the tables and the h1 all run off the right edge. It is the same on pages that have
+      not been touched for weeks, so it is old and it is site-wide rather than anything a recent
+      change did, and it was noticed while checking a new page rather than measured properly.
+      Most search traffic is on a phone, so this is worth an hour with a real mobile viewport:
+      find what sets the minimum width (the `.board` tables are the first suspect), and fix it in
+      `public/page.css`, which goes straight to main. Measure before and after.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the 47 model head-to-heads say what each model costs to run
+
+The last entry asked for two things and both are done. **The deploy question first: runs 41 and 42
+were cancelled, not stuck.** Both were superseded by the next push while they queued, which is the
+concurrency rule working as intended and exactly what the doubled push that run risked. Run 43, on
+`fde77db`, finished green at 21:04 UTC and republished, so everything from the head-to-head rewrite
+and both log commits is live. Nothing was lost and nothing needed re-running. The habit stands: one
+push, not two.
+
+Then the item that entry named to continue, the 47 model head-to-heads, which were the thin half of
+the site once the machine ones were fixed. Median 157 words, no `<h2>` on any of them, 5 internal
+links, and **not one link into the calculator on any of the 47**. Commit `e2ff694`, pushed to main.
+
+A model head-to-head was a specification table with a sentence about the intelligence index on top.
+It said which model was cleverer and nothing about what running either one costs, which is the only
+question this site exists to answer. The numbers for it were already there: `runnersFor` knows every
+machine that holds a model, and the gap between the cheapest machine that runs each is the buying
+decision nothing on the site stated.
+
+What the pages do now. The lede answers in four sentences: which model is ahead on the index, what
+the cheapest machine that runs each one costs and what the difference between them is, which model
+is quicker **on the cheapest machine that runs both** and by how much, and whether that machine ever
+pays for itself running either. Then a side-by-side section on the machine they share — speed,
+pay-back and the API bill for the same month's work — because the main table gives each model the
+cheapest machine that runs *it*, and on most pairs those are two different machines, so nothing in
+it is a race. Then the machines that run one model and not the other, which is what the difference
+in footprint costs at the till: on gpt-oss-120b against Ling 3.0 tiny, that is 24 of the 37 machines
+priced here, starting $2,550 lower down the range.
+
+**Two things were wrong rather than thin, and both are fixed.** A price gap under $100 printed in
+cents beside whole-dollar prices — "$1,299 and $1,269, $30.00 less" — because `fmtUsd` switches to
+cents below $100. No machine pair is that close today, so it never showed on the live pages, but
+`machineVerdict` had the same line and now takes the same fix. And the table printed API prices for
+models nobody rents by the token without saying whose prices they were; where the price stands in
+for another model, the hosted model is now named beside it, in the table and under the monthly
+figure.
+
+**Verified against the previous build, page by page.** Built the whole set twice, once from a
+worktree at `origin/main` and once with the change: **47 pages differ and 143 are byte-identical**,
+the 47 being exactly the model head-to-heads. The `<head>` is **byte-identical on all 47**, so every
+title, description, canonical and card address is what it was and nothing needs re-indexing. Median
+words in `<main>` 157 → 634, minimum 135 → 390, `<h2>` 0 → 3, internal links 5 → 20, and every page
+now has at least two links into the calculator with the machine and the model prefilled.
+
+Then checked the claims against the tables they sit with, by parsing the built pages: **276 prose
+claims cross-checked on 47 pages, and every one matches the row beside it** — the index figures and
+which model is named as ahead, both prices and the gap between them, the two speeds and the ratio,
+the pay-back durations, the count of machines one model runs on and the other does not against the
+difference in the counts, the "starting at" price against the first row of the table under it, and
+the memory each needs against its own row. No speed anywhere without its basis, no `undefined`, no
+`NaN`, no maintainer language, no link out of canonical form, every table balanced.
+
+`npm test` (130 passing, 9 new), `npm run typecheck`, and the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, all clean here. The guarantees are held by tests
+rather than by good intentions, and each was proved by breaking it on purpose and watching its own
+test fail by name: a ratio worked out from precision the page does not show, a price gap printed in
+cents, a machine named as running both when it runs only one, and two speeds called the same when
+they are not. Three of those tests run over **all 47 pairs**, not a chosen few — the first draft
+tested three hand-picked pairs, and when the ratio rule was broken on purpose all three still
+passed, which is how that got caught.
+
+Read the finished page in Chromium, full height, at 900px and at 390px. It reads as a buying
+decision rather than a spec sheet. The 390px shot turned up something older and larger, which is now
+a backlog item: these pages do not fit a phone, and pages untouched for weeks do the same.
+
+**Continue next:** `/compare/` as an index is the best of what is left, and it is a new page type so
+it goes to a PR, which would make three waiting on Ryan. If that is one too many, the phone-width
+item above is the biggest thing on main's own list — most search traffic is mobile and every
+generated page is affected — and it is measurement first, CSS second. Failing both, the `pull_request`
+CI workflow is still unwritten and still protects every PR in the queue.
 
 ### 2026-09-16 — the 28 head-to-heads say which machine wins
 
