@@ -16,11 +16,14 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       notify about this PR again** — the queue below is all doable without it, and a third ping
       would be nagging.
 
-- [ ] Review and merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the
-      calculator's own head: self-hosted fonts and the home page's `WebSite` markup. Also a
-      draft, so the same one click applies. It is independent of PR #1 and touches none of the
-      same files, so the two can be merged in either order. Ryan has been pinged once about it,
-      which is the first ping on this PR; do not ping about it again.
+- [ ] Merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the calculator's own
+      head: self-hosted fonts and the home page's `WebSite` markup. **Ryan marked it ready for
+      review at 23:21 on 2026-09-16**, so the draft no longer blocks it and only the merge is
+      left. It had gone un-mergeable in the meantime, which the same run fixed; see the run entry
+      for "the calculator's own head". Ryan has been pinged once about this PR; do not ping again.
+      A future run that finds it still open should re-check that it still merges — eight commits
+      landed on main in the three hours it sat there, and a waiting branch does not stay mergeable
+      on its own.
 
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
@@ -573,9 +576,22 @@ Ryan was pinged once, about PR #2 rather than PR #1: it is a second PR, and it c
 something visitors see on the live site today. His list says not to ping about either again.
 
 Nothing visitors see changed on main this run, so there was nothing to check on the live site.
-Deploy run 39, on this log commit, finished green at 19:51 UTC and republished. PR #2 is clean
-against main and has no checks, because nothing triggers on `pull_request`; that backlog item is
-now protecting two PRs rather than one.
+Deploy run 39, on this log commit, finished green at 19:51 UTC and republished. PR #2 has no
+checks, because nothing triggers on `pull_request`; that backlog item is now protecting two PRs
+rather than one.
+
+**Later the same evening, on the PR event:** Ryan marked PR #2 ready for review at 23:21 UTC, and
+the same fetch showed it had become un-mergeable. Eight commits had landed on main in the three
+hours it sat there, and the only conflict was `tests/pagekit.test.ts`, where the model head-to-head
+run and this branch had each appended a `describe` block at the end of the file. Resolved as the
+union of the two, merge commit `67b1a25` on `seo/home-head`. `npm test` 134 passing, which is
+main's 130 and this branch's 4 with none lost from either side, plus typecheck and the full build
+including `build:og`, `build:share` and `build:functions`. `git diff` against main is still the
+180 insertions and 4 deletions across 5 files it was before the merge, so the merge added nothing
+and dropped nothing. The font guard is worth a line of its own here: the phone-width run added 30
+lines to `public/page.css`, and the test that compares that file's `@font-face` block with
+`src/fonts.css` rule by rule stayed green, which is exactly how it should read when those two files
+diverge somewhere that is not type.
 
 **Continue next:** two PRs now wait on Ryan and the rule stands, so take something that goes
 straight to main. The best of it is an index at `/compare/` — except that is a new page type and so
