@@ -1,14 +1,14 @@
 /**
- * The share card for the two pages that rank a list rather than compare two
- * things (1200×630): the leaderboard and the best buys. One row per entry, the
- * same rows and the same figures the page itself puts at the top.
+ * The share card for the pages that answer with a list rather than with one
+ * pairing (1200×630): the leaderboard, the best buys and the memory question.
+ * One row per entry, the same rows and the same figures the page itself shows.
  *
  * Every value is passed in by the build from data/*.json. Nothing is computed,
  * rounded or worded differently from the page it belongs to.
  */
-import { esc, fmtDuration, fmtGb, fmtTokens } from './format';
+import { esc, fmtDuration, fmtGb, fmtTokens, fmtUsd } from './format';
 import { bestByTier, bestUsageLevels, type Combo } from './best';
-import { shortHardwareLabel } from './pagekit';
+import { bandFit, fmtGb1, shortHardwareLabel, SIZE_BANDS, type BandFit } from './pagekit';
 import {
   clampText, fitLines, wrapText, DEEP, DIM, EM, EM_BOLD, HAIR, INK, STEEL, VS_HEIGHT, VS_WIDTH, WATER,
 } from './versus-card';
@@ -149,6 +149,7 @@ ${rows}
 /** Where each card is written, and what the page asks for. One place, so the two agree. */
 export const LEADERBOARD_CARD = '/og/leaderboard.png';
 export const BEST_CARD = '/og/best.png';
+export const MEMORY_CARD = '/og/how-much-memory.png';
 
 /** How many open models the leaderboard card lists under the best hosted one. */
 const LEADERBOARD_ROWS = 5;
@@ -231,6 +232,42 @@ export function bestBuysCard(data: Dataset, fontFamily?: string): string {
     valueW: 196,
     note: `List price, ${d.usage.default_input_to_output_ratio}:1 input:output, ${Math.round(d.context.default_tokens / 1024)}k context, today’s API prices`,
     dataChecked: d.data_last_checked,
+    fontFamily,
+  });
+}
+
+/**
+ * The memory question, one row per size people search by: the hungriest model in
+ * the band that a machine on this list can hold, what it needs with its cache,
+ * and the cheapest machine that holds it. Where nothing holds anything in the
+ * band, the row says so rather than naming a machine that cannot run it.
+ */
+export function memoryCard(data: Dataset, fontFamily?: string): string {
+  const ctx = data.defaults.context.default_tokens;
+  const kctx = `${Math.round(ctx / 1024)}k`;
+  const fits = SIZE_BANDS.map((b) => bandFit(b, data, ctx)).filter((b): b is BandFit => b != null);
+
+  const rows: ListRow[] = fits.map((b) => {
+    // the hungriest the list can hold, which is the hungriest in the band wherever one holds it
+    const pick = b.held ?? b.biggest;
+    return {
+      name: b.band.label,
+      sub: `${pick.m.display_name} at ${pick.m.quantisation}`,
+      meta: b.heldBy ? `${shortHardwareLabel(b.heldBy)} · ${fmtUsd(b.heldBy.price_usd)}` : 'nothing on this list holds it',
+      value: fmtGb1(pick.need),
+    };
+  });
+
+  return listCardSvg({
+    eyebrow: 'Memory needed',
+    headline: 'How much memory do you need to run a local LLM?',
+    columns: { name: 'Model size', meta: 'Cheapest that holds it', value: 'Weights + cache' },
+    rows,
+    metaX: 420,
+    metaW: 514,
+    valueW: 170,
+    note: `The hungriest model in each band, at ${kctx} context, at list price`,
+    dataChecked: data.defaults.data_last_checked,
     fontFamily,
   });
 }

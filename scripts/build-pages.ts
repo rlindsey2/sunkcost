@@ -7,15 +7,15 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  calcLink, cheapestPerFamily, cheapestThatHolds, computeView, descOf, dotRow, esc, familyHeading, familyRange,
+  bandFit, calcLink, cheapestPerFamily, cheapestThatHolds, computeView, descOf, dotRow, esc, familyHeading, familyRange,
   fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange, hardwareLabel, hardwareProduct, kvWorking, lowerFirst,
-  median, modelLabel, modelsInBand, otherQuantisations, pageShell, priceRivals, runnersFor, shortHardwareLabel, slug,
+  median, modelLabel, otherQuantisations, pageShell, priceRivals, runnersFor, shortHardwareLabel, slug,
   tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, SIZE_BANDS, TITLE_MAX,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, LEADERBOARD_CARD } from '../src/list-card';
+import { BEST_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -825,19 +825,13 @@ function memoryPage(): string {
     .join('');
 
   const bands = SIZE_BANDS.map((band) => {
-    // ordered by what they ask of a machine, which is what the page is about
-    const sized = modelsInBand(band, data)
-      .map((m) => ({ m, need: footprintGb(m, CTX) }))
-      .filter((x): x is { m: Model; need: number } => x.need != null)
-      .sort((a, b) => a.need - b.need);
-    if (!sized.length) return '';
+    // ordered by what they ask of a machine, which is what the page is about.
+    // The same reading the share card draws, so the two cannot disagree.
+    const b = bandFit(band, data, CTX);
+    if (!b) return '';
+    const { sized, biggest, holder, held, heldBy } = b;
     const ms = sized.map((x) => x.m);
     const needs = sized.map((x) => x.need);
-    const biggest = sized[sized.length - 1];
-    const holder = cheapestThatHolds(biggest.need, data);
-    // where nothing holds the biggest, the biggest one that something does hold
-    const held = [...sized].reverse().find((x) => cheapestThatHolds(x.need, data) != null);
-    const heldBy = held ? cheapestThatHolds(held.need, data) : null;
     const size =
       band.max === Infinity
         ? `over ${band.min} billion parameters`
@@ -937,7 +931,7 @@ ${
         `Weights plus a cache that grows with context. What 8B, 32B, 70B and 100B models need at ${kctx}, and the cheapest machine that holds each.`,
       ]),
       canonical: '/how-much-memory/',
-      ogImage: '/og/default.png',
+      ogImage: MEMORY_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/how-much-memory/', label: 'How much memory' }],
     },
     body,

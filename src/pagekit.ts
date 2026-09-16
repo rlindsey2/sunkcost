@@ -8,7 +8,7 @@
  * may depend on JavaScript running.
  */
 import { computeView, hardwareLabel, modelLabel, type View } from './compute';
-import { kvCacheGb } from './fit';
+import { footprintGb, kvCacheGb } from './fit';
 import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 import { defaultState, serializeState, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
@@ -417,21 +417,66 @@ export function median(values: number[]): number | null {
  */
 export interface SizeBand {
   question: string;
+  /** the same band in two or three words, for a column that has no room for the question */
+  label: string;
   min: number;
   max: number;
 }
 
 export const SIZE_BANDS: SizeBand[] = [
-  { question: 'How much memory for a 7B or 8B model?', min: 0, max: 10 },
-  { question: 'How much memory for a 14B to 32B model?', min: 10, max: 40 },
-  { question: 'How much memory for a 70B model?', min: 40, max: 100 },
-  { question: 'How much memory for a 100B model or larger?', min: 100, max: Infinity },
+  { question: 'How much memory for a 7B or 8B model?', label: '7B and 8B', min: 0, max: 10 },
+  { question: 'How much memory for a 14B to 32B model?', label: '14B to 32B', min: 10, max: 40 },
+  { question: 'How much memory for a 70B model?', label: '70B', min: 40, max: 100 },
+  { question: 'How much memory for a 100B model or larger?', label: '100B and larger', min: 100, max: Infinity },
 ];
 
 export function modelsInBand(band: SizeBand, data: Dataset): Model[] {
   return data.models
     .filter((m) => m.params_b >= band.min && m.params_b < band.max)
     .sort((a, b) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0));
+}
+
+/** A model in a band and what it asks of a machine: weights plus cache, held at once. */
+export interface BandModel {
+  m: Model;
+  need: number;
+}
+
+/**
+ * A size band worked out: every model in it ordered by what it needs, the
+ * hungriest, and the hungriest the list can actually hold. The page and its
+ * share card both read this, so the picture cannot name a model or a machine
+ * the page does not.
+ */
+export interface BandFit {
+  band: SizeBand;
+  /** every model in the band with a known footprint, hungriest last */
+  sized: BandModel[];
+  /** the one that asks the most */
+  biggest: BandModel;
+  /** the cheapest machine that holds the hungriest, where one does */
+  holder: Hardware | null;
+  /** the hungriest this list can hold, which is the hungriest itself where that fits */
+  held: BandModel | null;
+  heldBy: Hardware | null;
+}
+
+export function bandFit(band: SizeBand, data: Dataset, contextTokens: number): BandFit | null {
+  const sized = modelsInBand(band, data)
+    .map((m) => ({ m, need: footprintGb(m, contextTokens) }))
+    .filter((x): x is BandModel => x.need != null)
+    .sort((a, b) => a.need - b.need);
+  if (!sized.length) return null;
+  const biggest = sized[sized.length - 1];
+  const held = [...sized].reverse().find((x) => cheapestThatHolds(x.need, data) != null) ?? null;
+  return {
+    band,
+    sized,
+    biggest,
+    holder: cheapestThatHolds(biggest.need, data),
+    held,
+    heldBy: held ? cheapestThatHolds(held.need, data) : null,
+  };
 }
 
 /**
