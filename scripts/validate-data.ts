@@ -29,6 +29,11 @@ for (const h of hardware) {
   if (h.usable_memory_gb != null && h.usable_memory_gb > h.unified_memory_gb) errors.push(`${h.id}: usable > total memory`);
   if (h.load_watts_status === 'stand_in' && !h.load_watts_note) errors.push(`${h.id}: stand-in power figure needs load_watts_note`);
   if (h.price_usd == null && !h.TODO) errors.push(`${h.id}: null price needs a TODO`);
+  // every label is built as "<family> <chip>, <memory>GB", so a chip that already ends in
+  // its memory size prints it twice: "NVIDIA GeForce RTX 3060 12GB, 12GB"
+  if (new RegExp(`\\b${h.unified_memory_gb}\\s?GB$`, 'i').test(h.chip)) {
+    errors.push(`${h.id}: chip "${h.chip}" ends in its memory size, which the label adds again`);
+  }
 }
 
 const modelIds = new Set<string>();
