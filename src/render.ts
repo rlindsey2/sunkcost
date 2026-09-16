@@ -102,7 +102,7 @@ function renderMachine(state: State, data: Dataset, view: View) {
     ? `You paid <b class="num">${fmtUsd(view.price)}</b>${listPrice == null ? '' : ` · list is ${fmtUsd(listPrice)}`} · <button type="button" class="linkish" id="price-reset">use the list price</button>`
     : listPrice == null
       ? `<span class="todo">No list price yet</span> · <button type="button" class="linkish" id="price-toggle">enter what you paid</button>`
-      : `List price <b class="num">${fmtUsd(listPrice)}</b>${view.hw.generation === 'previous' ? ' at launch' : ''} · <button type="button" class="linkish" id="price-toggle">I paid something else</button>`;
+      : `${view.hw.price_scope === 'card_only' ? 'Card price' : 'List price'} <b class="num">${fmtUsd(listPrice)}</b>${view.hw.generation === 'previous' ? ' at launch' : ''}${view.hw.price_scope === 'card_only' ? ', without the PC around it' : ''} · <button type="button" class="linkish" id="price-toggle">I paid something else</button>`;
 
   const bits: string[] = [];
   if (view.hw.chip_variant) bits.push(view.hw.chip_variant);
@@ -402,7 +402,7 @@ function renderFigures(state: State, data: Dataset, view: View) {
   const c = view.calc;
   const t = view.throughput;
   const figs: [string, string, string?][] = [
-    ['Hardware', view.price == null ? 'unknown' : fmtUsd(view.price), view.priceIsCustom ? 'the price you paid' : view.hw.generation === 'previous' ? 'launch price' : undefined],
+    ['Hardware', view.price == null ? 'unknown' : fmtUsd(view.price), view.priceIsCustom ? 'the price you paid' : view.hw.price_scope === 'card_only' ? `card only${view.hw.generation === 'previous' ? ', launch price' : ''}` : view.hw.generation === 'previous' ? 'launch price' : undefined],
     state.sub != null
       ? ['Your bill per month', fmtUsd(state.sub), 'what you entered; it buys a different model']
       : ['API cost per month', c ? fmtUsd(c.cloudCostPerMonth) : '—', view.model ? (view.model.cloud_equivalent.stand_in ? `nobody rents it; priced as ${view.model.cloud_equivalent.name}` : `${view.model.cloud_equivalent.name} on OpenRouter`) : undefined],
