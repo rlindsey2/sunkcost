@@ -8,8 +8,8 @@
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd,
-  hardwareLabel, lowerFirst, modelLabel, pageShell, runnersFor, shortHardwareLabel, slug, tierName, tierScale,
-  titleOf, verdictLine, CAP_SHORT, DESC_MAX, TITLE_MAX,
+  hardwareLabel, hardwareProduct, lowerFirst, modelLabel, pageShell, runnersFor, shortHardwareLabel, slug, tierName,
+  tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, TITLE_MAX,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -34,6 +34,15 @@ function write(path: string, html: string) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
   paths.push(path);
+  // Structured data a search engine cannot parse is worse than none, and a
+  // stray character in a machine name is all it takes.
+  const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+  if (!ld) throw new Error(`${path} has no JSON-LD`);
+  try {
+    JSON.parse(ld);
+  } catch (e) {
+    throw new Error(`${path} has JSON-LD that does not parse: ${(e as Error).message}`);
+  }
   meta.push({
     path,
     title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
@@ -414,6 +423,7 @@ ${fits.length > 12 ? `<p class="note">${fits.length - 12} more fit; the calculat
       canonical: `/hardware/${hw.id}/`,
       ogImage: view.model ? `/og/${hw.id}--${view.model.id}.png` : '/og/default.png',
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: `/hardware/${hw.id}/`, label: label }],
+      about: hardwareProduct(hw, `${site}/hardware/${hw.id}/`),
     },
     body,
     data,
@@ -461,7 +471,10 @@ ${row('Pay-back', esc(verdictLine(va)), esc(verdictLine(vb)))}
       ]),
       canonical: `/compare/${slug(hardwareLabel(a))}-vs-${slug(hardwareLabel(b))}/`,
       ogImage: '/og/default.png',
-      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '#', label: 'Comparison' }],
+      crumbs: [
+        { href: '/', label: 'Sunk Cost' },
+        { href: '#', label: `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}` },
+      ],
     },
     body,
     data,

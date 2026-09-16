@@ -73,12 +73,113 @@ export function lowerFirst(s: string): string {
   return s.charAt(0).toLowerCase() + s.slice(1);
 }
 
+/**
+ * Apple sells the Macs and the graphics cards carry their maker's name in the
+ * family. A Strix Halo box is somebody else's machine built around an AMD chip,
+ * and that somebody leads the chip field, which is where the box is named.
+ */
+const BRAND_BY_FAMILY: Record<string, string> = {
+  'Mac mini': 'Apple',
+  'Mac Studio': 'Apple',
+  'MacBook Air': 'Apple',
+  'MacBook Pro': 'Apple',
+  'DGX Spark': 'NVIDIA',
+  NVIDIA: 'NVIDIA',
+  AMD: 'AMD',
+};
+
+export function brandOf(hw: Hardware): string {
+  return BRAND_BY_FAMILY[hw.family] ?? hw.chip.split(' ')[0];
+}
+
+export type LdNode = Record<string, unknown>;
+
+/**
+ * JSON-LD, escaped so that nothing inside a machine or model name can close the
+ * script tag early. This is the same content the page already shows, written so
+ * a search engine can read the trail a page sits in and what it is about.
+ *
+ * Deliberately no Offer: this site does not sell anything. The prices here are
+ * list prices read from the maker's own page on a stated date, and marking them
+ * up as an offer would claim you can buy them from sunkcost.ai.
+ */
+export function jsonLd(graph: LdNode[]): string {
+  const doc = { '@context': 'https://schema.org', '@graph': graph };
+  return `<script type="application/ld+json">${JSON.stringify(doc).replace(/</g, '\\u003c')}</script>`;
+}
+
+/**
+ * The machine a hardware page is about. Only figures that are somebody's
+ * published specification go in: a stand-in or an estimate needs the sentence
+ * next to it that says so, and a machine-readable property has nowhere to put
+ * that sentence. Those figures stay on the page, with their caveat.
+ */
+export function hardwareProduct(hw: Hardware, url: string): LdNode {
+  const props: LdNode[] = [{ '@type': 'PropertyValue', name: 'Memory', value: `${hw.unified_memory_gb} GB` }];
+  if (hw.memory_bandwidth_gbs)
+    props.push({ '@type': 'PropertyValue', name: 'Memory bandwidth', value: `${hw.memory_bandwidth_gbs} GB/s` });
+  if (hw.load_watts != null && hw.load_watts_status === 'published')
+    props.push({ '@type': 'PropertyValue', name: 'Rated power under load', value: `${hw.load_watts} W` });
+  // the maker's name for the machine, not the site's: "Framework Desktop, 128GB"
+  // rather than "Strix Halo Framework Desktop, 128GB", with the site's own label
+  // kept alongside it so both match.
+  const name = shortHardwareLabel(hw);
+  const full = hardwareLabel(hw);
+  return {
+    '@type': 'Product',
+    '@id': `${url}#product`,
+    name,
+    ...(full === name ? {} : { alternateName: full }),
+    brand: { '@type': 'Brand', name: brandOf(hw) },
+    category: 'Computer hardware',
+    url,
+    additionalProperty: props,
+  };
+}
+
 export interface PageChrome {
   title: string;
   description: string;
   canonical: string;
   ogImage?: string | null;
   crumbs: { href: string; label: string }[];
+  /** The thing the page is about, as a schema.org node with an `@id`. */
+  about?: LdNode;
+}
+
+export function pageGraph(c: PageChrome, data: Dataset): LdNode[] {
+  const site = data.defaults.site_url.replace(/\/$/, '');
+  const url = site + c.canonical;
+  const website: LdNode = {
+    '@type': 'WebSite',
+    '@id': `${site}/#website`,
+    url: `${site}/`,
+    name: 'Sunk Cost',
+    description: 'Works out whether buying a machine to run open models at home pays back against API prices.',
+  };
+  const breadcrumb: LdNode = {
+    '@type': 'BreadcrumbList',
+    '@id': `${url}#breadcrumb`,
+    itemListElement: c.crumbs.map((b, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: b.label,
+      // a step with no page of its own carries a name and nothing else
+      ...(b.href === '#' ? {} : { item: b.href.startsWith('/') ? site + b.href : b.href }),
+    })),
+  };
+  const page: LdNode = {
+    '@type': 'WebPage',
+    '@id': `${url}#webpage`,
+    url,
+    name: c.title,
+    description: c.description,
+    isPartOf: { '@id': website['@id'] },
+    breadcrumb: { '@id': breadcrumb['@id'] },
+    ...(c.ogImage ? { primaryImageOfPage: { '@type': 'ImageObject', url: site + c.ogImage, width: 1200, height: 630 } } : {}),
+    ...(c.about ? { about: { '@id': c.about['@id'] } } : {}),
+  };
+  return [website, page, breadcrumb, ...(c.about ? [c.about] : [])];
 }
 
 export function pageShell(c: PageChrome, body: string, data: Dataset): string {
@@ -104,6 +205,7 @@ ${c.ogImage ? `<meta property="og:image" content="${esc(site + c.ogImage)}" />\n
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
 <link rel="stylesheet" href="/page.css" />
+${jsonLd(pageGraph(c, data))}
 </head>
 <body class="doc">
 <header class="topbar">
@@ -113,7 +215,14 @@ ${c.ogImage ? `<meta property="og:image" content="${esc(site + c.ogImage)}" />\n
     <span class="domain">sunkcost.ai</span>
   </a>
   <nav class="topbar-line" aria-label="Breadcrumb">
-    ${c.crumbs.map((b, i) => `${i ? '<span class="sep">/</span>' : ''}<a href="${esc(b.href)}">${esc(b.label)}</a>`).join('')}
+    ${c.crumbs
+      .map(
+        (b, i) =>
+          `${i ? '<span class="sep">/</span>' : ''}${
+            b.href === '#' ? `<span class="here">${esc(b.label)}</span>` : `<a href="${esc(b.href)}">${esc(b.label)}</a>`
+          }`,
+      )
+      .join('')}
   </nav>
   <span class="stamp">Data checked ${esc(data.defaults.data_last_checked)}</span>
 </header>
