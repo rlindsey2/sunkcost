@@ -53,10 +53,14 @@ Hosts worth having on the list, and what each unlocks:
 - `sunkcost.ai` — reading the site's own live pages: confirming a deploy actually served the
   markup, checking headers and canonicals as delivered rather than as built. The most useful
   one by far.
-- `www.googleapis.com` — the PageSpeed Insights API
-  (`/pagespeedonline/v5/runPagespeed?url=…&strategy=mobile`), which returns Core Web Vitals as
-  JSON and needs no key at this volume. This is the practical form of the Core Web Vitals
-  backlog item; pagespeed.web.dev itself is a JavaScript app and cannot be read by fetching it.
+- `www.googleapis.com` — reachable as of 2026-09-16, and the PageSpeed Insights API on it is
+  still not usable. Keyless, the call answers 429: "Quota exceeded for quota metric 'Queries'
+  … for consumer project_number:583797351490". That consumer is the anonymous project every
+  keyless caller shares, and it is exhausted, so this is not something a later run can wait
+  out. A free PSI key (console.cloud.google.com, enable the PageSpeed Insights API, no
+  billing) in the environment as `PSI_API_KEY` would turn Core Web Vitals into a number the
+  agent can watch. Until then, pagespeed.web.dev is a JavaScript app and cannot be fetched, so
+  the measurement stays on Ryan's side.
 - `validator.schema.org` — structured data validation.
 
 Google's Rich Results Test has no public API and its page is a JavaScript app, so allow-listing
@@ -91,10 +95,17 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       index.html, which means a PR, not a push.
 - [ ] A "what people entered" page updated from `npm run submissions` output that Ryan commits
       under seo/exports/ (never from live database access; the agent has none).
-- [ ] Core Web Vitals: run the PageSpeed Insights API against the home page and one hardware
-      page (see the reachability note above for the endpoint); fix render-blocking font loading
-      and image sizing. The generated pages load Instrument Sans and IBM Plex Mono from Google
-      Fonts in the head, which is the obvious first suspect.
+- [x] Core Web Vitals on the generated pages. The fonts were the whole of it and they are now
+      served from this origin; done 2026-09-16. Image sizing turned out not to apply: the 188
+      generated pages carry no `<img>` and no inline `<svg>` between them, so there is no image
+      to size. What is left of this item is the calculator's own head, which is the next entry
+      below, and a measurement this environment cannot take (see the PageSpeed note above).
+- [ ] The calculator at index.html still loads both fonts from Google, with the same two
+      preconnects and the same render-blocking stylesheet the generated pages had until
+      2026-09-16. The files are already in the repo under public/fonts/ and the @font-face rules
+      are already written in public/page.css, so this is four lines in the head and an import,
+      but index.html is the calculator, so it is a PR rather than a push. Worth pairing with the
+      home-page JSON-LD item above, since both are small changes to the same file.
 - [ ] Canonical and duplicate control: /s/ share pages stay noindex; comparison pages A-vs-B and
       B-vs-A must not both exist; www and trailing-slash variants resolve to one URL.
 - [ ] Open Graph images for generated pages (they use /og/default.png today). Comparison pages,
@@ -118,6 +129,74 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the fonts come from here now
+
+PR #1 was still open, and the previous entry said not to stack a second page on top of it, so
+this run took the top backlog item that goes straight to main: the render-blocking font load on
+all 188 generated pages. Commit `62a9e2b`, pushed to main.
+
+Every generated page used to open the connection race with somebody else's server. The head
+carried two preconnects and a stylesheet on `fonts.googleapis.com`, and nothing could be painted
+in the right face until the browser had resolved that host, shaken hands, fetched a stylesheet,
+learned from it that the fonts live on a *second* host, resolved and shaken hands with that one
+too, and downloaded the file. Two origins and three round trips in front of the first word, on a
+page whose own HTML and CSS were already on the way from one connection that was already open.
+
+Instrument Sans and IBM Plex Mono are now files in this repository, under `public/fonts/`, with
+the `@font-face` rules in `public/page.css`. They are the same woff2 files Google was serving —
+downloaded from `fonts.gstatic.com`, latin and latin-ext subsets, with the weights, styles and
+unicode ranges copied out of Google's own stylesheet — so the browser now finds them in a file it
+was fetching anyway, on a connection it already has. The two faces that paint first, body text
+and the figures in the tables, are preloaded so they download alongside that stylesheet rather
+than after it.
+
+Ten files, 172 KB in the repository. A page of English text fetches two of them, 45 KB, which is
+exactly what it fetched from Google before. The rest are the other mono weights, the italic and
+the latin-ext subsets, which a `unicode-range` or a weight the page never asks for leaves alone.
+`/fonts/*` is cached for a year as immutable in `public/_headers`, which is safe because the
+family version is in every filename: `instrument-sans-v4-400-700-latin.woff2` becomes a different
+URL when Google ships a v5.
+
+**Verified by rendering it, not by reading it.** Chromium, driven through this environment's own
+egress proxy so that the *old* pages could genuinely reach Google Fonts, full-page screenshots of
+`/hardware/geforce-rtx-3090-24/`, `/leaderboard/` and `/best/` before and after the change:
+11,499,600 pixels compared, **zero differ**, worst channel delta 0. The pages are pixel for pixel
+what they were; only where the fonts come from has changed. On the new pages the network log
+shows no request to any other origin at all, and two font files, both 200. `document.fonts`
+reports `Instrument Sans normal 400 700` loaded, and the same 40px string measures 359.3, 363.8
+and 372.5 pixels at weights 400, 500 and 700 — so the one variable file really is carrying all
+four weights the design uses, rather than one weight standing in for the others.
+
+Also `npm test` (83 passing, 4 new), `npm run typecheck`, `npm run build:pages` (188 pages, no
+duplicate or missing titles or descriptions, no orphans), and the full `npm run build`.
+
+Two guards went in with it, because a self-hosted font fails quietly — the page just renders in
+the system face and nobody notices:
+
+- `write()` in the build refuses any generated page that links a stylesheet from another origin.
+  That is the regression this change is about, stated as a rule.
+- `checkFonts()` fails the build if `page.css` names a font file that is not in `public/`, or if
+  a preloaded file is not one of the faces the stylesheet declares. Preloading a file that does
+  not exist wastes a request and logs a warning in every visitor's console.
+
+Not touched: `index.html`, the calculator itself, which still loads both fonts from Google. That
+file is behind the PR rule, and the work it needs is now four lines, since the files and the
+`@font-face` rules are already here. It is on the backlog directly under the ticked item.
+
+Two things this environment still cannot do. `sunkcost.ai` is refused by the egress policy, so
+the verification above is against the local build, which is the build the deploy runs.
+`www.googleapis.com` is reachable now, but keyless PageSpeed Insights answers 429 because the
+anonymous project every keyless caller shares has spent its daily quota, so there is no
+before-and-after Lighthouse number to put here. The reachability note above says what would fix
+that.
+
+**Continue next:** PR #1 still needs Ryan. If it is open again next run, the smallest useful
+thing left on main is the canonical and duplicate-control item — in particular whether any
+comparison exists as both A-vs-B and B-vs-A, which `build-pages.ts` generates from ordered pairs
+and so probably does not, but it has never been checked. If PR #1 has merged, the next question
+page is "best GPU for local LLMs": filter the machine list to `family === 'NVIDIA' || family ===
+'AMD'` and say plainly that a card's price needs a PC around it before it compares with a Mac.
 
 ### 2026-09-16 — the memory question, answered with the site's own arithmetic
 
