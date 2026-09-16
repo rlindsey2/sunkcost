@@ -16,6 +16,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       notify about this PR again** — the queue below is all doable without it, and a third ping
       would be nagging.
 
+- [ ] Review and merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the
+      calculator's own head: self-hosted fonts and the home page's `WebSite` markup. Also a
+      draft, so the same one click applies. It is independent of PR #1 and touches none of the
+      same files, so the two can be merged in either order. Ryan has been pinged once about it,
+      which is the first ping on this PR; do not ping about it again.
+
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
 - [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
@@ -108,9 +114,10 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 - [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
       are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
       queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
-- [ ] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
-      home page specifically, so /leaderboard/'s copy of it does not count. Small change to
-      index.html, which means a PR, not a push.
+- [~] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
+      home page specifically, so /leaderboard/'s copy of it does not count. Written and waiting in
+      PR #2, with a test holding it identical to the node `pageGraph()` builds. Reaches the site
+      when that PR merges.
 - [ ] A "what people entered" page updated from `npm run submissions` output that Ryan commits
       under seo/exports/ (never from live database access; the agent has none).
 - [x] Core Web Vitals on the generated pages. The fonts were the whole of it and they are now
@@ -118,12 +125,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       generated pages carry no `<img>` and no inline `<svg>` between them, so there is no image
       to size. What is left of this item is the calculator's own head, which is the next entry
       below, and a measurement this environment cannot take (see the PageSpeed note above).
-- [ ] The calculator at index.html still loads both fonts from Google, with the same two
-      preconnects and the same render-blocking stylesheet the generated pages had until
-      2026-09-16. The files are already in the repo under public/fonts/ and the @font-face rules
-      are already written in public/page.css, so this is four lines in the head and an import,
-      but index.html is the calculator, so it is a PR rather than a push. Worth pairing with the
-      home-page JSON-LD item above, since both are small changes to the same file.
+- [~] The calculator at index.html loading both fonts from Google. Done on the branch and waiting
+      in PR #2, paired with the JSON-LD item above as planned. The faces are now in src/fonts.css,
+      which styles.css imports and Vite folds into the bundle; a test keeps that block identical to
+      the one in public/page.css. The 1,894 /s/ share pages inherit the same head, so they stop
+      asking Google too. Reaches the site when that PR merges.
 - [x] Canonical and duplicate control. Audited and now enforced by the build. Done 2026-09-16;
       the run entry has what was actually wrong, which was the 45 links out of /best/ rather
       than anything in the page set. One part is not checkable from here and is on Ryan's side
@@ -159,6 +165,75 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-16 — the calculator's own head
+
+PR #1 is still open, still a draft and still unreviewed, so the standing rule holds: no second new
+page while it waits. This run took what the last entry said to continue, which is the two backlog
+items that live in one file's head and overlap nothing on that branch. Commit `e92a086`, pushed to
+`seo/home-head`, opened as [PR #2](https://github.com/rlindsey2/sunkcost/pull/2). Nothing went to
+main this run except this log.
+
+**The fonts.** The generated pages have served their own since this morning. The calculator still
+opened with two preconnects and a render-blocking stylesheet on `fonts.googleapis.com`: two origins
+and three round trips in front of the first word, on the site's most-linked page, whose own HTML and
+CSS were already on the way from a connection that was open. The woff2 files were already in
+`public/fonts/`. `src/fonts.css` now carries the same ten `@font-face` rules `public/page.css`
+declares, `src/styles.css` imports it, and Vite folds it into the bundle at no extra request. The
+same two faces the generated pages preload are preloaded here.
+
+**The markup.** `index.html` carried no JSON-LD at all. Google reads a site's name from `WebSite`
+markup on the home page specifically, so `/leaderboard/`'s copy does not count. The home page now
+emits the same `WebSite` node `pageGraph()` builds, plus a `WebPage` for itself.
+
+Two copies of a thing is how two things drift, so both are held by tests rather than by good
+intentions: one compares the app's `@font-face` block with `page.css`'s rule by rule, the other
+compares the home page's `WebSite` node with the one the build emits for every other page.
+
+**The share pages needed handling, and this is the part worth knowing.** All 1,894 `/s/` pages are
+built from the home page's head, so adding a graph to `index.html` would have given every one of
+them a `WebPage` node claiming the home page's address, name and description. `build-share-pages.ts`
+now strips it, and throws if any page still has one. They also stop requesting Google Fonts, which
+is 1,894 more pages off somebody else's server.
+
+**What the verification found is better than what it was checking.** Chromium against both builds,
+the old one genuinely reaching Google Fonts through this environment's egress proxy. Force a redraw
+once the fonts have arrived and the two pages are pixel for pixel identical: 2,274,560 pixels
+compared, **0 differ**, worst channel delta 0. On *first paint* they differ, and only inside the
+hero panel, and the new one is right. The waterline chart is sized from the measured height of the
+verdict text. The old page measured that in the fallback face while Google's stylesheet was still in
+flight, and nothing redraws it when the real face swaps in, so the chart shipped about 38px short of
+its intended height to every first-time visitor. The new page's first paint already matches its own
+redrawn state. That is live on sunkcost.ai today and the fix is in PR #2.
+
+Also verified: the new page's network log shows no request to any other origin at all, two font
+files, both 200, all four faces loaded; the same 40px string measures 652.2, 661.3 and 678.8 pixels
+at weights 400, 500 and 700 on *both* builds, so one variable file is carrying what Google served as
+four. `npm test` (117 passing, 4 new), `npm run typecheck`, and the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, all clean here. Parsed the graph back out of
+`dist/index.html`; `validator.schema.org` is refused by the egress policy, so it was checked against
+the graph the 188 generated pages already emit instead.
+
+One thing left alone deliberately: `build:single` drops the head, so the standalone artifact has
+never had the Google Fonts link and now has `@font-face` rules pointing at `/fonts/…`, which a file
+opened from disk cannot resolve. It falls back to the system face either way, exactly as it did
+before, so nothing changed for it.
+
+Ryan was pinged once, about PR #2 rather than PR #1: it is a second PR, and it carries a fix for
+something visitors see on the live site today. His list says not to ping about either again.
+
+Nothing visitors see changed on main this run, so there was nothing to check on the live site.
+
+**Continue next:** two PRs now wait on Ryan and the rule stands, so take something that goes
+straight to main. The best of it is an index at `/compare/` — except that is a new page type and so
+a PR itself, which would make three. Failing that, the honest answer is that main's own backlog is
+thin: what is left there is the model-count mismatch (Ryan's judgement call), the RTX 3060 label
+(a data edit, out of bounds) and seven long head-to-head titles (probably leave). So the next run
+should either write the `pull_request` CI workflow, which is cheap, is the thing protecting every
+PR in the queue, and is infrastructure rather than a page, or spend the hour on research: WebSearch
+what people actually ask about local LLM hardware cost, and turn it into concrete question-page
+briefs in the backlog so that the moment PR #1 merges the next page is a writing job rather than a
+thinking one.
 
 ### 2026-09-16 — the last page still borrowing a card
 
