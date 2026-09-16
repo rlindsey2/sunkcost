@@ -1,10 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, pageShell, priceRivals,
-  FONT_PRELOAD,
+  brandOf, calcLink, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, pageShell,
+  priceRivals, FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
+import { defaultState } from '../src/state';
+import { sharePath } from '../src/share';
 import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
@@ -188,6 +190,26 @@ describe('related machines', () => {
         data.hardware.some((x) => familyRange(x, data).some((r) => r.id === h.id) || priceRivals(x, data).some((r) => r.id === h.id)),
         `${h.id} is linked from no other machine page`,
       ).toBe(true);
+  });
+});
+
+describe('links into the calculator', () => {
+  const state = { ...defaultState(data), hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4', usage: 50_000 };
+
+  it('sends a reader to the calculator itself, not to a share page', () => {
+    // /s/ pages carry noindex on purpose. A page written to be found should not
+    // spend its links on addresses the site asks search engines to ignore.
+    const link = calcLink(state, data);
+    expect(link.startsWith('/?')).toBe(true);
+    expect(link).not.toContain('/s/');
+    expect(sharePath(state, state.model, data)).toContain('/s/');
+  });
+
+  it('carries the machine, the model and the usage the page was showing', () => {
+    const q = new URLSearchParams(calcLink(state, data).slice(2));
+    expect(q.get('hw')).toBe('mac-mini-m6-32');
+    expect(q.get('m')).toBe('qwen3.8-27b-q4');
+    expect(q.get('u')).toBe('50000');
   });
 });
 

@@ -14,7 +14,6 @@ import {
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { bestByTier, bestUsageLevels } from '../src/best';
-import { sharePath } from '../src/share';
 import { kvCacheGb } from '../src/fit';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 
@@ -26,7 +25,7 @@ const outRoot = new URL('../public/', import.meta.url);
 const site = data.defaults.site_url.replace(/\/$/, '');
 const paths: string[] = [];
 
-const meta: { path: string; title: string; description: string }[] = [];
+const meta: { path: string; title: string; description: string; canonical: string; links: string[] }[] = [];
 /** which pages link to each page, so the build can refuse to ship one nothing links to */
 const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
@@ -57,6 +56,8 @@ function write(path: string, html: string) {
     path,
     title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
     description: unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? ''),
+    canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
+    links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
   });
 }
 
@@ -101,6 +102,56 @@ function checkLinks() {
   }
   const counts = paths.map((p) => inbound.get(p)!.size);
   console.log(`  every page is linked from at least ${Math.min(...counts)} other page${Math.min(...counts) === 1 ? '' : 's'}`);
+}
+
+/**
+ * One page, one address. A search engine that reaches the same content at two
+ * URLs splits it in two and ranks neither, so four things have to hold across
+ * every generated page:
+ *
+ *   - each page's canonical is its own address, and no two pages claim the same
+ *     one, since a canonical pointing anywhere else takes the page out of the
+ *     results it was written for;
+ *   - a head-to-head exists in one direction only — A vs B and B vs A are the
+ *     same table with the columns swapped;
+ *   - the sitemap and the pages on disk are the same set, so nothing is
+ *     announced that does not exist and nothing exists unannounced;
+ *   - every internal link is the address the page's own canonical uses. A
+ *     missing trailing slash is a redirect in front of the reader, a link to a
+ *     page that is not there is a dead end, and a link to /s/ spends a link on
+ *     a page this site asks search engines to ignore.
+ */
+function checkCanonicals() {
+  const problems: string[] = [];
+  const own = new Set(paths);
+  for (const p of meta) {
+    if (p.canonical !== site + p.path) problems.push(`${p.path} says its address is ${p.canonical || '(none)'}`);
+    for (const href of p.links) {
+      if (!href.startsWith('/')) continue;
+      const target = href.split(/[?#]/)[0];
+      if (target === '/' || target === '') continue;
+      if (!target.endsWith('/')) problems.push(`${p.path} links to ${href}, which redirects before it arrives`);
+      else if (target.startsWith('/s/')) problems.push(`${p.path} links to ${href}, a share page search engines are told to ignore`);
+      else if (!own.has(target)) problems.push(`${p.path} links to ${href}, which no page here writes`);
+    }
+  }
+  const claimed = new Map<string, string[]>();
+  for (const p of meta) claimed.set(p.canonical, [...(claimed.get(p.canonical) ?? []), p.path]);
+  for (const [url, ps] of claimed) if (ps.length > 1) problems.push(`${ps.length} pages claim ${url}: ${ps.join(', ')}`);
+  for (const p of paths) {
+    const pair = p.match(/^\/compare\/(.+)-vs-(.+)\/$/);
+    if (pair && own.has(`/compare/${pair[2]}-vs-${pair[1]}/`)) problems.push(`${p} also exists with the two sides swapped`);
+  }
+  const announced = [...readFileSync(new URL('sitemap.xml', outRoot), 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const shouldBe = new Set(['/', ...paths].map((p) => site + p));
+  if (announced.length !== new Set(announced).size) problems.push('the sitemap lists a URL twice');
+  for (const u of announced) if (!shouldBe.has(u)) problems.push(`the sitemap announces ${u}, which is not a page here`);
+  for (const u of shouldBe) if (!announced.includes(u)) problems.push(`${u} is a page here and is missing from the sitemap`);
+  if (problems.length) {
+    console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
+    throw new Error(`${problems.length} pages are reachable at more than one address, or link to one`);
+  }
+  console.log(`  ${meta.length} pages, one address each, ${announced.length} in the sitemap`);
 }
 
 /**
@@ -274,7 +325,7 @@ function bestBuys(): string {
   <td class="c-hw"><a href="/hardware/${esc(c.hw.id)}/">${esc(hardwareLabel(c.hw))}</a> <span class="dim">${fmtUsd(c.hw.price_usd)}${c.hw.price_scope === 'card_only' ? ', card only' : ''}</span></td>
   <td>${tp?.tokensPerSec != null ? `${fmtNum(tp.tokensPerSec, 0)} tok/s` : '?'}${tp?.measurement && tp.measurement !== 'measured' ? ` <span class="dim">${esc(tp.measurement)}</span>` : ''}</td>
   <td><b>${esc(fmtDuration(c.days))}</b></td>
-  <td><a href="${esc(sharePath(state, c.model.id, data))}">Open in the calculator</a></td>
+  <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
             .join('') + (counts ? `<tr><td colspan="5" class="dim">Also in this class: ${counts}, of ${t.considered} pairs that fit.</td></tr>` : '');
@@ -685,5 +736,6 @@ writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UT
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
 checkMeta();
 checkLinks();
+checkCanonicals();
 checkFonts();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
