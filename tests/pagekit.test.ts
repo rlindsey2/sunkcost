@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { brandOf, hardwareProduct, jsonLd, pageGraph, type LdNode } from '../src/pagekit';
+import {
+  brandOf, familyHeading, familyRange, hardwareProduct, jsonLd, otherQuantisations, pageGraph, priceRivals,
+  type LdNode,
+} from '../src/pagekit';
 import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
@@ -117,5 +120,71 @@ describe('structured data', () => {
     const parsed = JSON.parse(html.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, ''));
     expect(parsed['@graph'][0].name).toBe('</script><img src=x>');
     expect(parsed['@context']).toBe('https://schema.org');
+  });
+});
+
+describe('related machines', () => {
+  it('lists the rest of a range, current generation first then cheapest first', () => {
+    const range = familyRange(hw('mac-mini-m6-16'), data);
+    expect(range.map((h) => h.id)).toEqual([
+      'mac-mini-m6-24', 'mac-mini-m6-32', 'mac-mini-m5-pro-24', 'mac-mini-m5-pro-48', 'mac-mini-m5-pro-64',
+      'mac-mini-m4-16', 'mac-mini-m4-24', 'mac-mini-m4-32', 'mac-mini-m4-pro-24', 'mac-mini-m4-pro-48',
+      'mac-mini-m4-pro-64',
+    ]);
+  });
+
+  it('never puts a machine in its own range', () => {
+    for (const h of data.hardware) expect(familyRange(h, data).map((x) => x.id)).not.toContain(h.id);
+  });
+
+  it('picks one price rival per other family, and nothing discontinued or unpriced', () => {
+    const rivals = priceRivals(hw('nvidia-dgx-spark-128'), data);
+    expect(new Set(rivals.map((h) => h.family)).size).toBe(rivals.length);
+    for (const r of rivals) {
+      expect(r.family).not.toBe('DGX Spark');
+      expect(r.generation ?? 'current').toBe('current');
+      expect(r.price_usd).not.toBeNull();
+    }
+  });
+
+  it('shows price rivals cheapest first', () => {
+    for (const h of data.hardware) {
+      const prices = priceRivals(h, data).map((r) => r.price_usd!);
+      expect(prices).toEqual([...prices].sort((a, b) => a - b));
+    }
+  });
+
+  it('takes the closest price in each family, not just any member of it', () => {
+    // the $18,000 card is the far end of NVIDIA; a $1,299 Mac mini should meet the $1,999 5090
+    expect(priceRivals(hw('mac-mini-m6-32'), data).find((h) => h.family === 'NVIDIA')?.id)
+      .toBe('geforce-rtx-5090-32');
+  });
+
+  it('gives a machine with no published price no rivals to be near', () => {
+    expect(priceRivals(hw('framework-desktop-495-192'), data)).toEqual([]);
+  });
+
+  it('names a range the way the thing is sold', () => {
+    expect(familyHeading(hw('mac-mini-m6-16'))).toBe('The rest of the Mac mini range');
+    expect(familyHeading(hw('geforce-rtx-3090-24'))).toBe('Other NVIDIA cards');
+    expect(familyHeading(hw('gmktec-evo-x2-128'))).toBe('Other Strix Halo machines');
+  });
+
+  it('pairs the two quantisations of a model, both ways and only those', () => {
+    const m = (id: string) => data.models.find((x) => x.id === id)!;
+    expect(otherQuantisations(m('qwen3-32b-q4'), data).map((x) => x.id)).toEqual(['qwen3-32b-q8']);
+    expect(otherQuantisations(m('qwen3-32b-q8'), data).map((x) => x.id)).toEqual(['qwen3-32b-q4']);
+    expect(otherQuantisations(m('llama-3.1-8b-q4'), data).map((x) => x.id)).toEqual(['llama-3.1-8b-q8']);
+    expect(otherQuantisations(m('spark-x2.5-4b-q4'), data)).toEqual([]);
+  });
+
+  it('leaves no machine and no model without a page linking to it', () => {
+    // every machine is named on a sibling's page or as somebody's nearest price,
+    // and every model is on the leaderboard, a machine page or its own twin
+    for (const h of data.hardware)
+      expect(
+        data.hardware.some((x) => familyRange(x, data).some((r) => r.id === h.id) || priceRivals(x, data).some((r) => r.id === h.id)),
+        `${h.id} is linked from no other machine page`,
+      ).toBe(true);
   });
 });

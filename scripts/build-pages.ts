@@ -7,9 +7,10 @@
  */
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd,
-  hardwareLabel, hardwareProduct, lowerFirst, modelLabel, pageShell, runnersFor, shortHardwareLabel, slug, tierName,
-  tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, TITLE_MAX,
+  calcLink, cheapestPerFamily, computeView, descOf, dotRow, esc, familyHeading, familyRange, fmtDuration, fmtGb,
+  fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, lowerFirst, modelLabel, otherQuantisations, pageShell,
+  priceRivals, runnersFor, shortHardwareLabel, slug, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX,
+  TITLE_MAX,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -26,6 +27,8 @@ const site = data.defaults.site_url.replace(/\/$/, '');
 const paths: string[] = [];
 
 const meta: { path: string; title: string; description: string }[] = [];
+/** which pages link to each page, so the build can refuse to ship one nothing links to */
+const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
   s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
@@ -43,6 +46,8 @@ function write(path: string, html: string) {
   } catch (e) {
     throw new Error(`${path} has JSON-LD that does not parse: ${(e as Error).message}`);
   }
+  for (const m of (html.split('<body')[1] ?? '').matchAll(/href="(\/[^"#?]*\/)"/g))
+    if (m[1] !== path) inbound.set(m[1], (inbound.get(m[1]) ?? new Set()).add(path));
   meta.push({
     path,
     title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
@@ -78,6 +83,21 @@ function checkMeta() {
       );
 }
 
+/**
+ * A page in the sitemap that no other page links to is one a crawler is told
+ * about and given no reason to want. Adding a machine or a model should not be
+ * able to quietly produce one, so this is fatal rather than a warning.
+ */
+function checkLinks() {
+  const orphans = paths.filter((p) => !inbound.get(p)?.size);
+  if (orphans.length) {
+    console.error(orphans.map((p) => `  nothing links to ${p}`).join('\n'));
+    throw new Error(`${orphans.length} generated pages have no inbound link`);
+  }
+  const counts = paths.map((p) => inbound.get(p)!.size);
+  console.log(`  every page is linked from at least ${Math.min(...counts)} other page${Math.min(...counts) === 1 ? '' : 's'}`);
+}
+
 const ratingWord: Record<string, string> = { green: 'good', amber: 'usable', red: 'don’t', unknown: 'not rated' };
 
 // Where the same model is listed at two quantisations, the quantisation is the
@@ -85,6 +105,32 @@ const ratingWord: Record<string, string> = { green: 'good', amber: 'usable', red
 const sharedNames = new Set(
   data.models.map((m) => m.display_name).filter((n, i, xs) => xs.indexOf(n) !== i),
 );
+
+// One view per machine at the default settings, computed once: the machine pages
+// and every table that names another machine all want the same two numbers out of
+// it, how much fits and whether it pays back.
+const hwViews = new Map(data.hardware.map((hw) => [hw.id, computeView({ ...defaultState(data), hw: hw.id }, data)]));
+const fitsOn = (hw: Hardware) => hwViews.get(hw.id)!.rows.filter((r) => r.fit.status === 'fits');
+
+// The machine most people cross-shop in each family: the middle of the range by
+// price. These are the pairs that get a head-to-head page, and the machine pages
+// link to the ones they appear in.
+const flagships = [...new Set(data.hardware.map((h) => h.family))]
+  .map((fam) => {
+    const inFam = data.hardware.filter((h) => h.family === fam && h.price_usd != null && (h.generation ?? 'current') === 'current');
+    return inFam.sort((a, b) => a.price_usd! - b.price_usd!)[Math.floor(inFam.length / 2)];
+  })
+  .filter(Boolean) as Hardware[];
+
+const headToHeads = new Map<string, { href: string; other: Hardware }[]>();
+for (let i = 0; i < flagships.length; i++) {
+  for (let j = i + 1; j < flagships.length; j++) {
+    const [a, b] = [flagships[i], flagships[j]];
+    const href = `/compare/${slug(hardwareLabel(a))}-vs-${slug(hardwareLabel(b))}/`;
+    for (const [self, other] of [[a, b], [b, a]] as const)
+      headToHeads.set(self.id, [...(headToHeads.get(self.id) ?? []), { href, other }]);
+  }
+}
 
 /* ------------------------------ leaderboard ------------------------------ */
 
@@ -132,6 +178,12 @@ function leaderboard(): string {
     )
     .join('');
 
+  // models the index has not scored are not in the table; they still have pages,
+  // and this is the only route to them
+  const unplaced = data.models
+    .filter((m) => m.frontier_equivalent?.score == null)
+    .sort((a, b) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0));
+
   const best = unique[0];
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
@@ -142,6 +194,7 @@ ${gap != null ? `<p>The short version: the best open model here scores <b>${best
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${frontierRows}${rows}</tbody>
 </table>
+${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
@@ -266,6 +319,7 @@ function modelPage(m: Model): string {
   const fe = m.frontier_equivalent;
   const ce = m.cloud_equivalent;
   const ctx = data.defaults.context.default_tokens;
+  const alsoAt = otherQuantisations(m, data);
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
 <p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}. ${esc(m.capability_note)}</p>
@@ -299,7 +353,7 @@ ${hwRows ? `<h2>Machines that run it</h2>
 <h2>The specifics</h2>
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
-  <dt>Quantisation</dt><dd>${esc(m.quantisation)}</dd>
+  <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
   <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
   <dt>KV cache</dt><dd>${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
@@ -351,6 +405,18 @@ ${hwRows ? `<h2>Machines that run it</h2>
 
 /* ---------------------------- hardware pages ---------------------------- */
 
+/** A machine named on another machine's page: price, memory, what it runs, what it costs you. */
+function relatedRow(h: Hardware): string {
+  const discontinued = (h.generation ?? 'current') === 'previous';
+  return `<tr>
+  <td><a href="/hardware/${esc(h.id)}/">${esc(hardwareLabel(h))}</a>${discontinued ? '<span class="c-quant">discontinued</span>' : ''}</td>
+  <td>${h.price_usd == null ? '<span class="dim">not published</span>' : fmtUsd(h.price_usd)}${h.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</td>
+  <td>${h.unified_memory_gb} GB</td>
+  <td>${fitsOn(h).length}</td>
+  <td>${esc(verdictLine(hwViews.get(h.id)!))}</td>
+</tr>`;
+}
+
 function hardwarePage(hw: Hardware): string {
   const state = { ...defaultState(data), hw: hw.id };
   const view = computeView(state, data);
@@ -358,6 +424,8 @@ function hardwarePage(hw: Hardware): string {
   const label = hardwareLabel(hw);
   const short = shortHardwareLabel(hw);
   const hwVerdict = view.calc ? lowerFirst(verdictLine(view)) : null;
+  const range = familyRange(hw, data);
+  const rivals = priceRivals(hw, data);
 
   const rows = fits
     .slice(0, 12)
@@ -390,6 +458,17 @@ ${rows ? `<h2>What it runs</h2>
 <tbody>${rows}</tbody>
 </table>
 ${fits.length > 12 ? `<p class="note">${fits.length - 12} more fit; the calculator lists them all.</p>` : ''}` : ''}
+
+${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
+<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Memory</th><th>Models that fit</th><th>Pay-back</th></tr></thead>
+<tbody>
+${range.length ? `<tr class="is-frontier"><th colspan="5">${esc(familyHeading(hw))}</th></tr>${range.map(relatedRow).join('')}` : ''}
+${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price elsewhere on the list</th></tr>${rivals.map(relatedRow).join('')}` : ''}
+</tbody>
+</table>
+<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.</p>` : ''}
+${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.get(hw.id)!.map((h) => `<a href="${esc(h.href)}">vs ${esc(shortHardwareLabel(h.other))}</a>`).join(' · ')}</p>` : ''}
 
 <h2>The specifics</h2>
 <dl class="specs">
@@ -553,14 +632,8 @@ write('/best/', bestBuys());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
-// comparisons: the flagship current config of each family against every other
-const flagships = [...new Set(data.hardware.map((h) => h.family))]
-  .map((fam) => {
-    const inFam = data.hardware.filter((h) => h.family === fam && h.price_usd != null && (h.generation ?? 'current') === 'current');
-    // the one most people cross-shop: the middle of the range by price
-    return inFam.sort((a, b) => a.price_usd! - b.price_usd!)[Math.floor(inFam.length / 2)];
-  })
-  .filter(Boolean) as Hardware[];
+// comparisons: the flagship current config of each family against every other,
+// the pairs `headToHeads` above already worked out and linked from both sides
 for (let i = 0; i < flagships.length; i++) {
   for (let j = i + 1; j < flagships.length; j++) {
     write(`/compare/${slug(hardwareLabel(flagships[i]))}-vs-${slug(hardwareLabel(flagships[j]))}/`, comparePage(flagships[i], flagships[j]));
@@ -583,4 +656,5 @@ const urls = ['/', ...paths]
 writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
 checkMeta();
+checkLinks();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

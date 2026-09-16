@@ -295,4 +295,52 @@ export function verdictLine(view: View): string {
   return view.calc.breakevenDays === null ? 'Never pays back' : `Pays back in ${fmtDuration(view.calc.breakevenDays)}`;
 }
 
+/**
+ * Someone reading about one machine is nearly always choosing between several.
+ * The rest of its range is the first comparison they make, and what else that
+ * money could go on is the second.
+ */
+
+/** Every other configuration sold under the same name, current generation first, then cheapest first. */
+export function familyRange(hw: Hardware, data: Dataset): Hardware[] {
+  const rank = (h: Hardware) => ((h.generation ?? 'current') === 'current' ? 0 : 1);
+  return data.hardware
+    .filter((h) => h.family === hw.family && h.id !== hw.id)
+    .sort((a, b) => rank(a) - rank(b) || (a.price_usd ?? Infinity) - (b.price_usd ?? Infinity));
+}
+
+/**
+ * The machine closest in price from each other family. One per family rather
+ * than the five nearest overall, because five Mac Studios within $300 of each
+ * other answer nobody's question. Nearest in price decides who is in the list;
+ * the list itself comes back cheapest first, which is how a column reads.
+ */
+export function priceRivals(hw: Hardware, data: Dataset, limit = 5): Hardware[] {
+  if (hw.price_usd == null) return [];
+  const gap = (h: Hardware) => Math.abs(h.price_usd! - hw.price_usd!);
+  const best = new Map<string, Hardware>();
+  for (const h of data.hardware) {
+    if (h.family === hw.family || h.price_usd == null || (h.generation ?? 'current') !== 'current') continue;
+    const held = best.get(h.family);
+    if (!held || gap(h) < gap(held)) best.set(h.family, h);
+  }
+  // chosen by how close the price is, then shown cheapest first so the column reads in order
+  return [...best.values()]
+    .sort((a, b) => gap(a) - gap(b))
+    .slice(0, limit)
+    .sort((a, b) => a.price_usd! - b.price_usd!);
+}
+
+/** How to introduce the rest of a range: a Mac mini is a product line, a Strix Halo box is a chip. */
+export function familyHeading(hw: Hardware): string {
+  if (hw.family === 'NVIDIA' || hw.family === 'AMD') return `Other ${hw.family} cards`;
+  if (hw.family === 'Strix Halo') return 'Other Strix Halo machines';
+  return `The rest of the ${hw.family} range`;
+}
+
+/** The same model at another quantisation: a different download, a different memory bill. */
+export function otherQuantisations(m: Model, data: Dataset): Model[] {
+  return data.models.filter((x) => x.display_name === m.display_name && x.id !== m.id);
+}
+
 export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc };
