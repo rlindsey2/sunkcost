@@ -251,6 +251,12 @@ shipped: the name column is 290px of the 358 available, so sticking it leaves al
 scroll in, and the full-width section heading rows stick as empty bands. Both new backlog items
 above came out of this run.
 
+**Deploy confirmed.** Two pushes again, the change and then this log, so run 46 was cancelled by
+the concurrency rule as it queued and run 47, on `0f0f3c4`, finished green at 22:55 UTC with
+`npm ci`, `npm test` and the full build passing on the runner. Everything from both commits is
+live. The site's own pages still cannot be read from here, so this is the runner's word, not a
+fetch of sunkcost.ai.
+
 **Continue next:** `/compare/` as an index is still the best of what is left, and it is still a new
 page type, so it is still a PR. If three PRs waiting is one too many, the `pull_request` CI
 workflow is unwritten and protects every one of them, and the head-to-head OG cards still print a
