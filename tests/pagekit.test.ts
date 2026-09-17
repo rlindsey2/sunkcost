@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
-  contextCappedBy, fitsShorter, fmtDuration, fmtNum, fmtUsd, longestContext,
+  contextCappedBy, fitsShorter, fmtDuration, fmtNum, fmtUsd, longestContext, machinesShorter,
   hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
   stack, strongestShared, tierLabel, tierName, FONT_PRELOAD,
@@ -758,6 +758,61 @@ describe('what memory buys once two machines hold the same models', () => {
     const ctx = data.defaults.context.default_tokens;
     const roomy = data.hardware.filter((h) => data.models.every((m) => (footprintGb(m, ctx) ?? Infinity) <= (h.usable_memory_gb ?? 0)));
     for (const h of roomy) expect(fitsShorter(h, data.models, data)).toEqual([]);
+  });
+
+  it('names the same rows from the model\'s side as from the machine\'s', () => {
+    // a model page's section is the machine pages' one read the other way round, so
+    // every machine it names has to be one that page's own model appears on, and at
+    // the same window. The two differ only in what they leave out: the model side
+    // keeps one machine per family and only weighs machines worth buying.
+    const ctx = data.defaults.context.default_tokens;
+    const considered = new Set(machinesConsidered(data).map((h) => h.id));
+    const fromMachines = new Map<string, number>();
+    for (const h of data.hardware) {
+      if (!considered.has(h.id)) continue;
+      for (const r of fitsShorter(h, data.models, data)) fromMachines.set(`${r.model.id}|${h.id}`, r.ctx);
+    }
+    let rows = 0;
+    for (const m of data.models) {
+      const seen = new Set<string>();
+      let last = -Infinity;
+      for (const r of machinesShorter(m, data)) {
+        rows++;
+        expect(fromMachines.get(`${m.id}|${r.hw.id}`)).toBe(r.ctx);
+        expect(considered.has(r.hw.id)).toBe(true);
+        // one machine per family, cheapest first
+        expect(seen.has(r.hw.family)).toBe(false);
+        seen.add(r.hw.family);
+        expect(r.hw.price_usd!).toBeGreaterThanOrEqual(last);
+        last = r.hw.price_usd!;
+      }
+    }
+    expect(rows).toBeGreaterThan(0);
+  });
+
+  it('never names a machine the model already runs on at the default context', () => {
+    // the two tables on a model page answer different questions, and a machine in
+    // both would read as a contradiction: it runs it, and it does not
+    const ctx = data.defaults.context.default_tokens;
+    const options = [...data.defaults.context.options].sort((a, b) => a - b);
+    for (const m of data.models) {
+      const runs = new Set(runnersFor(m, data).map((r) => r.hw.id));
+      for (const r of machinesShorter(m, data)) {
+        expect(runs.has(r.hw.id)).toBe(false);
+        expect(r.ctx).toBeLessThan(ctx);
+        expect(r.ctx).toBe(longestContext(m, r.hw, data));
+        if (m.max_context_tokens != null) expect(r.ctx).toBeLessThanOrEqual(m.max_context_tokens);
+        expect(r.needGb).toBeCloseTo(footprintGb(m, r.ctx)!, 6);
+        expect(r.needGb).toBeLessThanOrEqual(r.hw.usable_memory_gb!);
+        // and the next setting up really is out of reach, or the row is claiming a
+        // limit the machine does not have
+        const next = options.find((o) => o > r.ctx)!;
+        expect(footprintGb(m, next)!).toBeGreaterThan(r.hw.usable_memory_gb!);
+      }
+      // a model every considered machine holds at the default context has nothing here
+      if (machinesConsidered(data).every((h) => (footprintGb(m, ctx) ?? Infinity) <= (h.usable_memory_gb ?? 0)))
+        expect(machinesShorter(m, data)).toEqual([]);
+    }
   });
 
   it('writes a context the way the calculator does', () => {

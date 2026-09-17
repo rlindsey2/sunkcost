@@ -11,7 +11,14 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired twelve times**, most recently at 14:52 on 2026-09-17.
+      **It has now needed its merge repaired thirteen times**, most recently at 16:07 on 2026-09-17.
+      The thirteenth was the import block in both `scripts/build-pages.ts` and `tests/pagekit.test.ts`:
+      this branch's `/how-much-memory/` helpers against main's new `fitsShorter` and `ShorterFit`.
+      Every name from both sides was kept in both files, checked by taking the union of each pair of
+      lists and asserting nothing dropped out, and both lists were put back into one order rather
+      than left as two halves. Rebuilt (189 pages, 186 tests, typecheck clean, the full build
+      including `build:og` and `build:functions`) and re-measured over HTTP (**1,701 views, 0
+      overflows, 0 of 4,212 tables scrolling**) before pushing `398d115`.
       The twelfth was the import block in `tests/pagekit.test.ts` alone, the conflict this log has
       been predicting for five runs: this branch's `/how-much-memory/` helpers against main's new
       `cheapestPerFamily`. Every name from both sides was kept and none was lost, which was checked
@@ -74,6 +81,11 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed a sixth repair at 16:10 on 2026-09-17**, the import block for the fourth time:
+      this branch's `shownTps` against main's `fitsShorter` and `ShorterFit`. All three kept and the
+      list put back into one order; rebuilt (189 pages, 76 comparisons, 178 tests, typecheck clean)
+      and re-measured over HTTP (**1,701 views, 0 overflows, 0 of 4,176 tables scrolling**) before
+      pushing `2221657`.
       **It needed a fifth repair at 12:06 on 2026-09-17**, the import block again and for the third
       time: this branch's `shownTps` against main's `contextCappedBy` and `longestContext`. Both
       kept; rebuilt (189 pages, 76 comparisons, 174 tests, typecheck clean) and re-measured over
@@ -236,6 +248,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the same thing in different words is the duplicate this site should not create). Each
       answers in the first paragraph with the site's own numbers, links into the calculator with
       the configuration prefilled, and cites sources.
+- [ ] The model pages have the mirror of what the machine pages gained on 2026-09-17: a model can
+      fit most machines at 32k and one machine only below it, and the model page leaves that machine
+      out of "Machines that run it" entirely. The same 33 pairs, seen from the other side, and they
+      land on about ten model pages — Granite 4.2 8B and 30B, Ministral 3 14B, Devstral Small 2 24B,
+      Qwen3-Coder 30B-A3B, Laguna XS 2.1, Gemma 4 31B it. `fitsShorter()` is written and the machine
+      side is shipped, so this is the cheaper half. The question to settle first is whether it wants
+      a second table or a line under the existing one: a model page's table is priced at 32k
+      throughout, and a row that holds only at 8k cannot carry a speed or a pay-back from that table
+      without being read as one of them.
+
+- [ ] `/leaderboard/` has no prefilled calculator link at all — the only page on the site with none,
+      and it is the biggest hub, 1,336 words and 113 outbound internal links. Its "Cheapest machine
+      that runs it" column already names a machine and its price for every model, which is exactly
+      the pair the calculator wants, but the cell links to the machine page and stops. `/best/`
+      carries 45 such links, model pages 15 apiece and machine pages 13. The catch is that the
+      machine name is already a link worth keeping and the price beside it is a poor thing to make
+      into one, so this needs a shape rather than just a href — and the table is 7 columns and
+      8,134px tall on a phone already, so it cannot be a new column.
+
 - [x] The head-to-head OG cards printed a graphics card's price as a whole computer's. Done
       2026-09-16, and the item understated it: the cards were the last place the *comparison*
       pages did it, not the last place the site did. 57 pages were still bare, including five
@@ -382,6 +413,104 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the pages stop saying no at 32k when the answer is yes at 16k
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 and PR #3 both needed repairing afterwards, from this run's own push; see the
+end of this entry. Ryan has not been pinged about any of them, per the standing rule.
+
+**Why this item, and where it came from.** The question pages are still the top item overall and
+still blocked behind three unmerged PRs, for the ninth run running. The last entry said the
+main-reachable list below them had run down to cosmetics and that a run wanting a real item would
+have to find it by measuring the page set again. So that is what this run did, and it found one.
+
+**What was wrong.** Everything on this site is priced at one context, 32k, and that setting had
+quietly become a property of the hardware. A machine page counts what fits at 32k, prints those
+models and stops. **33 machine-and-model pairs miss at 32k and fit at 16k or 8k**, because the
+weights are the same size either way and the KV cache is not, and every one of them was left off the
+page. A Mac mini M6, 32GB was shown running 19 of 39 models when it runs 22 at a window someone might
+well accept; a 16GB Mac mini reads "10 of 39" and holds Granite 4.2 8B at 16k and Ministral 3 14B at
+8k; an RTX 3090 holds Granite 4.2 30B at 16k. Those are the machines people search for, and the page
+answered "it cannot run this" about a model it can.
+
+**What changed.** **19 of the 56 machine pages** now carry a short section under "What it runs" —
+"Two more, at a shorter window" — naming each model, the longest window this machine holds it at,
+what it needs there and what it would need at 32k. **The window is the link**, the way the Longest
+context column already is, so each one opens the calculator on that model at that length: 33 new
+prefilled links. The opening line counts them too, so "Yes, 10 of the 39 open models fit" became
+"Yes, 10 of the 39 open models fit in its 10.5 GB of usable memory, the strongest being Gemma 4 12B,
+and two more if you keep the window shorter than 32k".
+
+**The model side had one page with the same fault and a worse version of it.**
+`/models/hunyuan-hy3-q4/` was **the thinnest page on the site at 288 words and the only one with no
+way into the calculator at all**. It said "Nothing on the list runs it" and stopped. Tencent Hy3
+needs 193 GB at 32k and the Mac Studio M5 Ultra, 256GB has 192 GB usable — **the miss is about a
+gigabyte, and it is all cache**. At 16k the cache falls from 11 GB to 5.4 GB, the model needs 188 GB
+and that machine holds it. The site already knew this: the two thin model comparisons were rewritten
+around exactly this fact on 2026-09-17, so one page was saying "nothing runs it" while two others
+priced it on a machine that does. That page now names the machine, the window, the price, the speed
+and the pay-back, and its description leads with the answer rather than the refusal. 288 to 427
+words, and its first prefilled link.
+
+**No figure here is new data.** `fitsShorter()` asks `fit()` at every context the calculator offers,
+the same function the calculator uses, so a window is capped by whichever runs out first. Every
+memory figure is the weights plus the cache at that window, and the note under each table says so
+and names the usable memory it is measured against, so a reader can add up the two columns.
+
+`checkShorterFits()` holds both sides from here, recomputing every figure from `fit()` at build time
+rather than reading it back off the page: a machine with models to name must name them all, in order,
+with the right window and both memory figures; a machine with none may claim none, in its opening
+line as well as its table; no page may open the calculator at a window the machine does not hold; and
+a model page may not say nothing runs it where something does, or say a shorter window saves it where
+none does. Proved by breaking it eight ways: dropping the section failed the build on **19** counts,
+printing the window one step long on **33**, linking at the default window on **33**, dropping the
+count from the opening line on **19**, forcing the section onto every machine on **37**, printing the
+32k memory figure as the one at the shorter window on **33**, dropping the model page's section on
+**1**, and doubling the window it names on **1**.
+
+**Nothing else on the site moved.** Built the whole page set from a worktree at `origin/main` and
+compared every file: **170 byte-identical, 20 changed**, and the 20 are the 19 machine pages and
+`/models/hunyuan-hy3-q4/`. The first draft put a blank line on 91 pages that gained nothing, which is
+why the section carries its own trailing line now. **The only head lines that changed anywhere are
+Hy3's description, its `og:description` and the copy of it in the JSON-LD** — no title, no canonical,
+no OG image, and the sitemap is byte-identical.
+
+**Verified.** `npm ci`, `npm test` (173 tests, up from 171 — two new ones over every machine and
+model, asserting that a window offered is one the model itself allows, that the next setting up
+really does not fit, and that a machine which holds everything at 32k offers nothing), `npx tsc
+--noEmit`, `npm run build` all the way through `build:functions` with no workaround, and the eight
+deliberate breakages above. Measured over HTTP in Chromium at 320, 360, 390, 430, 640, 768, 1024,
+1280 and 1440px: **1,692 views over the generated pages, 0 page overflows, 0 of 4,158 tables
+scrolling**, against 0 of 3,987 on the baseline — the 171 new table views are the 19 pages at 9
+widths. Read the new section as a picture at 390 and 1280px, and **followed four of the new links in
+a browser**: the Mac mini M6, 32GB on Qwen3-Coder 30B-A3B at 16k, the RTX 3090 on Granite 4.2 30B at
+16k, the Mac Studio on Tencent Hy3 at 16k and the 16GB Mac mini on Ministral 3 14B at 8k. All four
+land on the right machine, model and window, with the model fitting and a pay-back priced, and the
+cache figures the calculator prints (1.6, 4.3, 5.4 and 1.3 GB) add up to the memory figures the pages
+print.
+
+**One measurement note for whoever runs the widths next.** Measuring `dist` rather than `public`
+turns up 3 page overflows and 1 scrolling table, all four on `/` — the calculator's own top bar,
+already on the backlog, and a `.card-body` at 1024px. Neither is a generated page and this run
+touched no calculator file, so both are pre-existing; the `.card-body` one shows up because this
+run's script measures `.stack` and `figure` as well as `table`, which earlier runs' scripts did not.
+
+**Deploy confirmed.** **Run 85, on `a195991`, finished green at 16:05 UTC** with `npm ci`, `npm test`
+and the full `npm run build` passing on the runner, and republished.
+
+**PR #1 and PR #3 were both repaired straight afterwards**, both from this run's own push and both
+the import block, which is now the only place either of them ever breaks. Details in Ryan's side
+above. Both were rebuilt (189 pages each; 186 tests on PR #1, 178 on PR #3; typecheck clean) and
+re-measured over HTTP before pushing `398d115` and `2221657`. All three branches merge clean again.
+
+**What to continue.** The backlog has two new items and they are the two best main-reachable ones.
+The first is the mirror of this run's work on the model pages, which is the cheaper half now that
+the helper exists. The second is bigger and has been hiding in plain sight: **`/leaderboard/` is the
+only page on the site with no prefilled calculator link at all**, and it is the biggest hub on the
+site. **The question pages are still the top item overall and still the biggest win**, and the
+judgement to revisit is unchanged: if a PR merges, the page type is on main and the next question
+page is much less work. **The live site has still had no new page since this agent started.**
 
 ### 2026-09-17 — the model pages send the reader to the length they print
 

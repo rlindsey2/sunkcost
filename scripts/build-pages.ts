@@ -7,13 +7,14 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, descOf, dotRow, esc, familyHeading, familyRange,
-  fitsOf, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, indefiniteArticle,
-  lowerFirst, machineVerdict, machinesConsidered, modelLabel, modelVerdict, otherQuantisations, pageShell,
-  priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
-  CAP_SHORT, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, fitsShorter, FONT_PRELOAD, longestContext,
-  meetAtShorterContext, shortHardwareLabel, shownTps, slug, speedWithBasis, stack, strongestShared, tierLabel,
-  tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner, type SharedMachine, type ShorterFit,
+  calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, computeView, contextCappedBy, contextHeadroom,
+  ctxLabel, DESC_MAX, descOf, dotRow, esc, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration,
+  fmtGb, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, hardwareLabel, hardwareProduct, indefiniteArticle,
+  longestContext, lowerFirst, machinesConsidered, machinesShorter, machineVerdict, meetAtShorterContext,
+  modelLabel, modelVerdict, otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText,
+  rowFor, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, slug, speedWithBasis, stack,
+  strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
+  type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
@@ -657,6 +658,98 @@ function checkMachineContexts() {
 }
 
 /**
+ * The mirror of `checkShorterFits`, on the model pages. The same 45 rows say
+ * something different from this side: not "the machine runs one more model" but
+ * "the model runs on a cheaper machine than this page names", which on 12 of the
+ * 16 pages contradicts the headline figure in the answer box unless the page says
+ * so. So every row is recomputed from fit() here rather than read back off the
+ * page, and the check holds both sides: a page with machines to name must name
+ * them all, in order, at the right window and the right footprint; a page with
+ * none may claim none; no machine may appear in both tables; and the answer box
+ * may only promise a cheaper machine where there is one.
+ */
+function checkShorterMachines() {
+  const problems: string[] = [];
+  const ctx = data.defaults.context.default_tokens;
+  let pages = 0;
+  let rows = 0;
+  let links = 0;
+  let cheaper = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const runners = runnersFor(m, data);
+    const want = runners.length ? machinesShorter(m, data) : [];
+    const found = html.match(/<h2>(\w+) more machines?, at a shorter window<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    // the answer box only promises a cheaper machine where the cheapest of these
+    // undercuts the cheapest machine the page's own table names
+    const undercuts =
+      want[0] != null && want[0].hw.price_usd != null && runners[0]?.hw.price_usd != null && want[0].hw.price_usd < runners[0].hw.price_usd;
+    const promised = html.includes('Cheaper at a shorter window');
+    if (undercuts && !promised) problems.push(`${path} runs on a machine cheaper than the one it calls cheapest and does not say so in its answer box`);
+    if (!undercuts && promised) problems.push(`${path} promises a cheaper machine at a shorter window, and there is none`);
+    if (undercuts) {
+      cheaper++;
+      if (!html.includes(`<a href="/hardware/${esc(want[0].hw.id)}/">${esc(hardwareLabel(want[0].hw))}</a> at ${priceWithScope(want[0].hw)}, which holds it at ${ctxLabel(want[0].ctx)}`))
+        problems.push(`${path} does not name the ${hardwareLabel(want[0].hw)} at ${ctxLabel(want[0].ctx)} as the cheaper machine in its answer box`);
+    }
+    if (!want.length) {
+      if (found) problems.push(`${path} names machines that hold it at a shorter window, and there are none`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${path} is held by ${want.length} more machine${want.length === 1 ? '' : 's'} at a shorter window and does not say so`);
+      continue;
+    }
+    pages++;
+    if (found[1] !== sentenceCase(numberWord(want.length)))
+      problems.push(`${path} heads that section "${found[1]} more", where ${want.length} machines hold it at a shorter window`);
+    // the paragraph above the table carries two figures of its own: what the model
+    // needs at the context everything above is priced at, which is what makes the
+    // column beside it mean anything, and the price the page's own table starts at,
+    // which is the whole point of the section where a shorter window undercuts it
+    if (!found[2].includes(`needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))}.`))
+      problems.push(`${path} does not say it needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))} at ${ctxLabel(ctx)} above that table`);
+    if (!found[2].includes(`starts at ${priceWithScopeText(runners[0].hw)}.`))
+      problems.push(`${path} does not say its own table starts at ${priceWithScopeText(runners[0].hw)} above that table`);
+    const listed = found[2].match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>[\s\S]*?<\/tr>/g) ?? [];
+    if (listed.length !== want.length) {
+      problems.push(`${path} lists ${listed.length} machines that hold it at a shorter window, not the ${want.length} there are`);
+      continue;
+    }
+    const alreadyListed = new Set(runners.map((r) => r.hw.id));
+    listed.forEach((row, i) => {
+      const r = want[i];
+      rows++;
+      const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+      const text = (c: string) => (c ?? '').replace(/<span class="c-quant">[\s\S]*?<\/span>/g, '').replace(/<[^>]*>/g, '').trim();
+      if (alreadyListed.has(r.hw.id))
+        problems.push(`${path} lists ${hardwareLabel(r.hw)} as holding it only at a shorter window, where it holds it at ${ctxLabel(ctx)}`);
+      if (!(cells[0] ?? '').includes(`href="/hardware/${esc(r.hw.id)}/"`))
+        problems.push(`${path} does not name ${hardwareLabel(r.hw)} in the row that holds it at ${ctxLabel(r.ctx)}`);
+      if ((cells[1] ?? '').trim() !== priceWithScope(r.hw))
+        problems.push(`${path} prints ${text(cells[1]) || 'nothing'} as the price of ${hardwareLabel(r.hw)}, which is ${priceWithScopeText(r.hw)}`);
+      if (text(cells[2]) !== ctxLabel(r.ctx))
+        problems.push(`${path} prints ${text(cells[2]) || 'nothing'} as the longest window ${hardwareLabel(r.hw)} holds it at, where it holds it to ${ctxLabel(r.ctx)}`);
+      if (text(cells[3]) !== fmtGb(r.needGb))
+        problems.push(`${path} prints ${text(cells[3]) || 'nothing'} as what it needs on ${hardwareLabel(r.hw)} at ${ctxLabel(r.ctx)}, where it needs ${fmtGb(r.needGb)}`);
+      // the window is the way in as well as the answer, and it may only open one
+      // that machine actually holds
+      const href = esc(calcLink({ hw: r.hw.id, model: m.id, ctx: r.ctx }, data));
+      if (!(cells[2] ?? '').includes(`href="${href}"`))
+        problems.push(`${path} prints ${ctxLabel(r.ctx)} for ${hardwareLabel(r.hw)} and does not open the calculator on it at that window`);
+      else links++;
+    });
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what model pages say about the machines that hold them at a shorter window`);
+  }
+  console.log(`  ${pages} model pages name ${rows} machines that hold them below ${ctxLabel(ctx)}, ${cheaper} of them cheaper than the page's own cheapest`);
+  console.log(`  ${links} of those windows open the calculator on that machine and model at that window`);
+}
+
+/**
  * The site prices everything at one context, and for a long time that context
  * decided what a machine was said to run. It is a setting, not a property of the
  * hardware: 33 machine-and-model pairs miss at that length and fit at a shorter
@@ -1047,6 +1140,48 @@ function shorterWindowRun(m: Model, run: { ctx: number; runner: Runner }, ctx: n
 `;
 }
 
+/**
+ * A model page lists the machines that hold it at the context the site prices
+ * everything at, and that list decided what the page said the model costs. It is
+ * a setting, not a property of the model: on 16 of the 55 models a machine misses
+ * at 32k and holds it at 16k, 8k or 4k, and on 12 of those the cheapest machine
+ * that runs the model at all is cheaper than anything the page named. Llama 3.3
+ * 70B reads "cheapest machine that runs it, $3,449" and runs on a $1,700 box if
+ * you keep the window to 16k. These rows cannot go in the table above, where
+ * every speed and pay-back is quoted at 32k, so they get their own.
+ */
+function shorterMachinesSection(m: Model, rows: ShorterMachine[], cheapest: Runner, ctx: number): string {
+  if (!rows.length) return '';
+  const body = rows
+    .map(
+      (r) => `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a></td>
+  <td>${priceWithScope(r.hw)}</td>
+  <td><a href="${esc(calcLink({ hw: r.hw.id, model: m.id, ctx: r.ctx }, data))}">${ctxLabel(r.ctx)}</a></td>
+  <td>${fmtGb(r.needGb)}</td>
+</tr>`,
+    )
+    .join('');
+  const some = rows.length === 1 ? 'One more machine holds' : `${sentenceCase(numberWord(rows.length))} more machines hold`;
+  // The money is the point of this section, and it only reads as money where the
+  // shorter window actually buys a cheaper machine. Both prices carry their scope,
+  // because a graphics card's price is not a whole computer's and the cheapest
+  // row in either table is sometimes one and sometimes the other.
+  const price =
+    rows[0].hw.price_usd != null && cheapest.hw.price_usd != null && rows[0].hw.price_usd < cheapest.hw.price_usd
+      ? ` ${rows.length === 1 ? 'It is' : 'The cheapest of those is'} the ${esc(shortHardwareLabel(rows[0].hw))} at ${priceWithScopeText(rows[0].hw)}. The table above starts at ${priceWithScopeText(cheapest.hw)}.`
+      : ` ${rows.length === 1 ? 'It is not' : 'None of them is'} cheaper than the table above, which starts at ${priceWithScopeText(cheapest.hw)}.`;
+  return `<h2>${sentenceCase(numberWord(rows.length))} more machine${rows.length === 1 ? '' : 's'}, at a shorter window</h2>
+<p>The table above lists the machines that run it at ${ctxLabel(ctx)}, the context the calculator starts on, where ${esc(m.display_name)} needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))}. ${some} it at a shorter window, because the weights are the same size either way and the key-value cache is not.${price}</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Longest window it fits</th><th>Needs there</th></tr></thead>
+<tbody>${body}</tbody>
+</table>`, { fig: 2 })}
+<p class="note">One machine per family, cheapest first, from the same list as the table above. Each window is the longest setting the calculator offers that the machine still holds this model at, and it opens the calculator on that machine at that length. What it needs there is the weights plus the key-value cache at that window, measured against the memory each machine's GPU can address, which that machine's own page gives.</p>
+
+`;
+}
+
 function modelPage(m: Model): string {
   const runners = runnersFor(m, data);
   const perFamily = cheapestPerFamily(runners);
@@ -1144,6 +1279,11 @@ function modelPage(m: Model): string {
     }
     return null;
   })();
+  // The mirror of what the machine pages gained: machines that miss this model at
+  // the context the table above is priced at and hold it at a shorter window. A
+  // page that has no machine at all is the case above, already answered in full,
+  // so this is only for the pages that have both.
+  const shorterMachines = runners.length ? machinesShorter(m, data) : [];
   const alsoAt = otherQuantisations(m, data);
 
   // The two head-to-heads this model is in, named from its own point of view.
@@ -1168,7 +1308,8 @@ function modelPage(m: Model): string {
 ${cheapest
       ? `<div class="answer">
   <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${priceWithScope(cheapest.hw)}</span></div>
-  ${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
+  ${shorterMachines[0] && shorterMachines[0].hw.price_usd != null && cheapest.hw.price_usd != null && shorterMachines[0].hw.price_usd < cheapest.hw.price_usd ? `<div class="answer-row"><span class="answer-k">Cheaper at a shorter window</span><span class="answer-v"><a href="/hardware/${esc(shorterMachines[0].hw.id)}/">${esc(hardwareLabel(shorterMachines[0].hw))}</a> at ${priceWithScope(shorterMachines[0].hw)}, which holds it at ${ctxLabel(shorterMachines[0].ctx)}</span></div>
+  ` : ''}${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
   ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — ${fmtNum(fastest.view.throughput!.tokensPerSec, 0)} tok/s at ${Math.round(ctx / 1024)}k context</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
 </div>`
@@ -1199,7 +1340,7 @@ ${stack(`<table class="board">
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
-<h2>The specifics</h2>
+${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}<h2>The specifics</h2>
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
@@ -2192,5 +2333,6 @@ checkHeadroom();
 checkModelContexts();
 checkMachineContexts();
 checkShorterFits();
+checkShorterMachines();
 checkHiddenModels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
