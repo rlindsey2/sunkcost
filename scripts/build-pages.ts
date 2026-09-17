@@ -889,6 +889,53 @@ function checkHiddenModels() {
   console.log(`  ${named} machine-and-unscored-model pairs, every one of them a link on the machine's page`);
 }
 
+/**
+ * The leaderboard's "Cheapest machine that runs it" column names a machine and its
+ * price, and the price is the way into the calculator on that pair — the same rule the
+ * machine and model pages use, where the figure a cell prints is the link. A price that
+ * opened the wrong machine, the wrong model or a machine that does not hold the model
+ * would send a reader to a configuration the row does not describe, so every link is
+ * recomputed here from the data rather than read back off the page.
+ */
+function checkLeaderboardLinks() {
+  const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  const ranked = data.models
+    .filter((m) => m.frontier_equivalent?.score != null)
+    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
+    .filter((m) => {
+      if (seen.has(m.display_name)) return false;
+      seen.add(m.display_name);
+      return true;
+    });
+  let linked = 0;
+  for (const m of ranked) {
+    const row = html.split('<tr>').find((r) => r.includes(`href="/models/${esc(m.id)}/"`));
+    if (!row) {
+      problems.push(`/leaderboard/ has no row for ${m.display_name}`);
+      continue;
+    }
+    const cheapest = cheapestPerFamily(runnersFor(m, data)).slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0];
+    if (!cheapest) {
+      if (row.includes('/?hw=')) problems.push(`/leaderboard/ opens the calculator for ${m.display_name}, which nothing on the list runs`);
+      continue;
+    }
+    const want = `<a class="dim" href="${esc(calcLink({ hw: cheapest.hw.id, model: m.id }, data))}">${fmtUsd(cheapest.hw.price_usd)}</a>`;
+    if (row.includes(want)) linked++;
+    else problems.push(`/leaderboard/ does not open ${m.display_name} on the ${shortHardwareLabel(cheapest.hw)} at ${fmtUsd(cheapest.hw.price_usd)}`);
+  }
+  for (const r of html.split('<tr class="is-frontier">').slice(1)) {
+    const name = r.match(/<td class="[^"]*c-model">([^<]+)/)?.[1] ?? 'a hosted model';
+    if (r.split('</tr>')[0].includes('/?hw=')) problems.push(`/leaderboard/ offers to run ${name} on hardware you can buy`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} row${problems.length === 1 ? '' : 's'} on /leaderboard/ do not open the machine and model they print`);
+  }
+  console.log(`  /leaderboard/ opens the calculator on ${linked} model-and-machine pairs, one a row`);
+}
+
 function checkFonts() {
   const css = readFileSync(new URL('page.css', outRoot), 'utf8');
   const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
@@ -970,7 +1017,7 @@ function leaderboard(): string {
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
-  <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <span class="dim">${fmtUsd(cheapest.hw.price_usd)}${cheapest.hw.price_scope === 'card_only' ? ', card only' : ''}</span>` : '<span class="dim">nothing on the list</span>'}</td>
+  <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <a class="dim" href="${esc(calcLink({ hw: cheapest.hw.id, model: m.id }, data))}">${fmtUsd(cheapest.hw.price_usd)}</a>${cheapest.hw.price_scope === 'card_only' ? '<span class="dim">, card only</span>' : ''}` : '<span class="dim">nothing on the list</span>'}</td>
   <td class="c-vs">${next ? `<a href="/compare/${slug(m.id)}-vs-${slug(next.id)}/">vs ${esc(next.display_name)}</a>` : ''}</td>
 </tr>`;
     })
@@ -998,7 +1045,7 @@ function leaderboard(): string {
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>.</p>
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>.</p>
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
@@ -2192,4 +2239,5 @@ checkMachineContexts();
 checkShorterFits();
 checkShorterMachines();
 checkHiddenModels();
+checkLeaderboardLinks();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
