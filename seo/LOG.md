@@ -298,6 +298,25 @@ and vertical scrolling is a thing phones do. If it ever reads as too long, the f
 short columns share a line, which is a new backlog item below rather than a reason to hide a
 column.
 
+**Deploy confirmed.** One push for the code and the log together. **Run 57, on `08197e0`,
+finished green at 02:09 UTC** with `npm ci`, `npm test` and the full `npm run build` passing on
+the runner, and republished. The site's own pages still cannot be read from here, so this is the
+runner's word rather than a fetch of sunkcost.ai.
+
+**PR #1 went un-mergeable on this push, and was fixed in the same run.** This was the risk the note
+at the top names: the change touched `scripts/build-pages.ts` and `src/pagekit.ts`, which is exactly
+what that branch touches. Merged main into it (never a rebase — it is a branch with a PR open on
+it), which conflicted twice: two import lists, and the machine page's "what it runs" table, where
+main wrapped the table and the branch added a note under it. Both sides kept in each.
+
+Then the new build guard earned itself on a page it was not written for: **`/how-much-memory/` had
+five tables that would swipe**, the widest seven columns, and what a phone was hiding on it was the
+total memory each model needs — the column that page exists for. They stack now like every other
+table on the site. `npm test` 163 passing on the branch, and all 189 pages at 390px: 0 of the 368
+tables scroll. Pushed as `d573b37`. **Both PR branches merge cleanly again as of 02:12 UTC.** This
+is the fourth time PR #1 has had to be repaired while it waits; Ryan has not been pinged, per the
+standing rule.
+
 **Continue next:** the band above 640px, now measured and the top live item on main — 223 of the
 362 tables still swipe at 700px, and the cheap half of it is raising the breakpoint these new
 rules sit behind. If either PR has merged by then, the merged one comes first: after PR #1, the
