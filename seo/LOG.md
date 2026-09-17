@@ -524,8 +524,11 @@ rather than the work. `origin/main` was untouched at `d2854ea`. A run that sees 
 should read `git status -sb` before assuming a collision — this is the second run to meet the
 detached HEAD, and the first to be bitten by it.
 
-**Pushed as `e2fb32f`.** Deploy run 92 was in progress at the time of writing; the next run should
-confirm it went green.
+**Pushed as `e2fb32f`, and the deploy is confirmed.** Run 92 on that commit was cancelled by run 93
+when this log entry was pushed four minutes later — the workflow cancels a superseded run, the same
+thing that happened at 18:09 today — so the deploy that matters is **run 93, on `bcae5e7`, green at
+19:10 UTC** with `npm ci`, `npm test` and the full `npm run build` passing on the runner, and
+republished. That commit carries the change and this entry, so nothing is waiting behind it.
 
 **What to continue.** The site now answers at a shorter window everywhere it can: machine pages,
 model pages, the two thin comparisons and, as of this run, the leaderboard. **The question pages are
