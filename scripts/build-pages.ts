@@ -124,6 +124,30 @@ function checkLinks() {
 }
 
 /**
+ * A head-to-head has to be reachable from both things it compares. Machine
+ * pages have always carried theirs; the model match-ups did not, so all 47 of
+ * them hung off a single link — the leaderboard's last column — while every
+ * machine match-up had two. One inbound link from one cell of one table is a
+ * page a crawler finds late and a reader never finds at all, and the reader on
+ * a model's own page is the one with the comparison in front of them.
+ */
+function checkHeadToHeads() {
+  const sides = new Map<string, string[]>();
+  for (const [a, b] of hardwarePairs(data)) sides.set(hardwareComparePath(a, b), [`/hardware/${a.id}/`, `/hardware/${b.id}/`]);
+  for (const [a, b] of modelPairs(data)) sides.set(modelComparePath(a, b), [`/models/${a.id}/`, `/models/${b.id}/`]);
+  const problems: string[] = [];
+  for (const [path, both] of sides)
+    for (const side of both)
+      if (!inbound.get(path)?.has(side)) problems.push(`${path} is not linked from ${side}, one of the two it compares`);
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head link${problems.length === 1 ? '' : 's'} missing, of the two every comparison needs`);
+  }
+  const fewest = Math.min(...[...sides.keys()].map((p) => inbound.get(p)!.size));
+  console.log(`  ${sides.size} head-to-heads, each linked from both sides and from at least ${fewest} pages in all`);
+}
+
+/**
  * One page, one address. A search engine that reaches the same content at two
  * URLs splits it in two and ranks neither, so four things have to hold across
  * every generated page:
@@ -289,6 +313,38 @@ function checkCompareIndex() {
   console.log(`  the head-to-head index lists all ${comparisons.length} comparisons`);
 }
 
+/**
+ * Every machine head-to-head answers pay-back at one usage above the fold, and the
+ * section below it answers the same question across the five levels the calculator
+ * names. Two things can go quietly wrong there: a page can lose the section, and a
+ * figure a machine is too slow to reach can print as though it were a race. Both stop
+ * the build.
+ */
+function checkPayback() {
+  const levels = bestUsageLevels(data);
+  const problems: string[] = [];
+  for (const [a, b] of hardwarePairs(data)) {
+    const path = hardwareComparePath(a, b);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    const section = html.split('<h2>How much use it takes to pay back</h2>')[1]?.split('<h2>')[0];
+    if (!section) {
+      problems.push(`${path} does not say how much use it takes to pay back`);
+      continue;
+    }
+    const rows = (section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>/g) ?? []).length;
+    if (rows !== levels.length) problems.push(`${path} prices ${rows} levels of use, not the ${levels.length} the calculator names`);
+    const capped = section.match(/its ceiling/g)?.length ?? 0;
+    const explained = (section.match(/at most/g)?.length ?? 0) > 0;
+    if (capped && !explained) problems.push(`${path} marks ${capped} figure${capped === 1 ? '' : 's'} as a ceiling without saying what the ceiling is`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} machine head-to-head${problems.length === 1 ? '' : 's'} do not answer pay-back across the levels of use`);
+  }
+  const ceilings = meta.reduce((n, m) => n + (m.html.match(/its ceiling/g)?.length ?? 0), 0);
+  console.log(`  ${hardwarePairs(data).length} machine head-to-heads price pay-back at ${levels.length} levels of use, ${ceilings} figures capped by what a machine can generate`);
+}
+
 function checkArticles() {
   // English picks the article from the sound, so a page opening "Can a NVIDIA…"
   // reads as a typo on its own first line. indefiniteArticle() knows which
@@ -352,6 +408,16 @@ for (const [a, b] of hardwarePairs(data)) {
   const href = hardwareComparePath(a, b);
   for (const [self, other] of [[a, b], [b, a]] as const)
     headToHeads.set(self.id, [...(headToHeads.get(self.id) ?? []), { href, other }]);
+}
+
+// The same thing for models. A pair is always [higher, lower] on the index, so
+// each model knows whether the one it is set against is the rung above it or
+// the rung below, and its page can say which.
+const modelHeadToHeads = new Map<string, { href: string; other: Model; side: 'above' | 'below' }[]>();
+for (const [a, b] of modelPairs(data)) {
+  const href = modelComparePath(a, b);
+  for (const [self, other, side] of [[a, b, 'below'], [b, a, 'above']] as const)
+    modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), { href, other, side }]);
 }
 
 /* ------------------------------ leaderboard ------------------------------ */
@@ -542,6 +608,22 @@ function modelPage(m: Model): string {
   const ce = m.cloud_equivalent;
   const ctx = data.defaults.context.default_tokens;
   const alsoAt = otherQuantisations(m, data);
+
+  // The two head-to-heads this model is in, named from its own point of view.
+  // Machine pages have carried their match-ups from the start; these were
+  // reachable only from the leaderboard's last column.
+  const versus = modelHeadToHeads.get(m.id) ?? [];
+  const above = versus.find((v) => v.side === 'above');
+  const below = versus.find((v) => v.side === 'below');
+  const versusLink = (v: { href: string; other: Model }) => `<a href="${esc(v.href)}">vs ${esc(v.other.display_name)}</a>`;
+  const versusLine =
+    above && below
+      ? `<p class="note">Head to head with its neighbours on the leaderboard: ${versusLink(above)} above it, ${versusLink(below)} below.</p>`
+      : below
+        ? `<p class="note">Head to head: ${versusLink(below)}, the next model down the leaderboard.</p>`
+        : above
+          ? `<p class="note">Head to head: ${versusLink(above)}, the next model up the leaderboard.</p>`
+          : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
 <p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}. ${esc(m.capability_note)}</p>
@@ -561,7 +643,7 @@ ${cheapest
       : 'It has not been placed on the intelligence index yet.'}
 ${fe?.url ? ` <a href="${esc(fe.url)}" rel="noopener">Score source</a>.` : ''} <a href="/leaderboard/">See the whole table</a>.</p>
 <ul class="caps">${caps}</ul>
-
+${versusLine}
 <h2>What it costs either way</h2>
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill.</p>
 
@@ -801,6 +883,84 @@ ${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} 
     : `<h2>Memory is not what separates them</h2>
 <p>Every model on this list that fits one machine fits the other, at ${ctxK}k of context. So the choice between them is speed, price and power, not what they can hold.</p>`;
 
+  // the whole page above is one usage level, and pay-back is the figure that moves
+  // most with it: a machine too slow to generate the tokens asked for stops gaining
+  // at its own ceiling, which is why the order of the two columns can change
+  const usageSection = shared
+    ? (() => {
+        const levels = bestUsageLevels(data);
+        const cells = levels.map((l) => ({
+          level: l,
+          a: computeView({ ...st, hw: a.id, model: shared.model.id, usage: l.usage }, data),
+          b: computeView({ ...st, hw: b.id, model: shared.model.id, usage: l.usage }, data),
+        }));
+        const days = (v: View) => v.calc?.breakevenDays ?? null;
+        const payCell = (v: View) => {
+          const d = days(v);
+          const text = d === null ? 'Never pays back' : fmtDuration(d);
+          return `${text}${v.capacity.capped ? '<span class="c-quant">its ceiling</span>' : ''}`;
+        };
+
+        // who gets there first at each level, and whether that answer holds all the way up
+        const sooner = cells.map((c) => {
+          const [da, db] = [days(c.a), days(c.b)];
+          if (da === null && db === null) return '';
+          if (da === null) return lb;
+          if (db === null) return la;
+          return da === db ? '' : da < db ? la : lb;
+        });
+        const runs: { who: string; last: number }[] = [];
+        sooner.forEach((who, i) => {
+          if (who && runs.length && runs[runs.length - 1].who === who) runs[runs.length - 1].last = i;
+          else if (who) runs.push({ who, last: i });
+        });
+        // the plain sentences only hold where one of them is ahead at every level; a
+        // level the two draw on breaks the run and is described the general way
+        const clean = sooner.every(Boolean);
+        const turns = clean && runs.length === 1
+          ? `The ${esc(runs[0].who)} pays back sooner at every level of use, so this is not a choice that turns on how hard you work it.`
+          : clean && runs.length === 2
+            ? `The ${esc(runs[0].who)} pays back sooner at every level up to ${fmtTokens(levels[runs[0].last].usage)} tokens a day. Above that the ${esc(runs[1].who)} does.`
+            : 'Which of them pays back sooner changes with the level of use.';
+
+        // where a machine cannot generate what the row asks for, its figure is for the
+        // most it can do, and the page has to say so rather than let it read as a race
+        const ceilings = [a, b]
+          .map((hw, i) => {
+            const over = cells.filter((c) => (i === 0 ? c.a : c.b).capacity.capped);
+            const v = over[0] && (i === 0 ? over[0].a : over[0].b);
+            return over.length && v ? { label: i === 0 ? la : lb, from: over[0].level.usage, rows: over.length, max: v.capacity.maxTokensPerDay } : null;
+          })
+          .filter((x): x is { label: string; from: number; rows: number; max: number } => !!x && x.max != null);
+        // 3 of these pages cap both machines at the same level, where a sentence each
+        // would say the same thing twice
+        const together = ceilings.length === 2 && ceilings[0].from === ceilings[1].from && ceilings[0].rows === ceilings[1].rows;
+        const ceilingLine = ceilings.length
+          ? `<p class="note">${
+              together
+                ? `On ${esc(shared.model.display_name)} neither machine can generate ${fmtTokens(ceilings[0].from)} tokens a day: the ${esc(ceilings[0].label)} manages at most ${fmtTokens(ceilings[0].max)} and the ${esc(ceilings[1].label)} at most ${fmtTokens(ceilings[1].max)}. ${ceilings[0].rows === 1 ? 'Both figures on that row are' : `Their figures from ${fmtTokens(ceilings[0].from)} tokens a day up are`} for the most each can do.`
+                : ceilings
+                    .map((c) => `On ${esc(shared.model.display_name)} the ${esc(c.label)} generates at most ${fmtTokens(c.max)} tokens a day, so ${c.rows === 1 ? `its figure at ${fmtTokens(c.from)} tokens a day is` : `its figures from ${fmtTokens(c.from)} tokens a day up are`} for the most it can do, not for the whole of what was asked.`)
+                    .join(' ')
+            }</p>`
+          : '';
+        const top = levels[levels.length - 1];
+
+        return `<h2>How much use it takes to pay back</h2>
+<p>Everything above is at ${fmtTokens(st.usage)} tokens a day. Pay-back moves with how much you actually run, so here are both machines on ${likeForLike ? `the same model` : `<a href="/models/${esc(shared.model.id)}/">${esc(shared.model.display_name)}</a>, the strongest model both hold`}, at the five levels of use the calculator names. ${turns}</p>
+<table class="board compare">
+<thead><tr><th>A day's use</th><th>${esc(la)}</th><th>${esc(lb)}</th></tr></thead>
+<tbody>
+${cells
+  .map((c) => `<tr><th>${fmtTokens(c.level.usage)}<span class="c-quant">${esc(c.level.label)}</span></th><td>${payCell(c.a)}</td><td>${payCell(c.b)}</td></tr>`)
+  .join('\n')}
+</tbody>
+</table>
+${ceilingLine}
+<p><a class="cta" href="${esc(calcLink({ hw: a.id, model: shared.model.id, usage: top.usage }, data))}">Run the ${esc(la)} at ${fmtTokens(top.usage)} tokens a day</a> · <a href="${esc(calcLink({ hw: b.id, model: shared.model.id, usage: top.usage }, data))}">or the ${esc(lb)}</a></p>`;
+      })()
+    : '';
+
   const body = `<article class="prose">
 <h1>${esc(la)} vs ${esc(lb)} for local AI</h1>
 <p class="lede">${machineVerdict(a, b, va, vb, data)}</p>
@@ -820,6 +980,7 @@ ${row('Pay-back on that model', esc(verdictLine(va)), esc(verdictLine(vb)))}
 </table>
 <p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(lb)}</a></p>
 ${likeForLike}
+${usageSection}
 ${extraSection}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. Change any of it in the calculator.</p>
@@ -1143,6 +1304,7 @@ writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UT
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
 checkMeta();
 checkLinks();
+checkHeadToHeads();
 checkCanonicals();
 checkOgCards();
 checkFonts();
@@ -1150,4 +1312,5 @@ checkCardPrices();
 checkTables();
 checkArticles();
 checkCompareIndex();
+checkPayback();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
