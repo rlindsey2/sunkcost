@@ -295,9 +295,20 @@ articles in the test is written out by hand rather than derived, so the rule can
 agreeing with itself, and a separate test fails if the data ever grows a family the table does not
 cover — a new maker has to be read out loud by a person before it ships.
 
-**Continue next:** check PR #1 merges again before anything else; it has needed repair on five of
-the last six runs, and the `/how-much-memory/` page is worth re-measuring over HTTP each time main
-changes the table rules. While both PRs wait, the top live item on main is the `/compare/` index,
+**Deploy confirmed.** **Run 61, on `2d1d7e1`, finished green at 03:52 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. The site's own
+pages still cannot be read from here, so this is the runner's word rather than a fetch of
+sunkcost.ai.
+
+**PR #1 went un-mergeable on that push and was repaired a second time in the same run**, the same
+two import lists again, resolved the same way and pushed as `0f381fb`. On the repaired branch:
+`npm test` 175 passing, typecheck clean, 189 pages built, and 0 of 368 tables scrolling at 390,
+700, 1024 and 1440px. That is six repairs. The branch touches the two files nearly every run
+edits, so this will keep happening for as long as it waits; it is not a fault in the branch.
+
+**Continue next:** check PR #1 merges again before anything else; it has needed repair on six of
+the last seven runs, and the `/how-much-memory/` page is worth re-measuring over HTTP each time
+main changes the table rules. While both PRs wait, the top live item on main is the `/compare/` index,
 which is a new page type and therefore a PR. After that, the leaderboard's height on a phone.
 
 ### 2026-09-17 — a tablet stops swiping, and the leaderboard shows all seven columns
