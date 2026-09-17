@@ -8,11 +8,11 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, descOf, dotRow, esc, familyHeading, familyRange,
-  fitsOf, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, lowerFirst, machineVerdict,
-  machinesConsidered, modelLabel, modelVerdict, otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor,
-  runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, slug, speedWithBasis, stack, strongestShared, tierLabel,
-  tierName,
-  tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, TITLE_MAX, type Runner,
+  fitsOf, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, indefiniteArticle,
+  lowerFirst, machineVerdict, machinesConsidered, modelLabel, modelVerdict, otherQuantisations, pageShell,
+  priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
+  shortHardwareLabel, slug, speedWithBasis, stack, strongestShared, tierLabel, tierName, tierScale, titleOf,
+  verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, TITLE_MAX, type Runner,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
@@ -269,6 +269,28 @@ function checkTables() {
   }
   const stacked = meta.reduce((n, p) => n + (p.html.match(/<table class="board stack"/g)?.length ?? 0), 0);
   console.log(`  ${stacked} tables read as a block on a phone, the rest split their width`);
+}
+
+function checkArticles() {
+  // English picks the article from the sound, so a page opening "Can a NVIDIA…"
+  // reads as a typo on its own first line. indefiniteArticle() knows which
+  // names are spelt out letter by letter; this is what holds the pages to it.
+  const machines = meta.filter((p) => p.path.startsWith('/hardware/'));
+  const opened = machines.map((p) => ({
+    path: p.path,
+    h1: p.html.match(/<h1>Can (an?) ([^<]+?) run local LLMs\?<\/h1>/),
+  }));
+  const problems = opened.flatMap(({ path, h1 }) => {
+    if (!h1) return [`  ${path} does not open by asking whether the machine runs local LLMs`];
+    const want = indefiniteArticle(h1[2]);
+    return h1[1] === want ? [] : [`  ${path} opens "Can ${h1[1]} ${h1[2]}", which wants "${want}"`];
+  });
+  if (problems.length) {
+    console.error(problems.slice(0, 5).join('\n'));
+    throw new Error(`${problems.length} machine pages open with the wrong article`);
+  }
+  const an = opened.filter(({ h1 }) => h1![1] === 'an').length;
+  console.log(`  ${machines.length} machine pages open on their own name, ${an} of them with "an"`);
 }
 
 function checkFonts() {
@@ -627,7 +649,7 @@ function hardwarePage(hw: Hardware): string {
 
   const best = fits[0];
   const body = `<article class="prose">
-<h1>Can a ${esc(label)} run local LLMs?</h1>
+<h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
 <p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in.` : ''}</p>
 
 <div class="answer">
@@ -986,4 +1008,5 @@ checkOgCards();
 checkFonts();
 checkCardPrices();
 checkTables();
+checkArticles();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
