@@ -529,8 +529,9 @@ Studio M5 Ultra, 256GB  $10,799" with the price underlined — and read one row'
 the rendered page in the browser: the model page, the machine page, the calculator on that pair, and
 the head-to-head, in that order.
 
-**Deploy.** Commit `11d3708`; run 89 started at 18:03 UTC on it. The push before it, run 88 on
-`f8727fc`, finished green.
+**Deploy confirmed.** **Run 89, on `11d3708`, finished green at 18:08 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. Run 90 carries this
+log entry.
 
 **PR #3 repaired afterwards** from this run's own push, its eighth, and not the import block this
 time: both sides had written the leaderboard's lede. Details in Ryan's side above; rebuilt and
