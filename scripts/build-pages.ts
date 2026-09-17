@@ -296,35 +296,47 @@ function checkTables() {
 }
 
 /**
- * Every machine head-to-head answers pay-back at one usage above the fold, and the
- * section below it answers the same question across the five levels the calculator
- * names. Two things can go quietly wrong there: a page can lose the section, and a
- * figure a machine is too slow to reach can print as though it were a race. Both stop
- * the build.
+ * Every head-to-head answers pay-back at one usage above the fold, and the section
+ * below it answers the same question across the five levels the calculator names.
+ * Two things can go quietly wrong there: a page can lose the section, and a figure a
+ * machine is too slow to reach can print as though it were a race. Both stop the
+ * build, on the machine pairs and on the model ones.
+ *
+ * A model head-to-head only has the section where one machine runs both models, which
+ * is the same condition that gives it the side-by-side table above; two of the 47
+ * pairs share no machine and are exempt from both.
  */
 function checkPayback() {
   const levels = bestUsageLevels(data);
   const problems: string[] = [];
-  for (const [a, b] of hardwarePairs(data)) {
-    const path = hardwareComparePath(a, b);
+  const check = (path: string, heading: string, exempt = false) => {
     const html = meta.find((m) => m.path === path)?.html ?? '';
-    const section = html.split('<h2>How much use it takes to pay back</h2>')[1]?.split('<h2>')[0];
+    const section = html.split(`<h2>${heading}</h2>`)[1]?.split('<h2>')[0];
     if (!section) {
-      problems.push(`${path} does not say how much use it takes to pay back`);
-      continue;
+      if (!exempt) problems.push(`${path} does not say how much use it takes to pay back`);
+      return 0;
     }
     const rows = (section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>/g) ?? []).length;
     if (rows !== levels.length) problems.push(`${path} prices ${rows} levels of use, not the ${levels.length} the calculator names`);
     const capped = section.match(/its ceiling/g)?.length ?? 0;
     const explained = (section.match(/at most/g)?.length ?? 0) > 0;
     if (capped && !explained) problems.push(`${path} marks ${capped} figure${capped === 1 ? '' : 's'} as a ceiling without saying what the ceiling is`);
+    return 1;
+  };
+  for (const [a, b] of hardwarePairs(data)) check(hardwareComparePath(a, b), 'How much use it takes to pay back');
+  let priced = 0;
+  for (const [a, b] of modelPairs(data)) {
+    const path = modelComparePath(a, b);
+    // no machine runs both, so there is no machine for either of them to pay for
+    const noShared = !(meta.find((m) => m.path === path)?.html ?? '').includes('<h2>Side by side on the ');
+    priced += check(path, 'How much use it takes to pay for the machine', noShared);
   }
   if (problems.length) {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
-    throw new Error(`${problems.length} machine head-to-head${problems.length === 1 ? '' : 's'} do not answer pay-back across the levels of use`);
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} do not answer pay-back across the levels of use`);
   }
   const ceilings = meta.reduce((n, m) => n + (m.html.match(/its ceiling/g)?.length ?? 0), 0);
-  console.log(`  ${hardwarePairs(data).length} machine head-to-heads price pay-back at ${levels.length} levels of use, ${ceilings} figures capped by what a machine can generate`);
+  console.log(`  ${hardwarePairs(data).length} machine and ${priced} model head-to-heads price pay-back at ${levels.length} levels of use, ${ceilings} figures capped by what a machine can generate`);
 }
 
 function checkArticles() {
@@ -1061,6 +1073,98 @@ ${row('API cost per month', apiCell(a, shared.a.view), apiCell(b, shared.b.view)
       })()
     : '';
 
+  // the table above prices pay-back at one level of use, and pay-back is the figure
+  // that moves most with it: the machine is the same either way, so what changes
+  // between the two columns is what the same work costs on an API, and a model the
+  // machine is too slow to keep up with stops gaining at its own ceiling
+  const usageSection = shared
+    ? (() => {
+        const l = shortHardwareLabel(shared.hw);
+        const levels = bestUsageLevels(data);
+        const cells = levels.map((lv) => ({
+          level: lv,
+          a: computeView({ ...st, hw: shared.hw.id, model: a.id, usage: lv.usage }, data),
+          b: computeView({ ...st, hw: shared.hw.id, model: b.id, usage: lv.usage }, data),
+        }));
+        const days = (v: View) => v.calc?.breakevenDays ?? null;
+        const printed = (v: View) => {
+          const d = days(v);
+          return d === null ? 'Never pays back' : fmtDuration(d);
+        };
+        const payCell = (v: View) => `${printed(v)}${v.capacity.capped ? '<span class="c-quant">its ceiling</span>' : ''}`;
+
+        // which model earns the machine back first at each level, and whether that
+        // answer holds all the way up. the sentence has to hold against the figures
+        // the table prints rather than the days behind them, so two figures that
+        // print the same are a draw even where one is a few days ahead
+        const never = (side: 'a' | 'b') => cells.every((c) => days(c[side]) === null);
+        const sooner = cells.map((c) => {
+          const [da, db] = [days(c.a), days(c.b)];
+          if (da === null && db === null) return '';
+          if (da === null) return b.display_name;
+          if (db === null) return a.display_name;
+          if (printed(c.a) === printed(c.b)) return '';
+          return da < db ? a.display_name : b.display_name;
+        });
+        const winners = [...new Set(sooner.filter(Boolean))];
+        const runs: { who: string; last: number }[] = [];
+        sooner.forEach((who, i) => {
+          if (who && runs.length && runs[runs.length - 1].who === who) runs[runs.length - 1].last = i;
+          else if (who) runs.push({ who, last: i });
+        });
+        const clean = sooner.every(Boolean);
+        // a model that never pays the machine back is not simply the slower of the
+        // two to do it, so those pages say what is actually happening
+        const turns = never('a') && never('b')
+          ? `Neither pays for it at any of those levels, even with agents running most of the day.`
+          : never('a') || never('b')
+            ? `${esc(never('a') ? b.display_name : a.display_name)} pays for it sooner at every level of use: ${esc(never('a') ? a.display_name : b.display_name)} never pays for it at all.`
+            : clean && runs.length === 1
+              ? `${esc(runs[0].who)} pays for it sooner at every level of use, so which of them to run does not turn on how hard you work it.`
+              : winners.length === 1
+                ? `${esc(winners[0])} is never the slower of the two to pay for it, at any level of use.`
+                : clean && runs.length === 2
+                  ? `${esc(runs[0].who)} pays for it sooner at every level up to ${fmtTokens(levels[runs[0].last].usage)} tokens a day. Above that ${esc(runs[1].who)} does.`
+                  : `Which of them pays for it sooner changes with the level of use.`;
+
+        // where the machine cannot generate what the row asks for on a model, that
+        // model's figure is for the most it can do, and the page has to say so
+        const ceilings = [a, b]
+          .map((m, i) => {
+            const over = cells.filter((c) => (i === 0 ? c.a : c.b).capacity.capped);
+            const v = over[0] && (i === 0 ? over[0].a : over[0].b);
+            return over.length && v ? { name: m.display_name, from: over[0].level.usage, rows: over.length, max: v.capacity.maxTokensPerDay } : null;
+          })
+          .filter((x): x is { name: string; from: number; rows: number; max: number } => !!x && x.max != null);
+        // 5 of these pages cap both models at the same level, where a sentence each
+        // would say the same thing twice
+        const together = ceilings.length === 2 && ceilings[0].from === ceilings[1].from && ceilings[0].rows === ceilings[1].rows;
+        const ceilingLine = ceilings.length
+          ? `<p class="note">${
+              together
+                ? `The ${esc(l)} cannot generate ${fmtTokens(ceilings[0].from)} tokens a day on either model: at most ${fmtTokens(ceilings[0].max)} on ${esc(ceilings[0].name)} and ${fmtTokens(ceilings[1].max)} on ${esc(ceilings[1].name)}. ${ceilings[0].rows === 1 ? 'Both figures on that row are' : `Their figures from ${fmtTokens(ceilings[0].from)} tokens a day up are`} for the most it can do.`
+                : ceilings
+                    .map((c, i) => `${i === 0 ? `The ${esc(l)} generates` : 'It generates'} at most ${fmtTokens(c.max)} tokens a day on ${esc(c.name)}, so ${c.rows === 1 ? `that column's figure at ${fmtTokens(c.from)} tokens a day is` : `that column's figures from ${fmtTokens(c.from)} tokens a day up are`} for the most it can do, not for the whole of what was asked.`)
+                    .join(' ')
+            }</p>`
+          : '';
+        const top = levels[levels.length - 1];
+
+        return `<h2>How much use it takes to pay for the machine</h2>
+<p>Everything above is at ${fmtTokens(st.usage)} tokens a day. Pay-back moves with how much you actually run, so here are both models at the five levels of use the calculator names, on the ${esc(l)}. ${turns}</p>
+<table class="board compare">
+<thead><tr><th>A day's use</th><th>${esc(a.display_name)}</th><th>${esc(b.display_name)}</th></tr></thead>
+<tbody>
+${cells
+  .map((c) => `<tr><th>${fmtTokens(c.level.usage)}<span class="c-quant">${esc(c.level.label)}</span></th><td>${payCell(c.a)}</td><td>${payCell(c.b)}</td></tr>`)
+  .join('\n')}
+</tbody>
+</table>
+${ceilingLine}
+<p><a class="cta" href="${esc(calcLink({ hw: shared.hw.id, model: a.id, usage: top.usage }, data))}">Run ${esc(a.display_name)} at ${fmtTokens(top.usage)} tokens a day</a> · <a href="${esc(calcLink({ hw: shared.hw.id, model: b.id, usage: top.usage }, data))}">or ${esc(b.display_name)}</a></p>`;
+      })()
+    : '';
+
   // fit turns on memory, so one model's list of machines is nearly always a
   // superset of the other's; whichever way round it falls, this is what the
   // difference in footprint costs you at the till
@@ -1114,6 +1218,7 @@ ${capRows}
 <p><a class="cta" href="${esc(ctaA.href)}">Run ${esc(ctaA.text)}</a> · <a href="${esc(ctaB.href)}">or ${esc(ctaB.text)}</a></p>
 <p class="note">Ratings are coarse on purpose: they say what a model is usable for, not where it places to the decimal.</p>
 ${sideBySide}
+${usageSection}
 ${machinesSection}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
