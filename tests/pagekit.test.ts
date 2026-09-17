@@ -1,12 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestRunsBoth, computeView, familyHeading, familyRange, fitsOf, fmtDuration, fmtNum, fmtUsd,
+  brandOf, calcLink, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
+  fmtDuration, fmtNum, fmtUsd, longestContext,
   hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
   stack, strongestShared, tierLabel, tierName, FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
+import { footprintGb } from '../src/fit';
 import { modelPairs } from '../src/versus-card';
 import { defaultState } from '../src/state';
 import { sharePath } from '../src/share';
@@ -633,5 +635,60 @@ describe('the article in front of a machine name', () => {
   it('reads only the first word, because the rest is not what you hear next', () => {
     expect(indefiniteArticle('Mac mini M6, 16GB')).toBe('a');
     expect(indefiniteArticle('NVIDIA GeForce RTX 3090, 24GB')).toBe('an');
+  });
+});
+
+describe('what memory buys once two machines hold the same models', () => {
+  const st = defaultState(data);
+  it('stops at the longest context setting the machine still holds the model at', () => {
+    const m = data.models.find((x) => x.id === 'ling-3.0-flash-q4')!;
+    const spark = hw('nvidia-dgx-spark-128');
+    const studio = hw('mac-studio-m5-max-128');
+    // 78 GB of weights, and the cache it leaves room for is what the two differ by
+    expect(longestContext(m, spark, data)).toBe(262144);
+    expect(longestContext(m, studio, data)).toBe(131072);
+    for (const [machine, ctx] of [[spark, 262144], [studio, 131072]] as const) {
+      expect(footprintGb(m, ctx)!).toBeLessThanOrEqual(machine.usable_memory_gb!);
+    }
+    // and one setting further is past what it has
+    expect(footprintGb(m, 262144)!).toBeGreaterThan(studio.usable_memory_gb!);
+  });
+
+  it('never takes a model past its own context limit', () => {
+    for (const m of data.models) {
+      for (const h of data.hardware) {
+        const ctx = longestContext(m, h, data);
+        if (ctx !== null && m.max_context_tokens != null) expect(ctx).toBeLessThanOrEqual(m.max_context_tokens);
+      }
+    }
+  });
+
+  it('names only the models the two machines take to different lengths', () => {
+    const a = hw('macbook-pro-16-m5-pro-64');
+    const b = hw('radeon-ai-pro-r9700-32');
+    const counted = computeView({ ...st, hw: a.id }, data).rows.map((r) => r.model);
+    const rows = contextHeadroom(counted, a, b, data);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) expect(r.a).not.toBe(r.b);
+    // 48 GB against 31 GB, so it is always the roomier machine that goes further
+    for (const r of rows) expect(r.a ?? 0).toBeGreaterThan(r.b ?? 0);
+    // and every model left out reaches the same length on both
+    const named = new Set(rows.map((r) => r.model.id));
+    for (const m of counted.filter((x) => !named.has(x.id))) {
+      expect(longestContext(m, a, data)).toBe(longestContext(m, b, data));
+    }
+  });
+
+  it('finds nothing to say where the two machines are the same size', () => {
+    const a = hw('mac-studio-m5-max-128');
+    const b = hw('gmktec-evo-x2-128');
+    const counted = computeView({ ...st, hw: a.id }, data).rows.map((r) => r.model);
+    expect(contextHeadroom(counted, a, b, data)).toEqual([]);
+  });
+
+  it('writes a context the way the calculator does', () => {
+    expect(ctxLabel(32768)).toBe('32k');
+    expect(ctxLabel(4096)).toBe('4k');
+    expect(ctxLabel(262144)).toBe('256k');
   });
 });
