@@ -8,11 +8,12 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   bandFit, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, descOf, dotRow, esc,
-  familyHeading, familyRange, fitsOf, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange, hardwareLabel,
-  hardwareProduct, kvWorking, lowerFirst, machineVerdict, machinesConsidered, median, modelLabel, modelVerdict,
-  otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
-  shortHardwareLabel, slug, speedWithBasis, stack, strongestShared, tierName, tierScale, titleOf, verdictLine, CAP_SHORT,
-  DESC_MAX, FONT_PRELOAD, SIZE_BANDS, TITLE_MAX, type Runner,
+  familyHeading, familyRange, fitsOf, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange,
+  hardwareLabel, hardwareProduct, kvWorking, lowerFirst, machinesConsidered, machineVerdict, median,
+  modelLabel, modelVerdict, otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText,
+  rowFor, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, slug, speedWithBasis, stack,
+  strongestShared, tierLabel, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD,
+  SIZE_BANDS, TITLE_MAX, type Runner,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
@@ -359,7 +360,7 @@ function leaderboard(): string {
       return `<tr>
   <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(m.quantisation)}</span></td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
-  <td class="c-tier">${tierScale(m, data)} ${esc(tierName(m, data))}</td>
+  <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
   <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <span class="dim">${fmtUsd(cheapest.hw.price_usd)}${cheapest.hw.price_scope === 'card_only' ? ', card only' : ''}</span>` : '<span class="dim">nothing on the list</span>'}</td>
@@ -639,7 +640,7 @@ function hardwarePage(hw: Hardware): string {
     .map((r) => `<tr>
   <td><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${esc(r.model.quantisation)}</span></td>
   <td>${r.throughput.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(r.throughput.tokensPerSec, r.throughput.tokensPerSec < 10 ? 1 : 0)} tok/s`}</td>
-  <td>${tierScale(r.model, data)} ${esc(tierName(r.model, data))}</td>
+  <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
   <td>${dotRow(r.model)}</td>
   <td>${fmtGb(r.fit.needGb)}</td>
 </tr>`)

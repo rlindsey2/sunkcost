@@ -276,6 +276,18 @@ export function tierName(m: Model, data: Dataset): string {
   return tier == null ? 'not yet placed' : data.defaults.frontier_tiers[tier].label;
 }
 
+/**
+ * The same name for a table cell that sits beside the scale. A tier label is
+ * one word — "Haiku-class" — and a column narrow enough breaks it at its own
+ * hyphen, which reads as a typo. A one-word label holds its line here; a label
+ * that is a phrase still wraps between its words, and the cell wraps between
+ * the scale and the label either way.
+ */
+export function tierLabel(m: Model, data: Dataset): string {
+  const name = tierName(m, data);
+  return name.includes(' ') ? esc(name) : `<span class="nobreak">${esc(name)}</span>`;
+}
+
 /** The cheapest machine each family can run this model on, with the verdict at default usage. */
 export interface Runner {
   hw: Hardware;
