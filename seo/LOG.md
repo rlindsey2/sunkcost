@@ -11,11 +11,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired seven times**, most recently at 09:55 on 2026-09-17.
-      The seventh was the import block at the top of `scripts/build-pages.ts`: this branch adds
-      `/how-much-memory/`'s helpers to it and main added `meetAtShorterContext`. Both lists were
-      kept. That block is the likeliest place this branch breaks next, because every run that adds
-      a helper touches it.
+      **It has now needed its merge repaired eight times**, most recently at 10:50 on 2026-09-17.
+      The eighth was the import block at the top of `scripts/build-pages.ts` again, and this time
+      the same block in `tests/pagekit.test.ts` as well: this branch adds `/how-much-memory/`'s
+      helpers to both and main added `contextHeadroom`, `ctxLabel` and `longestContext`. Both lists
+      were kept in both files. Those two blocks are the likeliest place this branch breaks next,
+      because every run that adds a helper touches them.
       A future run that finds it still open should re-check that it still merges before doing
       anything else: a waiting branch does not stay mergeable on its own, and this one has the
       worst of it, because it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly
@@ -49,6 +50,10 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed a fourth repair at 10:52 on 2026-09-17**, the import block alone this time:
+      this branch's `shownTps` against main's `contextHeadroom` and `ctxLabel`. Both kept; rebuilt
+      (189 pages, 76 comparisons, 172 tests, typecheck clean) and re-measured over HTTP
+      (**1,520 views, 0 overflows, 0 of 3,576 tables scrolling**) before pushing `31d1b91`.
 
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
@@ -284,14 +289,22 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       "a Radeon". Seven h1s changed and nothing else on the site; `checkArticles()` stops the
       build if a machine page opens with the wrong article.
 
-- [ ] The thinnest comparisons on the site are now the machine head-to-heads between machines with
-      the same memory: `/compare/mac-studio-m5-max-128gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/` at
-      517 words, then three more at 527, 535 and 539, against a median of 753. They are short for a
-      reason — two 128GB machines hold the same models, so "Machines that run one and not the other"
-      has nothing to list — and nothing on them is wrong. What they could answer with the site's own
-      numbers is what the memory each machine has left over buys: how much further one of them can
-      take the context on the model both hold, which `kvCacheGb()` gives directly. Worth doing only
-      after the question pages.
+- [x] The thinnest comparisons on the site were the machine head-to-heads between machines that
+      hold the same models. Done 2026-09-17, and the fix was the one this item proposed: what the
+      memory each machine has left over buys is context, so the 7 pages now answer that. On 4 of
+      them the two machines do take shared models to different lengths and the page names every
+      one; on the other 3 they do not at any context the calculator offers, and saying that across
+      all 39 models is a stronger answer than the 32k one they gave. Thinnest comparison on the
+      site went from 525 words to 570, and all 7 gained. The run entry below has the figures and
+      `checkHeadroom()`, which holds both sides to it.
+
+- [ ] The other 21 machine head-to-heads answer the memory difference with the models one holds
+      and the other does not, and stop there. The same context question applies to the models they
+      *share*: a 128GB machine against a 32GB one runs Qwen3.8 27B on both, and not to the same
+      length. `contextHeadroom()` already gives the answer and the section is written. It was left
+      alone because those pages are not thin — they run 611 to 795 words, median 720, and already
+      have a table about memory — so a second one risks length without an extra answer. Worth a look only
+      after the question pages, and only if it can replace something rather than sit beside it.
 
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
@@ -299,6 +312,93 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — what two machines that hold the same models differ by
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 and PR #3 both needed repairing afterwards, from this run's own push; see
+the end of this entry. Ryan has not been pinged about any of them, per the standing rule.
+
+**Why this item and not the top one.** The top backlog item is the question pages, and it stayed
+where it is. A question page is a new page type, which the rules send to a pull request, and there
+are already three of those open and unmerged — two of which this run had to repair again for the
+eighth and fourth time. A fourth PR would have added to that pile and reached no reader. So this
+run took the top item that could reach main on its own, which is the thin comparisons. **That
+judgement is worth revisiting the moment any of the three PRs merges.**
+
+Then the item: the thinnest comparisons on the site, which are the **7 machine head-to-heads whose
+two machines hold exactly the same models**. They ran from 525 to 574 words against a median of
+762. They were short because the section every other comparison fills with "what the extra memory
+buys" had nothing to list, so it said two sentences instead: *"Every model on this list that fits
+one machine fits the other, at 32k of context. So the choice between them is speed, price and
+power, not what they can hold."*
+
+**What was actually wrong.** Nothing, and the sentence stopped one question short. Memory does not
+stop mattering when two machines hold the same list — it moves into the context. The weights are
+fixed but the KV cache grows with every token you keep, so a machine with more memory left over
+takes the same model further. **On 4 of the 7 pairs it does**, and none of those pages said so.
+
+**What changed.** Those 4 pages now carry "The same models, not to the same length": every model
+the two machines take to different lengths, the longest context each holds it at, and a link that
+opens the calculator at that configuration on each side. The clearest is the **MacBook Pro M5 Pro
+(16-inch), 64GB against the Radeon AI PRO R9700, 32GB** — the same 27 models at 32k, 48 GB usable
+against 31 GB, and **8 models the Mac takes further**: Qwen3-Coder 30B-A3B to 256k where the card
+stops at 64k, Gemma 4 31B it to 128k against 32k. On the three 128GB-class pairs it is the **DGX
+Spark's 119.5 GB usable** that shows, on **Ling 3.0 flash (256k against 128k) and Devstral 2 123B
+(64k against 32k)** — the two models big enough for 23 GB of spare memory to matter.
+
+**On the other 3 pairs the answer is that it buys nothing, and that is now said properly.** Those
+pages checked 32k and left the rest open. They now state what was actually measured: across all
+**39 models the calculator counts, at every context from 4k to 256k**, there is no model one holds
+and the other does not. Mac Studio M5 Max 128GB against the GMKtec EVO-X2 128GB (both 96 GB
+usable), against the RTX PRO 6000 Blackwell 96GB (96 against 95 GB), and the EVO-X2 against the
+RTX PRO. A checked negative is a better answer than an unchecked one.
+
+**No figure here is new data.** `longestContext()` walks the calculator's own context list and asks
+`fit()`, the same function the pages and the calculator use, so a figure is capped by whichever
+runs out first — the machine's usable memory or the model's own context limit. That second cap is
+why the table says 256k where the list tops out and the model tops out together, and the note under
+it says so.
+
+**What it did to the figures.** The 7 pages: **525 → 575, 535 → 570, 543 → 685, 547 → 689, 562 →
+612, 570 → 714, 574 → 770 words**. The thinnest comparison on the site is now 570 words, up from
+525, and the median across the 75 moved from 762 to 763.
+
+`checkHeadroom()` holds both sides of it from here: **a page whose two machines differ nowhere
+claims nothing, and a page where they do differ names every model they differ on and prints both
+lengths** — recomputed from the data at build time, not read back off the page. Proved by breaking
+it three ways: suppressing the section failed the build on all 4 pages, dropping one row failed
+with the model named and both its lengths, and printing a doubled context failed on all 4.
+
+**Verified.** `npm test` 167 passing, up from 162 — 5 new ones covering the two helpers, including
+that no machine is ever shown taking a model past its own context limit. Typecheck clean. The full
+`npm run build` passed, `build:functions` included, with no workaround needed. Built the whole page
+set from a worktree at `origin/main` and compared every file: **198 byte-identical, 7 changed**,
+and on those 7 the only things removed were the old heading and its sentence. **No title,
+description, canonical, OG tag or JSON-LD line changed anywhere.** Measured over HTTP in Chromium
+at 320, 360, 390, 430, 700, 1024, 1280 and 1440px: **616 page views, 0 overflowing the window, 0 of
+2,216 tables scrolling sideways**. Read the new section as a picture at 390 and 1280px.
+
+**Deploy confirmed.** **Run 75, on `97477f1`, finished green at 10:54 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #1 and PR #3 were both repaired straight afterwards**, both from this run's own push, and both
+were the import block — the place the log has been predicting for three runs. PR #1 was its eighth
+repair and hit `tests/pagekit.test.ts` as well as `scripts/build-pages.ts`; PR #3 was its fourth
+and hit only the one block. Both sides were kept everywhere. Both branches were rebuilt (189 pages
+each; 180 tests on PR #1, 172 on PR #3; typecheck clean) and re-measured over HTTP (**1,512 views,
+0 overflows, 0 of 3,592 tables scrolling** on PR #1; **1,520 views, 0 overflows, 0 of 3,576
+tables** on PR #3) before pushing `ded6b83` and `31d1b91`. All three branches merge clean again.
+
+**Continue next:** check all three PR branches still merge before anything else — a run that
+touches the import block at the top of `scripts/build-pages.ts` will break PR #1 and PR #3 again,
+so budget for it. **The question pages are still the top item and still the biggest win**, and the
+judgement above is the thing to revisit: if a PR has merged, the page type is on main and the next
+question page is much less work; if the pile is still three deep, weigh a fourth PR against
+another main-reachable item. What is left below the question pages on main is now small — the
+leaderboard's height on a phone is cosmetic, the waterline label is a one-line tidy, and the new
+item about the other 21 comparisons is a maybe. **The live site has still had no new page since
+this agent started.**
 
 ### 2026-09-17 — the two comparisons that had no machine in common
 

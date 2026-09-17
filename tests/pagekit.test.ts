@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestRunsBoth, cheapestThatHolds, computeView, contextHeadroom, ctxLabel, familyHeading,
-  familyRange, fitsOf, fmtDuration, fmtGb1, fmtNum, fmtUsd, gbRange, hardwareLabel, hardwareProduct,
+  brandOf, calcLink, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy, contextHeadroom, ctxLabel,
+  familyHeading, familyRange, fitsOf, fmtDuration, fmtGb1, fmtNum, fmtUsd, gbRange, hardwareLabel, hardwareProduct,
   indefiniteArticle, jsonLd, kvWorking, longestContext, machinesConsidered, machineVerdict, median, modelsInBand,
   modelVerdict, otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, priceWithScopeText,
   runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis, stack, strongestShared,
@@ -759,6 +759,43 @@ describe('what memory buys once two machines hold the same models', () => {
     const b = hw('gmktec-evo-x2-128');
     const counted = computeView({ ...st, hw: a.id }, data).rows.map((r) => r.model);
     expect(contextHeadroom(counted, a, b, data)).toEqual([]);
+  });
+
+  it('says what stopped a longest-context figure, so a page can only claim what is true', () => {
+    const options = [...data.defaults.context.options].sort((a, b) => a - b);
+    const top = options[options.length - 1];
+    // a model whose own limit falls between two settings: Qwen3 32B stops at 40k,
+    // so 32k is the last setting under it and no machine here is the reason
+    const qwen = data.models.find((x) => x.id === 'qwen3-32b-q4')!;
+    expect(qwen.max_context_tokens).toBe(40960);
+    expect(contextCappedBy(qwen, 32768, data)).toBe('model');
+    // a model whose limit is above everything the calculator offers
+    const inkling = data.models.find((x) => x.id === 'inkling-small-ud-q4')!;
+    expect(inkling.max_context_tokens!).toBeGreaterThan(top);
+    expect(contextCappedBy(inkling, top, data)).toBe('list');
+    // and one where the two run out together
+    const coder = data.models.find((x) => x.id === 'qwen3-coder-next-q4')!;
+    expect(coder.max_context_tokens).toBe(top);
+    expect(contextCappedBy(coder, top, data)).toBe('both');
+    // anything short of both is the machine's memory
+    const llama = data.models.find((x) => x.id === 'llama-3.3-70b-q4')!;
+    expect(contextCappedBy(llama, 32768, data)).toBe('memory');
+  });
+
+  it('only calls memory the cap where another setting was really available', () => {
+    // the rule the pages lean on: where this says 'memory', the next setting up is
+    // one the model itself allows, so more memory would have bought it
+    const options = [...data.defaults.context.options].sort((a, b) => a - b);
+    for (const m of data.models) {
+      for (const h of data.hardware) {
+        const ctx = longestContext(m, h, data);
+        if (ctx === null || contextCappedBy(m, ctx, data) !== 'memory') continue;
+        const next = options.find((o) => o > ctx)!;
+        expect(next).toBeDefined();
+        if (m.max_context_tokens != null) expect(next).toBeLessThanOrEqual(m.max_context_tokens);
+        expect(footprintGb(m, next)!).toBeGreaterThan(h.usable_memory_gb!);
+      }
+    }
   });
 
   it('writes a context the way the calculator does', () => {

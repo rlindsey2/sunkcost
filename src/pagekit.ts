@@ -601,6 +601,21 @@ export function longestContext(m: Model, hw: Hardware, data: Dataset): number | 
   return longest;
 }
 
+/**
+ * What stopped a longest-context figure from going further: the model's own
+ * context limit, the end of the calculator's list, or the machine's memory.
+ * Only the last of those says anything about the machine, so a page printing
+ * one of these figures has to know which it is looking at before it draws a
+ * conclusion from it.
+ */
+export function contextCappedBy(m: Model, tokens: number, data: Dataset): 'model' | 'list' | 'both' | 'memory' {
+  const options = [...data.defaults.context.options].sort((x, y) => x - y);
+  const next = options.find((o) => o > tokens);
+  const limit = m.max_context_tokens;
+  if (next == null) return limit != null && limit <= tokens ? 'both' : 'list';
+  return limit != null && next > limit ? 'model' : 'memory';
+}
+
 export interface Headroom {
   model: Model;
   a: number | null;
