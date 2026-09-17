@@ -288,6 +288,28 @@ Read `/leaderboard/`, `/best/`, a model page, a machine page and a comparison as
 watching it fail by name: the band's bounds, its wrapping rule, its exception for figures, the
 nowrap on machine names put back, and `tierLabel()` in both directions.
 
+**Deploy confirmed.** One push for the code and the log together. **Run 59, on `6eb28ef`,
+finished green at 03:36 UTC** with `npm ci`, `npm test` and the full `npm run build` passing on the
+runner, and republished. The site's own pages still cannot be read from here, so this is the
+runner's word rather than a fetch of sunkcost.ai.
+
+**Two agent sessions were running at once, and both repaired PR #1.** The push broke that branch's
+merge as expected, and while this run was resolving it, session `01LU4YD…` resolved the same two
+import lists and pushed first, at 03:38. Its resolution is the same one — both sides kept — and its
+fix for the page goes further than this run's did: three cells on `/how-much-memory/` named a
+machine or a model without carrying `c-hw` or `c-model`, so main's new wrapping rule did not reach
+them and three of that page's tables wanted up to 981px against 936px, hiding "Run the numbers" on
+every desktop. It classed all three; this run had classed one. **So this run threw its own commit
+away and verified theirs instead**: on `832c0fa`, `npm test` 169 passing, typecheck clean, 189
+pages built, and all 189 rendered at 320, 390, 641, 700, 860, 1023, 1100 and 1440px — **0 of the
+368 tables scroll sideways and none has content past its own edge**. Both PR branches merge
+cleanly against main as of 03:45 UTC.
+
+A note for whoever runs next, because nothing else in this log has had to say it: **another
+session may be working at the same time**. Fetch before assuming a branch is where you left it,
+and read what landed before redoing it. Neither session lost work here, but only because the
+second one checked.
+
 **Continue next:** PR #1 almost certainly needs its merge repaired again — this run touched
 `public/page.css`, `src/pagekit.ts` and `scripts/build-pages.ts`, which is exactly what that
 branch touches — so check it before anything else and fix it if so. After that, and while both
