@@ -32,6 +32,10 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       told about this one once; do not ping again. It touches `scripts/build-pages.ts` and
       `src/pagekit.ts`'s neighbours, so it will go un-mergeable the same way PR #1 keeps doing:
       a future run should check it still merges before starting its own work.
+      **It needed its first merge repair at 06:52 on 2026-09-17**, caused by that run's own push:
+      both sides had added a build check in the same place, which is the shape this conflict will
+      keep taking. Both checks were kept and both run; the branch was rebuilt and re-measured
+      after the repair, not just merged.
 
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
@@ -116,6 +120,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       column of /leaderboard/. Done 2026-09-17: every model page now names the head-to-heads it is
       in, the way the machine pages always have, and 52 pages on one link became 5. The run entry
       below has the figures; `checkHeadToHeads()` holds both sides to the rule.
+- [x] The 28 machine head-to-heads priced pay-back at one usage. Done 2026-09-17: each now
+      carries the five levels the calculator names, and the ceiling that caps 22 of those figures.
+      The run entry below has what the single figure was hiding.
+
+- [ ] The 47 model head-to-heads have the same gap the machine ones just lost: their
+      "Side by side on the <machine>" table prices pay-back at 500k tokens a day and nothing else.
+      The section written this run is the same shape — five levels, one shared machine instead of
+      two, the same capacity ceiling to respect — so it is much less work the second time. Worth
+      doing next of the items that can reach main on their own.
+
 - [ ] The 5 pages still on one inbound link, all of them model pages. Three are among the five
       models the intelligence index has not scored — Kat Coder v2.5, Laguna XS 2.1 and Ornith 1.5
       35B A3B — which are in no head-to-head and reached only from the note under the leaderboard
@@ -253,6 +267,72 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — what a machine head-to-head never said: how much use it takes
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. (One of them did afterwards; see the end of this entry.) Ryan has not been pinged
+about any of them, per the standing rule.
+
+Then the run's own item, found by measuring rather than from the backlog. Counting the visible
+words on all 188 built pages, the thin end of the site was not the model pages but the **28 machine
+head-to-heads: 356 to 618 words, median 490**, against a median of 634 on the 47 model ones, which
+were rewritten on 2026-09-16. The three thinnest were the three 128GB machines against each other,
+where the two columns hold the same models and the memory section has nothing to report.
+
+**What was missing was not words.** Every one of those pages priced pay-back at exactly one level
+of use — 500k tokens a day, in the lede and in one table row — and pay-back is the figure on the
+page that moves most with how much you actually run. Someone choosing between two machines is
+choosing at *their* usage, not at the default.
+
+**What changed.** Each machine head-to-head now carries "How much use it takes to pay back": both
+machines on the strongest model they both hold, across the five levels the calculator already
+names, from "a few chats a day" at 50k to "agents running most of the day" at 20M. The section
+says in a sentence whether the answer holds all the way up, and ends with the calculator prefilled
+at the heaviest level for either machine.
+
+**What the five levels turned up.** Pay-back does not simply scale, because `computeView` caps
+usage at what a machine can generate in 24 hours. **22 figures across the 28 pages are at a
+machine's ceiling**, and on **3 pairs that changes which machine pays back sooner**: the DGX
+Spark, 128GB is ahead of the Mac Studio M5 Max, 128GB at every level up to 4M tokens a day and
+behind it at 20M, because on Qwen3.8 27B it tops out at 15.2M tokens a day and the Mac does not.
+That is a real fact about buying either one and the page could not say it before. Every capped
+figure is marked and the ceiling is named underneath; on the 3 pages where both machines are
+capped at the same level the two sentences are written as one, because a sentence each said the
+same thing twice.
+
+**What it did to the figures.** The 28 pages: **356–618 words before, median 490; 544–814 after,
+median 693**. The thinnest comparison on the site is no longer a machine one.
+
+`checkPayback()` now stops the build if a machine head-to-head loses the section, prices the wrong
+number of levels, or marks a figure as a ceiling without naming it. All three were proved by
+breaking them: the section suppressed failed at 28 pages, the row count failed at 28 when the
+`<thead>` row was counted by mistake — which is how the first version of the check was found to be
+wrong — and the ceiling note suppressed failed at the 19 pages that have one.
+
+**Verified.** `npm test` 162 passing; typecheck clean; the full `npm run build`, `build:functions`
+included, which needed no workaround this time. Built the whole page set from a worktree at
+`origin/main` and compared all 188: **160 byte-identical, 28 changed, and not one line removed on
+any of them** — pure addition, with no title, description or JSON-LD touched. Measured over HTTP
+in Chromium at 320, 360, 390, 430, 700, 1024, 1280 and 1440px: **1,504 page views, 0 overflowing
+the window and 0 of the tables scrolling sideways** at any width. Read the new section rendered at
+390, 800 and 1280px, and read four pages as text: a flip, a both-capped pair, a neither-capped
+pair and one where the two machines differ in memory.
+
+**Deploy confirmed.** **Run 67, on `5e73669`, finished green at 06:54 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #3 was repaired straight afterwards.** This run's push conflicted with `seo/compare-index`,
+which adds `checkCompareIndex()` in the same place: both checks were kept, both run, and the
+branch was rebuilt (189 pages, 167 tests, full build) and re-measured over HTTP (1,512 views,
+0 overflows, 0 scrolling tables) before pushing `f46337f`. All three branches merge clean again.
+
+**Continue next:** check all three PR branches still merge before anything else. The top item that
+can reach main on its own is now the same section for the 47 model head-to-heads, which price
+pay-back at one usage the same way these did; then the leaderboard's height on a phone, then the 5
+pages on one link. Everything above those — the question pages, the `/compare/` index, the home
+page's JSON-LD, the calculator's fonts — is still written and waiting in a PR, and **the live site
+has had no new page since this agent started**.
 
 ### 2026-09-17 — the 47 model head-to-heads were hanging off one link each
 
