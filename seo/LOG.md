@@ -121,13 +121,12 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       model descriptions a search result prints. The run entry below has the whole list, and
       `checkCardPrices()` now stops the build if one comes back.
 
-- [ ] The share card's config line runs off the right edge of the card. `src/og.ts:87` draws
-      `configLine · usageLine` as one `<text>` at x=56 with no width fitting at all, while the
-      head-to-head cards next to it pick a size and wrap with `fitLines`. On the RTX 5090's card
-      the line ends "500k tokens/day, 15:1 input" against the edge, mid-word. It affects any
-      card whose machine and model names are long, which is most of the 1,894, and it is the
-      one thing on a share card a reader cannot get from anywhere else on it. The fitting
-      helpers are already written and exported from `src/versus-card.ts`.
+- [x] The share card's text ran off the right edge. Done 2026-09-17, and the item understated it
+      the same way the card-price one did: the config line was the worst of three, not the only
+      one. Measured by rendering all 1,894 cards and reading the rightmost inked pixel — 687 clipped
+      the config line, 214 the verdict, 59 the sub-line, and the card that previews sunkcost.ai
+      itself was one of them. The run entry below has the figures and what the verdict's own width
+      estimate had to be.
 
 - [x] The 47 model head-to-heads. Done 2026-09-16: median 157 words to 634, no subheading to
       three, and every one now carries the machine bill the two models differ by. The run entry
@@ -203,6 +202,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       proportions are checked at 768px: a 34% label column is right at 358px and probably too
       wide at 724.
 
+- [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
+      M6 32GB card the label "never reaches the surface" is drawn right-anchored by
+      `renderWaterline` and ends at x=1181, where every other line on the card now stops at 1144.
+      It is not clipped, so it is untidy rather than broken, and it is `src/waterline.ts`, which
+      the calculator draws with too — there the chart is full-bleed and the label belongs at the
+      edge, so the fix is a margin the card passes in rather than a change to the renderer.
+      Turned up while fixing the card's own text on 2026-09-17.
+
 - [ ] Every graphics card page opens "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?" — "a"
       before a label that wants "an". It reads as a typo on the first line of the page, on seven
       pages. The h1 in `hardwarePage()` is where it is built; the rule has to cover the letters
@@ -214,6 +221,65 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — a share card never runs its own words off the edge
+
+Both PRs were read first, as the notes above ask, and both still merge: `git merge-tree` against
+main answers for each in a second, and neither needed touching this run. Ryan has not been pinged
+about either, per the standing rule.
+
+Took the item the last run said to continue, the share card's config line, and it was understated
+in the same direction the card-price item was. Commit `27b4569`, pushed to main.
+
+**Measured before writing anything.** Rendered all 1,894 share cards with the font the build
+actually uses and read the rightmost inked pixel of each line against a 56px margin: **687 clipped
+the config line, 214 the verdict and 59 the sub-line**. The worst config line reached x=1198 on a
+1200px card, cut mid-word. `/og/default.png`, the card that previews sunkcost.ai itself, was one of
+the 214.
+
+None of the three lines had any width fitting at all — drawn at x=56 at a fixed size and trusted to
+be short, while the head-to-head cards beside them have picked a size and wrapped since they were
+written. Nothing on these cards is short by rule: a machine is "Mac mini M6, 16GB" or "Strix Halo
+Corsair AI Workstation 300, 128GB", and a pay-back is 4 characters or 12.
+
+Each line is fitted now. The verdict takes the largest of 60, 54, 50 and 46 that fits. The
+configuration and the usage are two thoughts joined by a dot, so a line too long for the card breaks
+between them rather than setting too small to read in a timeline — **697 cards take the second
+line**. The sub-line is a whole sentence, so it wraps instead of shrinking. An extra line takes its
+height from the plot above rather than the strip of figures below, which is what the block already
+did for the sub-line.
+
+**The verdict needed its own width estimate, and this is the part worth remembering.** `EM_BOLD`
+is 0.66 because it is tuned for machine names, which are caps and digits. A verdict is a lowercase
+sentence and sets far narrower, so reusing that estimate was 13% pessimistic and cost 1,764
+headlines a size they did not need to lose. Rendered every distinct string the site produces and
+measured it: the widest verdict comes out at **0.56 em** with the tracking included, the widest
+detail line at 0.554 and the widest sub-line at 0.523. So `EM = 0.58` is right for the regular
+lines — 5% headroom over the widest real string, and its 697 splits against 687 true overflows —
+and the verdict gets `EM_VERDICT = 0.6`. 113 cards keep 60px, 1,550 take one step down, 228 two,
+3 three.
+
+**The fitting helpers moved to `src/text-fit.ts`, and that is the only reason this is two files.**
+Importing them from `versus-card.ts` would have pulled `pagekit` and the dataset helpers into the
+calculator's own JS bundle. They are still re-exported from `versus-card.ts`, so `list-card.ts` and
+its tests are untouched. The bundle goes 272.80 kB → 273.77 kB, +0.5 kB gzipped, which is the
+helpers themselves; `versusCardSvg` and `hardwarePairs` appear 0 times in the built bundle.
+
+**Verified.** Rendered every card again and measured every line against the card's own geometry,
+read out of its markup rather than assumed: **0 lines past the margin, widest now 1082 against a
+limit of 1144**. Then built the whole set from a worktree at `origin/main` and compared all 2,177
+files: **1,869 share cards and `default.png` differ, and the 188 generated pages, the 75
+head-to-head cards and the list cards are byte-identical**. `npm test` 142 passing (6 new), typecheck
+clean, and the full `npm run build` including `build:functions`, which did find its font this time.
+Each new test was proved by taking the fitting back out and watching all five fail by name — two of
+them passed the first time that was tried, because the old size rule happened to satisfy them, so
+both were rewritten before they counted.
+
+**Continue next:** the two table items are the live work on main, the narrower-columns one
+(`scripts/build-pages.ts`, not CSS) being the bigger of the two, since `/best/` still hides the
+pay-back column on a phone and that is the column the page exists for. The new waterline-label item
+above is a twenty-minute job if a smaller one is wanted. If either PR has merged by then, the merged
+one comes first: after PR #1, the next question page is "best GPU for local LLMs".
 
 ### 2026-09-16 — a graphics card's price stops reading as a whole computer's
 
