@@ -7,21 +7,24 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, descOf, dotRow, esc, familyHeading, familyRange,
-  fitsOf, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, indefiniteArticle,
-  lowerFirst, machineVerdict, machinesConsidered, modelLabel, modelVerdict, otherQuantisations, pageShell,
-  priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
-  contextCappedBy, contextHeadroom, ctxLabel, fitsShorter, longestContext, machinesShorter, meetAtShorterContext, shortHardwareLabel, slug, speedWithBasis, stack, strongestShared,
-  tierLabel, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, TITLE_MAX, type Runner, type SharedMachine, type ShorterFit, type ShorterMachine,
+  bandFit, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView,
+  contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, dotRow, esc, familyHeading, familyRange,
+  fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
+  hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
+  machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
+  modelVerdict, otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor,
+  runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, SIZE_BANDS, slug, speedWithBasis, stack,
+  strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
+  type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath, modelPairs, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, LEADERBOARD_CARD } from '../src/list-card';
+import { BEST_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
-import { kvCacheGb } from '../src/fit';
+import { fit, footprintGb, kvCacheGb } from '../src/fit';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 import type { ModelRow, View } from '../src/compute';
 
@@ -225,6 +228,26 @@ function checkOgCards() {
     throw new Error(`${missing.length} pages name an OG card that does not exist`);
   }
   console.log(`  ${named.size} OG cards named, all drawn`);
+}
+
+/**
+ * One machine, one number. The memory page counts what a machine holds with fitCount,
+ * and every machine page counts the rows computeView hands it. Both are meant to be the
+ * current models at the default context, and a reader moving between the two pages sees
+ * both, so the build stops if they ever drift apart.
+ */
+function checkCounts() {
+  const st = defaultState(data);
+  for (const hw of buyable) {
+    const onMachinePage = fitsOn(hw).length;
+    const onMemoryPage = fitCount(hw, st.ctx);
+    if (onMachinePage !== onMemoryPage) {
+      throw new Error(
+        `${hw.id}: its own page counts ${onMachinePage} models that fit, /how-much-memory/ counts ${onMemoryPage}`,
+      );
+    }
+  }
+  console.log(`  ${buyable.length} machines, each counted the same on its own page and on /how-much-memory/`);
 }
 
 /**
@@ -1092,7 +1115,7 @@ ${stack(`<table class="board">
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' } })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
   return pageShell(
@@ -1412,7 +1435,7 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}<h2>
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
   <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
-  <dt>KV cache</dt><dd>${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}</dd>
+  <dt>KV cache</dt><dd>${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}. <a href="/how-much-memory/">How weights and cache add up</a>.</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
   ${m.sources?.length ? `<dt>Sources</dt><dd>${m.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener">source ${i + 1}</a>`).join(', ')}</dd>` : ''}
@@ -1647,7 +1670,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1 })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on. The longest context is the longest setting it offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
 ${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
@@ -1954,6 +1977,284 @@ ${extraSection}
         { href: '/', label: 'Sunk Cost' },
         { href: '#', label: heading },
       ],
+    },
+    body,
+    data,
+  );
+}
+
+/* --------------------------- the memory question --------------------------- */
+
+const CTX = defaultState(data).ctx;
+const NEARLY = data.defaults.nearly_fits_ratio;
+/** the context lengths the calculator offers, up to the longest most models will do */
+const CTX_STEPS = data.defaults.context.options.filter((c) => c <= 131072);
+/** every machine a memory table should consider: on sale, priced, memory published */
+const buyable = data.hardware.filter(
+  (h) => h.price_usd != null && (h.generation ?? 'current') === 'current' && h.usable_memory_gb != null,
+);
+const holds = (hw: Hardware, m: Model, ctx: number) => fit(m, hw, ctx, NEARLY).status === 'fits';
+
+/**
+ * What a machine holds is a claim about what to buy it for, so it counts the models
+ * you would choose today: the same set the calculator shows before you ask for the
+ * older ones, and the same set every machine page counts. What a model *needs* is a
+ * different question, and a superseded model needs it just the same, so the tables by
+ * size below count everything listed here and mark the superseded ones.
+ */
+const currentModels = data.models.filter((m) => m.generation !== 'legacy');
+const fitCount = (hw: Hardware, ctx: number) => currentModels.filter((m) => holds(hw, m, ctx)).length;
+const strongestThatFits = (hw: Hardware, ctx: number) =>
+  currentModels
+    .filter((m) => holds(hw, m, ctx) && m.frontier_equivalent?.score != null)
+    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)[0] ?? null;
+
+const machineLink = (hw: Hardware) =>
+  `<a href="/hardware/${esc(hw.id)}/">${esc(hardwareLabel(hw))}</a> <span class="dim">${fmtUsd(hw.price_usd)}${hw.price_scope === 'card_only' ? ', card only' : ''}</span>`;
+
+/**
+ * Two models of the same size whose caches are furthest apart: the plainest
+ * evidence that the cache is an architecture choice rather than a function of
+ * parameter count. Grouped on the rounded parameter count so the sentence that
+ * says "the same N billion parameters" is true of both.
+ */
+function widestCacheSpread(ctx: number): [Model, Model] | null {
+  const groups = new Map<number, { m: Model; kv: number }[]>();
+  for (const m of data.models) {
+    const kv = kvCacheGb(m, ctx);
+    if (kv == null) continue;
+    const key = Math.round(m.params_b);
+    groups.set(key, [...(groups.get(key) ?? []), { m, kv }]);
+  }
+  let widest: [Model, Model] | null = null;
+  let gap = 0;
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    const sorted = [...group].sort((a, b) => b.kv - a.kv);
+    const [most, least] = [sorted[0], sorted[sorted.length - 1]];
+    if (most.kv - least.kv > gap) {
+      gap = most.kv - least.kv;
+      widest = [most.m, least.m];
+    }
+  }
+  return widest;
+}
+
+/**
+ * The model someone means when they type a size. Close enough to the number they
+ * typed that calling it a 70B is honest, then the strongest of those, and where
+ * that ties the plainer name, which is the base model rather than a distill of it.
+ */
+function nearestSize(paramsB: number): Model | null {
+  const near = data.models
+    .filter((m) => m.weights_gb != null && Math.abs(m.params_b - paramsB) <= paramsB * 0.1)
+    .sort(
+      (a, b) =>
+        (b.frontier_equivalent?.score ?? 0) - (a.frontier_equivalent?.score ?? 0) ||
+        Math.abs(a.params_b - paramsB) - Math.abs(b.params_b - paramsB) ||
+        a.display_name.length - b.display_name.length,
+    );
+  return near[0] ?? null;
+}
+
+/** A model's name, with the quantisation where the site lists the same model twice. */
+function namePlusQuant(m: Model): string {
+  return sharedNames.has(m.display_name) ? `${m.display_name} at ${m.quantisation}` : m.display_name;
+}
+
+/**
+ * The stretch of the memory ladder over which the strongest model you can run
+ * does not change. Buying more memory buys more models and a longer window; it
+ * does not always buy a better one, and the ladder says where that stops being
+ * true.
+ */
+function strongestPlateau(ladder: Hardware[], ctx: number): { model: Model; from: Hardware; to: Hardware; next: Model | null; nextHw: Hardware | null } | null {
+  const top = ladder.map((hw) => ({ hw, m: strongestThatFits(hw, ctx) }));
+  let best: { model: Model; from: Hardware; to: Hardware } | null = null;
+  let i = 0;
+  while (i < top.length) {
+    const m = top[i].m;
+    let j = i;
+    while (j + 1 < top.length && top[j + 1].m?.id === m?.id) j++;
+    if (m && (!best || j - i > ladder.indexOf(best.to) - ladder.indexOf(best.from)))
+      best = { model: m, from: top[i].hw, to: top[j].hw };
+    i = j + 1;
+  }
+  if (!best || best.from.id === best.to.id) return null;
+  const after = top.slice(ladder.indexOf(best.to) + 1).find((x) => x.m && x.m.id !== best!.model.id);
+  return { ...best, next: after?.m ?? null, nextHw: after?.hw ?? null };
+}
+
+function memoryRow(m: Model): string {
+  const kv = kvCacheGb(m, CTX);
+  const need = footprintGb(m, CTX);
+  const hw = cheapestThatHolds(need, data);
+  return `<tr>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(m.quantisation)}</span>${m.generation === 'legacy' ? '<span class="c-quant">older</span>' : ''}</td>
+  <td>${fmtNum(m.params_b, 1)}B</td>
+  <td>${fmtGb1(m.weights_gb)}</td>
+  <td>${fmtGb1(kv)}</td>
+  <td><b>${fmtGb1(need)}</b></td>
+  <td class="c-hw">${hw ? machineLink(hw) : '<span class="dim">nothing on this list</span>'}</td>
+  <td>${hw ? `<a href="${esc(calcLink({ hw: hw.id, model: m.id, ctx: CTX }, data))}">Run the numbers</a>` : ''}</td>
+</tr>`;
+}
+
+function memoryPage(): string {
+  const kctx = `${Math.round(CTX / 1024)}k`;
+  const anchor = nearestSize(70);
+  const anchorNeed = anchor ? footprintGb(anchor, CTX) : null;
+  const anchorHolder = cheapestThatHolds(anchorNeed, data);
+
+  // weights per billion parameters, over the four-bit models, which is nearly all of them
+  const fourBit = data.models.filter((m) => /q4|mxfp4/i.test(m.quantisation) && m.weights_gb != null);
+  const perB = fourBit.map((m) => m.weights_gb! / m.params_b);
+  const midPerB = median(perB);
+  const caches = data.models.map((m) => kvCacheGb(m, CTX)).filter((v): v is number => v != null);
+
+  // the three columns of the context table: the cheapest machine at each of the
+  // memory sizes these boxes are actually sold in
+  const columns = [32, 64, 128]
+    .map((installed) =>
+      buyable.filter((h) => h.unified_memory_gb === installed).sort((a, b) => a.price_usd! - b.price_usd!)[0],
+    )
+    .filter(Boolean) as Hardware[];
+
+  const ctxRows = CTX_STEPS.map(
+    (c) => `<tr>
+  <th>${Math.round(c / 1024)}k${c === CTX ? ' <span class="dim">default</span>' : ''}</th>
+  ${columns.map((hw) => `<td>${fitCount(hw, c)}</td>`).join('')}
+</tr>`,
+  ).join('');
+
+  // one machine per level of usable memory, cheapest at that level
+  const ladder = [...new Set(buyable.map((h) => h.usable_memory_gb!))]
+    .sort((a, b) => a - b)
+    .map((gb) => buyable.filter((h) => h.usable_memory_gb === gb).sort((a, b) => a.price_usd! - b.price_usd!)[0]);
+
+  const plateau = strongestPlateau(ladder, CTX);
+  const ladderRows = ladder
+    .map((hw) => {
+      const top = strongestThatFits(hw, CTX);
+      return `<tr>
+  <td><b>${fmtGb1(hw.usable_memory_gb)}</b></td>
+  <td>${hw.unified_memory_gb} GB</td>
+  <td class="c-hw">${machineLink(hw)}</td>
+  <td>${fitCount(hw, CTX)}</td>
+  <td class="c-model">${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> <span class="dim">${esc(tierName(top, data))}</span>` : '<span class="dim">none</span>'}</td>
+</tr>`;
+    })
+    .join('');
+
+  const bands = SIZE_BANDS.map((band) => {
+    // ordered by what they ask of a machine, which is what the page is about.
+    // The same reading the share card draws, so the two cannot disagree.
+    const b = bandFit(band, data, CTX);
+    if (!b) return '';
+    const { sized, biggest, holder, held, heldBy } = b;
+    const ms = sized.map((x) => x.m);
+    const needs = sized.map((x) => x.need);
+    const size =
+      band.max === Infinity
+        ? `over ${band.min} billion parameters`
+        : band.min === 0
+          ? `under ${band.max} billion parameters`
+          : `between ${band.min} and ${band.max} billion parameters`;
+    return `<section>
+<h2>${esc(band.question)}</h2>
+<p>${ms.length} model${ms.length === 1 ? '' : 's'} on this site ${ms.length === 1 ? 'is' : 'are'} ${esc(size)}. The weights come to ${gbRange(ms.map((m) => m.weights_gb ?? NaN))}, and at ${kctx} context the cache adds ${gbRange(ms.map((m) => kvCacheGb(m, CTX) ?? NaN))} on top. That puts the whole job at ${gbRange(needs)} of memory at once. ${
+      holder
+        ? `The cheapest machine here that runs the hungriest of them, ${esc(namePlusQuant(biggest.m))}, is the ${esc(hardwareLabel(holder))} at ${fmtUsd(holder.price_usd)}.`
+        : `No machine on this list holds the hungriest of them, ${esc(namePlusQuant(biggest.m))}, which wants ${fmtGb1(biggest.need)} at ${kctx} context.${
+            held && heldBy
+              ? ` The largest that does fit is ${esc(namePlusQuant(held.m))}, on the ${esc(hardwareLabel(heldBy))} at ${fmtUsd(heldBy.price_usd)}.`
+              : ''
+          }`
+    }</p>
+${stack(`<table class="board">
+<thead><tr><th>Model</th><th>Parameters</th><th>Weights</th><th>Cache at ${kctx}</th><th>Needs</th><th>Cheapest machine that runs it</th><th></th></tr></thead>
+<tbody>${ms.map(memoryRow).join('')}</tbody>
+</table>`, { fig: 4, labels: { 5: 'Cheapest' } })}
+</section>`;
+  }).join('\n');
+
+  const working = anchor ? kvWorking(anchor, CTX) : null;
+  const spread = widestCacheSpread(131072);
+  const short8k = anchor ? footprintGb(anchor, 8192) : null;
+  const holder8k = cheapestThatHolds(short8k, data);
+  const kv = data.defaults.kv_cache;
+
+  const body = `<article class="prose">
+<h1>How much memory do you need to run a local LLM?</h1>
+<p class="lede">Two numbers, added together, held at the same time. The weights are a fixed download. The key-value cache grows with the context window you ask for, and on some models it ends up larger than the weights.${
+    anchor && anchorNeed
+      ? ` ${esc(anchor.display_name)} at ${esc(anchor.quantisation)} is ${fmtGb1(anchor.weights_gb)} of weights plus ${fmtGb1(kvCacheGb(anchor, CTX))} of cache at ${kctx} context: ${fmtGb1(anchorNeed)} in one machine.`
+      : ''
+  }</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">What has to fit</span><span class="answer-v">The weights, plus a cache the size of your context window. Both at once, in memory the GPU can reach.</span></div>
+  ${midPerB != null ? `<div class="answer-row"><span class="answer-k">Weights at four bits</span><span class="answer-v">About ${midPerB.toFixed(2)} GB per billion parameters. Across the ${fourBit.length} four-bit models here it runs ${Math.min(...perB).toFixed(2)} GB to ${Math.max(...perB).toFixed(2)} GB.</span></div>` : ''}
+  ${caches.length ? `<div class="answer-row"><span class="answer-k">Cache at ${kctx} context</span><span class="answer-v">${gbRange(caches)}, depending on the model. Architecture decides this, not parameter count.</span></div>` : ''}
+  ${anchor && anchorHolder ? `<div class="answer-row"><span class="answer-k">${esc(anchor.display_name)} at ${kctx}</span><span class="answer-v">${fmtGb1(anchorNeed)}. The cheapest machine here that holds it is the <a href="/hardware/${esc(anchorHolder.id)}/">${esc(hardwareLabel(anchorHolder))}</a> at ${fmtUsd(anchorHolder.price_usd)}.</span></div>` : ''}
+</div>
+
+${anchor && anchorHolder ? `<p><a class="cta" href="${esc(calcLink({ hw: anchorHolder.id, model: anchor.id, ctx: CTX }, data))}">Run the numbers on that pairing</a></p>` : ''}
+
+<h2>Where the cache figure comes from</h2>
+<p>The weights are whatever the file weighs on disk. The cache is arithmetic. Every token in the context window leaves a key and a value behind in every layer, and all of it stays resident while the model is loaded.</p>
+${working && anchor ? `<p>For ${esc(anchor.display_name)}: ${working}</p>` : ''}
+<p>Two things follow. The window you ask for is a hardware decision, not a setting: on most models the cache grows in step with it, and only the ones with sliding-window layers stop growing partway. And two models of the same size can want very different amounts, because the number of key-value heads and the width of each one are architecture choices.</p>
+
+${bands}
+
+<h2>Context is the part people miss</h2>
+<p>A longer window costs memory before it costs anything else. Here is how many of the ${currentModels.length} current models fit three machines as the window grows, counting a model only where its own context ceiling allows it.</p>
+<table class="board compare">
+<thead><tr><th>Context</th>${columns.map((hw) => `<th><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a><span class="c-quant">${fmtGb1(hw.usable_memory_gb)} usable</span></th>`).join('')}</tr></thead>
+<tbody>${ctxRows}</tbody>
+</table>
+${
+    anchor && short8k != null && anchorNeed != null && holder8k && anchorHolder && holder8k.id !== anchorHolder.id
+      ? `<p>That is a shopping list, not a setting. ${esc(anchor.display_name)} needs ${fmtGb1(short8k)} at 8k context, which the ${esc(hardwareLabel(holder8k))} at ${fmtUsd(holder8k.price_usd)} holds. At ${kctx} it needs ${fmtGb1(anchorNeed)}, and the cheapest machine that holds it becomes the ${esc(hardwareLabel(anchorHolder))} at ${fmtUsd(anchorHolder.price_usd)}.</p>`
+      : ''
+  }
+${
+    spread
+      ? `<p>Size is a poor guide to the cache. Two models here have the same ${Math.round(spread[0].params_b)} billion parameters: at 128k context <a href="/models/${esc(spread[0].id)}/">${esc(spread[0].display_name)}</a> wants ${fmtGb1(kvCacheGb(spread[0], 131072))} of cache and <a href="/models/${esc(spread[1].id)}/">${esc(spread[1].display_name)}</a> wants ${fmtGb1(kvCacheGb(spread[1], 131072))}. Each model's page carries its own figure.</p>`
+      : ''
+  }
+<p>You can also make the cache smaller. ${esc(kv?.note ?? '')}${kv?.source_url ? ` (<a href="${esc(kv.source_url)}" rel="noopener">source</a>)` : ''} The calculator has that switch, and every figure on this page is at the 16-bit default.</p>
+
+<h2>Installed memory is not usable memory</h2>
+<p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level, counted against the ${currentModels.length} current models.</p>
+${stack(`<table class="board">
+<thead><tr><th>Usable</th><th>Installed</th><th>Cheapest machine at that level</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th></tr></thead>
+<tbody>${ladderRows}</tbody>
+</table>`, { fig: 3, labels: { 2: 'Cheapest', 4: 'Strongest' } })}
+${
+    plateau
+      ? `<p>Read the last column before you spend anything. From ${fmtGb1(plateau.from.usable_memory_gb)} of usable memory up to ${fmtGb1(plateau.to.usable_memory_gb)}, the strongest model on this list does not change: it is <a href="/models/${esc(plateau.model.id)}/">${esc(plateau.model.display_name)}</a> the whole way. More memory across that stretch buys more models, more context and more room to work, not a cleverer one.${
+          plateau.next && plateau.nextHw
+            ? ` The next step up is <a href="/models/${esc(plateau.next.id)}/">${esc(plateau.next.display_name)}</a>, and the cheapest machine that holds it is the <a href="/hardware/${esc(plateau.nextHw.id)}/">${esc(hardwareLabel(plateau.nextHw))}</a> at ${fmtUsd(plateau.nextHw.price_usd)}.`
+            : ''
+        }</p>`
+      : ''
+  }
+
+<p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. The tables by size cover all ${data.models.length} models listed here, superseded ones included and marked, because people still run them. The two tables of what a machine holds count the ${currentModels.length} current ones instead, which is what every machine page and the calculator count. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf(['How much memory do you need to run a local LLM?', 'How much memory to run a local LLM']),
+      description: descOf([
+        `Weights plus a key-value cache that grows with context. What 8B, 32B, 70B and 100B models need at ${kctx}, and the cheapest machine that holds each.`,
+        `Weights plus a cache that grows with context. What 8B, 32B, 70B and 100B models need at ${kctx}, and the cheapest machine that holds each.`,
+      ]),
+      canonical: '/how-much-memory/',
+      ogImage: MEMORY_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/how-much-memory/', label: 'How much memory' }],
     },
     body,
     data,
@@ -2271,6 +2572,7 @@ ${machinesSection}
 
 write('/leaderboard/', leaderboard());
 write('/best/', bestBuys());
+write('/how-much-memory/', memoryPage());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
@@ -2293,6 +2595,7 @@ checkHeadToHeads();
 checkCanonicals();
 checkOgCards();
 checkFonts();
+checkCounts();
 checkCardPrices();
 checkTables();
 checkArticles();

@@ -13,7 +13,7 @@ import { OG_WIDTH, OG_HEIGHT } from '../src/og';
 import {
   hardwareComparePath, hardwarePairs, hardwareVersusCard, modelComparePath, modelPairs, modelVersusCard, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, bestBuysCard, LEADERBOARD_CARD, leaderboardCard } from '../src/list-card';
+import { BEST_CARD, bestBuysCard, LEADERBOARD_CARD, leaderboardCard, MEMORY_CARD, memoryCard } from '../src/list-card';
 import type { Dataset } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -91,11 +91,13 @@ const versus = (page: string, svg: string) => {
 for (const [a, b] of hardwarePairs(data)) versus(hardwareComparePath(a, b), hardwareVersusCard(a, b, data, FONT));
 for (const [a, b] of modelPairs(data)) versus(modelComparePath(a, b), modelVersusCard(a, b, data, FONT));
 
-// the two ranked pages get a card of their own top rows, for the same reason: a
-// link to the leaderboard should preview as the leaderboard.
+// the pages that answer with a list rather than a single pairing get a card of
+// their own rows, for the same reason: a link to the leaderboard should preview
+// as the leaderboard.
 const list: [string, string][] = [
   [LEADERBOARD_CARD, leaderboardCard(data, FONT)],
   [BEST_CARD, bestBuysCard(data, FONT)],
+  [MEMORY_CARD, memoryCard(data, FONT)],
 ];
 for (const [path, svg] of list) writeFileSync(new URL(path.replace('/og/', ''), outDir), toPng(svg));
 
