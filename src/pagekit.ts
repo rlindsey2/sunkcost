@@ -671,6 +671,42 @@ export function fitsShorter(hw: Hardware, models: Model[], data: Dataset): Short
   return out.sort((a, b) => b.ctx - a.ctx || (b.model.weights_gb ?? 0) - (a.model.weights_gb ?? 0));
 }
 
+export interface ShorterMachine {
+  hw: Hardware;
+  /** the longest window the calculator offers that this machine holds the model at */
+  ctx: number;
+  /** weights plus cache at that window */
+  needGb: number;
+}
+
+/**
+ * The same 45 rows as `fitsShorter`, read from the model's side: the machines
+ * that miss this model at the context the site prices everything at and hold it
+ * at a shorter one. A model page lists what runs it at 32k and stops, so on
+ * twelve of these models the cheapest machine on the page is not the cheapest
+ * machine that runs the model — Llama 3.3 70B reads $3,449 and runs on a $1,700
+ * box at 16k. One machine per family, cheapest first, the same rule the table
+ * above it uses, and a family already in that table may still appear here on a
+ * cheaper machine.
+ */
+export function machinesShorter(m: Model, data: Dataset): ShorterMachine[] {
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const at = (hw: Hardware, tokens: number) => memoryFit(m, hw, tokens, data.defaults.nearly_fits_ratio, kvScale);
+  const out: ShorterMachine[] = [];
+  const seen = new Set<string>();
+  for (const hw of [...machinesConsidered(data)].sort((a, b) => a.price_usd! - b.price_usd!)) {
+    if (at(hw, ctx).status === 'fits') continue;
+    const longest = longestContext(m, hw, data);
+    if (longest == null || longest >= ctx) continue;
+    const needGb = at(hw, longest).needGb;
+    if (needGb == null || seen.has(hw.family)) continue;
+    seen.add(hw.family);
+    out.push({ hw, ctx: longest, needGb });
+  }
+  return out;
+}
+
 /** A price, with the note that a graphics card is priced without the PC around it. */
 export function priceWithScope(hw: Hardware): string {
   if (hw.price_usd == null) return '<span class="dim">not published</span>';
