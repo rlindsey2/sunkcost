@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, LEADERBOARD_CARD, leaderboardCard, listCardSvg, quickestAt,
+  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, LEADERBOARD_CARD, leaderboardCard, listCardSvg,
+  MEMORY_CARD, memoryCard, quickestAt,
 } from '../src/list-card';
 import { bestUsageLevels } from '../src/best';
-import { computeView, fitsOf, priceWithScopeText, shortHardwareLabel } from '../src/pagekit';
+import {
+  bandFit, cheapestThatHolds, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS,
+} from '../src/pagekit';
+import { footprintGb } from '../src/fit';
 import { defaultState } from '../src/state';
-import { fmtDuration, fmtGb, fmtTokens } from '../src/format';
+import { fmtDuration, fmtGb, fmtTokens, fmtUsd } from '../src/format';
 import { flagshipMachines, hardwarePairs, modelPairs, VS_HEIGHT, VS_WIDTH } from '../src/versus-card';
 import type { Dataset } from '../src/types';
 import hardware from '../data/hardware.json';
@@ -18,7 +22,8 @@ const data = { hardware, models, throughput, defaults } as unknown as Dataset;
 const leaderboard = leaderboardCard(data);
 const best = bestBuysCard(data);
 const compare = compareIndexCard(data);
-const cards = [leaderboard, best, compare];
+const memory = memoryCard(data);
+const cards = [leaderboard, best, compare, memory];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
 /** The same text with the spaces taken out, so a name that wrapped onto two lines still matches. */
@@ -199,5 +204,61 @@ describe('the head-to-head card', () => {
 
   it('is drawn where the page asks for it', () => {
     expect(COMPARE_CARD).toBe('/og/compare.png');
+  });
+});
+
+describe('the memory card', () => {
+  const ctx = data.defaults.context.default_tokens;
+  const bands = SIZE_BANDS.map((b) => bandFit(b, data, ctx)).filter((b) => b != null);
+
+  it('gives one row to every size band the page has a section for', () => {
+    expect(bands.length).toBe(SIZE_BANDS.length);
+    for (const b of bands) expect(flat(memory)).toContain(noSpace(b!.band.label));
+  });
+
+  it('names the hungriest model in the band that a machine on this list holds', () => {
+    for (const b of bands) {
+      const pick = b!.held ?? b!.biggest;
+      expect(flat(memory)).toContain(noSpace(pick.m.display_name));
+      expect(flat(memory)).toContain(noSpace(pick.m.quantisation));
+      // nothing hungrier in the band fits, or the card would be naming the wrong model
+      for (const x of b!.sized) {
+        if (x.need > pick.need) expect(cheapestThatHolds(x.need, data)).toBeNull();
+      }
+    }
+  });
+
+  it('prints the figure the page prints, weights and cache added together', () => {
+    for (const b of bands) {
+      const pick = b!.held ?? b!.biggest;
+      expect(fmtGb1(pick.need)).toBe(fmtGb1(footprintGb(pick.m, ctx)));
+      expect(flat(memory)).toContain(noSpace(fmtGb1(pick.need)));
+    }
+  });
+
+  it('never names a machine that cannot hold the figure beside it', () => {
+    for (const b of bands) {
+      const pick = b!.held ?? b!.biggest;
+      const hw = b!.heldBy;
+      if (!hw) continue;
+      expect(hw.usable_memory_gb!).toBeGreaterThanOrEqual(pick.need);
+      expect(flat(memory)).toContain(noSpace(shortHardwareLabel(hw)));
+      expect(flat(memory)).toContain(noSpace(fmtUsd(hw.price_usd)));
+      // cheapest, not merely one that fits
+      for (const other of data.hardware) {
+        if ((other.generation ?? 'current') !== 'current' || other.price_usd == null) continue;
+        if ((other.usable_memory_gb ?? 0) >= pick.need) expect(other.price_usd).toBeGreaterThanOrEqual(hw.price_usd!);
+      }
+    }
+  });
+
+  it('states the assumptions the figures were computed on', () => {
+    expect(text(memory)).toContain(`${Math.round(ctx / 1024)}k context`);
+    expect(text(memory)).toContain('list price');
+    expect(text(memory)).toContain(`Data checked ${data.defaults.data_last_checked}`);
+  });
+
+  it('is drawn where the page asks for it', () => {
+    expect(MEMORY_CARD).toBe('/og/how-much-memory.png');
   });
 });

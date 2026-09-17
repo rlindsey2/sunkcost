@@ -1,14 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
-  contextCappedBy, fitsShorter, fmtDuration, fmtNum, fmtUsd, longestContext, machinesShorter,
-  hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
-  priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
-  stack, strongestShared, tierLabel, tierName, FONT_PRELOAD,
-  type LdNode,
+  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
+  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
+  otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, priceWithScopeText, runnersFor,
+  runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
+  strongestShared, tierLabel, tierName, type LdNode,
 } from '../src/pagekit';
-import { footprintGb } from '../src/fit';
+import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs } from '../src/versus-card';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
@@ -198,6 +199,80 @@ describe('related machines', () => {
   });
 });
 
+describe('the memory question', () => {
+  const m = (id: string) => data.models.find((x) => x.id === id)!;
+  const CTX = 32768;
+
+  it('writes a decimal only where there is one', () => {
+    expect(fmtGb1(42.52)).toBe('42.5 GB');
+    expect(fmtGb1(24)).toBe('24 GB');
+    expect(fmtGb1(10.5)).toBe('10.5 GB');
+    expect(fmtGb1(null)).toBe('—');
+  });
+
+  it('gives a range only when the two ends differ', () => {
+    expect(gbRange([4.9, 42.52])).toBe('4.9 GB to 42.5 GB');
+    expect(gbRange([8, 8])).toBe('8 GB');
+    expect(gbRange([])).toBe('—');
+    expect(median([3, 1, 2])).toBe(2);
+    expect(median([4, 1, 2, 3])).toBe(2.5);
+    expect(median([])).toBeNull();
+  });
+
+  it('holds a model only in a machine that is current, priced and big enough', () => {
+    for (const need of [3, 12.8, 53.3, 96, 500]) {
+      const hw = cheapestThatHolds(need, data);
+      if (!hw) continue;
+      expect(hw.usable_memory_gb).toBeGreaterThanOrEqual(need);
+      expect(hw.generation ?? 'current').toBe('current');
+      expect(hw.price_usd).not.toBeNull();
+      // nothing cheaper on the list would have done
+      for (const other of data.hardware)
+        if (
+          other.price_usd != null &&
+          (other.generation ?? 'current') === 'current' &&
+          (other.usable_memory_gb ?? 0) >= need
+        )
+          expect(other.price_usd).toBeGreaterThanOrEqual(hw.price_usd!);
+    }
+  });
+
+  it('says nothing holds a model no machine can hold', () => {
+    const biggest = Math.max(...data.hardware.map((h) => h.usable_memory_gb ?? 0));
+    expect(cheapestThatHolds(biggest + 1, data)).toBeNull();
+    expect(cheapestThatHolds(null, data)).toBeNull();
+  });
+
+  it('puts every model in exactly one size band', () => {
+    const counted = SIZE_BANDS.flatMap((b) => modelsInBand(b, data).map((x) => x.id));
+    expect(counted.length).toBe(data.models.length);
+    expect(new Set(counted).size).toBe(counted.length);
+    for (const band of SIZE_BANDS)
+      for (const x of modelsInBand(band, data)) {
+        expect(x.params_b).toBeGreaterThanOrEqual(band.min);
+        expect(x.params_b).toBeLessThan(band.max);
+      }
+  });
+
+  it('shows the cache working only where that working is the whole story', () => {
+    // plain multi-head attention: 2 × 8 heads × 128 × 2 bytes × 80 layers × 32768 tokens
+    const working = kvWorking(m('llama-3.3-70b-q4'), CTX);
+    expect(working).toContain('327,680 bytes');
+    expect(working).toContain('10.7 GB');
+    // a hybrid caches the full context in only some layers, so the one-line sum would lie
+    expect(kvWorking(m('qwen3-coder-next-q4'), CTX)).toBeNull();
+    expect(kvWorking(m('gpt-oss-120b-mxfp4'), CTX)).toBeNull();
+  });
+
+  it('never prints working that disagrees with the figure the site uses', () => {
+    for (const model of data.models) {
+      const working = kvWorking(model, CTX);
+      if (working == null) continue;
+      expect(working).toContain(`${kvCacheGb(model, CTX)!.toFixed(1)} GB`);
+    }
+  });
+});
+
 describe('links into the calculator', () => {
   const state = { ...defaultState(data), hw: 'mac-mini-m6-32', model: 'qwen3.8-27b-q4', usage: 50_000 };
 
@@ -260,6 +335,61 @@ describe('fonts', () => {
   it('lets the text show in a fallback face while a font is still coming', () => {
     expect(css.match(/@font-face/g)).toHaveLength(10);
     expect(css.match(/font-display: swap/g)).toHaveLength(10);
+  });
+});
+
+describe('the calculator’s own head', () => {
+  const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
+  const home = read('index.html');
+  const faces = (css: string) => [...css.matchAll(/@font-face\s*\{[^}]*\}/g)].map((m) => m[1] ?? m[0]);
+
+  it('asks no other origin for anything before it can paint', () => {
+    // a canonical names an address rather than fetching one, so it is not a request
+    const fetched = [...home.matchAll(/<(?:link|script)\b[^>]*>/g)].map((m) => m[0]).filter((t) => !t.includes('rel="canonical"'));
+    expect(fetched.filter((t) => /(?:href|src)="https?:\/\//.test(t))).toEqual([]);
+    expect(home).not.toContain('fonts.googleapis.com');
+    expect(home).not.toContain('fonts.gstatic.com');
+  });
+
+  it('preloads the same two faces the generated pages do, and only those', () => {
+    const preloads = [...home.matchAll(/<link rel="preload" href="([^"]+)" as="font"[^>]*>/g)].map((m) => m[1]);
+    expect(preloads).toEqual([FONT_PRELOAD.sans, FONT_PRELOAD.mono]);
+    for (const f of preloads) {
+      expect(home).toContain(`href="${f}" as="font" type="font/woff2" crossorigin`);
+      expect(existsSync(new URL(`../public${f}`, import.meta.url))).toBe(true);
+    }
+  });
+
+  it('sets type in the same faces as a search landing, from one set of rules', () => {
+    const app = read('src/fonts.css');
+    expect(read('src/styles.css')).toContain("@import './fonts.css';");
+    expect(faces(app)).toHaveLength(10);
+    expect(faces(app)).toEqual(faces(read('public/page.css')));
+    for (const f of [...app.matchAll(/url\((\/fonts\/[^)]+)\)/g)].map((m) => m[1]))
+      expect(existsSync(new URL(`../public${f}`, import.meta.url))).toBe(true);
+  });
+
+  it('tells a search engine what site this is, in the words the other pages use', () => {
+    const raw = home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+    const graph = JSON.parse(raw!)['@graph'] as Record<string, unknown>[];
+    const site = data.defaults.site_url.replace(/\/$/, '');
+    const website = graph.find((n) => n['@type'] === 'WebSite');
+    const page = graph.find((n) => n['@type'] === 'WebPage');
+
+    // Google reads the site name from the home page's own markup, so this node
+    // has to say exactly what all 188 generated pages say about the same site.
+    const fromPages = pageGraph(
+      { title: 'A page', description: 'A description.', canonical: '/best/', ogImage: null, crumbs: [{ href: '/', label: 'Sunk Cost' }] },
+      data,
+    ).find((n) => n['@type'] === 'WebSite');
+    expect(website).toEqual(fromPages);
+
+    expect(page!['@id']).toBe(`${site}/#webpage`);
+    expect(page!.url).toBe(`${site}/`);
+    expect(page!.isPartOf).toEqual({ '@id': website!['@id'] });
+    expect(page!.name).toBe(home.match(/<title>([^<]+)<\/title>/)![1]);
+    expect(page!.description).toBe(home.match(/<meta name="description" content="([^"]+)"/)![1]);
+    expect(home).toContain(`<link rel="canonical" href="${site}/" />`);
   });
 });
 

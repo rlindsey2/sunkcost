@@ -5,6 +5,10 @@
    reserved for the moment you break through.
    ============================================================ */
 
+/* The two faces, from this origin. Vite folds this file into the bundle, so it
+   costs no extra request. */
+@import './fonts.css';
+
 :root {
   color-scheme: light;
 
