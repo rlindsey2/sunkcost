@@ -193,20 +193,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       on 147 of the 230, and the link into the calculator on 59. A row is a block on a phone now.
       The run entry below has the figures and why the first layout was thrown away.
 
-- [ ] Above 640px every table goes back to swiping, because both narrow layouts — the
-      comparison tables' three-way split and the new block-per-row one — sit inside the site's
-      640px breakpoint. Measured on 2026-09-17: **223 of the 362 tables scroll at 700px, 122 at
-      800px and 34 at 900px**. A phone in landscape and a tablet in portrait both land in that
-      band, and a five-column table wants 824px, so a 700px window has the same problem a 390px
-      one had. The cheap half is raising the breakpoint the `.board.stack` rules sit behind to
-      around 840px; the comparison split needs its proportions checked first, because a 34%
-      label column is right at 358px and too wide at 724.
+- [x] Above 640px every table went back to swiping. Done 2026-09-17, and the fix was not the
+      one this item proposed: stacking at tablet width would have wasted the width a tablet has,
+      so the table stays a table between 641 and 1023px and every cell wraps instead. The item
+      also missed the worst of it, which was not in the band at all — see the leaderboard note in
+      the run entry below. 0 of the 362 tables scroll at any width from 320 to 1440px now.
 
 - [ ] The leaderboard's table is 8,134px tall on a phone, because a 7-column row becomes 6 lines
       and there are 55 of them. "Good at" is four dots and "Weights" is "17 GB"; either pair of
       short columns could share a line and save about a line a row. `stack()` would need to be
       told which columns are short enough to sit together, and the grid rules would place them on
-      the same row. Only worth doing if the length reads as a problem — nothing is hidden.
+      the same row. Only worth doing if the length reads as a problem — nothing is hidden. The
+      same page is now 4,208px on a desktop, up from 3,377, which is the price of showing the two
+      columns it used to hide; that one is not worth chasing.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -227,6 +226,74 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — a tablet stops swiping, and the leaderboard shows all seven columns
+
+Both PRs were read first, as the notes above ask. **PR #1 and PR #2 are both still open, both
+still ready for review**, and both still merged cleanly against main at the start of this run.
+Ryan has not been pinged about either, per the standing rule.
+
+Took the item the last run said to continue, the band above 640px. Commit `8a82197`, pushed to
+main.
+
+**Measured first, and the item's own figures came back exactly**: rendering all 188 pages in
+Chromium and reading every table's geometry gave 223 of the 362 tables scrolling at 700px, 122 at
+800px and 34 at 900px, the same numbers the last run recorded. Two things it had not measured:
+**250 scroll at 660px**, just above the phone breakpoint, which is the worst point on the whole
+range; and **one table scrolls at every width there is**, which is the next paragraph.
+
+**The item proposed the wrong fix, and the run did not take it.** Raising the `.board.stack`
+breakpoint to 840px would have given a tablet the phone's block-per-row layout, which spends a
+full-width line on every short cell: the leaderboard would have been about 8,000px tall on a
+screen with room for a seven-column table. A window between a phone and a full page still reads a
+table as a table. So the table stays a table between 641 and 1023px and **every cell wraps**
+instead — 1024px being the window at which the page first gets its whole 980px measure. Figures
+and quantisation labels keep their line, because half a number is worse than half a name. That
+alone took every table in the band to zero, and the comparison split needed no change at all,
+because the three-way split it was measured against only ever applied below 640px.
+
+**The leaderboard was hiding two columns on every screen, desktops included.** It names two
+machines a row, in "Cheapest machine that runs it" and "Next down", and both names were held to
+one line, so the table wanted **1253px against the 936px a page is ever given**. `.doc-main` caps
+at 980px, so no window was ever wide enough: at 1440px the last two columns sat behind a sideways
+scroll, cut mid-word, on the site's main list page. Machine names, class names and the rival link
+wrap at every width now, and the table comes out at exactly 936px. A memory figure like "17 GB"
+still never breaks.
+
+Which turned up a smaller thing worth naming: with the class column narrow, **"Haiku-class" broke
+at its own hyphen**, "Haiku-" over "class", on about forty rows. `word-break: keep-all` does not
+stop a hyphen break in Chromium — measured, not assumed — so `tierLabel()` holds a one-word tier
+label in a `nobreak` span while a label that is a phrase still wraps between its words. Keeping
+that label whole also redistributed the columns and left the page **shorter** than the first
+attempt, 3,543px of table against 4,101.
+
+**Verified.** All 188 pages rendered at 320, 360, 390, 430, 540, 600, 641, 700, 768, 860, 960,
+1023, 1024, 1280 and 1440px: **0 of the 362 tables scroll sideways and none has any content past
+its own edge**, at any of them, against 250 at 660px and 223 at 700px before. Then built the whole
+set from a worktree at `origin/main` and compared every page as a picture:
+
+- **On a phone nothing moves.** A geometry diff at 390px puts every element of every page at the
+  same pixel it was at. 45 pages differ in the raster by the new span around the tier label
+  alone — 670 differing pixels out of 1.85 million on the worst of them, all inside the label's
+  own line.
+- **On a desktop the leaderboard is the only page that changes**, at 1100px and at 1440px. It
+  grows from 3,377 to 4,208px in exchange for the two columns it was hiding. The 33 hardware
+  pages that show in the comparison differ by 46 pixels each, which is the same label span.
+
+Read `/leaderboard/`, `/best/`, a model page, a machine page and a comparison as pictures at 700,
+860, 1000 and 1100px, light and dark, before committing.
+
+`npm test` 156 passing (6 new), `npm run typecheck` clean, and the full `npm run build` including
+`build:functions`, which found its font. Each new test was proved by breaking what it holds and
+watching it fail by name: the band's bounds, its wrapping rule, its exception for figures, the
+nowrap on machine names put back, and `tierLabel()` in both directions.
+
+**Continue next:** PR #1 almost certainly needs its merge repaired again — this run touched
+`public/page.css`, `src/pagekit.ts` and `scripts/build-pages.ts`, which is exactly what that
+branch touches — so check it before anything else and fix it if so. After that, and while both
+PRs wait, the top live item on main is the graphics-card pages opening "Can a NVIDIA GeForce RTX
+3090, 24GB run local LLMs?", which wants "an" and reads as a typo on the first line of seven
+pages. If PR #1 has merged, the next question page, "best GPU for local LLMs", comes first.
 
 ### 2026-09-17 — a phone stops swiping to find the pay-back
 
