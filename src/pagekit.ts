@@ -75,6 +75,30 @@ export function lowerFirst(s: string): string {
 }
 
 /**
+ * English picks between "a" and "an" from the sound a name opens with, not the
+ * letter, and a machine name leads with a maker about as often as with a word.
+ * NVIDIA and AMD are read out letter by letter, so both open on a vowel sound
+ * and want "an"; Radeon and Mac are read as words and want "a". So a name set
+ * in capitals is taken as an initialism and answered on the name of its first
+ * letter — eff, aitch, em and the rest start with a vowel sound — and anything
+ * else is answered on its first letter. A capitalised name read as a word, the
+ * way RAM is, would come out wrong; there is none in the data, and the test
+ * over every machine on the site is what keeps it that way.
+ */
+const SPELT_OUT = /^[A-Z][A-Z0-9]*$/;
+const LETTERS_NAMED_WITH_A_VOWEL = 'AEFHILMNORSX';
+/** Vowels read as consonants: a unified machine, a one-off, a EULA. */
+const SOUNDS_LIKE_A_CONSONANT = /^(?:uni|use|usa|usu|uti|ubi|eu|one|once)/i;
+
+export function indefiniteArticle(name: string): 'a' | 'an' {
+  const word = name.trim().split(/[\s,]+/)[0] ?? '';
+  if (!word) return 'a';
+  if (SPELT_OUT.test(word)) return LETTERS_NAMED_WITH_A_VOWEL.includes(word[0]) ? 'an' : 'a';
+  if (SOUNDS_LIKE_A_CONSONANT.test(word)) return 'a';
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
+
+/**
  * Apple sells the Macs and the graphics cards carry their maker's name in the
  * family. A Strix Halo box is somebody else's machine built around an AMD chip,
  * and that somebody leads the chip field, which is where the box is named.

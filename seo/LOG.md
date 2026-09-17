@@ -11,11 +11,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now gone un-mergeable twice in one day** — once during the afternoon, once while it
-      sat between 17:38 and 23:22 — and both times a run merged main into it. A future run that
-      finds it still open should re-check that it still merges before doing anything else: a
-      waiting branch does not stay mergeable on its own, and this one has the worst of it, because
-      it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly every run edits.
+      **It has now needed its merge repaired five times**, most recently at 03:39 on 2026-09-17.
+      A future run that finds it still open should re-check that it still merges before doing
+      anything else: a waiting branch does not stay mergeable on its own, and this one has the
+      worst of it, because it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly
+      every run edits. Re-measure `/how-much-memory/`'s tables over HTTP after each repair too —
+      the 2026-09-17 repair found three of them behind a sideways scroll on a desktop.
 
 - [ ] Merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the calculator's own
       head: self-hosted fonts and the home page's `WebSite` markup. **Ryan marked it ready for
@@ -215,10 +216,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       edge, so the fix is a margin the card passes in rather than a change to the renderer.
       Turned up while fixing the card's own text on 2026-09-17.
 
-- [ ] Every graphics card page opens "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?" — "a"
-      before a label that wants "an". It reads as a typo on the first line of the page, on seven
-      pages. The h1 in `hardwarePage()` is where it is built; the rule has to cover the letters
-      pronounced with a vowel sound (an NVIDIA, an AMD, an RTX), not just the vowels.
+- [x] Every graphics card page opened "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?".
+      Done 2026-09-17. `indefiniteArticle()` reads a name set in capitals as an initialism and
+      answers on the name of its first letter, so "an NVIDIA" and "an AMD" but still "a DGX" and
+      "a Radeon". Seven h1s changed and nothing else on the site; `checkArticles()` stops the
+      build if a machine page opens with the wrong article.
 
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
@@ -226,6 +228,77 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — seven machine pages stop opening on a typo
+
+**PR #1 was un-mergeable again and was repaired first**, which is what the last entry predicted:
+that run touched `public/page.css`, `src/pagekit.ts` and `scripts/build-pages.ts`, and the branch
+touches the last two. Both conflicts were import lists, in `scripts/build-pages.ts` and
+`tests/pagekit.test.ts`, and both sides were kept in each: the branch's memory helpers and the
+`tierLabel` main's leaderboard now uses. PR #2 still merges clean and was not touched. Ryan has
+not been pinged about either, per the standing rule. This is the fifth repair PR #1 has needed
+while it waits. **A second agent session was repairing the same branch at the same time**; it
+verified this run's resolution and threw its own away, and its note in the entry below is worth
+reading before assuming a branch is where you left it.
+
+**The merge turned up a real defect on that branch, and it was fixed in the same run.** Main's
+leaderboard fix lets a machine name, a model name and a class wrap at any width, and it is keyed
+off the `c-hw` and `c-model` classes those cells carry. Three cells on `/how-much-memory/` named a
+machine or a model without them, so they were still held to one line: three of that page's tables
+wanted 981px, 951px and 939px against the 936px a page is ever given, and at every width from
+1024px up "Cheapest machine that runs it" sat behind a sideways scroll — on the page that exists
+to answer which machine runs what. Three classes added. Pushed as `832c0fa`; on the repaired
+branch all 189 pages come back at 0 of 368 tables scrolling at 320, 390, 430, 700, 860, 1024, 1280
+and 1440px. Both PR branches merge cleanly again as of 03:39 UTC.
+
+**A measurement mistake worth not repeating.** The first pass rendered the built pages over
+`file://` and reported 27 tables scrolling at 390px on main, which would have been a regression
+shipped an hour earlier. It was not: the pages link `/page.css` by absolute path, which `file://`
+resolves to the root of the filesystem, so **no stylesheet loaded at all** and the figures were of
+an unstyled page. Served over HTTP instead, main comes back at 0 of 362 at every width, exactly as
+the last run recorded. Any future run measuring layout must serve `public/` over HTTP —
+`python3 -m http.server --directory public` is enough — and should check a known-good build first.
+Playwright is not a dependency of this repo; `npm i playwright` into a scratch directory with
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`, launched at
+`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, is what worked.
+
+Then the run's own item, the article on the machine pages. Commit `963f9a3`, pushed to main.
+
+**What was wrong.** Seven pages opened on "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?" —
+six NVIDIA cards and one AMD card — in the h1, at the top of the page, in the largest type on it.
+English picks the article from the sound a name opens with, not the letter, and NVIDIA and AMD are
+read out letter by letter, so both open on a vowel.
+
+`indefiniteArticle()` in `src/pagekit.ts` reads the first word of a name. A word set in capitals is
+taken as an initialism and answered on the name of its first letter — eff, aitch, em, en, ess and
+the rest start with a vowel sound — so "an RTX", "an HP", "an M4", but "a DGX" and "a GPU".
+Anything else is read as a word, which is what keeps "a Radeon" and "a Mac" right despite the
+letters they start with, and the vowels read as consonants are covered too: a unified machine, a
+one-off. The one thing the rule cannot get right is a capitalised name read as a word, the way RAM
+is; there is none in the data, and the test below is what keeps it that way.
+
+**Swept the whole site first rather than trusting the item's count.** Stripped the markup from all
+188 pages and checked every "a"/"an" against the sound of the word after it: 7 wrong, all of them
+this h1. Titles and meta descriptions were clean, because a description drops the maker prefix and
+says "fit a GeForce RTX 3090, 24GB", which is right.
+
+**Verified.** Built the whole set from a worktree at `origin/main` and compared all 188 pages:
+**7 differ, each by exactly one line, the h1**, and the other 181 are byte-identical. Read the
+RTX 3090 page as a picture before committing. `npm test` 162 passing (6 new), `npm run typecheck`
+clean, and the full `npm run build` including `build:functions`, which found its font.
+
+Each new test was proved by breaking what it holds and watching it fail by name — five mutations:
+the capitals rule removed, the consonant-sounding vowels removed, the helper reading a whole label
+instead of its first word, a family dropped from the hand-written table, and the h1 put back to a
+hardcoded "a", which `checkArticles()` caught by naming all seven pages. The table of expected
+articles in the test is written out by hand rather than derived, so the rule cannot pass by
+agreeing with itself, and a separate test fails if the data ever grows a family the table does not
+cover — a new maker has to be read out loud by a person before it ships.
+
+**Continue next:** check PR #1 merges again before anything else; it has needed repair on five of
+the last six runs, and the `/how-much-memory/` page is worth re-measuring over HTTP each time main
+changes the table rules. While both PRs wait, the top live item on main is the `/compare/` index,
+which is a new page type and therefore a PR. After that, the leaderboard's height on a phone.
 
 ### 2026-09-17 — a tablet stops swiping, and the leaderboard shows all seven columns
 
@@ -287,6 +360,28 @@ Read `/leaderboard/`, `/best/`, a model page, a machine page and a comparison as
 `build:functions`, which found its font. Each new test was proved by breaking what it holds and
 watching it fail by name: the band's bounds, its wrapping rule, its exception for figures, the
 nowrap on machine names put back, and `tierLabel()` in both directions.
+
+**Deploy confirmed.** One push for the code and the log together. **Run 59, on `6eb28ef`,
+finished green at 03:36 UTC** with `npm ci`, `npm test` and the full `npm run build` passing on the
+runner, and republished. The site's own pages still cannot be read from here, so this is the
+runner's word rather than a fetch of sunkcost.ai.
+
+**Two agent sessions were running at once, and both repaired PR #1.** The push broke that branch's
+merge as expected, and while this run was resolving it, session `01LU4YD…` resolved the same two
+import lists and pushed first, at 03:38. Its resolution is the same one — both sides kept — and its
+fix for the page goes further than this run's did: three cells on `/how-much-memory/` named a
+machine or a model without carrying `c-hw` or `c-model`, so main's new wrapping rule did not reach
+them and three of that page's tables wanted up to 981px against 936px, hiding "Run the numbers" on
+every desktop. It classed all three; this run had classed one. **So this run threw its own commit
+away and verified theirs instead**: on `832c0fa`, `npm test` 169 passing, typecheck clean, 189
+pages built, and all 189 rendered at 320, 390, 641, 700, 860, 1023, 1100 and 1440px — **0 of the
+368 tables scroll sideways and none has content past its own edge**. Both PR branches merge
+cleanly against main as of 03:45 UTC.
+
+A note for whoever runs next, because nothing else in this log has had to say it: **another
+session may be working at the same time**. Fetch before assuming a branch is where you left it,
+and read what landed before redoing it. Neither session lost work here, but only because the
+second one checked.
 
 **Continue next:** PR #1 almost certainly needs its merge repaired again — this run touched
 `public/page.css`, `src/pagekit.ts` and `scripts/build-pages.ts`, which is exactly what that

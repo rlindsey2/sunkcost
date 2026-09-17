@@ -2,10 +2,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   brandOf, calcLink, cheapestRunsBoth, cheapestThatHolds, computeView, familyHeading, familyRange, fitsOf,
-  fmtDuration, fmtGb1, fmtNum, fmtUsd, gbRange, hardwareProduct, jsonLd, kvWorking, machinesConsidered,
-  machineVerdict, median, modelsInBand, modelVerdict, otherQuantisations, pageGraph, pageShell, priceRivals,
-  priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps,
-  speedWithBasis, stack, strongestShared, tierLabel, tierName, FONT_PRELOAD, SIZE_BANDS,
+  fmtDuration, fmtGb1, fmtNum, fmtUsd, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd,
+  kvWorking, machinesConsidered, machineVerdict, median, modelsInBand, modelVerdict, otherQuantisations,
+  pageGraph, pageShell, priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere,
+  shortHardwareLabel, shownTps, speedWithBasis, stack, strongestShared, tierLabel, tierName, FONT_PRELOAD,
+  SIZE_BANDS,
   type LdNode,
 } from '../src/pagekit';
 import { kvCacheGb } from '../src/fit';
@@ -654,5 +655,60 @@ describe('tables on a phone', () => {
     expect(() => stack('<table class="board">\n<tbody><tr><td>x</td></tr></tbody>\n</table>', { fig: 1 })).toThrow(/name its columns/);
     expect(() => stack(table, { fig: 5 })).toThrow(/no column 5/);
     expect(() => stack(table, { fig: 0 })).toThrow(/no column 0/);
+  });
+});
+
+describe('the article in front of a machine name', () => {
+  // Written out by hand, not derived, so a family whose name the rule reads
+  // wrongly cannot pass by agreeing with itself. Every family the data holds
+  // has to appear here, which is the next test.
+  const BY_FAMILY: Record<string, 'a' | 'an'> = {
+    'Mac mini': 'a',
+    'Mac Studio': 'a',
+    'MacBook Air': 'a',
+    'MacBook Pro': 'a',
+    'DGX Spark': 'a',
+    'Strix Halo': 'a',
+    NVIDIA: 'an',
+    AMD: 'an',
+  };
+
+  it('covers every family on the site, so a new one has to be read out loud first', () => {
+    const families = [...new Set(data.hardware.map((h) => h.family))].sort();
+    expect(families).toEqual(Object.keys(BY_FAMILY).sort());
+  });
+
+  it('gives every machine the article a person would say', () => {
+    for (const h of data.hardware) {
+      expect([hardwareLabel(h), indefiniteArticle(hardwareLabel(h))]).toEqual([
+        hardwareLabel(h),
+        BY_FAMILY[h.family],
+      ]);
+    }
+  });
+
+  it('spells out a name set in capitals and answers on its first letter', () => {
+    // en-VID-ia, ay-em-dee, are-tee-ex, aitch-pee, em-four: all open on a vowel
+    for (const n of ['NVIDIA', 'AMD', 'RTX', 'HP', 'M4', 'IBM', 'SSD']) expect(indefiniteArticle(n)).toBe('an');
+    // dee-gee-ex, gee-pee-you, bee-em-double-you
+    for (const n of ['DGX', 'GPU', 'BMW', 'TPU']) expect(indefiniteArticle(n)).toBe('a');
+  });
+
+  it('reads a name that is a word as a word, whatever letter it starts with', () => {
+    for (const n of ['Radeon', 'Mac', 'Strix Halo', 'Framework Desktop', 'MacBook Pro']) {
+      expect(indefiniteArticle(n)).toBe('a');
+    }
+    for (const n of ['Apple', 'Intel', 'Arc A770', 'EVO-X2']) expect(indefiniteArticle(n)).toBe('an');
+  });
+
+  it('says "a" in front of a vowel that is read as a consonant', () => {
+    for (const n of ['unified memory box', 'one-off build', 'usable machine']) {
+      expect(indefiniteArticle(n)).toBe('a');
+    }
+  });
+
+  it('reads only the first word, because the rest is not what you hear next', () => {
+    expect(indefiniteArticle('Mac mini M6, 16GB')).toBe('a');
+    expect(indefiniteArticle('NVIDIA GeForce RTX 3090, 24GB')).toBe('an');
   });
 });
