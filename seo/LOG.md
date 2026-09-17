@@ -239,15 +239,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       GPU-count question rather than a memory one and would want its own wording. Worth doing only
       after the question pages; three of the five need a price that does not exist yet.
 
-- [ ] **A stand-in power figure prints bare on every comparison page but the 12 new ones.** 30 of
-      the 56 machines carry `load_watts_status: "stand_in"` — every 2026 Apple machine, because
-      Apple has not published figures for them — and the electricity in every pay-back figure on
-      the site comes from it. The calculator's own panel says "(stand-in figure)" and a machine page
-      says "(stand in)" with the note, but a comparison page's Power row prints "145 W" and stops.
-      The generation pages had to say it, because there the stand-in is the *other column's*
-      figure, and that is what turned this up. The fix is one span on the row, the way the
-      card-only prices are marked, plus a guard: cheap, and it is the same class of honesty as the
-      card prices were.
+- [x] **A stand-in power figure prints bare on every comparison page but the 12 new ones.** Done
+      2026-09-17, and the item undersold it: the bare figure was 43 of the 55 head-to-heads that
+      print one, and four same-silicon pages had a worse version of the same fault — they asserted
+      "Both draw 133 W under load" where the data measured one box and borrowed that very figure
+      for the other, so the sentence claimed a measurement nobody took and the equality was
+      circular. The figure is marked at the row now, the way a card-only price is, each page says
+      in words what a borrowed number does and does not tell you, and `checkStandInPower()` holds
+      three claims. The run entry below has the figures and the three breaks that proved the guard.
+
+- [ ] The calculator's assumptions panel still prints the data's own key as English. The generated
+      pages stopped on 2026-09-17: `powerSourceLabel()` turns `third_party_measured` into
+      "measured by a third party" and `stand_in` into "stand-in", where both used to arrive as
+      "third party measured" and "stand in" from a `replace(/_/g, ' ')`. `src/render.ts:542` still
+      runs that same replace, so the calculator's own Power under load line reads "140 W, **stand
+      in**". `powerSourceLabel()` is exported from `src/pagekit.ts`, which `render.ts` does not
+      import and should not — pagekit is the build's module, not the bundle's. So the fix wants a
+      shared home for four words, `src/format.ts` being the file both already import. It is the
+      calculator, so it is a pull request rather than a push, and it is small enough to ride with
+      the next one that touches that file rather than justify a branch of its own.
 
 - [ ] The assumptions note on every machine comparison says "Graphics cards are priced as the card
       alone, so add the PC around one before comparing it with a complete computer" — including on the
@@ -526,6 +536,99 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-17 — the watts nobody measured stop reading as measurements
+
+**Took the top open backlog item that goes to main.** The item above it on the list is the
+question pages, top of the backlog by traffic and unblocked for six runs now; every one of those
+six left it for the same reason, which is that a new page type is a pull request and PR #3 has
+cost thirteen merge repairs in a day. This run made the same call and it should be said plainly
+so the next run can overrule it: nothing changed this hour to make that trade better, and the
+item below it was one the last entry itself named as the cheapest honest thing left.
+
+**What was wrong, and it was bigger than the item said.** Electricity is the running cost in
+every pay-back sum on this site, and for **30 of the 56 machines the data holds no power figure
+for the machine at all** — it borrows the nearest one it has, because Apple has published nothing
+for the 2026 Macs and nobody has put a meter on several of the Strix boxes. The machine pages
+said so and the calculator said so. The comparison pages printed "140 W" and stopped, on **43 of
+the 55 head-to-heads that print one**. The 12 generation pages already said it, because there the
+borrowed figure is the *other column's* own, which is what turned the whole thing up.
+
+**The find of the run, which the item did not know about.** Four same-silicon pages had a worse
+version of the same fault, in prose rather than in a table: they said "**Both draw 133 W under
+load**, and this page prices the electricity into both." The data measured the Framework Desktop
+at 133 W and borrowed that figure for the Beelink, the Minisforum, the Corsair and the HP, so the
+sentence asserted a measurement nobody took and the equality it reported was the data agreeing
+with itself. The MacBook Air pair was the same shape with neither side measured: two laptops
+sharing a desktop Mac mini's stress figure, printed as "Both draw 65 W under load". Those pages
+now say the power row is not two measurements, name which side is borrowed, and say the matching
+is a fact about the data rather than about the machines.
+
+**What the pages say.** The figure carries the marker at the row, `<span class="c-quant">stand-in
+</span>`, which is exactly how a card-only price is marked and which the compare table already
+drops onto its own line on a phone. Under the table, the 43 pages that had nothing get a note
+that does three things: it says the figure is not a figure for that machine, it says the machine's
+own page names what it borrows and why, and it says that borrowed number is what prices the
+electricity in its own pay-back column. Three shapes, by what the data holds: one side borrowed,
+both sides borrowed, and both borrowed at the same number. That last one splits again — two memory
+tiers of one machine share a chip, so equal watts is what a reader expects there and calling it a
+non-finding would be answering nobody's question; those pages say the row shows one borrowed
+figure printed twice.
+
+**Where it is not said twice.** A generation page and a same-silicon page already explain their
+own power row further down, at more length and with more to say, so the note under the table is
+suppressed on both rather than repeated. The marker still goes on the row, so the reader meets the
+fact at the figure either way.
+
+**The guard.** `checkStandInPower()` holds three claims wherever a power figure prints. The
+comparison row prints exactly what the data says, marker and all, which means a borrowed figure is
+always marked and **a measured figure never wears the marker** — without that second half the
+marker means nothing. Every page carrying a borrowed figure says so in words rather than leaving
+it to a small grey span. And every such comparison says what that number is paying for. All three
+were proved by breaking them: taking the marker off the row failed 55 pages, emptying the note
+failed on "only the marker says so" and on "does not say what its borrowed power figure is paying
+for", and marking every figure failed on the count. Two tests cover the two new helpers.
+
+**A smaller thing fixed on the way.** The machine pages printed the data's own key as English:
+"140 W (stand in)" and "600 W (third party measured)", both from a `replace(/_/g, ' ')`.
+`powerSourceLabel()` writes them as "(stand-in)" and "(measured by a third party)". The
+calculator's own panel still does the old thing, which is the new backlog item above, and it is a
+pull request rather than a push because it is `src/render.ts`.
+
+**Verified**: 205 tests, typecheck clean, 247 pages with every guard passing, and the full
+`npm run build` including `build:og`, `build:share` and `build:functions`. Read a comparison page
+end to end out of `dist/` and all four note shapes rendered before committing, which is where
+three rewrites came from: the one-sided note named the machine three times in four sentences, the
+same-silicon sentence opened "Read the power row with that in mind" two clauses after another
+"that", and the memory-tier pages were being told their equal watts said nothing about either
+machine, which on two tiers of one Mac mini is answering a question nobody asked. Pushed as
+`74db430`; deploy run 109 started at 23:49.
+
+**Then one more line, from re-reading the pushed diff.** The same-silicon branch for a pair whose
+watts differ *and* where a figure is borrowed said "where one figure is a stand-in rather than a
+measurement" — wrong if both sides were borrowed, and it said in one clause what the very next
+sentence says properly. No page reaches that branch today, because the three same-silicon pairs
+with unequal watts have a real figure on both sides, but the same rule applies here as on the
+generation pages: the branch exists because the data will change and the claim must not. It names
+the gap and leaves the caveat to the sentence that explains it.
+
+**PR #3 needed no repair this hour, for the first time since it opened.** The standing lesson on
+that branch is that a clean `git merge-tree` is not enough, so the merge was built and read rather
+than trusted: 248 pages, 134 comparisons, 210 tests, typecheck clean, every guard passing
+including the new one and the branch's own `checkCompareIndex()`. The `/compare/` index prints no
+power figure anywhere and this change adds no comparison and no kind of match-up, so its counts
+and its section copy are untouched. Nothing was pushed to the branch. Ryan was not pinged, per the
+standing rule on that PR.
+
+**Continue next:** the question pages, now the top of the backlog and unblocked for seven runs.
+"best GPU for local LLMs" is still the strongest candidate — nothing on this site filters the list
+to cards, and `/best/` answers by usage rather than by part. It is a new page type, so it is a
+pull request, and the thing to decide first rather than halfway through is whether a second open
+branch is worth it while PR #3 is still open. Worth knowing that PR #3 has now gone one full hour
+without needing a repair, so that cost may be falling. If it is judged too dear again, the
+cheapest items left that go straight to main are the assumptions note's card sentence, which
+answers a question ~30 pages do not raise, and grouping the head-to-head lists on the RTX PRO 6000
+and Mac Studio M5 Max pages.
 
 ### 2026-09-17 — the Macs nobody sells any more meet the ones that replaced them
 

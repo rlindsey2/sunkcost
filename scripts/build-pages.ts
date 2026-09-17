@@ -1861,7 +1861,7 @@ function sameSiliconSection(a: Hardware, b: Hardware, va: View, ctxK: number, fa
   const standIn = [a, b].filter((h) => h.load_watts_status === 'stand_in');
   const onlyGap = wattsDiffer
     ? standIn.length
-      ? `the only other thing between them is the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W in the power row, where one figure is a stand-in rather than a measurement`
+      ? `the only other thing between them is the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W in the power row`
       : `every difference in pay-back on this page comes from that and from the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W between them`
     : 'every difference in pay-back on this page comes from that and nothing else';
   const watts = a.load_watts == null || b.load_watts == null
