@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BEST_CARD, bestBuysCard, LEADERBOARD_CARD, leaderboardCard, listCardSvg, MEMORY_CARD, memoryCard, quickestAt,
+  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, LEADERBOARD_CARD, leaderboardCard, listCardSvg,
+  MEMORY_CARD, memoryCard, quickestAt,
 } from '../src/list-card';
 import { bestUsageLevels } from '../src/best';
-import { bandFit, cheapestThatHolds, fmtGb1, shortHardwareLabel, SIZE_BANDS } from '../src/pagekit';
+import {
+  bandFit, cheapestThatHolds, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS,
+} from '../src/pagekit';
 import { footprintGb } from '../src/fit';
+import { defaultState } from '../src/state';
 import { fmtDuration, fmtGb, fmtTokens, fmtUsd } from '../src/format';
-import { VS_HEIGHT, VS_WIDTH } from '../src/versus-card';
+import { flagshipMachines, hardwarePairs, modelPairs, VS_HEIGHT, VS_WIDTH } from '../src/versus-card';
 import type { Dataset } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
@@ -17,8 +21,9 @@ const data = { hardware, models, throughput, defaults } as unknown as Dataset;
 
 const leaderboard = leaderboardCard(data);
 const best = bestBuysCard(data);
+const compare = compareIndexCard(data);
 const memory = memoryCard(data);
-const cards = [leaderboard, best, memory];
+const cards = [leaderboard, best, compare, memory];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
 /** The same text with the spaces taken out, so a name that wrapped onto two lines still matches. */
@@ -149,6 +154,56 @@ describe('the best buys card', () => {
 
   it('is drawn where the page asks for it', () => {
     expect(BEST_CARD).toBe('/og/best.png');
+  });
+});
+
+describe('the head-to-head card', () => {
+  const st = defaultState(data);
+  const held = (id: string) => {
+    const view = computeView({ ...st, hw: id }, data);
+    return { fits: fitsOf(view).length, of: view.rows.length };
+  };
+  // cheapest first among however many hold the same number, which is the order
+  // the index's own first table is ranked in
+  const ranked = flagshipMachines(data)
+    .map((hw) => ({ hw, ...held(hw.id) }))
+    .sort((a, b) => b.fits - a.fits || a.hw.price_usd! - b.hw.price_usd!);
+  // the three columns, read back off the card: names, prices, and the figure
+  // each row is ranked on
+  const names = [...compare.matchAll(/letter-spacing="-0\.3">([^<]+)</g)].map((m) => m[1]);
+  const prices = [...compare.matchAll(/font-weight="500"[^>]*>([^<]+)</g)].map((m) => m[1]);
+  const values = [...compare.matchAll(/letter-spacing="-0\.4"[^>]*>([^<]+)</g)].map((m) => m[1]);
+  const shown = ranked.slice(0, values.length);
+
+  it('lists the machines the comparison pages are cut from, the fullest first', () => {
+    expect(values.length).toBeGreaterThan(3);
+    expect(values.length).toBeLessThanOrEqual(ranked.length);
+    expect(noSpace(names.join(''))).toBe(noSpace(shown.map((r) => shortHardwareLabel(r.hw)).join('')));
+  });
+
+  it('counts what a machine holds against the total the machine pages count against', () => {
+    expect(values).toEqual(shown.map((r) => String(r.fits)));
+    // every machine is counted against the same set of models, and it is the
+    // current ones rather than every model the leaderboard ranks
+    expect(new Set(ranked.map((r) => r.of)).size).toBe(1);
+    expect(ranked[0].of).toBeLessThan(data.models.length);
+    expect(text(compare)).toContain(`of ${ranked[0].of}`);
+  });
+
+  it('says which prices buy a card rather than a computer', () => {
+    expect(prices).toEqual(shown.map((r) => priceWithScopeText(r.hw)));
+    for (const r of shown.filter((x) => x.hw.price_scope === 'card_only'))
+      expect(text(compare)).toContain(`${priceWithScopeText(r.hw)}`);
+  });
+
+  it('counts the match-ups the index lists', () => {
+    expect(text(compare)).toContain(`${ranked.length} machines`);
+    expect(text(compare)).toContain(`${hardwarePairs(data).length} machine pairs`);
+    expect(text(compare)).toContain(`${modelPairs(data).length} model pairs`);
+  });
+
+  it('is drawn where the page asks for it', () => {
+    expect(COMPARE_CARD).toBe('/og/compare.png');
   });
 });
 

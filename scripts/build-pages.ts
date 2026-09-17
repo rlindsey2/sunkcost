@@ -24,7 +24,7 @@ import {
   flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath,
   modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
+import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -320,6 +320,24 @@ function checkTables() {
   }
   const stacked = meta.reduce((n, p) => n + (p.html.match(/<table class="board stack"/g)?.length ?? 0), 0);
   console.log(`  ${stacked} tables read as a block on a phone, the rest split their width`);
+}
+
+/**
+ * The head-to-head index is the only page that lists every comparison, so a
+ * comparison it leaves out is one a reader can reach only by already knowing
+ * which two things to start from. Adding a machine family or a model adds
+ * comparisons, and this is what stops them being added quietly.
+ */
+function checkCompareIndex() {
+  const index = meta.find((p) => p.path === '/compare/');
+  if (!index) throw new Error('no head-to-head index was written');
+  const comparisons = paths.filter((p) => p.startsWith('/compare/') && p !== '/compare/');
+  const missing = comparisons.filter((p) => !index.links.includes(p));
+  if (missing.length) {
+    console.error(missing.slice(0, 5).map((p) => `  the head-to-head index does not list ${p}`).join('\n'));
+    throw new Error(`${missing.length} comparisons are missing from the head-to-head index`);
+  }
+  console.log(`  the head-to-head index lists all ${comparisons.length} comparisons`);
 }
 
 /**
@@ -1161,7 +1179,7 @@ function leaderboard(): string {
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>.</p>
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>.</p>
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
@@ -1242,7 +1260,7 @@ ${stack(`<table class="board">
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
 <p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
-<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions.</p>
+<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, or set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>.</p>
 </article>`;
 
   return pageShell(
@@ -1736,7 +1754,7 @@ ${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price else
 </tbody>
 </table>`, { fig: 4 })}
 <p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.</p>` : ''}
-${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.get(hw.id)!.map((h) => `<a href="${esc(h.href)}">vs ${esc(shortHardwareLabel(h.other))}</a>`).join(' · ')}</p>` : ''}
+${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.get(hw.id)!.map((h) => `<a href="${esc(h.href)}">vs ${esc(shortHardwareLabel(h.other))}</a>`).join(' · ')} · <a href="/compare/">all of them</a></p>` : ''}
 
 <h2>The specifics</h2>
 <dl class="specs">
@@ -2147,7 +2165,7 @@ ${usageSection}
 ${extraSection}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. Change any of it in the calculator.</p>
-<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
+<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/compare/">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
 </article>`;
   return pageShell(
     {
@@ -2212,8 +2230,11 @@ ${extraSection}
       ),
       canonical: hardwareComparePath(a, b),
       ogImage: versusCardPath(hardwareComparePath(a, b)),
+      // the index is the step above a match-up, so the trail a search result
+      // prints reads Sunk Cost / Head to head / this pair
       crumbs: [
         { href: '/', label: 'Sunk Cost' },
+        { href: '/compare/', label: 'Head to head' },
         { href: '#', label: heading },
       ],
     },
@@ -2782,7 +2803,7 @@ ${usageSection}
 ${machinesSection}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat.${race?.shortened ? ` The two sections that need one machine to hold both models are at ${raceK}k of context instead, which is the longest on the calculator's list where one does.` : ''} Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
-<p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
+<p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="/compare/">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
 </article>`;
   return pageShell(
     {
@@ -2800,7 +2821,140 @@ ${machinesSection}
       ]),
       canonical: modelComparePath(a, b),
       ogImage: versusCardPath(modelComparePath(a, b)),
-      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Models' }, { href: '#', label: `${a.display_name} vs ${b.display_name}` }],
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/compare/', label: 'Head to head' }, { href: '#', label: `${a.display_name} vs ${b.display_name}` }],
+    },
+    body,
+    data,
+  );
+}
+
+/* ------------------------- the head-to-head index ------------------------- */
+
+/**
+ * One page listing every comparison this site writes. Somebody typing
+ * "mac studio vs rtx 5090" wants the match-up, not either machine's own page,
+ * and until now a comparison could only be found from the two things it
+ * compares. Every figure in a row is read from the helpers the comparison page
+ * itself uses, so the index cannot promise something the page behind it does
+ * not say.
+ */
+function compareIndex(): string {
+  const st = defaultState(data);
+  const ctxK = Math.round(st.ctx / 1024);
+  const modelCount = hwViews.values().next().value!.rows.length;
+
+  // the like-for-like race the comparison page sets out further down itself:
+  // both machines on the strongest model each of them holds
+  const race = (s: { model: Model; a: ModelRow; b: ModelRow } | null) => {
+    if (!s) return '<span class="dim">nothing on this list fits both</span>';
+    const ta = shownTps(s.a);
+    const tb = shownTps(s.b);
+    if (ta == null || tb == null) return '<span class="dim">unknown</span>';
+    const basis = [s.a.throughput.measurement, s.b.throughput.measurement];
+    const how = basis.every((m) => m === 'measured')
+      ? ''
+      : basis.every((m) => m !== 'measured')
+        ? ', both estimated'
+        : ', one measured, one estimated';
+    return `${fmtNum(ta, ta < 10 ? 1 : 0)} vs ${fmtNum(tb, tb < 10 ? 1 : 0)} tok/s <span class="dim">on ${esc(s.model.display_name)}${how}</span>`;
+  };
+
+  const pairs = hardwarePairs(data).map(([a, b]) => {
+    const va = hwViews.get(a.id)!;
+    const vb = hwViews.get(b.id)!;
+    return { a, b, va, vb, href: hardwareComparePath(a, b), label: `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}` };
+  });
+  // a reader looking for their own machine reads down the first column, so the
+  // list is alphabetical rather than in the order the build happens to cut it
+  const machines = [...pairs].sort((x, y) => x.label.localeCompare(y.label));
+
+  const machineRows = machines
+    .map(({ a, b, va, vb, href, label }) => `<tr>
+  <td class="c-hw"><a href="${esc(href)}">${esc(label)}</a></td>
+  <td class="c-pair">${priceWithScope(a)} vs ${priceWithScope(b)}</td>
+  <td class="c-pair">${a.unified_memory_gb} GB vs ${b.unified_memory_gb} GB</td>
+  <td>${fitsOf(va).length} vs ${fitsOf(vb).length}</td>
+  <td class="c-pair">${race(strongestShared(va, vb))}</td>
+</tr>`)
+    .join('');
+
+  const modelRows = modelPairs(data)
+    .map(([a, b]) => {
+      const ra = runnersFor(a, data);
+      const rb = runnersFor(b, data);
+      const shared = cheapestRunsBoth(a, b, ra, rb);
+      return `<tr>
+  <td class="c-model"><a href="${esc(modelComparePath(a, b))}">${esc(a.display_name)} vs ${esc(b.display_name)}</a></td>
+  <td class="c-score">${a.frontier_equivalent!.score} vs ${b.frontier_equivalent!.score}</td>
+  <td class="c-pair">${fmtGb(a.weights_gb)} vs ${fmtGb(b.weights_gb)}</td>
+  <td class="c-hw">${shared ? `<a href="/hardware/${esc(shared.hw.id)}/">${esc(hardwareLabel(shared.hw))}</a> ${priceWithScope(shared.hw)}` : '<span class="dim">none listed</span>'}</td>
+  <td>${shared ? `<a href="${esc(calcLink({ hw: shared.hw.id, model: a.id }, data))}">Open in the calculator</a>` : ''}</td>
+</tr>`;
+    })
+    .join('');
+
+  // the index's own answer, so the page says something before it starts listing.
+  // Every machine the table above puts against another one, which is the family
+  // flagships plus the graphics cards the card grid brings in, and each of them once
+  const compared = [...new Map(pairs.flatMap(({ a, b }) => [[a.id, a], [b.id, b]] as const)).values()];
+  const ranked = compared
+    .map((hw) => ({ hw, fits: fitsOf(hwViews.get(hw.id)!).length }))
+    .sort((x, y) => y.fits - x.fits || x.hw.price_usd! - y.hw.price_usd!);
+  // sorted by what each holds and then by price, so the first machine is the
+  // cheapest of however many reach the top of the list rather than one of a tie
+  const most = ranked[0];
+  const atMost = ranked.filter((r) => r.fits === most?.fits);
+  const cheapest = [...ranked].sort((x, y) => x.hw.price_usd! - y.hw.price_usd!)[0];
+
+  // the machines compared here are no longer all machines you can buy: the generation
+  // rule brings in discontinued ones, whose price in this data is the one they launched
+  // at. Naming one as the cheapest that does something, with no more said, would point a
+  // reader at a machine nobody sells.
+  const launchNote = (xs: (Hardware | undefined)[]) => {
+    const older = [...new Map(
+      xs.filter((h): h is Hardware => !!h && (h.generation ?? 'current') === 'previous').map((h) => [h.id, h]),
+    ).values()];
+    if (!older.length) return '';
+    return older.length === 1
+      ? ` That is the price the ${esc(shortHardwareLabel(older[0]))} launched at, before it was discontinued.`
+      : ' Both of those prices are the ones those machines launched at, before they were discontinued.';
+  };
+
+  const body = `<article class="prose">
+<h1>Every head-to-head: machine against machine, model against model</h1>
+<p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a> or the <a href="/leaderboard/">leaderboard</a>.</p>
+${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
+
+<h2>Machine against machine</h2>
+<p>Five kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top; and every discontinued machine against the one that replaced it, which is the upgrade question. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+${stack(`<table class="board">
+<thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
+<tbody>${machineRows}</tbody>
+</table>`, { fig: 3, labels: { 4: 'Both speeds' } })}
+
+<h2>Model against model</h2>
+<p>Each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds. The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
+${stack(`<table class="board">
+<thead><tr><th>Match-up</th><th>Score</th><th>Weights</th><th>Cheapest machine that runs both</th><th></th></tr></thead>
+<tbody>${modelRows}</tbody>
+</table>`, { fig: 1, labels: { 3: 'Cheapest' } })}
+
+<p class="note">Every figure here is the one the page behind it prints, at the same defaults: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. A speed that says <i>estimated</i> is worked out from memory bandwidth rather than measured. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. Scores are the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}. Each calculator link opens the machine in its row running the first model named; change any of it once you are there.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([
+        'Compare local LLM hardware and models, head to head',
+        'Compare local LLM hardware and models',
+      ]),
+      description: descOf([
+        `${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups in one list: price, memory, speed and the cheapest machine that runs both.`,
+        `${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups in one list, with price, memory and speed on each.`,
+      ]),
+      canonical: '/compare/',
+      ogImage: COMPARE_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/compare/', label: 'Head to head' }],
     },
     body,
     data,
@@ -2816,7 +2970,10 @@ for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
 // comparisons: the flagship current config of each family against every other,
-// the pairs `headToHeads` above already worked out and linked from both sides
+// the pairs `headToHeads` above already worked out and linked from both sides,
+// and one index in front of them so a match-up can be found without knowing
+// which two things to start from
+write('/compare/', compareIndex());
 for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), comparePage(a, b));
 
 // model head-to-heads: each model against the next one down the leaderboard,
@@ -2963,6 +3120,7 @@ checkCounts();
 checkCardPrices();
 checkTables();
 checkArticles();
+checkCompareIndex();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();

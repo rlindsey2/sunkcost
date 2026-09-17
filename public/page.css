@@ -156,6 +156,10 @@ a:hover { color: var(--ink); }
    given: "Cheapest machine that runs it" sat off the right edge on every
    screen there is. A memory figure like "17 GB" still never breaks. */
 .board .c-model, .board .answer-v, .board .c-hw, .board .c-tier, .board .c-vs { white-space: normal; }
+/* A cell holding both sides of a match-up — two prices, two memory sizes, two
+   speeds with a "vs" between them — is prose twice over, so it wraps like
+   prose rather than holding one line and pushing the column beside it out. */
+.board .c-pair { white-space: normal; }
 .board thead th { text-align: left; font-size: 11.5px; font-weight: 500; color: var(--faint); padding: 8px 10px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
 .board td, .board tbody th { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .board tbody th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; }

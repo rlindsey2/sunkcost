@@ -1,16 +1,21 @@
 /**
  * The share card for the pages that answer with a list rather than with one
- * pairing (1200×630): the leaderboard, the best buys and the memory question.
- * One row per entry, the same rows and the same figures the page itself shows.
+ * pairing (1200×630): the leaderboard, the best buys, the head-to-head index and
+ * the memory question. One row per entry, the same rows and the same figures the
+ * page itself shows.
  *
  * Every value is passed in by the build from data/*.json. Nothing is computed,
  * rounded or worded differently from the page it belongs to.
  */
 import { esc, fmtDuration, fmtGb, fmtTokens, fmtUsd } from './format';
 import { bestByTier, bestUsageLevels, type Combo } from './best';
-import { bandFit, fmtGb1, shortHardwareLabel, SIZE_BANDS, type BandFit } from './pagekit';
 import {
-  clampText, fitLines, wrapText, DEEP, DIM, EM, EM_BOLD, HAIR, INK, STEEL, VS_HEIGHT, VS_WIDTH, WATER,
+  bandFit, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS, type BandFit,
+} from './pagekit';
+import { defaultState } from './state';
+import {
+  clampText, fitLines, flagshipMachines, hardwarePairs, modelPairs, wrapText,
+  DEEP, DIM, EM, EM_BOLD, HAIR, INK, STEEL, VS_HEIGHT, VS_WIDTH, WATER,
 } from './versus-card';
 import type { Dataset } from './types';
 
@@ -149,6 +154,7 @@ ${rows}
 /** Where each card is written, and what the page asks for. One place, so the two agree. */
 export const LEADERBOARD_CARD = '/og/leaderboard.png';
 export const BEST_CARD = '/og/best.png';
+export const COMPARE_CARD = '/og/compare.png';
 export const MEMORY_CARD = '/og/how-much-memory.png';
 
 /** How many open models the leaderboard card lists under the best hosted one. */
@@ -232,6 +238,45 @@ export function bestBuysCard(data: Dataset, fontFamily?: string): string {
     valueW: 196,
     note: `List price, ${d.usage.default_input_to_output_ratio}:1 input:output, ${Math.round(d.context.default_tokens / 1024)}k context, today’s API prices`,
     dataChecked: d.data_last_checked,
+    fontFamily,
+  });
+}
+
+/** How many machines the head-to-head card lists, most capacious first. */
+const COMPARE_ROWS = 6;
+
+/**
+ * The machines the head-to-head pages are cut from, each with its price and how
+ * many of the open models it holds: the left-hand column of the index's own
+ * first table, in the order that table ranks it. A link to the index should
+ * preview as the machines it compares, not as one machine's pay-back curve.
+ */
+export function compareIndexCard(data: Dataset, fontFamily?: string): string {
+  const st = defaultState(data);
+  const views = flagshipMachines(data).map((hw) => ({ hw, view: computeView({ ...st, hw: hw.id }, data) }));
+  const machines = views
+    .map(({ hw, view }) => ({ hw, fits: fitsOf(view).length }))
+    .sort((a, b) => b.fits - a.fits || a.hw.price_usd! - b.hw.price_usd!);
+  // the same denominator every machine page and the index itself count against
+  const total = views[0]?.view.rows.length ?? 0;
+
+  const rows: ListRow[] = machines.slice(0, COMPARE_ROWS).map(({ hw, fits }) => ({
+    name: shortHardwareLabel(hw),
+    meta: priceWithScopeText(hw),
+    value: `${fits}`,
+    valueSub: `of ${total}`,
+  }));
+
+  return listCardSvg({
+    eyebrow: 'Head to head',
+    headline: 'Every machine and model, compared in pairs',
+    columns: { name: 'Machine', meta: 'Price', value: 'Models it runs' },
+    rows,
+    metaX: 648,
+    metaW: 300,
+    valueW: 120,
+    note: `${machines.length} machines, ${hardwarePairs(data).length} machine pairs and ${modelPairs(data).length} model pairs`,
+    dataChecked: data.defaults.data_last_checked,
     fontFamily,
   });
 }
