@@ -13,7 +13,8 @@ import {
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
   gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
   machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
-  modelVerdict, otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor,
+  modelVerdict, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
+  priceWithScope, priceWithScopeText, rowFor,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   speedWithBasis, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
@@ -1742,7 +1743,7 @@ ${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.
   <dt>Chip</dt><dd>${esc(hw.chip)}${hw.chip_variant ? ` — ${esc(hw.chip_variant)}` : ''}</dd>
   <dt>Memory bandwidth</dt><dd>${hw.memory_bandwidth_gbs ? `${hw.memory_bandwidth_gbs} GB/s` : 'unknown'}</dd>
   <dt>Usable by the GPU</dt><dd>${hw.usable_memory_gb ?? 'unknown'} GB${hw.notes ? ` — ${esc(hw.notes)}` : ''}</dd>
-  <dt>Power under load</dt><dd>${hw.load_watts ?? 'unknown'} W${hw.load_watts_status ? ` (${esc(hw.load_watts_status.replace(/_/g, ' '))})` : ''}${hw.load_watts_note ? ` — ${esc(hw.load_watts_note)}` : ''}</dd>
+  <dt>Power under load</dt><dd>${hw.load_watts ?? 'unknown'} W (${esc(powerSourceLabel(hw))})${hw.load_watts_note ? ` — ${esc(hw.load_watts_note)}` : ''}</dd>
   ${hw.status ? `<dt>Availability</dt><dd>${esc(hw.status)}</dd>` : ''}
   ${hw.sources?.length ? `<dt>Sources</dt><dd>${hw.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener">source ${i + 1}</a>`).join(', ')}</dd>` : ''}
 </dl>
@@ -1853,14 +1854,23 @@ function sameSiliconSection(a: Hardware, b: Hardware, va: View, ctxK: number, fa
   // a page that says it is would be overstating what its own table shows
   const wattsDiffer = a.load_watts != null && b.load_watts != null && a.load_watts !== b.load_watts;
   const forSame = ta != null && tb != null && ta === tb ? 'for the same models at the same speed' : 'for the same models';
+  // and where one of the two figures is a stand-in the page cannot say either machine
+  // draws it. On four of these pairs the boxes carry the same watts because the data
+  // has a figure for one of them and borrows it for the other, so the equality is the
+  // data agreeing with itself rather than two machines measuring the same.
+  const standIn = [a, b].filter((h) => h.load_watts_status === 'stand_in');
   const onlyGap = wattsDiffer
-    ? `every difference in pay-back on this page comes from that and from the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W between them`
+    ? standIn.length
+      ? `the only other thing between them is the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W in the power row, where one figure is a stand-in rather than a measurement`
+      : `every difference in pay-back on this page comes from that and from the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W between them`
     : 'every difference in pay-back on this page comes from that and nothing else';
-  const watts = a.load_watts != null && b.load_watts != null
-    ? wattsDiffer
-      ? ` The ${esc(shortHardwareLabel(a.load_watts! > b.load_watts! ? a : b))} draws ${Math.max(a.load_watts, b.load_watts)} W under load against ${Math.min(a.load_watts, b.load_watts)} W, and this page prices the electricity into both.`
-      : ` Both draw ${a.load_watts} W under load, and this page prices the electricity into both.`
-    : '';
+  const watts = a.load_watts == null || b.load_watts == null
+    ? ''
+    : standIn.length
+      ? ` The power row is not two measurements: ${standIn.length === 2 ? 'both figures are stand-ins borrowed from the nearest hardware the data has' : `the ${esc(shortHardwareLabel(standIn[0]))}'s ${standIn[0].load_watts} W is a stand-in borrowed from the nearest hardware the data has a figure for`}, so ${wattsDiffer ? 'the gap between them' : 'the two matching'} is a fact about the data rather than about the machines. This page still prices the electricity into both from those numbers.`
+      : wattsDiffer
+        ? ` The ${esc(shortHardwareLabel(a.load_watts! > b.load_watts! ? a : b))} draws ${Math.max(a.load_watts, b.load_watts)} W under load against ${Math.min(a.load_watts, b.load_watts)} W, and this page prices the electricity into both.`
+        : ` Both draw ${a.load_watts} W under load, and this page prices the electricity into both.`;
 
   return `<h2>The same machine inside</h2>
 <p>Both have the same ${esc(gpuPart(a))}, the same ${a.unified_memory_gb} GB of memory and the same ${a.memory_bandwidth_gbs} GB/s to read it at, and both leave ${a.usable_memory_gb} GB of that memory to the GPU. What a machine holds is decided by that last figure, so they hold the same ${fa.length} models, and not only at ${ctxK}k of context: across all ${va.rows.length} models the calculator counts, at every context from ${span}, there is no model one holds and the other does not.${speedLine}${variantLine}</p>
@@ -1918,6 +1928,32 @@ function generationSection(old: Hardware, now: Hardware): string {
 <p>These are the same machine a generation apart, in the same case and at the same memory size, so this is the upgrade question rather than a choice between two things on sale. ${bandwidth}${variant}</p>
 ${power}
 <p>${stopped}, so the ${fmtUsd(old.price_usd!, { cents: false })} above is the price it launched at, and every figure on this page for it is priced at that. A used or refurbished one costs whatever it costs, and pay-back follows the price rather than the machine. <a href="${esc(calcLink({ hw: old.id }, data))}">Open the calculator on the ${esc(lo)}</a> and put in what you would actually pay; the years move with it. Its <a href="/hardware/${esc(old.id)}/">own page</a> has what the data records about buying one now.</p>`;
+}
+
+/**
+ * A machine's power draw is the running cost in every pay-back figure it has, and for
+ * 30 of the 56 machines here the data has no figure for that machine at all: it borrows
+ * one from the nearest hardware it does have. A generation head-to-head already says so
+ * at length, because there the borrowed figure is the other column's own, so this covers
+ * the comparisons that had nothing. The marker on the row says which number it is; this
+ * says what a borrowed number does and does not tell you, and what it is paying for.
+ */
+function standInPowerNote(a: Hardware, b: Hardware, explainedBelow: boolean): string {
+  const sides = [a, b].filter((h) => h.load_watts_status === 'stand_in' && h.load_watts != null);
+  if (!sides.length || explainedBelow) return '';
+  if (sides.length === 2) {
+    // two memory tiers of one machine share a chip, so equal watts is what a reader
+    // expects there and calling it a non-finding would be answering nobody's question
+    const match = a.load_watts !== b.load_watts
+      ? 'the gap between them is not a difference between these two machines'
+      : a.family === b.family && a.chip === b.chip
+        ? 'what the row shows is one borrowed figure printed twice'
+        : 'the two matching says nothing about either machine';
+    return `<p class="note">Neither power figure above is measured on the machine beside it. Both are stand-ins borrowed from the nearest hardware the data does have, so ${match}. Each machine's page names the figure it borrows and why. Every pay-back figure on this page prices its electricity from these numbers.</p>`;
+  }
+  const s = sides[0];
+  const other = s.id === a.id ? b : a;
+  return `<p class="note">The ${s.load_watts} W beside the ${esc(shortHardwareLabel(s))} is a stand-in, not a figure for that machine: the data borrows it from the nearest hardware it does have, and the machine's own page names which and why. So the two figures above are not like for like${other.load_watts === s.load_watts ? ', and their matching says nothing about either machine' : ''}, and the electricity in its pay-back here is priced from a borrowed number.</p>`;
 }
 
 function comparePage(a: Hardware, b: Hardware): string {
@@ -2095,13 +2131,14 @@ ${row('Price', priceWithScope(a), priceWithScope(b))}
 ${row('Memory', `${a.unified_memory_gb} GB`, `${b.unified_memory_gb} GB`)}
 ${row('Usable by the GPU', `${a.usable_memory_gb ?? '?'} GB`, `${b.usable_memory_gb ?? '?'} GB`)}
 ${row('Memory bandwidth', a.memory_bandwidth_gbs ? `${a.memory_bandwidth_gbs} GB/s` : 'unknown', b.memory_bandwidth_gbs ? `${b.memory_bandwidth_gbs} GB/s` : 'unknown')}
-${row('Power under load', `${a.load_watts ?? '?'} W`, `${b.load_watts ?? '?'} W`)}
+${row('Power under load', powerWithSource(a), powerWithSource(b))}
 ${row('Models that fit', String(fa.length), String(fb.length))}
 ${row('Best model it runs', fa[0] ? `<a href="/models/${esc(fa[0].model.id)}/">${esc(fa[0].model.display_name)}</a>` : '—', fb[0] ? `<a href="/models/${esc(fb[0].model.id)}/">${esc(fb[0].model.display_name)}</a>` : '—')}
 ${row('Speed on that model', speedCell(fa[0]), speedCell(fb[0]))}
 ${row('Pay-back on that model', esc(verdictLine(va)), esc(verdictLine(vb)))}
 </tbody>
 </table>
+${standInPowerNote(a, b, (!!gens && b.load_watts_status === 'stand_in') || (!!twins && a.load_watts != null && b.load_watts != null))}
 <p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(lb)}</a></p>
 ${twins ? sameSiliconSection(a, b, va, ctxK, fa, fb) : ''}
 ${gens ? generationSection(a, b) : ''}
@@ -2860,6 +2897,62 @@ function checkGenerationPairs() {
   console.log(`  ${pages} head-to-heads between a discontinued machine and the one that replaced it, each naming both bandwidths, the launch price it prices and a way to enter your own; ${standIns} say a power figure is standing in`);
 }
 
+/**
+ * Electricity is the running cost in every pay-back figure on this site, and for 30 of
+ * the 56 machines the data holds no power figure for the machine at all: it borrows the
+ * nearest one it has. Printed bare, a borrowed watt reads as a measurement of the machine
+ * beside it — and where a comparison borrows one side's figure for the other, two equal
+ * numbers in the power row read as a finding about both.
+ *
+ * So this holds three claims wherever a power figure prints. The comparison row prints
+ * exactly what the data says, marker and all, so a borrowed figure is marked where the
+ * reader meets it and a measured one never wears the marker. Every page carrying a
+ * borrowed figure says in words that it is one, rather than leaving it to the marker.
+ * And every such comparison says what that number is paying for, which is the electricity
+ * in its own pay-back column.
+ */
+function checkStandInPower() {
+  const problems: string[] = [];
+  const standIn = (h: Hardware) => h.load_watts_status === 'stand_in' && h.load_watts != null;
+  const marker = /<span class="c-quant">stand-in<\/span>/g;
+  let pages = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    const path = hardwareComparePath(a, b);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    if (!html) {
+      problems.push(`${path} is a machine head-to-head with no page`);
+      continue;
+    }
+    if (!html.includes(`<tr><th>Power under load</th><td>${powerWithSource(a)}</td><td>${powerWithSource(b)}</td></tr>`))
+      problems.push(`${path} does not print the power row the data says, marker and all`);
+    const borrowed = [a, b].filter(standIn);
+    // the marker only means something while a measured figure never wears one
+    if ((html.match(marker) ?? []).length !== borrowed.length)
+      problems.push(`${path} marks ${(html.match(marker) ?? []).length} power figures as stand-ins where the data has ${borrowed.length}`);
+    if (!borrowed.length) continue;
+    pages++;
+    const prose = unesc(html).replace(marker, '');
+    if (!/stand-in|stands the|standing in/.test(prose))
+      problems.push(`${path} prints a borrowed power figure and only the marker says so`);
+    if (!/prices (?:the|its) electricity|is priced from/.test(prose))
+      problems.push(`${path} does not say what its borrowed power figure is paying for`);
+  }
+  let machines = 0;
+  for (const h of data.hardware) {
+    if (!standIn(h)) continue;
+    const html = meta.find((m) => m.path === `/hardware/${h.id}/`)?.html;
+    if (html == null) continue;
+    machines++;
+    if (!unesc(html).includes(`${h.load_watts} W (stand-in)`))
+      problems.push(`/hardware/${h.id}/ prints ${h.load_watts} W without saying it is a stand-in`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} print a borrowed power figure as if it were measured`);
+  }
+  console.log(`  ${machines} machines carry a borrowed power figure; the ${pages} head-to-heads that print one mark it and say what it prices`);
+}
+
 checkMeta();
 checkLinks();
 checkHeadToHeads();
@@ -2875,6 +2968,7 @@ checkMeetingPoint();
 checkHeadroom();
 checkSameSilicon();
 checkGenerationPairs();
+checkStandInPower();
 checkModelContexts();
 checkMachineContexts();
 checkShorterFits();

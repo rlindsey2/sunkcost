@@ -5,7 +5,8 @@ import {
   contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
-  otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, priceWithScopeText, runnersFor,
+  otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals,
+  priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   strongestShared, tierLabel, tierName, type LdNode,
 } from '../src/pagekit';
@@ -444,6 +445,25 @@ describe('machine head-to-heads', () => {
     expect(priceWithScopeText(card)).toBe(`${fmtUsd(card.price_usd)}, card only`);
     expect(priceWithScopeText(box)).toBe(fmtUsd(box.price_usd));
     expect(priceWithScopeText(card)).not.toContain('<');
+  });
+
+  it('says when a power figure is borrowed rather than measured', () => {
+    const borrowed = data.hardware.filter((h) => h.load_watts_status === 'stand_in' && h.load_watts != null);
+    const own = data.hardware.filter((h) => h.load_watts_status !== 'stand_in' && h.load_watts != null);
+    expect(borrowed.length).toBeGreaterThan(0);
+    expect(own.length).toBeGreaterThan(0);
+    // the marker sits on the figure, where the reader meets it, and carries the watts with it
+    for (const h of borrowed) expect(powerWithSource(h)).toBe(`${h.load_watts} W<span class="c-quant">stand-in</span>`);
+    // and a figure the data did get for the machine itself never wears one
+    for (const h of own) expect(powerWithSource(h)).toBe(`${h.load_watts} W`);
+    expect(powerWithSource({ ...own[0], load_watts: null })).toBe('<span class="dim">not published</span>');
+  });
+
+  it('names where a power figure came from in words rather than in the data’s own key', () => {
+    for (const h of data.hardware) expect(powerSourceLabel(h)).not.toMatch(/_/);
+    expect(powerSourceLabel(data.hardware.find((h) => h.load_watts_status === 'stand_in')!)).toBe('stand-in');
+    expect(powerSourceLabel(data.hardware.find((h) => h.load_watts_status === 'third_party_measured')!)).toBe('measured by a third party');
+    expect(powerSourceLabel(data.hardware.find((h) => h.load_watts_status === 'published')!)).toBe('published');
   });
 
   it('works the speed ratio out of the figures it prints, so the page divides out', () => {

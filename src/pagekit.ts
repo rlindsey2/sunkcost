@@ -803,6 +803,31 @@ export function priceWithScopeText(hw: Hardware): string {
 }
 
 /**
+ * A power figure, marked where the data has no figure for that machine and
+ * borrows one. Electricity is the running cost in every pay-back sum on the
+ * site, so a borrowed watt printed bare reads as a measurement of the machine
+ * beside it — and where two of them come out equal, as a finding about both.
+ */
+export function powerWithSource(hw: Hardware): string {
+  if (hw.load_watts == null) return '<span class="dim">not published</span>';
+  return `${hw.load_watts} W${hw.load_watts_status === 'stand_in' ? '<span class="c-quant">stand-in</span>' : ''}`;
+}
+
+/** Where a power figure came from, in words rather than in the data's own key. */
+export function powerSourceLabel(hw: Hardware): string {
+  switch (hw.load_watts_status) {
+    case 'stand_in':
+      return 'stand-in';
+    case 'third_party_measured':
+      return 'measured by a third party';
+    case 'entered':
+      return 'entered by you';
+    default:
+      return 'published';
+  }
+}
+
+/**
  * A speed as the page prints it. Anything said about two speeds is worked out
  * from these rather than from the full precision behind them, so that a reader
  * dividing one figure on the page by another gets the third figure on the page.
