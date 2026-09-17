@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
-  memoryTierNames, memoryTierPairs, sameSiliconPairs,
+  generationPairs, memoryTierNames, memoryTierPairs, sameSiliconPairs,
   modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
-import { gpuPart, runnersFor, sameSilicon, shortHardwareLabel } from '../src/pagekit';
+import {
+  appleChip, discontinuedOn, generationNames, gpuPart, machineVerdict, runnersFor, sameSilicon,
+  shortHardwareLabel,
+} from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
 import type { Dataset, Hardware } from '../src/types';
@@ -135,7 +138,7 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, once each', () => {
+  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, once each', () => {
     const pairs = hardwarePairs(data);
     const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
     const keys = pairs.map(([a, b]) => key(a, b));
@@ -146,10 +149,11 @@ describe('the pairs the cards and the pages cut', () => {
     const cards = graphicsCards(data);
     const tiers = memoryTierPairs(data);
     const twins = sameSiliconPairs(data);
+    const gens = generationPairs(data);
     const want = new Set<string>();
     for (const xs of [flagships, cards])
       for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
-    for (const [a, b] of [...tiers, ...twins]) want.add(key(a, b));
+    for (const [a, b] of [...tiers, ...twins, ...gens]) want.add(key(a, b));
     expect(new Set(keys)).toEqual(want);
 
     // a card is priced as the part, not as a computer, and the flagship grid on its own
@@ -165,10 +169,105 @@ describe('the pairs the cards and the pages cut', () => {
     // two of the flagships are themselves cards, so one pair is in both grids and is
     // written once: the union is the page set, not the sum
     expect(pairs.length).toBe(want.size);
-    // and the two later rules are appended after both grids, in the order they run, for
+    // and the three later rules are appended after both grids, in the order they run, for
     // the same reason: a pair keeps the address it has always had
-    const tail = pairs.slice(-(tiers.length + twins.length)).map(([a, b]) => key(a, b));
-    expect(tail).toEqual([...tiers, ...twins].map(([a, b]) => key(a, b)));
+    const later = [...tiers, ...twins, ...gens];
+    const tail = pairs.slice(-later.length).map(([a, b]) => key(a, b));
+    expect(tail).toEqual(later.map(([a, b]) => key(a, b)));
+  });
+
+  it('puts each discontinued machine against the one that replaced it, and reads the successor out of the chip names', () => {
+    const gens = generationPairs(data);
+    expect(gens.length).toBeGreaterThan(0);
+
+    for (const [old, now] of gens) {
+      // the older side first, because that is the machine the reader already has
+      expect(old.generation).toBe('previous');
+      expect(now.generation ?? 'current').toBe('current');
+      // the same case, the same class of chip and the same memory: the page's whole
+      // answer is that the newer chip buys no room, so the rule has to hold the room equal
+      expect(old.family).toBe(now.family);
+      expect(old.unified_memory_gb).toBe(now.unified_memory_gb);
+      expect(old.usable_memory_gb).toBe(now.usable_memory_gb);
+      expect(appleChip(old)!.tier).toBe(appleChip(now)!.tier);
+      expect(appleChip(old)!.gen).toBeLessThan(appleChip(now)!.gen);
+      // pay-back is what the page is for, and pay-back needs two prices
+      for (const h of [old, now]) expect(h.price_usd).not.toBeNull();
+    }
+
+    // one machine to a pair on each side, so no page says the same thing twice
+    const olds = gens.map(([old]) => old.id);
+    expect(new Set(olds).size).toBe(olds.length);
+
+    // every discontinued machine whose successor this data prices gets a page, and the
+    // one whose successor has no price does not: there is no pay-back to compare
+    const unpriced = data.hardware.filter(
+      (h) => h.generation === 'previous' && h.price_usd != null && appleChip(h)
+        && data.hardware.some((x) => (x.generation ?? 'current') === 'current' && x.family === h.family
+          && x.unified_memory_gb === h.unified_memory_gb && appleChip(x)?.tier === appleChip(h)!.tier
+          && (appleChip(x)?.gen ?? 0) > appleChip(h)!.gen && x.price_usd == null),
+    );
+    for (const h of unpriced) expect(olds).not.toContain(h.id);
+  });
+
+  it('takes the chip names Apple writes and nothing else', () => {
+    const chip = (name: string) => appleChip({ chip: name } as Hardware);
+    expect(chip('M4')).toEqual({ gen: 4, tier: '' });
+    expect(chip('M4 Pro')).toEqual({ gen: 4, tier: 'Pro' });
+    expect(chip('M5 Max (16-inch)')).toEqual({ gen: 5, tier: 'Max' });
+    expect(chip('M3 Ultra')).toEqual({ gen: 3, tier: 'Ultra' });
+    // a GeForce RTX 4090 does not say in its name what replaced it, and the card that
+    // did carries a different amount of memory, so no rule here can guess the successor
+    expect(chip('GeForce RTX 4090')).toBeNull();
+    expect(chip('Ryzen AI Max+ 395 \u00b7 Radeon 8060S, 40 CU')).toBeNull();
+    expect(chip('GB10 Grace Blackwell')).toBeNull();
+  });
+
+  it('names a generation pair by its two chips and its size once, and names nothing else', () => {
+    const by = (id: string) => data.hardware.find((h) => h.id === id)!;
+    expect(generationNames(by('mac-mini-m4-32'), by('mac-mini-m6-32'))).toEqual({
+      machine: 'Mac mini', a: 'M4', b: 'M6', size: '32GB',
+    });
+    // the newer side is not the older side: the pair is only ever written one way round
+    expect(generationNames(by('mac-mini-m6-32'), by('mac-mini-m4-32'))).toBeNull();
+    // two memory tiers of one machine are the same chip, and two boxes on the same
+    // silicon are both on sale; neither is a generation apart
+    for (const [a, b] of [...memoryTierPairs(data), ...sameSiliconPairs(data)])
+      expect(generationNames(a, b)).toBeNull();
+    // a different tier of the same generation is a different machine, not a successor
+    expect(generationNames(by('mac-mini-m4-pro-24'), by('mac-mini-m6-24'))).toBeNull();
+  });
+
+  it('reads the day a machine stopped being sold out of the availability note', () => {
+    const by = (id: string) => data.hardware.find((h) => h.id === id)!;
+    expect(discontinuedOn(by('mac-mini-m4-32'))).toBe('25 August 2026');
+    // a card that is superseded rather than withdrawn has no date in the data, and the
+    // page must not invent one
+    expect(discontinuedOn(by('geforce-rtx-4090-24'))).toBeNull();
+    expect(discontinuedOn(by('mac-mini-m6-32'))).toBeNull();
+  });
+
+  it('says in the first paragraph that a previous generation\'s price is the one it launched at', () => {
+    const st = defaultState(data);
+    const view = (id: string) => computeView({ ...st, hw: id }, data);
+    const by = (id: string) => data.hardware.find((h) => h.id === id)!;
+    const verdict = (x: string, y: string) => machineVerdict(by(x), by(y), view(x), view(y), data);
+
+    // on these pages the discontinued machine is the cheaper one, so it is the one the
+    // lede hands the win to, and a lede that stops there sells a machine nobody sells
+    const one = verdict('mac-mini-m4-32', 'mac-mini-m6-32');
+    expect(one).toContain('The Mac mini M4, 32GB costs $300 less.');
+    expect(one).toContain('The Mac mini M4, 32GB is the previous generation, so every figure here for it is priced at what it launched at rather than at a price you can pay today.');
+    expect(one.trimEnd().endsWith('you can pay today.')).toBe(true);
+
+    // both sides previous generation, which is every head-to-head between two of the
+    // four older cards: one sentence, not the same one twice
+    const two = verdict('geforce-rtx-4090-24', 'geforce-rtx-3090-24');
+    expect(two).toContain('Both are previous-generation parts, so every figure here is priced at what they launched at rather than at prices you can pay today.');
+    expect(two).not.toContain('is the previous generation, so every figure');
+
+    // and a pair of current machines says nothing about launch prices at all
+    expect(verdict('mac-mini-m6-32', 'mac-studio-m5-max-36')).not.toContain('launched at');
   });
 
   it('puts two memory tiers of one machine against each other, and nothing else', () => {
