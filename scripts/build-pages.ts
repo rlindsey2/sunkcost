@@ -11,8 +11,9 @@ import {
   fitsOf, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, indefiniteArticle,
   lowerFirst, machineVerdict, machinesConsidered, modelLabel, modelVerdict, otherQuantisations, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
-  shortHardwareLabel, shownTps, slug, speedWithBasis, stack, strongestShared, tierLabel, tierName, tierScale, titleOf,
-  verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, TITLE_MAX, type Runner,
+  meetAtShorterContext, shortHardwareLabel, shownTps, slug, speedWithBasis, stack, strongestShared, tierLabel,
+  tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, TITLE_MAX, type Runner,
+  type SharedMachine,
 } from '../src/pagekit';
 import {
   flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
@@ -321,8 +322,10 @@ function checkCompareIndex() {
  * build, on the machine pairs and on the model ones.
  *
  * A model head-to-head only has the section where one machine runs both models, which
- * is the same condition that gives it the side-by-side table above; two of the 47
- * pairs share no machine and are exempt from both.
+ * is the same condition that gives it the side-by-side table above. Two of the 47 pairs
+ * share no machine at the context the site assumes; they run both sections at the
+ * shorter context where one machine does hold both, and checkMeetingPoint below is
+ * what holds them to saying so.
  */
 function checkPayback() {
   const levels = bestUsageLevels(data);
@@ -357,6 +360,56 @@ function checkPayback() {
   console.log(`  ${hardwarePairs(data).length} machine and ${priced} model head-to-heads price pay-back at ${levels.length} levels of use, ${ceilings} figures capped by what a machine can generate`);
 }
 
+/**
+ * Two model head-to-heads have no machine in common at 32k of context, so they used to
+ * skip the like-for-like table and the pay-back-by-usage section that every other
+ * comparison carries, and were the thinnest pages on the site at 409 and 504 words.
+ * They are not thin because there is nothing to say: what puts the bigger model past
+ * every machine is the cache, which shrinks with the context you ask for, and at 16k
+ * one machine holds both. So those pages run the same two sections at that context.
+ *
+ * A page that quietly moved to a shorter context without saying so would be the worst
+ * of both: figures that look like the ones above them and are not. The rule is that a
+ * page running the race at a shorter context names that context in the heading, in the
+ * assumptions, and in every calculator link those sections carry.
+ */
+function checkMeetingPoint() {
+  const problems: string[] = [];
+  let met = 0;
+  for (const [a, b] of modelPairs(data)) {
+    const path = modelComparePath(a, b);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    const ra = runnersFor(a, data);
+    const rb = runnersFor(b, data);
+    if (cheapestRunsBoth(a, b, ra, rb)) continue;
+    const meeting = meetAtShorterContext(a, b, data);
+    if (!meeting) {
+      // nothing here holds both at any context the calculator offers, so there is no
+      // race to run and the page says only what each model needs
+      if (html.includes('<h2>Side by side on the ')) problems.push(`${path} runs a side-by-side race on a machine that holds both at no context`);
+      continue;
+    }
+    met++;
+    const k = Math.round(meeting.ctx / 1024);
+    if (!html.includes(`<h2>Side by side on the ${esc(shortHardwareLabel(meeting.shared.hw))} at ${k}k of context</h2>`))
+      problems.push(`${path} meets at ${k}k on the ${shortHardwareLabel(meeting.shared.hw)} and its heading does not say so`);
+    if (!html.includes(`are at ${k}k of context instead`))
+      problems.push(`${path} runs its race at ${k}k and the assumptions still claim ${Math.round(data.defaults.context.default_tokens / 1024)}k`);
+    // a link that opens the calculator at the default context would land the reader on
+    // the configuration the page has just said does not fit
+    const sections = html.split('<h2>Side by side on the ')[1]?.split('<h2>Machines that run one')[0] ?? '';
+    const links = [...sections.matchAll(/href="\/\?([^"]+)"/g)].map((m) => unesc(m[1]));
+    if (!links.length) problems.push(`${path} runs its race at ${k}k with no link into the calculator`);
+    for (const q of links)
+      if (!q.includes(`ctx=${meeting.ctx}`)) problems.push(`${path} links into the calculator at the wrong context: ${q}`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} run a race at a context they do not name`);
+  }
+  console.log(`  ${met} model head-to-head${met === 1 ? '' : 's'} with no machine in common at 32k run the race at the context where one holds both`);
+}
+
 function checkArticles() {
   // English picks the article from the sound, so a page opening "Can a NVIDIA…"
   // reads as a typo on its own first line. indefiniteArticle() knows which
@@ -377,6 +430,37 @@ function checkArticles() {
   }
   const an = opened.filter(({ h1 }) => h1![1] === 'an').length;
   console.log(`  ${machines.length} machine pages open on their own name, ${an} of them with "an"`);
+}
+
+/**
+ * A machine page lists the twelve strongest models that fit it, in index-class
+ * order, which puts every model the index has not scored yet below the cut. On
+ * all but the smallest machines that hid all five of them, and three — Kat
+ * Coder v2.5, Laguna XS 2.1 and Ornith 1.5 35B-A3B — were in no machine's first
+ * twelve at all, leaving each of their pages with exactly one inbound link on
+ * the whole site. The note under the table names them now. The rule this holds
+ * is the simple one: if a model fits a machine, that machine's page links it,
+ * whether it made the table or not.
+ */
+function checkHiddenModels() {
+  const problems: string[] = [];
+  let named = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const page = meta.find((p) => p.path === path);
+    if (!page) throw new Error(`no page written for ${path}`);
+    for (const r of fitsOn(hw)) {
+      if (r.model.frontier_equivalent?.score != null) continue;
+      const href = `/models/${r.model.id}/`;
+      if (page.links.includes(href)) named++;
+      else problems.push(`${path} does not link ${href}, a model with no index score that fits it`);
+    }
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} unscored model${problems.length === 1 ? ' fits a machine whose page does' : 's fit a machine whose page does'} not link it`);
+  }
+  console.log(`  ${named} machine-and-unscored-model pairs, every one of them a link on the machine's page`);
 }
 
 function checkFonts() {
@@ -738,6 +822,21 @@ function relatedRow(h: Hardware): string {
 </tr>`;
 }
 
+/**
+ * What to say about the models that fit but are below the table. A count on its
+ * own is a dead end; the ones worth naming are those the intelligence index has
+ * not scored, because a table ordered by class is exactly what buries them.
+ */
+function runsOnNote(hiddenCount: number, unscored: Model[], link: (m: Model) => string): string {
+  const more = hiddenCount === 1 ? 'One more fits; the calculator lists it.' : `${hiddenCount} more fit; the calculator lists them all.`;
+  if (!unscored.length) return more;
+  if (hiddenCount === 1)
+    return `One more fits: ${link(unscored[0])}, which has no intelligence-index score, so it sits below the twelve above. Its page shows what it needs and what runs it.`;
+  if (unscored.length === 1)
+    return `${more} One of them, ${link(unscored[0])}, has no intelligence-index score, so it sits below the twelve above. Its page shows what it needs and what runs it.`;
+  return `${more} ${unscored.length} of them have no intelligence-index score, so they sit below the twelve above: ${unscored.map(link).join(', ')}. Their pages show what each one needs and what runs it.`;
+}
+
 function hardwarePage(hw: Hardware): string {
   const state = { ...defaultState(data), hw: hw.id };
   const view = computeView(state, data);
@@ -747,6 +846,14 @@ function hardwarePage(hw: Hardware): string {
   const hwVerdict = view.calc ? lowerFirst(verdictLine(view)) : null;
   const range = familyRange(hw, data);
   const rivals = priceRivals(hw, data);
+
+  // The table stops at twelve, ordered by index class, which puts every model
+  // the index has not scored beneath it — below the cut on all but the smallest
+  // machines. Three of those models were in no machine's first twelve, so the
+  // only thing on the site linking them was one line under the leaderboard.
+  const hidden = fits.slice(12);
+  const unscored = hidden.filter((r) => r.model.frontier_equivalent?.score == null).map((r) => r.model);
+  const modelLink = (m: Model) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`;
 
   const rows = fits
     .slice(0, 12)
@@ -778,7 +885,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1 })}
-${fits.length > 12 ? `<p class="note">${fits.length - 12} more fit; the calculator lists them all.</p>` : ''}` : ''}
+${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
 ${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
 ${stack(`<table class="board">
@@ -1033,6 +1140,17 @@ function modelComparePage(a: Model, b: Model): string {
   const st = defaultState(data);
   const ctx = data.defaults.context.default_tokens;
   const ctxK = Math.round(ctx / 1024);
+  // Two of the 47 pairs have no machine in common at 32k, so they skipped the two
+  // sections every other comparison carries: the like-for-like table and pay-back
+  // across the levels of use. They do meet at a shorter context, and that is the
+  // answer someone choosing between them wants, so the race runs there and says so.
+  const meeting = shared ? null : meetAtShorterContext(a, b, data);
+  const race = shared
+    ? { s: shared, ctx, shortened: false }
+    : meeting
+      ? { s: meeting.shared, ctx: meeting.ctx, shortened: true }
+      : null;
+  const raceK = Math.round((race?.ctx ?? ctx) / 1024);
   const considered = machinesConsidered(data).length;
   const sa = a.frontier_equivalent?.score ?? null;
   const sb = b.frontier_equivalent?.score ?? null;
@@ -1047,16 +1165,26 @@ function modelComparePage(a: Model, b: Model): string {
     rowFor(runners[0]?.view ?? computeView({ ...st, model: m.id }, data), m)?.fit.needGb ?? null;
 
   // a call to action that only offers a machine where one exists
+  // a model no machine holds at 32k used to open on whatever machine the calculator
+  // starts on, which is one that cannot hold it either. Where the pair meets at a
+  // shorter context, the link opens there instead: a configuration that runs.
   const openIn = (m: Model, runners: Runner[]) =>
     runners[0]
       ? { href: calcLink({ hw: runners[0].hw.id, model: m.id }, data), text: `${m.display_name} on the ${shortHardwareLabel(runners[0].hw)}` }
-      : { href: calcLink({ model: m.id }, data), text: `${m.display_name} in the calculator` };
+      : meeting
+        ? {
+            href: calcLink({ hw: meeting.shared.hw.id, model: m.id, ctx: meeting.ctx }, data),
+            text: `${m.display_name} on the ${shortHardwareLabel(meeting.shared.hw)} at ${raceK}k of context`,
+          }
+        : { href: calcLink({ model: m.id }, data), text: `${m.display_name} in the calculator` };
   const modelLink = (m: Model, runners: Runner[]) =>
     `<a href="/models/${esc(m.id)}/">${runners.length ? `every machine that runs ${esc(m.display_name)}` : `what ${esc(m.display_name)} needs`}</a>`;
   const ctaA = openIn(a, ra);
   const ctaB = openIn(b, rb);
-  // where both models start on the same machine, naming it twice in one line says nothing twice
-  if (ra[0] && rb[0] && ra[0].hw.id === rb[0].hw.id) ctaB.text = b.display_name;
+  // where both models open on the same machine, naming it twice in one line says nothing twice
+  const opensOn = (runners: Runner[]) => runners[0]?.hw.id ?? meeting?.shared.hw.id ?? null;
+  if (opensOn(ra) && opensOn(ra) === opensOn(rb))
+    ctaB.text = rb[0] ? b.display_name : `${b.display_name} at ${raceK}k of context`;
 
   // the API bill each model's own work would run up, and the model that price is for:
   // where nobody rents the open one, it is the nearest hosted match and has to say so
@@ -1074,23 +1202,65 @@ function modelComparePage(a: Model, b: Model): string {
   };
 
   const sameStart = !!ra[0] && !!rb[0] && ra[0].hw.id === rb[0].hw.id;
-  const sideBySide = shared
+
+  /**
+   * What a shorter context buys, for the pairs that need one. The weights do not
+   * move; the cache does, and on these pages the cache is the whole of what put a
+   * model out of every machine's reach. Every figure here is printed on its own,
+   * so nothing asks the reader to add two rounded numbers and get a third.
+   */
+  const meetingIntro = (s: SharedMachine, atK: number) => {
+    const link = `<a href="/hardware/${esc(s.hw.id)}/">${esc(hardwareLabel(s.hw))}</a>`;
+    const have = s.hw.usable_memory_gb;
+    const biggest = have != null && machinesConsidered(data).every((h) => (h.usable_memory_gb ?? 0) <= have);
+    const sides = [
+      { m: a, runners: ra, row: s.rowA },
+      { m: b, runners: rb, row: s.rowB },
+    ];
+    const blocked = sides.filter((x) => !x.runners.length);
+    const running = sides.filter((x) => x.runners.length);
+    const out: string[] = [];
+    for (const x of blocked) {
+      const atDefault = needGb(x.m, x.runners);
+      const atRace = x.row.fit.needGb;
+      if (atDefault == null || atRace == null) continue;
+      out.push(
+        `${esc(x.m.display_name)} needs ${fmtGb(atDefault)} at ${ctxK}k of context.`,
+        biggest
+          ? `The biggest machine on this list is the ${link}, and it has ${fmtGb(have)} usable.`
+          : `The ${link} has ${fmtGb(have)} usable.`,
+        x.m.weights_gb != null
+          ? `${esc(x.m.display_name)}'s weights are ${fmtGb(x.m.weights_gb)} of that. The rest is the cache, and the cache is the part that shrinks when you ask for less context: at ${atK}k the model needs ${fmtGb(atRace)}, which that machine holds.`
+          : `At ${atK}k of context the model needs ${fmtGb(atRace)} instead, which that machine holds.`,
+      );
+    }
+    out.push(
+      running.length === 1
+        ? `It already runs ${esc(running[0].m.display_name)}, so at ${atK}k of context one machine here runs both. It costs ${priceWithScope(s.hw)}. The rest of this page is what each model does with it.`
+        : `So at ${atK}k of context one machine here runs both: the ${link}, at ${priceWithScope(s.hw)}. The rest of this page is what each model does with it.`,
+    );
+    return out.join(' ');
+  };
+
+  const sideBySide = race
     ? (() => {
-        const l = shortHardwareLabel(shared.hw);
-        const intro = sameStart
-          ? `The cheapest machine that runs either model is the same one, so this is the pair doing the same work on the same hardware: <a href="/hardware/${esc(shared.hw.id)}/">${esc(hardwareLabel(shared.hw))}</a>, at ${priceWithScope(shared.hw)}.`
-          : `The table above gives each model the cheapest machine that runs it, and those are two different machines, so nothing in it is a like-for-like race. The <a href="/hardware/${esc(shared.hw.id)}/">${esc(hardwareLabel(shared.hw))}</a> is the cheapest machine here that runs both, so this is the pair doing the same work on the same hardware.`;
-        return `<h2>Side by side on the ${esc(l)}</h2>
+        const l = shortHardwareLabel(race.s.hw);
+        const intro = race.shortened
+          ? meetingIntro(race.s, raceK)
+          : sameStart
+            ? `The cheapest machine that runs either model is the same one, so this is the pair doing the same work on the same hardware: <a href="/hardware/${esc(race.s.hw.id)}/">${esc(hardwareLabel(race.s.hw))}</a>, at ${priceWithScope(race.s.hw)}.`
+            : `The table above gives each model the cheapest machine that runs it, and those are two different machines, so nothing in it is a like-for-like race. The <a href="/hardware/${esc(race.s.hw.id)}/">${esc(hardwareLabel(race.s.hw))}</a> is the cheapest machine here that runs both, so this is the pair doing the same work on the same hardware.`;
+        return `<h2>Side by side on the ${esc(l)}${race.shortened ? ` at ${raceK}k of context` : ''}</h2>
 <p>${intro}</p>
 <table class="board compare">
 <thead><tr><th></th><th>${esc(a.display_name)}</th><th>${esc(b.display_name)}</th></tr></thead>
 <tbody>
-${row(`Speed at ${ctxK}k`, speedWithBasis(shared.rowA), speedWithBasis(shared.rowB))}
-${row('Pay-back on this machine', esc(verdictLine(shared.a.view)), esc(verdictLine(shared.b.view)))}
-${row('API cost per month', apiCell(a, shared.a.view), apiCell(b, shared.b.view))}
+${row(`Speed at ${raceK}k`, speedWithBasis(race.s.rowA), speedWithBasis(race.s.rowB))}
+${row('Pay-back on this machine', esc(verdictLine(race.s.a.view)), esc(verdictLine(race.s.b.view)))}
+${row('API cost per month', apiCell(a, race.s.a.view), apiCell(b, race.s.b.view))}
 </tbody>
 </table>
-<p><a class="cta" href="${esc(calcLink({ hw: shared.hw.id, model: a.id }, data))}">Run ${esc(a.display_name)} on the ${esc(l)}</a> · <a href="${esc(calcLink({ hw: shared.hw.id, model: b.id }, data))}">or ${esc(b.display_name)}</a></p>`;
+<p><a class="cta" href="${esc(calcLink({ hw: race.s.hw.id, model: a.id, ctx: race.ctx }, data))}">Run ${esc(a.display_name)} on the ${esc(l)}</a> · <a href="${esc(calcLink({ hw: race.s.hw.id, model: b.id, ctx: race.ctx }, data))}">or ${esc(b.display_name)}</a></p>`;
       })()
     : '';
 
@@ -1098,14 +1268,14 @@ ${row('API cost per month', apiCell(a, shared.a.view), apiCell(b, shared.b.view)
   // that moves most with it: the machine is the same either way, so what changes
   // between the two columns is what the same work costs on an API, and a model the
   // machine is too slow to keep up with stops gaining at its own ceiling
-  const usageSection = shared
+  const usageSection = race
     ? (() => {
-        const l = shortHardwareLabel(shared.hw);
+        const l = shortHardwareLabel(race.s.hw);
         const levels = bestUsageLevels(data);
         const cells = levels.map((lv) => ({
           level: lv,
-          a: computeView({ ...st, hw: shared.hw.id, model: a.id, usage: lv.usage }, data),
-          b: computeView({ ...st, hw: shared.hw.id, model: b.id, usage: lv.usage }, data),
+          a: computeView({ ...st, hw: race.s.hw.id, model: a.id, usage: lv.usage, ctx: race.ctx }, data),
+          b: computeView({ ...st, hw: race.s.hw.id, model: b.id, usage: lv.usage, ctx: race.ctx }, data),
         }));
         const days = (v: View) => v.calc?.breakevenDays ?? null;
         const printed = (v: View) => {
@@ -1172,7 +1342,7 @@ ${row('API cost per month', apiCell(a, shared.a.view), apiCell(b, shared.b.view)
         const top = levels[levels.length - 1];
 
         return `<h2>How much use it takes to pay for the machine</h2>
-<p>Everything above is at ${fmtTokens(st.usage)} tokens a day. Pay-back moves with how much you actually run, so here are both models at the five levels of use the calculator names, on the ${esc(l)}. ${turns}</p>
+<p>Everything above is at ${fmtTokens(st.usage)} tokens a day. Pay-back moves with how much you actually run, so here are both models at the five levels of use the calculator names, on the ${esc(l)}${race.shortened ? ` at ${raceK}k of context` : ''}. ${turns}</p>
 <table class="board compare">
 <thead><tr><th>A day's use</th><th>${esc(a.display_name)}</th><th>${esc(b.display_name)}</th></tr></thead>
 <tbody>
@@ -1182,7 +1352,7 @@ ${cells
 </tbody>
 </table>
 ${ceilingLine}
-<p><a class="cta" href="${esc(calcLink({ hw: shared.hw.id, model: a.id, usage: top.usage }, data))}">Run ${esc(a.display_name)} at ${fmtTokens(top.usage)} tokens a day</a> · <a href="${esc(calcLink({ hw: shared.hw.id, model: b.id, usage: top.usage }, data))}">or ${esc(b.display_name)}</a></p>`;
+<p><a class="cta" href="${esc(calcLink({ hw: race.s.hw.id, model: a.id, usage: top.usage, ctx: race.ctx }, data))}">Run ${esc(a.display_name)} at ${fmtTokens(top.usage)} tokens a day</a> · <a href="${esc(calcLink({ hw: race.s.hw.id, model: b.id, usage: top.usage, ctx: race.ctx }, data))}">or ${esc(b.display_name)}</a></p>`;
       })()
     : '';
 
@@ -1218,7 +1388,7 @@ ${only.length > shownRunners.length ? `<p class="note">${only.length - shownRunn
 
   const body = `<article class="prose">
 <h1>${esc(a.display_name)} vs ${esc(b.display_name)}</h1>
-<p class="lede">${modelVerdict(a, b, ra, rb, shared, data)}</p>
+<p class="lede">${modelVerdict(a, b, ra, rb, shared, data, meeting)}</p>
 <table class="board compare">
 <thead><tr><th></th><th><a href="/models/${esc(a.id)}/">${esc(a.display_name)}</a></th><th><a href="/models/${esc(b.id)}/">${esc(b.display_name)}</a></th></tr></thead>
 <tbody>
@@ -1242,7 +1412,7 @@ ${sideBySide}
 ${usageSection}
 ${machinesSection}
 <h2>The assumptions behind both columns</h2>
-<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
+<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat.${race?.shortened ? ` The two sections that need one machine to hold both models are at ${raceK}k of context instead, which is the longest on the calculator's list where one does.` : ''} Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
 <p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="/compare/">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
 </article>`;
   return pageShell(
@@ -1418,4 +1588,6 @@ checkTables();
 checkArticles();
 checkCompareIndex();
 checkPayback();
+checkMeetingPoint();
+checkHiddenModels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
