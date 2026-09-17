@@ -475,11 +475,17 @@ function checkHeadroom() {
  * claim a spread the table does not show, or miss one it does: on 32 of the 54
  * models the machines do reach different lengths, and on the rest they do not,
  * and those are opposite claims.
+ *
+ * The figure is also the way in, so there is a third: a page may not print one
+ * length and send the reader to another, name the wrong machine or the wrong
+ * model, or offer a way in to a length it has just said the machine does not
+ * hold.
  */
 function checkModelContexts() {
   const problems: string[] = [];
   let spread = 0;
   let level = 0;
+  let links = 0;
   for (const m of data.models) {
     const perFamily = cheapestPerFamily(runnersFor(m, data));
     const path = `/models/${m.id}/`;
@@ -501,7 +507,8 @@ function checkModelContexts() {
     }
     rows.forEach((row, i) => {
       const want = lengths[i];
-      const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]*>/g, '').trim());
+      const raw = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+      const cells = raw.map((c) => c.replace(/<[^>]*>/g, '').trim());
       const printed = cells[3];
       const should = want == null ? 'unknown' : ctxLabel(want);
       if (printed !== should)
@@ -509,6 +516,18 @@ function checkModelContexts() {
       // a machine may never be shown taking a model past its own published limit
       if (want != null && m.max_context_tokens != null && want > m.max_context_tokens)
         problems.push(`${path} takes the ${hardwareLabel(perFamily[i].hw)} to ${ctxLabel(want)}, past this model's own ${ctxLabel(m.max_context_tokens)} limit`);
+      // The printed length is the way in, so it opens the calculator on this
+      // machine, this model and that length, and a length no machine holds
+      // offers no way in at all.
+      const cell = raw[3] ?? '';
+      if (want == null) {
+        if (/<a /.test(cell)) problems.push(`${path} links a longest context on the ${hardwareLabel(perFamily[i].hw)}, which holds this model at no length`);
+      } else {
+        const href = esc(calcLink({ hw: perFamily[i].hw.id, model: m.id, ctx: want }, data));
+        if (!cell.includes(`href="${href}"`))
+          problems.push(`${path} prints ${should} on the ${hardwareLabel(perFamily[i].hw)} and does not open the calculator on it at that length`);
+        else links++;
+      }
     });
     const known = lengths.filter((c): c is number => c != null);
     const differ = known.length > 1 && new Set(known).size > 1;
@@ -531,6 +550,7 @@ function checkModelContexts() {
     throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what model pages say about how far each machine takes the context`);
   }
   console.log(`  ${spread + level} model pages give each machine's longest context: ${spread} where the machines differ, ${level} where they do not`);
+  console.log(`  ${links} of those lengths open the calculator on that machine and model at that length`);
 }
 
 /**
@@ -944,6 +964,12 @@ function modelPage(m: Model): string {
     }
   };
 
+  // The length is the link, the way it is on the machine pages. Every other figure
+  // in this row is priced at the context the page assumes, and the row's own "Run
+  // the numbers" link opens there, which is what makes the row reproducible. This
+  // one is the other question, so it opens the calculator on that machine at the
+  // length printed beside it rather than sending a reader who has just read off
+  // 128k to the 32k everything else is quoted at.
   const hwRows = perFamily
     .map((r) => {
       const t = r.view.throughput;
@@ -952,7 +978,7 @@ function modelPage(m: Model): string {
   <td class="c-hw"><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a></td>
   <td>${priceWithScope(r.hw)}</td>
   <td>${t?.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(t.tokensPerSec, t.tokensPerSec < 10 ? 1 : 0)} tok/s <span class="dim">${esc(t.measurement)}</span>`}</td>
-  <td>${holds == null ? '<span class="dim">unknown</span>' : ctxLabel(holds)}</td>
+  <td>${holds == null ? '<span class="dim">unknown</span>' : `<a href="${esc(calcLink({ hw: r.hw.id, model: m.id, ctx: holds }, data))}">${ctxLabel(holds)}</a>`}</td>
   <td>${esc(verdictLine(r.view))}</td>
   <td><a href="${esc(calcLink({ hw: r.hw.id, model: m.id }, data))}">Run the numbers</a></td>
 </tr>`;
@@ -1024,7 +1050,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Longest context</th><th>Pay-back</th><th></th></tr></thead>
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}.</p>
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 <h2>The specifics</h2>
