@@ -10,7 +10,7 @@ import {
   strongestShared, tierLabel, tierName, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
-import { modelPairs } from '../src/versus-card';
+import { modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
 import type { Dataset, Hardware } from '../src/types';
@@ -457,6 +457,20 @@ describe('machine head-to-heads', () => {
       expect(Math.abs(printed - Number(m[1]))).toBeLessThan(0.05);
       expect(Number(m[2])).toBe(Math.max(shownTps(shared.a)!, shownTps(shared.b)!));
       expect(Number(m[3])).toBe(Math.min(shownTps(shared.a)!, shownTps(shared.b)!));
+    }
+  });
+
+  it('never calls one of two boxes built on the same hardware faster than the other', () => {
+    const pairs = sameSiliconPairs(data);
+    expect(pairs.length).toBeGreaterThan(0);
+    for (const [a, b] of pairs) {
+      const [va, vb] = [view(a.id), view(b.id)];
+      const verdict = machineVerdict(a, b, va, vb, data);
+      // two figures for one GPU are one part benchmarked twice; a page that picks a
+      // winner out of them invents a difference its own data denies
+      expect(verdict).not.toMatch(/× faster/);
+      expect(verdict).toContain('are the same machine inside');
+      expect(verdict).toContain(`${a.unified_memory_gb} GB of memory at ${a.memory_bandwidth_gbs} GB/s`);
     }
   });
 

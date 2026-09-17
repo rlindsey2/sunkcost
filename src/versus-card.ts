@@ -10,7 +10,7 @@ import { esc, fmtDuration, fmtGb, fmtNum, fmtUsd } from './format';
 import { clampText, EM, EM_BOLD, fitLines, fitsIn, fitOneLine, wrapText } from './text-fit';
 import { computeView, hardwareLabel } from './compute';
 import { defaultState } from './state';
-import { priceWithScopeText, runnersFor, shortHardwareLabel, slug } from './pagekit';
+import { gpuPart, priceWithScopeText, runnersFor, sameSilicon, shortHardwareLabel, slug } from './pagekit';
 import type { Dataset, Hardware, Model } from './types';
 
 // the text fitting these cards do lives in text-fit.ts, so the share card can use it
@@ -205,8 +205,31 @@ export function memoryTierPairs(data: Dataset): [Hardware, Hardware][] {
 }
 
 /**
+ * Each box against the cheapest box of the same hardware, cheapest side first. Not a
+ * grid: where every machine in the group runs the same models at the same speed, a grid
+ * would write the same answer twenty-one times, and the only question a buyer has is what
+ * the dearer box asks on top of the cheapest one that does the same work. Discontinued
+ * and unpriced machines are left out, because a price is the whole comparison here.
+ */
+export function sameSiliconPairs(data: Dataset): [Hardware, Hardware][] {
+  const groups = new Map<string, Hardware[]>();
+  for (const h of data.hardware) {
+    if (h.price_usd == null || (h.generation ?? 'current') !== 'current' || gpuPart(h) === '') continue;
+    const key = `${h.family}|${gpuPart(h)}|${h.unified_memory_gb}|${h.memory_bandwidth_gbs}|${h.usable_memory_gb}`;
+    groups.set(key, [...(groups.get(key) ?? []), h]);
+  }
+  const out: [Hardware, Hardware][] = [];
+  for (const g of [...groups.values()].filter((g) => g.length > 1)) {
+    const xs = [...g].sort((a, b) => a.price_usd! - b.price_usd! || a.id.localeCompare(b.id));
+    for (const h of xs.slice(1)) if (sameSilicon(xs[0], h)) out.push([xs[0], h]);
+  }
+  return out;
+}
+
+/**
  * Every machine pair that has a page, in the order the build writes them: the grid of
- * family flagships first, then the card grid, then the memory tiers of one machine. Each
+ * family flagships first, then the card grid, then the memory tiers of one machine, then
+ * each box against the cheapest box of the same hardware. Each
  * rule is appended after the ones before it, so a pair keeps the address it has always
  * had, and a pair is only ever written once, whichever way round the rules reach it.
  */
@@ -224,6 +247,7 @@ export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   grid(flagshipMachines(data));
   grid(graphicsCards(data));
   for (const [a, b] of memoryTierPairs(data)) add(a, b);
+  for (const [a, b] of sameSiliconPairs(data)) add(a, b);
   return out;
 }
 
