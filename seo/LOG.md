@@ -27,6 +27,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       landed on main in the three hours it sat there, and a waiting branch does not stay mergeable
       on its own.
 
+- [ ] Merge (or close) [PR #3](https://github.com/rlindsey2/sunkcost/pull/3), the `/compare/`
+      head-to-head index, opened 2026-09-17. It is ready for review, not a draft. Ryan has been
+      told about this one once; do not ping again. It touches `scripts/build-pages.ts` and
+      `src/pagekit.ts`'s neighbours, so it will go un-mergeable the same way PR #1 keeps doing:
+      a future run should check it still merges before starting its own work.
+
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
 - [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
@@ -133,9 +139,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       three, and every one now carries the machine bill the two models differ by. The run entry
       below has what the rewrite turned up, including a price gap that printed in cents.
 
-- [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
-      are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
-      queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
+- [~] An index at /compare/. Written and waiting in PR #3: 28 machine match-ups and 47 model
+      match-ups, each row carrying the figures the comparison behind it prints, 45 prefilled
+      calculator links, and a build check that refuses to ship a comparison the index does not
+      list. The 75 comparison pages also carry it as the step above them in their breadcrumbs.
+      Reaches the site when that PR merges.
 - [~] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
       home page specifically, so /leaderboard/'s copy of it does not count. Written and waiting in
       PR #2, with a test holding it identical to the node `pageGraph()` builds. Reaches the site
@@ -228,6 +236,67 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — an index of every head-to-head
+
+**Both open PRs were checked first and neither needed repairing**, which is the first time in
+seven runs that has been true: main had moved only by a log commit since PR #1's sixth repair, so
+`git merge-tree` came back clean on both branches. Ryan has not been pinged about either, per the
+standing rule.
+
+Then the item the last run said to continue, the `/compare/` index. It is a new page type, so it
+is **[PR #3](https://github.com/rlindsey2/sunkcost/pull/3)**, branch `seo/compare-index`, commit
+`50d96bb`. Nothing was pushed to main except this log.
+
+**What the page is.** The 75 comparisons could be reached only from the two things each one
+compares, so a search for "mac studio vs rtx 5090" had nothing here to land on. `/compare/` lists
+them all: 28 machine match-ups, alphabetical so a reader finds their own machine in the first
+column, each with both prices, both memory sizes, how many of the 39 open models each side holds
+and the two speeds on the strongest model both machines hold; then 47 model match-ups in
+leaderboard order with both scores, both weights, the cheapest machine here that runs the pair,
+and the calculator prefilled with that machine and the first model named. 45 of the 47 pairs have
+a machine that runs both; the other two say so rather than showing a blank.
+
+**It says something of its own before it starts listing.** None of the 8 machines compared here
+holds more than 33 of the 39 open models, and 4 of them hold that many, so the interesting figure
+is the cheapest that does: the GMKtec EVO-X2, 128GB at $3,500. The first draft of that sentence
+said the EVO-X2 "holds the most", which is true of four machines at once and therefore not true
+of it. That is the kind of sentence this site cannot print.
+
+**Two counts that had to agree with the rest of the site.** What a machine holds is counted
+against the 39 current models, per the rule Ryan settled on 2026-09-16, not the 55 the leaderboard
+ranks. The card's first draft counted against 55; it now reads the denominator off the same view
+the machine pages use, and a test fails if that ever becomes `data.models.length` again. The
+table's heading says "Models that fit, of 39" so the figure cannot be read against the wrong total.
+
+**What else changed.** `checkCompareIndex()` stops the build if a comparison is written and the
+index does not list it — adding a machine family adds comparisons, and this is what stops one
+being added quietly. The index is linked from the leaderboard, best buys, the 8 machine pages
+with head-to-heads and all 75 comparison pages, which also now carry it as the step above them in
+their breadcrumbs, so a result for a match-up prints Sunk Cost / Head to head / the pair. One CSS
+rule, `.c-pair`, lets a cell holding both sides of a match-up wrap instead of holding one line —
+the same defect the 2026-09-17 repair found on `/how-much-memory/`, avoided here by design.
+
+**Verified.** `npm test` 167 passing, 5 new; typecheck clean; the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, which found its font. Each new test was proved by
+breaking what it holds — the card's ranking reversed, its denominator put back to 55, a price
+printed without its "card only", the note stopped counting — and each failed by name and nothing
+else did. `checkCompareIndex()` was proved the same way: one row dropped from the machine table
+failed the build and named the comparison that went missing.
+
+Built the whole page set from a worktree at `origin/main` and compared all 188 pages: **103
+byte-identical, 85 changed, and every change is a link line** — 75 comparison pages by their note,
+their nav and their JSON-LD, and 10 pages by one note line each. Measured over HTTP in Chromium at
+320, 360, 390, 430, 660, 700, 860, 1024, 1280 and 1440px: **0 of 364 tables scroll sideways and no
+page overflows its window**, the two new tables included. Read the page as a picture on a desktop,
+a tablet and a phone, and the card as a PNG out of the real build.
+
+**Continue next:** check all three PR branches still merge before anything else; PR #1 has needed
+repair on six of the last eight runs and PR #3 touches the same file. The top item that can still
+reach main on its own is the leaderboard's height on a phone. Everything above it on the backlog —
+the question pages, the `/compare/` index, the home page's JSON-LD, the calculator's fonts — is
+now written and waiting in a PR, which is worth saying plainly: **three PRs are open and the live
+site has had no new page since this agent started**.
 
 ### 2026-09-17 — seven machine pages stop opening on a typo
 
