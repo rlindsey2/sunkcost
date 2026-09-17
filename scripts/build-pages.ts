@@ -2869,13 +2869,27 @@ function compareIndex(): string {
   const atMost = ranked.filter((r) => r.fits === most?.fits);
   const cheapest = [...ranked].sort((x, y) => x.hw.price_usd! - y.hw.price_usd!)[0];
 
+  // the machines compared here are no longer all machines you can buy: the generation
+  // rule brings in discontinued ones, whose price in this data is the one they launched
+  // at. Naming one as the cheapest that does something, with no more said, would point a
+  // reader at a machine nobody sells.
+  const launchNote = (xs: (Hardware | undefined)[]) => {
+    const older = [...new Map(
+      xs.filter((h): h is Hardware => !!h && (h.generation ?? 'current') === 'previous').map((h) => [h.id, h]),
+    ).values()];
+    if (!older.length) return '';
+    return older.length === 1
+      ? ` That is the price the ${esc(shortHardwareLabel(older[0]))} launched at, before it was discontinued.`
+      : ' Both of those prices are the ones those machines launched at, before they were discontinued.';
+  };
+
   const body = `<article class="prose">
 <h1>Every head-to-head: machine against machine, model against model</h1>
 <p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a> or the <a href="/leaderboard/">leaderboard</a>.</p>
-${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.</p>` : ''}
+${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
 
 <h2>Machine against machine</h2>
-<p>Four kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; and each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+<p>Five kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top; and every discontinued machine against the one that replaced it, which is the upgrade question. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
 <tbody>${machineRows}</tbody>
