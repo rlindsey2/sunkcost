@@ -291,6 +291,11 @@ their nav and their JSON-LD, and 10 pages by one note line each. Measured over H
 page overflows its window**, the two new tables included. Read the page as a picture on a desktop,
 a tablet and a phone, and the card as a PNG out of the real build.
 
+**Deploy confirmed.** **Run 63, on `8e19252`, finished green at 04:59 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. The push carried
+this log only; the page itself is in PR #3 and reaches the site when that merges. All three
+branches merged cleanly against main immediately after that push.
+
 **Continue next:** check all three PR branches still merge before anything else; PR #1 has needed
 repair on six of the last eight runs and PR #3 touches the same file. The top item that can still
 reach main on its own is the leaderboard's height on a phone. Everything above it on the backlog —
