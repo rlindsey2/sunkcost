@@ -533,6 +533,97 @@ function checkModelContexts() {
   console.log(`  ${spread + level} model pages give each machine's longest context: ${spread} where the machines differ, ${level} where they do not`);
 }
 
+/**
+ * The mirror of checkModelContexts, from the machine's side. A machine page now
+ * says how long a window it holds each model at, and which of those figures its
+ * own memory is what stopped. Both are recomputed here from fit() rather than read
+ * back off the page, because a stale figure would read as a measurement.
+ *
+ * The tag matters as much as the figure. A model that stops at 32k because the
+ * machine is full says something about the machine; one that stops at 32k because
+ * its own ceiling is 40k says nothing at all, and printing them alike would sell a
+ * machine on a limit it did not set.
+ */
+function checkMachineContexts() {
+  const problems: string[] = [];
+  const longestOffered = Math.max(...data.defaults.context.options);
+  let capped = 0;
+  let free = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const section = html.split('<h2>What it runs</h2>')[1]?.split('<h2>')[0] ?? '';
+    const view = computeView({ ...defaultState(data), hw: hw.id }, data);
+    const shown = view.rows.filter((r) => r.fit.status === 'fits').slice(0, 12);
+    if (!shown.length) {
+      if (section) problems.push(`${path} has a "What it runs" table and nothing on the list fits it`);
+      continue;
+    }
+    if (!section) {
+      problems.push(`${path} does not say what it runs`);
+      continue;
+    }
+    const rows = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>[\s\S]*?<\/tr>/g) ?? [];
+    if (rows.length !== shown.length) {
+      problems.push(`${path} lists ${rows.length} models, not the ${shown.length} it shows`);
+      continue;
+    }
+    const memory: string[] = [];
+    rows.forEach((row, i) => {
+      const m = shown[i].model;
+      const want = longestContext(m, hw, data);
+      const cell = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1])[5] ?? '';
+      const printed = cell.replace(/<span class="c-quant">memory<\/span>/, '').replace(/<[^>]*>/g, '').trim();
+      const should = want == null ? 'unknown' : ctxLabel(want);
+      if (printed !== should)
+        problems.push(`${path} prints ${printed || 'nothing'} as the longest context for ${m.display_name}, where this machine holds it to ${should}`);
+      // a machine may never be shown taking a model past its own published limit
+      if (want != null && m.max_context_tokens != null && want > m.max_context_tokens)
+        problems.push(`${path} takes ${m.display_name} to ${ctxLabel(want)}, past that model's own ${ctxLabel(m.max_context_tokens)} limit`);
+      const isMemory = want != null && contextCappedBy(m, want, data) === 'memory';
+      const tagged = cell.includes('>memory<');
+      if (isMemory !== tagged)
+        problems.push(
+          isMemory
+            ? `${path} does not say that this machine's memory is what stops ${m.display_name} at ${should}`
+            : `${path} blames this machine's memory for stopping ${m.display_name} at ${should}, which is that model's own limit or the end of the list`,
+        );
+      if (isMemory) memory.push(m.display_name);
+    });
+    const claimsFree = section.includes('Memory never runs out first here');
+    if (claimsFree === (memory.length > 0))
+      problems.push(
+        memory.length
+          ? `${path} says memory never runs out first, and it stops ${memory.length} of the models it lists`
+          : `${path} does not say that memory never runs out first, and on none of the models it lists does it`,
+      );
+    if (memory.length) {
+      capped++;
+      const shortest = shown
+        .filter((r) => memory.includes(r.model.display_name))
+        .sort((a, b) => longestContext(a.model, hw, data)! - longestContext(b.model, hw, data)!)[0];
+      const at = ctxLabel(longestContext(shortest.model, hw, data)!);
+      if (!section.includes(`On ${memoryCount(memory.length)} of the ${shown.length} below`))
+        problems.push(`${path} does not say how many of the models it lists its own memory stops, which is ${memory.length} of ${shown.length}`);
+      if (!section.includes(`${esc(shortest.model.display_name)} stops soonest, at ${at}`))
+        problems.push(`${path} does not name ${shortest.model.display_name} at ${at}, the shortest window its memory leaves`);
+    } else free++;
+    // Only a page that actually takes a model to the end of the list may name it.
+    const reaches = shown.some((r) => longestContext(r.model, hw, data) === longestOffered);
+    if (reaches !== section.includes(`${ctxLabel(longestOffered)}, where the calculator's list ends`))
+      problems.push(
+        reaches
+          ? `${path} does not name ${ctxLabel(longestOffered)}, which it takes at least one model to`
+          : `${path} names ${ctxLabel(longestOffered)} as somewhere its models reach, and it takes none of them there`,
+      );
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what machine pages say about how far they take the context`);
+  }
+  console.log(`  ${capped + free} machine pages say how far they take each model: ${capped} where their own memory stops one, ${free} where it never does`);
+}
+
 function checkArticles() {
   // English picks the article from the sound, so a page opening "Can a NVIDIA…"
   // reads as a typo on its own first line. indefiniteArticle() knows which
@@ -1009,6 +1100,9 @@ function runsOnNote(hiddenCount: number, unscored: Model[], link: (m: Model) => 
   return `${more} ${unscored.length} of them have no intelligence-index score, so they sit below the twelve above: ${unscored.map(link).join(', ')}. Their pages show what each one needs and what runs it.`;
 }
 
+/** How many of the models in a machine's table its own memory stops, as the page writes it. */
+const memoryCount = (n: number) => (n === 1 ? 'one' : String(n));
+
 function hardwarePage(hw: Hardware): string {
   const state = { ...defaultState(data), hw: hw.id };
   const view = computeView(state, data);
@@ -1027,16 +1121,62 @@ function hardwarePage(hw: Hardware): string {
   const unscored = hidden.filter((r) => r.model.frontier_equivalent?.score == null).map((r) => r.model);
   const modelLink = (m: Model) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`;
 
-  const rows = fits
-    .slice(0, 12)
-    .map((r) => `<tr>
-  <td><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${esc(r.model.quantisation)}</span></td>
+  // Every figure in this table is taken at the context the page assumes, and that
+  // is where it used to stop. The weights are a fixed size; the KV cache is not,
+  // because it grows with every token you keep, so the memory left over after the
+  // weights is how long a window the machine holds each model at. On 51 of the 56
+  // machines at least one model is stopped by this machine's memory rather than by
+  // its own limit, which is the half of the answer the table never gave.
+  const shown = fits.slice(0, 12);
+  const reach = new Map(shown.map((r) => [r.model.id, longestContext(r.model, hw, data)] as const));
+  // Only memory running out says anything about the machine. A model's own limit
+  // or the end of the calculator's list stops the figure just as dead, and neither
+  // is the hardware's doing, so the page may not read them as the same thing.
+  const stoppedByMemory = shown.filter((r) => {
+    const tokens = reach.get(r.model.id);
+    return tokens != null && contextCappedBy(r.model, tokens, data) === 'memory';
+  });
+  const longestOffered = Math.max(...data.defaults.context.options);
+
+  const rows = shown
+    .map((r) => {
+      const holds = reach.get(r.model.id);
+      const memory = holds != null && contextCappedBy(r.model, holds, data) === 'memory';
+      return `<tr>
+  <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${esc(r.model.quantisation)}</span></td>
   <td>${r.throughput.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(r.throughput.tokensPerSec, r.throughput.tokensPerSec < 10 ? 1 : 0)} tok/s`}</td>
   <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
   <td>${dotRow(r.model)}</td>
   <td>${fmtGb(r.fit.needGb)}</td>
-</tr>`)
+  <td>${holds == null ? '<span class="dim">unknown</span>' : `${ctxLabel(holds)}${memory ? '<span class="c-quant">memory</span>' : ''}`}</td>
+</tr>`;
+    })
     .join('');
+
+  // What the new column adds up to, said before the table rather than left to be
+  // read out of it. The two cases are opposite claims, so each page makes its own.
+  const contextLine = (() => {
+    if (!shown.length) return '';
+    const spare = hw.usable_memory_gb ?? hw.unified_memory_gb;
+    // Where the models this machine does not stop end up, which is not the same
+    // sentence on every machine: on a 16GB Mac nothing reaches the end of the
+    // list, so naming it as somewhere "the rest" get to would sell a length this
+    // machine never holds.
+    const rest = shown.filter((r) => !stoppedByMemory.includes(r));
+    const atEnd = rest.filter((r) => reach.get(r.model.id) === longestOffered).length;
+    const end = `${ctxLabel(longestOffered)}, where the calculator's list ends`;
+    if (!stoppedByMemory.length)
+      return `<p>Memory never runs out first here. Every model below holds ${atEnd === rest.length ? end : atEnd ? `${end}, or the longest setting its own context limit allows` : `the longest setting its own context limit allows`}, so the window you get is the model's choice rather than this machine's.</p>`;
+    const worst = [...stoppedByMemory].sort((a, b) => reach.get(a.model.id)! - reach.get(b.model.id)!)[0];
+    const others = !rest.length
+      ? ''
+      : atEnd === rest.length
+        ? ` The rest reach ${end}.`
+        : atEnd
+          ? ` The rest reach ${end}, or the longest setting their own context limit allows.`
+          : ` The rest stop at the longest setting their own context limit allows, which is the model's doing and not this machine's.`;
+    return `<p>They do not all hold the same window. The weights are a fixed size, but the key-value cache grows with every token you keep, so what is left of ${spare} GB after the weights is how far the context goes. On ${memoryCount(stoppedByMemory.length)} of the ${shown.length} below, this machine's memory is what runs out first: ${esc(worst.model.display_name)} stops soonest, at ${ctxLabel(reach.get(worst.model.id)!)}.${others}</p>`;
+  })();
 
   const best = fits[0];
   const body = `<article class="prose">
@@ -1053,11 +1193,13 @@ function hardwarePage(hw: Hardware): string {
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id }, data))}">Run the numbers on this machine</a></p>
 
 ${rows ? `<h2>What it runs</h2>
+${contextLine}
 ${stack(`<table class="board">
-<thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th></tr></thead>
+<thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1 })}
-<p class="note">${hidden.length ? `${runsOnNote(hidden.length, unscored, modelLink)} ` : ''}The memory column is the weights plus the cache for ${Math.round(state.ctx / 1024)}k of context: <a href="/how-much-memory/">how that sum works, and what each size needs</a>.</p>` : ''}
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included; a figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
+${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
 ${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
 ${stack(`<table class="board">
@@ -1964,5 +2106,6 @@ checkPayback();
 checkMeetingPoint();
 checkHeadroom();
 checkModelContexts();
+checkMachineContexts();
 checkHiddenModels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
