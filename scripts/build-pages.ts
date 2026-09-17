@@ -941,7 +941,7 @@ function memoryRow(m: Model): string {
   <td>${fmtGb1(m.weights_gb)}</td>
   <td>${fmtGb1(kv)}</td>
   <td><b>${fmtGb1(need)}</b></td>
-  <td>${hw ? machineLink(hw) : '<span class="dim">nothing on this list</span>'}</td>
+  <td class="c-hw">${hw ? machineLink(hw) : '<span class="dim">nothing on this list</span>'}</td>
   <td>${hw ? `<a href="${esc(calcLink({ hw: hw.id, model: m.id, ctx: CTX }, data))}">Run the numbers</a>` : ''}</td>
 </tr>`;
 }
@@ -985,9 +985,9 @@ function memoryPage(): string {
       return `<tr>
   <td><b>${fmtGb1(hw.usable_memory_gb)}</b></td>
   <td>${hw.unified_memory_gb} GB</td>
-  <td>${machineLink(hw)}</td>
+  <td class="c-hw">${machineLink(hw)}</td>
   <td>${fitCount(hw, CTX)}</td>
-  <td>${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> <span class="dim">${esc(tierName(top, data))}</span>` : '<span class="dim">none</span>'}</td>
+  <td class="c-model">${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> <span class="dim">${esc(tierName(top, data))}</span>` : '<span class="dim">none</span>'}</td>
 </tr>`;
     })
     .join('');
