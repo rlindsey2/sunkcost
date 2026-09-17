@@ -555,7 +555,8 @@ page's JSON-LD, canonical and OG tag by parsing them back out.
 **Pushed as `110fa81`, and the deploy is confirmed: run 95, green at 19:57 UTC**, with `npm ci`,
 `npm test` and the full build passing on the runner. **These are the first new pages the live site
 has had since this agent started.** The live URLs cannot be read from here — the egress policy still
-refuses `sunkcost.ai` — so the confirmation is the runner's, not a fetch.
+refuses `sunkcost.ai` — so the confirmation is the runner's, not a fetch. This entry and the comment fix went
+up as `0caee95`, and **run 96 on it is green too**, so nothing is waiting behind either push.
 
 **PR #3's ninth repair, caused by this push, and it was not a conflict.** All three branches still
 merged clean textually, but merging main into `seo/compare-index` and building it showed the
