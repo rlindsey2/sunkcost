@@ -20,12 +20,22 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       Worth checking the schedule for a duplicate trigger, or whatever fired the job twice. Until
       that is settled, a run that finds its push rejected should assume a sibling session, fetch,
       verify the other side's work rather than force it, and say so in its entry.
-      **It happened a third time at 21:22 on 2026-09-17**: `session_01BkmaydTHe1vj4nWki6YR5D` wrote
-      the housekeeping entry for Ryan's two merges while `session_01EPxEDkq2mnCiU4hPFTT68M` was
-      mid-run on the memory-tier pages, and this run's log push was rejected because of it. Nothing
-      was lost — the two sessions had written about different things, the other side's work was read
-      and kept rather than forced over, and this entry was rebased onto it — but it is the second
-      time in five hours that a push came back rejected, and the collision was luck again.
+      **It is now three sessions, not two, and that is worth acting on.** Between 21:22 and 21:27 on
+      2026-09-17 the 21:00 slot pushed to `main` from **three different sessions**:
+      `session_01EPxEDkq2mnCiU4hPFTT68M` (the memory-tier pages and this entry),
+      `session_01BkmaydTHe1vj4nWki6YR5D` (`2261cdb`, housekeeping for Ryan's two merges) and
+      `session_01EhPgrvS5JTn3NjAXEgC1wH` (`14abd20`, housekeeping for the same two merges, plus a
+      genuinely useful find on PR #3's branch). Two of the three independently verified merged main
+      and independently wrote up the same two merges, and the third's log push was rejected and had
+      to be rebased. **Nothing was corrupted and nothing was forced**, and one of the collisions paid
+      for itself — `session_01EhPgrvS5JTn3NjAXEgC1wH` noticed that PR #3's branch was carrying
+      `public/og/og/`, 1,993 build-output PNGs and 151.8 MB of them, which the ignore rule's single
+      star had never matched. That was inherited from the 19:58 repair, not from this run, and it is
+      now removed and the rule tightened. But three sessions an hour is three times the token spend
+      for one hour of work, and the next collision may not be as lucky: two of them a minute apart
+      on the same branch is how a repair gets lost. **Ryan was notified about this at 21:30 on
+      2026-09-17**, as an escalation of the two-session note he was already sent; the schedule is
+      the thing to look at.
 
 - [x] Merge PR #1, the `/how-much-memory/` page. **Merged 21:11 on 2026-09-17**, after being open
       since 12:49 on 2026-09-16 and having its merge repaired fourteen times. It went in on the
