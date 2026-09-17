@@ -4,7 +4,7 @@ import {
   brandOf, calcLink, cheapestRunsBoth, computeView, familyHeading, familyRange, fitsOf, fmtDuration, fmtNum, fmtUsd,
   hardwareProduct, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
-  strongestShared, FONT_PRELOAD,
+  stack, strongestShared, FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
 import { modelPairs } from '../src/versus-card';
@@ -478,5 +478,65 @@ describe('model head-to-heads', () => {
     expect(runners(unrunnable[0]).length).toBe(0);
     expect(verdict).toContain(`No machine on this list runs ${model(unrunnable[0]).display_name}`);
     expect(verdict).toContain(`${model(unrunnable[1]).display_name} runs on the`);
+  });
+});
+
+describe('tables on a phone', () => {
+  const table = `<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Speed at 32k</th><th>Pay-back</th><th></th></tr></thead>
+<tbody><tr class="is-frontier"><th colspan="5">Same machine, more memory</th></tr><tr>
+  <td><a href="/hardware/mac-mini-m6-16/">Mac mini M6, 16GB</a></td>
+  <td>$899</td>
+  <td>12 tok/s <span class="dim">estimated</span></td>
+  <td>Pays back in 842 years</td>
+  <td><a href="/?hw=mac-mini-m6-16">Run the numbers</a></td>
+</tr></tbody>
+</table>`;
+  const marked = stack(table, { fig: 3 });
+  const cell = (cls: string) => marked.match(new RegExp(`<td class="${cls}"[^>]*>([\\s\\S]*?)</td>`))?.[1] ?? '';
+
+  it('leads the row with the column that answers the page', () => {
+    expect(cell('k-fig')).toBe('Pays back in 842 years');
+  });
+
+  it('gives every other column its heading, so a figure is never bare', () => {
+    expect(marked).toContain('<td class="k-sub" data-label="Price">$899</td>');
+    expect(marked).toContain('data-label="Speed at 32k"');
+    // the last column has no heading to borrow, so it gets none
+    expect(marked).toContain('<td class="k-sub"><a href="/?hw=mac-mini-m6-16">Run the numbers</a></td>');
+  });
+
+  it('shortens a heading too long to sit in a row when asked', () => {
+    const short = stack(table, { fig: 3, labels: { 2: 'Speed' } });
+    expect(short).toContain('data-label="Speed"');
+    expect(short).not.toContain('data-label="Speed at 32k"');
+  });
+
+  it('reads a cell that spans the row as a heading, not as a column', () => {
+    expect(marked).toContain('<th colspan="5" class="k-wide">Same machine, more memory</th>');
+  });
+
+  it('keeps the wide screen exactly as it was, down to the words in every cell', () => {
+    const text = (html: string) => html.replace(/<[^>]*>/g, '|').replace(/\|+/g, '|');
+    expect(text(marked)).toBe(text(table));
+    expect(marked).toContain('<table class="board stack">');
+  });
+
+  it('keeps a class the table already gave a cell', () => {
+    const classed = stack(table.replace('<td>$899</td>', '<td class="c-gb">$899</td>'), { fig: 3 });
+    expect(classed).toContain('<td class="k-sub c-gb" data-label="Price">$899</td>');
+  });
+
+  it('drops a column holding nothing but a dash, and keeps one drawn without words', () => {
+    const dashed = stack(table.replace('<td>$899</td>', '<td>—</td>').replace('<td>12 tok/s <span class="dim">estimated</span></td>', '<td><span class="dot dot-green"></span></td>'), { fig: 3 });
+    expect(dashed).toContain('<td class="k-sub k-none">—</td>');
+    expect(dashed).toContain('<td class="k-sub" data-label="Speed at 32k"><span class="dot dot-green"></span></td>');
+  });
+
+  it('refuses a table it cannot mark up rather than shipping one that swipes', () => {
+    expect(() => stack('<table class="board compare">x</table>', { fig: 1 })).toThrow(/board/);
+    expect(() => stack('<table class="board">\n<tbody><tr><td>x</td></tr></tbody>\n</table>', { fig: 1 })).toThrow(/name its columns/);
+    expect(() => stack(table, { fig: 5 })).toThrow(/no column 5/);
+    expect(() => stack(table, { fig: 0 })).toThrow(/no column 0/);
   });
 });
