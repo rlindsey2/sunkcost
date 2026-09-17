@@ -275,6 +275,13 @@ Each new test was proved by taking the fitting back out and watching all five fa
 them passed the first time that was tried, because the old size rule happened to satisfy them, so
 both were rewritten before they counted.
 
+**Deploy confirmed.** One push this run, both commits together, which is what the last entry asked
+for. **Run 55, on `ba6841f`, finished green at 01:31 UTC** with `npm ci`, `npm test` and the full
+`npm run build` passing on the runner, and republished — 6 minutes rather than the usual 3.5, which
+is the 1,870 changed cards going up. Both PR branches were re-checked after the push and both still
+merge, which matters because this one touched `src/versus-card.ts`. The site's own pages still
+cannot be read from here, so this is the runner's word rather than a fetch of sunkcost.ai.
+
 **Continue next:** the two table items are the live work on main, the narrower-columns one
 (`scripts/build-pages.ts`, not CSS) being the bigger of the two, since `/best/` still hides the
 pay-back column on a phone and that is the column the page exists for. The new waterline-label item
