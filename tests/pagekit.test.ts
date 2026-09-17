@@ -847,6 +847,28 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(checked).toBeGreaterThan(600);
   });
 
+  it("opens the leaderboard's cheapest machine on the model in that row", () => {
+    // The leaderboard's "Cheapest machine that runs it" column names a machine and a
+    // price, and the price is the way into the calculator. That link carries no context,
+    // so it lands on the calculator's default — which has to be the same context the
+    // column was worked out at, or the reader arrives at a configuration the row does
+    // not describe.
+    const ctx = data.defaults.context.default_tokens;
+    let checked = 0;
+    for (const m of data.models) {
+      const cheapest = cheapestPerFamily(runnersFor(m, data)).slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0];
+      if (!cheapest) continue;
+      const href = calcLink({ hw: cheapest.hw.id, model: m.id }, data);
+      const back = parseState(href.slice(href.indexOf('?')), data);
+      expect(back.hw).toBe(cheapest.hw.id);
+      expect(back.model).toBe(m.id);
+      expect(back.ctx).toBe(ctx);
+      expect(computeView(back, data).model?.id).toBe(m.id);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(40);
+  });
+
   it('never sends a model page reader to a shorter window than the row is priced at', () => {
     // Every other figure in a model page's row — the speed, the pay-back — is
     // quoted at the context the page assumes, and the machines listed are the ones

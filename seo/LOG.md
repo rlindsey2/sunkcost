@@ -5,13 +5,37 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 ## Ryan's side (needs the site owner)
 
+- [ ] **Two agent sessions keep running this hourly task at the same time, and they duplicate each
+      other's work.** It has now happened at least twice: once around 03:38 on 2026-09-17 (see the run
+      entry "a tablet stops swiping, and the leaderboard shows all seven columns", which ends with a
+      note about it) and again
+      at 17:38 the same day. Twice is a pattern, not an accident, so it is worth a look at the
+      schedule rather than a note in the log. The 17:00 slot fired twice: `session_01HLJt85apd2NivX6fVvQH6s` (which did
+      this run's work and pushed `9717481`) and `session_01GisDawkCEqMazMjq8SY8SP`, which picked up
+      that same commit and repaired PR #1 and PR #3 against it four minutes ahead of the other
+      session doing the identical repair. Nothing was corrupted — both resolutions were the same
+      union, both were verified here after the fact, and all three PRs merge clean — but an hour of
+      one session's work was thrown away, and a worse collision is easy to imagine: two sessions
+      appending different entries to this log, or two pushing different fixes to the same branch.
+      Worth checking the schedule for a duplicate trigger, or whatever fired the job twice. Until
+      that is settled, a run that finds its push rejected should assume a sibling session, fetch,
+      verify the other side's work rather than force it, and say so in its entry.
+
 - [ ] Merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
       `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason six
       runs in a row have taken smaller items instead of the top backlog entry, which is question
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired thirteen times**, most recently at 16:07 on 2026-09-17.
+      **It has now needed its merge repaired fourteen times**, most recently at 17:38 on 2026-09-17.
+      The fourteenth was the import block in both files again, this branch's `/how-much-memory/`
+      helpers against main's new `machinesShorter` and `ShorterMachine`, and it was **repaired by a
+      second agent session running the same hourly task at the same time** — see the duplicate-runs
+      item below. Its resolution was checked independently here by taking the union of each pair of
+      import lists against the merged file: 64 names in `scripts/build-pages.ts` and 49 in
+      `tests/pagekit.test.ts`, **nothing lost and nothing invented on either side**. It rebuilt
+      (189 pages, 188 tests, typecheck clean, the full build) and re-measured over HTTP (1,701 views,
+      0 overflows, 0 of 4,356 tables scrolling) before pushing `3f84214`.
       The thirteenth was the import block in both `scripts/build-pages.ts` and `tests/pagekit.test.ts`:
       this branch's `/how-much-memory/` helpers against main's new `fitsShorter` and `ShorterFit`.
       Every name from both sides was kept in both files, checked by taking the union of each pair of
@@ -81,6 +105,11 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed a seventh repair at 17:41 on 2026-09-17**, the import block for the fifth time:
+      this branch's `shownTps` against main's `machinesShorter` and `ShorterMachine`. Like PR #1's
+      fourteenth, this one was **done by a second agent session running the same task concurrently**;
+      checked here by union against the merged file (58 names, nothing lost, nothing invented) and by
+      confirming all three branches merge clean against main afterwards. Pushed as `7adcb3b`.
       **It needed a sixth repair at 16:10 on 2026-09-17**, the import block for the fourth time:
       this branch's `shownTps` against main's `fitsShorter` and `ShorterFit`. All three kept and the
       list put back into one order; rebuilt (189 pages, 76 comparisons, 178 tests, typecheck clean)
@@ -248,15 +277,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the same thing in different words is the duplicate this site should not create). Each
       answers in the first paragraph with the site's own numbers, links into the calculator with
       the configuration prefilled, and cites sources.
-- [ ] The model pages have the mirror of what the machine pages gained on 2026-09-17: a model can
-      fit most machines at 32k and one machine only below it, and the model page leaves that machine
-      out of "Machines that run it" entirely. The same 33 pairs, seen from the other side, and they
-      land on about ten model pages — Granite 4.2 8B and 30B, Ministral 3 14B, Devstral Small 2 24B,
-      Qwen3-Coder 30B-A3B, Laguna XS 2.1, Gemma 4 31B it. `fitsShorter()` is written and the machine
-      side is shipped, so this is the cheaper half. The question to settle first is whether it wants
-      a second table or a line under the existing one: a model page's table is priced at 32k
-      throughout, and a row that holds only at 8k cannot carry a speed or a pay-back from that table
-      without being read as one of them.
+- [x] The model pages have the mirror of what the machine pages gained on 2026-09-17. Done
+      2026-09-17, and the item undersold it twice over: 16 model pages, not ten, and what the
+      omission hid is not a missing machine but a wrong price. On 12 of the 16 the cheapest machine
+      the page named was **not** the cheapest machine that runs the model — Llama 3.3 70B answered
+      "$3,449" and runs on a $1,700 box at 16k. The question the item said to settle first was
+      settled the way it leaned: a second table, because price and window both vary down it and
+      neither belongs in a table priced at 32k throughout. The run entry below has the figures and
+      `checkShorterMachines()`, which holds every row and the answer box's claim to the data.
 
 - [ ] `/leaderboard/` has no prefilled calculator link at all — the only page on the site with none,
       and it is the biggest hub, 1,336 words and 113 outbound internal links. Its "Cheapest machine
@@ -413,6 +441,113 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — a model page stops naming the wrong machine as the cheapest that runs it
+
+**All three open PRs were checked first: PR #1 and PR #2 merged clean, PR #3 did not.** PR #3 was
+repaired after the work rather than before, because a second session got to it first; see the end of
+this entry, and the new item at the top of Ryan's side. Ryan has not been pinged about the PRs
+themselves, per the standing rule.
+
+**Why this item.** The question pages are still the top item overall and still blocked behind three
+unmerged PRs, for the tenth run running. The last entry named two main-reachable items and called
+this one the cheaper half, because `fitsShorter()` was already written. It was cheap. It was also
+the more useful of the two.
+
+**What was wrong, and it is worse than the backlog item said.** The machine pages had stopped
+saying "it cannot run this" about a model they run at 16k. The same 45 rows read from the model's
+side say something different and worse: **the cheapest machine a model page named was often not the
+cheapest machine that runs the model**. `/models/llama-3.3-70b-q4/` answered "Cheapest machine that
+runs it: Framework Desktop, 128GB at $3,449" — and a $1,700 Corsair AI Workstation 300 runs it at
+16k. That is not a missing row, it is the page's headline figure being wrong by $1,749 for anyone
+who would have kept a shorter window. **On 12 of the 16 affected pages the page's own cheapest was
+beaten**: four models at $1,099 that run on an $899 Mac mini, two 70B models at $3,449 that run on
+the $1,700 Corsair, and the rest by $30 to $200.
+
+**What changed.** **16 of the 55 model pages** now carry a section under "Machines that run it" —
+"Four more machines, at a shorter window" — naming each machine, its price, the longest window it
+holds that model at and what the model needs there. **The window is the link**, the way it already
+is in the table above and on the machine pages, so each one opens the calculator on that machine at
+that length: **45 new prefilled links**. On the 12 pages where the shorter window buys a cheaper
+machine, the answer box says so in a row of its own, directly under the "Cheapest machine that runs
+it" row it qualifies.
+
+**Two drafts were thrown away, both for the same kind of fault.** The first table had a fifth
+column, the machine's usable memory, so a reader could check the fit. On the Llama 70B page it
+printed "48 GB" beside "Needs there 48 GB" — true to a tenth of a gigabyte and unreadable as
+anything but a rounding artefact, so the column went and the note points at the machine's own page
+instead. The first draft of the paragraph opened "Every figure in the table above is taken at 32k",
+which is **false**: the Longest context column in that table is the one figure on the page that is
+not. It now says the table lists the machines that run it at 32k, which is what is actually true.
+
+**No figure here is new data.** `machinesShorter()` asks `fit()` at every context the calculator
+offers, the same function the calculator uses, and keeps one machine per family, cheapest first —
+the same rule the table above it already states. A family already in that table can appear here on a
+cheaper machine, which is the whole point. Checked that the rule loses nothing: across all 55 models
+there is **no family where two machines hold the model at different shorter windows**, so the
+cheapest per family is not hiding a longer window behind a dearer box.
+
+`checkShorterMachines()` holds it from here, recomputing every row from `fit()` at build time rather
+than reading it back off the page: a page with machines to name must name them all, in order, with
+the right price, window and footprint; a page with none may claim none; **no machine may appear in
+both tables**; the paragraph must carry the model's own 32k footprint and the price its own table
+starts at; and the answer box may only promise a cheaper machine where there is one. Proved by
+breaking it eleven ways — dropping the section (**16** faults), printing the window one step long
+(**45**), linking at the default window (**45**), dropping the answer-box row (**12**), forcing that
+row onto every page with a section (**4**), printing the 32k footprint as the figure at the shorter
+window (**45**), listing machines the model already runs on at 32k (**297**), ordering the rows
+dearest first (**126**), taking the paragraph's 32k figure at the shorter window (**16**), taking
+the "starts at" price from the wrong machine (**16**), and printing a wrong price in the table
+(**45**).
+
+**One breakage produced nothing, and that was worth knowing.** Printing the price without its
+"card only" scope failed to fail — because the check compared the cells as text, and the text
+comparison strips the very tag it was meant to hold. There is also no card-only machine among the 45
+today, so nothing would have caught it either way. The price cell is now compared as markup, not as
+text, which is the only column on the page where that matters.
+
+**Nothing else on the site moved.** Built the whole page set from a worktree at `origin/main` and
+compared every file: **173 byte-identical, 16 changed**, and the 16 are exactly the 16 model pages.
+The sitemap is byte-identical and **no title, description, canonical, OG image or JSON-LD line
+changed on any page**. A first draft left a blank line inside the answer box on all 54 model pages
+with a machine list; the row carries its own line now, which is what took the diff from 54 to 16.
+
+**Verified.** `npm ci`, `npm test` (**175 tests**, up from 173 — two new ones over every model,
+holding the model side to the machine side row for row and keeping any machine that runs it at 32k
+out), `npx tsc --noEmit`, and `npm run build` all the way through `build:functions` with no
+workaround, exit 0. Measured over HTTP in Chromium at 320, 360, 390, 430, 640, 768, 1024, 1280 and
+1440px: **1,692 views over the generated pages, 0 page overflows, 0 of 4,302 tables scrolling**,
+against 0 of 4,158 on the baseline — the 144 new table views are the 16 pages at 9 widths. Read the
+new section as a picture at 390 and 1280px, and **followed five of the new links in a browser**:
+Llama 3.3 70B on the $1,700 Corsair at 16k, Granite 4.2 8B on the $899 Mac mini at 16k, Qwen3 32B on
+the Mac mini M6 32GB at 4k, Gemma 4 31B on the Framework Desktop at 16k and Ministral 3 14B on the
+$899 Mac mini at 8k. All five land on the right machine, model and window, with the model fitting
+and a pay-back priced, and the cache figures the calculator prints (5.4, 2.7, 1.1, 3.5 and 1.3 GB)
+add up to the footprints the pages print. One note on that last figure: the calculator rounds its
+cache to one decimal, so 8.24 + 1.34 prints as 8.2 + 1.3 there and 9.6 GB here. The page's figure is
+the exact one; the 0.1 is the calculator's display, and it is site-wide rather than new.
+
+**Deploy confirmed.** **Run 87, on `9717481`, finished green at 17:03 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**A second session was running this same hourly task, and repaired both PRs first.** The push broke
+PR #1 and PR #3 exactly where this log has predicted for six runs — the import block — and while
+this run was resolving them, `session_01GisDawkCEqMazMjq8SY8SP` resolved the same blocks and pushed
+at 17:38 and 17:41. Both its resolutions were checked here rather than taken on trust, by unioning
+each pair of import lists and comparing against the merged file: **64 and 49 names on PR #1's two
+files, 58 on PR #3's, nothing lost and nothing invented on any of them**. So this run threw its own
+two merge commits away and kept theirs. **All three branches merge clean against main as of 17:50
+UTC.** This is the second time two sessions have collided in a day; it is now an item at the top of
+Ryan's side rather than a footnote, because an hour of work was duplicated and the next collision
+could land on this log instead of on an import block.
+
+**What to continue.** The best main-reachable item left is **`/leaderboard/` having no prefilled
+calculator link at all** — the biggest hub on the site and the only page with none. It needs a shape
+rather than a href: the table is already 7 columns and 8,134px tall on a phone, so it cannot take a
+new column, and the machine name in "Cheapest machine that runs it" is a link worth keeping. **The
+question pages are still the top item overall and still the biggest win**, and the judgement is
+unchanged: if a PR merges, the page type is on main and the next question page is much less work.
+**The live site has still had no new page since this agent started.**
 
 ### 2026-09-17 — the pages stop saying no at 32k when the answer is yes at 16k
 
