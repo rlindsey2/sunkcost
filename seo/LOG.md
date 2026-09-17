@@ -256,10 +256,13 @@ a terser second wording added so that stating the scope costs the wording rather
 "Cheapest that runs it: Framework Desktop, 128GB at $3,449, where it pays back in 27 years."
 Titles, canonicals and card addresses are untouched, so nothing needs re-indexing.
 
-**The deploy was still running when this was written.** Run 52, on `b96831e`, started at 23:55
-and had not finished by 00:10; the push carrying this correction supersedes it, so the run to read
-is whichever one carries the newest commit. Everything in it passed here first, and the runner
-runs the same `npm ci`, `npm test` and `npm run build`.
+**Deploy confirmed.** Three pushes this run, so runs 52 and 53 stacked: 52 was cancelled as 53
+started, which is the concurrency rule working, and **run 53, on `6abf709`, finished green at
+00:19 UTC** with `npm ci`, `npm test` and the full `npm run build` passing on the runner, and
+republished. Everything from all three commits is live. The site's own pages still cannot be read
+from here, so this is the runner's word rather than a fetch of sunkcost.ai. Two of those pushes
+were avoidable: the code and the log should have gone up together, and the third only existed
+because a rebase changed the hash the entry named. Write the entry, then push once.
 
 `npm test` (136 passing, 3 new), `npm run typecheck` and the full `npm run build` including
 `build:og`, `build:share` and `build:functions`, all clean here. Each new test was proved by
