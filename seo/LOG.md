@@ -298,6 +298,11 @@ and 1440px: **0 of 188 pages overflow the window and 0 of 362 tables scroll side
 them. Read the section as a picture at 1280px and at 390px, in the two-sided wording and in both
 of the one-sided ones.
 
+**Deploy confirmed.** **Run 65, on `e9547c8`, finished green at 05:51 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. All three PR
+branches were re-checked immediately after the push and all three still merge clean, which
+matters this time: this run edited `scripts/build-pages.ts`, the file PR #1 and PR #3 both touch.
+
 **Continue next:** check all three PR branches still merge before anything else. The top item that
 can still reach main on its own is the leaderboard's height on a phone, then the 5 pages on one
 link above. Everything above those on the backlog — the question pages, the `/compare/` index, the
