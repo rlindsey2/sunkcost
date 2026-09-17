@@ -990,10 +990,11 @@ const sharedNames = new Set(
 const hwViews = new Map(data.hardware.map((hw) => [hw.id, computeView({ ...defaultState(data), hw: hw.id }, data)]));
 const fitsOn = (hw: Hardware) => hwViews.get(hw.id)!.rows.filter((r) => r.fit.status === 'fits');
 
-// The machine most people cross-shop in each family: the middle of the range by
-// price. These are the pairs that get a head-to-head page, and the machine pages
-// link to the ones they appear in. The pairing lives in src/versus-card.ts, so
-// that the card build and the page build cut the same list and agree on names.
+// Which machines get a head-to-head: the middle of each family's range by price, the
+// one most people cross-shop, and then every graphics card against every other, since
+// a card is bought as a part and a part is what people put against another part. The
+// machine pages link to the ones they appear in. The pairing lives in src/versus-card.ts,
+// so that the card build and the page build cut the same list and agree on names.
 const flagships = flagshipMachines(data);
 
 const headToHeads = new Map<string, { href: string; other: Hardware }[]>();
