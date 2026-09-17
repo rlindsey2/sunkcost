@@ -635,6 +635,42 @@ export function contextHeadroom(models: Model[], a: Hardware, b: Hardware, data:
     .filter((r) => r.a !== r.b);
 }
 
+export interface ShorterFit {
+  model: Model;
+  /** the longest window the calculator offers that this machine holds it at */
+  ctx: number;
+  /** weights plus cache at that window */
+  needGb: number;
+  /** what the same model would need at the context everything else is priced at */
+  needAtDefaultGb: number;
+}
+
+/**
+ * Models a machine does not hold at the context the site prices everything at,
+ * but does hold at a shorter window. The weights are a fixed size and the cache
+ * is not, so a model that misses at 32k can fit at 16k or 8k with nothing else
+ * changed. A page that only counts what fits at 32k answers "no" to someone who
+ * would happily keep a shorter window, which is the wrong answer to their
+ * question. Longest window first, then the heavier model, so the nearest miss
+ * leads.
+ */
+export function fitsShorter(hw: Hardware, models: Model[], data: Dataset): ShorterFit[] {
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const at = (m: Model, tokens: number) => memoryFit(m, hw, tokens, data.defaults.nearly_fits_ratio, kvScale);
+  const out: ShorterFit[] = [];
+  for (const model of models) {
+    if (at(model, ctx).status === 'fits') continue;
+    const longest = longestContext(model, hw, data);
+    if (longest == null || longest >= ctx) continue;
+    const needGb = at(model, longest).needGb;
+    const needAtDefaultGb = at(model, ctx).needGb;
+    if (needGb == null || needAtDefaultGb == null) continue;
+    out.push({ model, ctx: longest, needGb, needAtDefaultGb });
+  }
+  return out.sort((a, b) => b.ctx - a.ctx || (b.model.weights_gb ?? 0) - (a.model.weights_gb ?? 0));
+}
+
 /** A price, with the note that a graphics card is priced without the PC around it. */
 export function priceWithScope(hw: Hardware): string {
   if (hw.price_usd == null) return '<span class="dim">not published</span>';

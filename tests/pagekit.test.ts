@@ -1,12 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy, contextHeadroom, ctxLabel,
-  familyHeading, familyRange, fitsOf, fmtDuration, fmtGb1, fmtNum, fmtUsd, gbRange, hardwareLabel, hardwareProduct,
-  indefiniteArticle, jsonLd, kvWorking, longestContext, machinesConsidered, machineVerdict, median, modelsInBand,
-  modelVerdict, otherQuantisations, pageGraph, pageShell, priceRivals, priceWithScope, priceWithScopeText,
-  runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis, stack, strongestShared,
-  tierLabel, tierName, FONT_PRELOAD, SIZE_BANDS,
+  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum, fmtUsd,
+  FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking, longestContext,
+  machinesConsidered, machineVerdict, median, modelsInBand, modelVerdict, otherQuantisations, pageGraph, pageShell,
+  priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps,
+  SIZE_BANDS, speedWithBasis, stack, strongestShared, tierLabel, tierName,
   type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
@@ -796,6 +796,43 @@ describe('what memory buys once two machines hold the same models', () => {
         expect(footprintGb(m, next)!).toBeGreaterThan(h.usable_memory_gb!);
       }
     }
+  });
+
+  it('only offers a shorter window where one really changes the answer', () => {
+    // what the machine pages print: every pair here misses at the context the site
+    // prices everything at, holds at the window named, and holds at nothing longer
+    const ctx = data.defaults.context.default_tokens;
+    const options = [...data.defaults.context.options].sort((a, b) => a - b);
+    let pairs = 0;
+    for (const h of data.hardware) {
+      for (const r of fitsShorter(h, data.models, data)) {
+        pairs++;
+        expect(r.ctx).toBeLessThan(ctx);
+        expect(footprintGb(r.model, r.ctx)!).toBeLessThanOrEqual(h.usable_memory_gb!);
+        expect(footprintGb(r.model, ctx)!).toBeGreaterThan(h.usable_memory_gb!);
+        const next = options.find((o) => o > r.ctx)!;
+        expect(footprintGb(r.model, next)!).toBeGreaterThan(h.usable_memory_gb!);
+        expect(r.ctx).toBe(longestContext(r.model, h, data));
+        expect(r.needGb).toBeCloseTo(footprintGb(r.model, r.ctx)!, 6);
+        expect(r.needAtDefaultGb).toBeCloseTo(footprintGb(r.model, ctx)!, 6);
+        expect(r.needGb).toBeLessThan(r.needAtDefaultGb);
+      }
+    }
+    expect(pairs).toBeGreaterThan(0);
+  });
+
+  it('never offers a window the model itself does not allow, and stays quiet where nothing is gained', () => {
+    // the page reads a shorter window as this machine's doing, so the window it
+    // names has to be one the model would have run at anyway
+    for (const h of data.hardware) {
+      for (const r of fitsShorter(h, data.models, data)) {
+        if (r.model.max_context_tokens != null) expect(r.ctx).toBeLessThanOrEqual(r.model.max_context_tokens);
+      }
+    }
+    // a machine that holds every model at the default context has nothing to add
+    const ctx = data.defaults.context.default_tokens;
+    const roomy = data.hardware.filter((h) => data.models.every((m) => (footprintGb(m, ctx) ?? Infinity) <= (h.usable_memory_gb ?? 0)));
+    for (const h of roomy) expect(fitsShorter(h, data.models, data)).toEqual([]);
   });
 
   it('writes a context the way the calculator does', () => {
