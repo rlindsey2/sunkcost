@@ -11,7 +11,7 @@ import {
   fitsOf, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, hardwareLabel, hardwareProduct, indefiniteArticle,
   lowerFirst, machineVerdict, machinesConsidered, modelLabel, modelVerdict, otherQuantisations, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
-  contextHeadroom, ctxLabel, meetAtShorterContext, shortHardwareLabel, slug, speedWithBasis, stack, strongestShared,
+  contextCappedBy, contextHeadroom, ctxLabel, longestContext, meetAtShorterContext, shortHardwareLabel, slug, speedWithBasis, stack, strongestShared,
   tierLabel, tierName, tierScale, titleOf, verdictLine, CAP_SHORT, DESC_MAX, FONT_PRELOAD, TITLE_MAX, type Runner, type SharedMachine,
 } from '../src/pagekit';
 import {
@@ -442,6 +442,76 @@ function checkHeadroom() {
   console.log(`  ${named + flat} head-to-heads between machines holding the same models: ${named} name what the spare memory buys in context, ${flat} that it buys nothing`);
 }
 
+/**
+ * A model page's table says what each machine does with the model at 32k of context.
+ * That was the whole of it, and it left the question people actually ask next —
+ * how long a window can this machine hold it at — to be guessed from the memory
+ * figures on another page. The "Longest context" column answers it, and this is
+ * what holds the column and the sentence above it to the data.
+ *
+ * Two ways it could go quietly wrong. A figure could drift from what fit() says,
+ * which is the only thing that makes it worth printing. And the sentence could
+ * claim a spread the table does not show, or miss one it does: on 32 of the 54
+ * models the machines do reach different lengths, and on the rest they do not,
+ * and those are opposite claims.
+ */
+function checkModelContexts() {
+  const problems: string[] = [];
+  let spread = 0;
+  let level = 0;
+  for (const m of data.models) {
+    const perFamily = cheapestPerFamily(runnersFor(m, data));
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const section = html.split('<h2>Machines that run it</h2>')[1]?.split('<h2>')[0] ?? '';
+    if (!perFamily.length) {
+      if (section) problems.push(`${path} has a machines table and no machine on the list runs it`);
+      continue;
+    }
+    if (!section) {
+      problems.push(`${path} does not say what machines run it`);
+      continue;
+    }
+    const lengths = perFamily.map((r) => longestContext(m, r.hw, data));
+    const rows = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>[\s\S]*?<\/tr>/g) ?? [];
+    if (rows.length !== perFamily.length) {
+      problems.push(`${path} lists ${rows.length} machines, not the ${perFamily.length} that run it`);
+      continue;
+    }
+    rows.forEach((row, i) => {
+      const want = lengths[i];
+      const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]*>/g, '').trim());
+      const printed = cells[3];
+      const should = want == null ? 'unknown' : ctxLabel(want);
+      if (printed !== should)
+        problems.push(`${path} prints ${printed || 'nothing'} as the longest context on the ${hardwareLabel(perFamily[i].hw)}, where it holds this model to ${should}`);
+      // a machine may never be shown taking a model past its own published limit
+      if (want != null && m.max_context_tokens != null && want > m.max_context_tokens)
+        problems.push(`${path} takes the ${hardwareLabel(perFamily[i].hw)} to ${ctxLabel(want)}, past this model's own ${ctxLabel(m.max_context_tokens)} limit`);
+    });
+    const known = lengths.filter((c): c is number => c != null);
+    const differ = known.length > 1 && new Set(known).size > 1;
+    const claims = section.includes('but not to the same length');
+    if (differ !== claims)
+      problems.push(
+        differ
+          ? `${path} reaches ${new Set(known).size} different lengths across its machines and says they are the same`
+          : `${path} says its machines reach different lengths, and they all stop at ${ctxLabel(known[0])}`,
+      );
+    if (differ) {
+      spread++;
+      for (const tokens of [Math.min(...known), Math.max(...known)])
+        if (!section.includes(`>${ctxLabel(tokens)}<`) && !section.includes(` ${ctxLabel(tokens)};`) && !section.includes(` ${ctxLabel(tokens)},`) && !section.includes(` ${ctxLabel(tokens)}.`))
+          problems.push(`${path} does not name ${ctxLabel(tokens)}, one end of what its machines reach`);
+    } else level++;
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what model pages say about how far each machine takes the context`);
+  }
+  console.log(`  ${spread + level} model pages give each machine's longest context: ${spread} where the machines differ, ${level} where they do not`);
+}
+
 function checkArticles() {
   // English picks the article from the sound, so a page opening "Can a NVIDIA…"
   // reads as a typo on its own first line. indefiniteArticle() knows which
@@ -719,18 +789,65 @@ function modelPage(m: Model): string {
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
   ).join('');
 
+  // Every machine in this table holds the model at the context the page assumes,
+  // and that is where the page used to stop. The weights are the same on all of
+  // them; the KV cache is not, because it grows with every token you keep, so the
+  // memory a machine has left over is how far it takes the context. On 32 of the
+  // 54 models these machines do not all reach the same length.
+  const reach = new Map(perFamily.map((r) => [r.hw.id, longestContext(m, r.hw, data)] as const));
+  const lengths = [...reach.values()].filter((c): c is number => c != null);
+  const furthest = lengths.length ? Math.max(...lengths) : null;
+  const shortest = lengths.length ? Math.min(...lengths) : null;
+  const atLength = (tokens: number) => perFamily.find((r) => reach.get(r.hw.id) === tokens)!;
+  // A figure only says something about the machine where memory is what stopped it.
+  // A model's own limit rarely falls on a setting the calculator offers — Qwen3 32B
+  // stops at 40k — so where it does not, the figure is the last setting below that
+  // limit and saying "its ceiling" would be a gigabyte of wishful rounding.
+  const capNote = (tokens: number) => {
+    const limit = m.max_context_tokens;
+    const own = limit === tokens ? `this model's own ceiling` : `the longest setting below this model's own ${limit ? ctxLabel(limit) : ''} limit`;
+    switch (contextCappedBy(m, tokens, data)) {
+      case 'model':
+        return `, ${own}`;
+      case 'both':
+        return `, which is ${own} and the longest the calculator offers`;
+      case 'list':
+        return `, the longest the calculator offers`;
+      default:
+        return '';
+    }
+  };
+
   const hwRows = perFamily
     .map((r) => {
       const t = r.view.throughput;
+      const holds = reach.get(r.hw.id);
       return `<tr>
-  <td><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a></td>
+  <td class="c-hw"><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a></td>
   <td>${priceWithScope(r.hw)}</td>
   <td>${t?.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(t.tokensPerSec, t.tokensPerSec < 10 ? 1 : 0)} tok/s <span class="dim">${esc(t.measurement)}</span>`}</td>
+  <td>${holds == null ? '<span class="dim">unknown</span>' : ctxLabel(holds)}</td>
   <td>${esc(verdictLine(r.view))}</td>
   <td><a href="${esc(calcLink({ hw: r.hw.id, model: m.id }, data))}">Run the numbers</a></td>
 </tr>`;
     })
     .join('');
+
+  // what the new column adds up to, said before the table rather than left to be read out of it
+  const lengthLine = (() => {
+    if (furthest == null || shortest == null) return '';
+    const cap = capNote(furthest);
+    const limit = m.max_context_tokens;
+    if (perFamily.length === 1) {
+      const only = esc(hardwareLabel(perFamily[0].hw));
+      // with nothing to compare it against, the useful part is which of the two ran out
+      const stops = cap || (limit ? `, and it is the machine's memory that stops it there, not the model's ${ctxLabel(limit)} limit` : '');
+      return `<p>The ${only} holds it to ${ctxLabel(furthest)}${stops}.</p>`;
+    }
+    if (furthest === shortest)
+      return `<p>Every machine here holds it to ${ctxLabel(furthest)}${cap || ' and no further'}, so the choice between them is speed and price rather than how much you can keep in the window.</p>`;
+    return `<p>Every machine here runs it, but not to the same length. The ${esc(hardwareLabel(atLength(shortest).hw))} stops at ${ctxLabel(shortest)}; the ${esc(hardwareLabel(atLength(furthest).hw))} takes it to ${ctxLabel(furthest)}${cap}. The weights are the same size on every machine; what differs is the memory left for the key-value cache, which grows with every token you keep.</p>`;
+  })();
 
   const fe = m.frontier_equivalent;
   const ce = m.cloud_equivalent;
@@ -776,11 +893,13 @@ ${versusLine}
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill.</p>
 
 ${hwRows ? `<h2>Machines that run it</h2>
+${lengthLine}
 ${stack(`<table class="board">
-<thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Pay-back</th><th></th></tr></thead>
+<thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Longest context</th><th>Pay-back</th><th></th></tr></thead>
 <tbody>${hwRows}</tbody>
-</table>`, { fig: 3 })}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration.</p>` : ''}
+</table>`, { fig: 4 })}
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}.</p>
+${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 <h2>The specifics</h2>
 <dl class="specs">
@@ -1543,5 +1662,6 @@ checkArticles();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();
+checkModelContexts();
 checkHiddenModels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
