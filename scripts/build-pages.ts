@@ -361,6 +361,37 @@ function checkArticles() {
   console.log(`  ${machines.length} machine pages open on their own name, ${an} of them with "an"`);
 }
 
+/**
+ * A machine page lists the twelve strongest models that fit it, in index-class
+ * order, which puts every model the index has not scored yet below the cut. On
+ * all but the smallest machines that hid all five of them, and three — Kat
+ * Coder v2.5, Laguna XS 2.1 and Ornith 1.5 35B-A3B — were in no machine's first
+ * twelve at all, leaving each of their pages with exactly one inbound link on
+ * the whole site. The note under the table names them now. The rule this holds
+ * is the simple one: if a model fits a machine, that machine's page links it,
+ * whether it made the table or not.
+ */
+function checkHiddenModels() {
+  const problems: string[] = [];
+  let named = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const page = meta.find((p) => p.path === path);
+    if (!page) throw new Error(`no page written for ${path}`);
+    for (const r of fitsOn(hw)) {
+      if (r.model.frontier_equivalent?.score != null) continue;
+      const href = `/models/${r.model.id}/`;
+      if (page.links.includes(href)) named++;
+      else problems.push(`${path} does not link ${href}, a model with no index score that fits it`);
+    }
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} unscored model${problems.length === 1 ? ' fits a machine whose page does' : 's fit a machine whose page does'} not link it`);
+  }
+  console.log(`  ${named} machine-and-unscored-model pairs, every one of them a link on the machine's page`);
+}
+
 function checkFonts() {
   const css = readFileSync(new URL('page.css', outRoot), 'utf8');
   const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
@@ -720,6 +751,21 @@ function relatedRow(h: Hardware): string {
 </tr>`;
 }
 
+/**
+ * What to say about the models that fit but are below the table. A count on its
+ * own is a dead end; the ones worth naming are those the intelligence index has
+ * not scored, because a table ordered by class is exactly what buries them.
+ */
+function runsOnNote(hiddenCount: number, unscored: Model[], link: (m: Model) => string): string {
+  const more = hiddenCount === 1 ? 'One more fits; the calculator lists it.' : `${hiddenCount} more fit; the calculator lists them all.`;
+  if (!unscored.length) return more;
+  if (hiddenCount === 1)
+    return `One more fits: ${link(unscored[0])}, which has no intelligence-index score, so it sits below the twelve above. Its page shows what it needs and what runs it.`;
+  if (unscored.length === 1)
+    return `${more} One of them, ${link(unscored[0])}, has no intelligence-index score, so it sits below the twelve above. Its page shows what it needs and what runs it.`;
+  return `${more} ${unscored.length} of them have no intelligence-index score, so they sit below the twelve above: ${unscored.map(link).join(', ')}. Their pages show what each one needs and what runs it.`;
+}
+
 function hardwarePage(hw: Hardware): string {
   const state = { ...defaultState(data), hw: hw.id };
   const view = computeView(state, data);
@@ -729,6 +775,14 @@ function hardwarePage(hw: Hardware): string {
   const hwVerdict = view.calc ? lowerFirst(verdictLine(view)) : null;
   const range = familyRange(hw, data);
   const rivals = priceRivals(hw, data);
+
+  // The table stops at twelve, ordered by index class, which puts every model
+  // the index has not scored beneath it — below the cut on all but the smallest
+  // machines. Three of those models were in no machine's first twelve, so the
+  // only thing on the site linking them was one line under the leaderboard.
+  const hidden = fits.slice(12);
+  const unscored = hidden.filter((r) => r.model.frontier_equivalent?.score == null).map((r) => r.model);
+  const modelLink = (m: Model) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`;
 
   const rows = fits
     .slice(0, 12)
@@ -760,7 +814,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1 })}
-${fits.length > 12 ? `<p class="note">${fits.length - 12} more fit; the calculator lists them all.</p>` : ''}` : ''}
+${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
 ${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
 ${stack(`<table class="board">
@@ -1277,4 +1331,5 @@ checkCardPrices();
 checkTables();
 checkArticles();
 checkPayback();
+checkHiddenModels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
