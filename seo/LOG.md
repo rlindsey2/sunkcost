@@ -38,10 +38,26 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       finished green at 21:18 and published, so both are live. Nothing is left for Ryan here.
 
 - [ ] Merge (or close) [PR #3](https://github.com/rlindsey2/sunkcost/pull/3), the `/compare/`
-      head-to-head index, opened 2026-09-17. It is ready for review, not a draft. Ryan has been
-      told about this one once; do not ping again. It touches `scripts/build-pages.ts` and
-      `src/pagekit.ts`'s neighbours, so it will go un-mergeable the same way PR #1 keeps doing:
-      a future run should check it still merges before starting its own work.
+      head-to-head index, opened 2026-09-17. It is ready for review, not a draft. It touches
+      `scripts/build-pages.ts` and `src/pagekit.ts`'s neighbours, so it will go un-mergeable the
+      same way PR #1 kept doing: a future run should check it still merges before starting its own
+      work.
+      **Merge it with "Squash and merge", not an ordinary merge.** The branch was carrying
+      `public/og/og/`: **1,993 PNG share cards, 151.8 MB**, committed into the repository, where
+      main has none. The 21:11 run removed them at the tip (`d73ce66`) and widened the ignore rule,
+      so the merged tree is right either way, but the blobs are still in the branch's history and
+      an ordinary merge commit would make them reachable from main permanently, in every clone. A
+      squash collapses the branch to one commit with the files already gone, and deleting the
+      branch afterwards lets them be collected. The tracked tree is 1.7 MB with them out, against
+      about 153 MB with them in. Ryan was pinged once about this, which is a second ping on this
+      PR and was not about reviewing it: he had merged two PRs minutes earlier and this one was
+      plausibly next, and the difference between the two merge buttons is permanent. **Do not ping
+      about this PR again.**
+      How they got in, because the same trap is still open elsewhere: the cards are build output,
+      `build-og.ts` draws every one of them on each deploy, and the ignore rule was
+      `public/og/*.png`. A single star does not cross a directory boundary, so a stray nested copy
+      was never ignored and a `git add` took it in. Both rules are now `public/og/**/*.png` and
+      `**/*.svg`. Worth knowing that `git status` looked clean the whole time.
       **It needed its first merge repair at 06:52 on 2026-09-17**, caused by that run's own push:
       both sides had added a build check in the same place, which is the shape this conflict will
       keep taking. Both checks were kept and both run; the branch was rebuilt and re-measured
@@ -478,6 +494,66 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — PR #1 landed, and PR #3 was carrying 151.8 MB of build output
+
+Woke on the merge event: Ryan merged PR #1 at 21:11, thirty-two hours after it was opened, in the
+same minute as PR #2. `/how-much-memory/` is live. The first question page has shipped.
+
+**Checked the merge rather than assuming it, because this repository gives a PR no CI at all.** The
+first time any check ran on that code was the deploy on main, so a green deploy is the only
+evidence there is, and if it had been red the page would simply never have appeared. Pulled the
+merged main and ran the lot here: 196 tests, typecheck, validate, and 227 pages built with every
+guard passing. Deploy run 100 carried both PRs and finished green at 21:18. Run 99, on PR #1's own
+merge commit, shows as cancelled: run 100 superseded it through the `deploy-production`
+concurrency group, which is the workflow working as configured, not a failure.
+
+One false alarm worth recording so the next run does not chase it: `build:pages` failed here with
+"38 pages name an OG card that does not exist". That was a stale `public/og` left in this container
+from an earlier build, not a fault on main. `checkOgCards()` skips when no cards are drawn at all
+and checks when some are, so a *partly* stale directory is the one state that trips it. Clearing it
+was the fix.
+
+**Then PR #3, which two merges had just broken.** Its own log item predicted this, so it was worth a
+`git merge-tree` before anything else: conflicted, eleven of them across four files. Every one was
+the same shape — main had gained the memory card with PR #1, this branch adds the head-to-head
+index card, and neither touched the other's behaviour — so each resolution is the union.
+
+**A sibling session had pushed the same merge four minutes earlier, and its work was kept.** The
+push came back rejected, which the duplicate-runs item says to treat as a sibling rather than force
+past. Fetched, read their resolution instead of assuming it: both card functions declared, all four
+list cards drawn, 201 tests passing on their tip. It was equivalent to mine, so mine was dropped
+and theirs kept, and only the part they did not have was re-applied on top.
+
+**That part is the find of the run. PR #3 was carrying `public/og/og/`: 1,993 PNG share cards,
+151.8 MB, committed into the repository.** Main has none. They are build output — `build-og.ts`
+draws every one on each deploy — and `.gitignore` has always meant to exclude them. The rule was
+`public/og/*.png`, and a single star does not cross a directory boundary, so a stray nested copy
+was never ignored and a `git add` took it in. Nothing writes to that path today and nothing reads
+it: the pages and the manifest name `/og/<card>.png`, which is where `build-og` writes. Removed,
+with both rules widened to `public/og/**/*.png` and `**/*.svg`; commit `d73ce66`. The tracked tree
+goes from about 153 MB to **1.7 MB**.
+
+The tip being clean is not the whole fix, which is why this one needed Ryan rather than just a
+commit. The blobs are still in that branch's history, so an ordinary merge commit would make them
+reachable from main permanently, in every clone from then on, while a squash merge collapses the
+branch to one commit with the files already gone. That is on his list above and in a comment on the
+PR, and it is the one thing about PR #3 that cannot be fixed after the fact.
+
+It also says something about the missing `pull_request` workflow that is worth more than the
+general argument for CI: **151.8 MB sat on a branch for a day and nothing looked at it**, because
+nothing here looks at a branch. `git status` was clean throughout, since the files were committed
+rather than stray. That backlog item now protects three PRs and, on this evidence, catches things
+that are not test failures.
+
+Verified after the removal, on the sibling's merge plus this commit: 201 tests, typecheck clean,
+228 pages built with every guard passing, working tree clean.
+
+**Continue next:** PR #3 is green and mergeable and waits only on Ryan, with the squash caveat
+above. Nothing else about it is the agent's. The live work is whatever the other sessions' entries
+name; with the memory page merged, the question-pages item is open again and "best GPU for local
+LLMs" is the next one, which is the first time in eight runs that item has not been blocked behind
+a PR.
 
 ### 2026-09-17 — the memory question gets its own 18 pages
 
