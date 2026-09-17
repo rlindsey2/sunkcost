@@ -4,7 +4,7 @@ import {
   brandOf, calcLink, cheapestRunsBoth, computeView, familyHeading, familyRange, fitsOf, fmtDuration, fmtNum, fmtUsd,
   hardwareProduct, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
-  stack, strongestShared, FONT_PRELOAD,
+  stack, strongestShared, tierLabel, tierName, FONT_PRELOAD,
   type LdNode,
 } from '../src/pagekit';
 import { modelPairs } from '../src/versus-card';
@@ -478,6 +478,46 @@ describe('model head-to-heads', () => {
     expect(runners(unrunnable[0]).length).toBe(0);
     expect(verdict).toContain(`No machine on this list runs ${model(unrunnable[0]).display_name}`);
     expect(verdict).toContain(`${model(unrunnable[1]).display_name} runs on the`);
+  });
+});
+
+describe('tables between a phone and a full page', () => {
+  const css = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8');
+  const band = css.match(/@media \(min-width: 641px\) and \(max-width: 1023px\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+
+  it('covers every window between the phone layout and the full 980px measure', () => {
+    // the phone stacks below 641px; above 1023px the page has all the width it
+    // is ever given, so nothing in between may be left to swipe sideways
+    expect(band).not.toBe('');
+    expect(css).toContain('@media (max-width: 640px)');
+  });
+
+  it('lets every cell wrap there, so no column is pushed off the right edge', () => {
+    expect(band).toContain('.board thead th, .board td, .board tbody th { white-space: normal;');
+  });
+
+  it('keeps a figure on one line, because half a number is worse than half a name', () => {
+    expect(band).toMatch(/\.board \.c-score, \.board \.c-quant, \.board \.c-gb \{ white-space: nowrap; \}/);
+  });
+
+  it('never holds a machine name, a class or a rival to one line at any width', () => {
+    // the leaderboard names two machines a row; holding those to one line made
+    // its table want 1253px against the 936px a page is ever given
+    expect(css).toContain('.board .c-model, .board .answer-v, .board .c-hw, .board .c-tier, .board .c-vs { white-space: normal; }');
+    expect(css).not.toMatch(/\.c-tier, \.c-gb, \.c-hw \{[^}]*nowrap/);
+    expect(css).toContain('.c-gb { white-space: nowrap; }');
+  });
+
+  it('holds a one-word tier label together, so it never breaks at its own hyphen', () => {
+    const haiku = data.models.find((m) => tierName(m, data) === 'Haiku-class')!;
+    expect(tierLabel(haiku, data)).toBe('<span class="nobreak">Haiku-class</span>');
+    expect(css).toContain('.nobreak { white-space: nowrap; }');
+  });
+
+  it('lets a tier label that is a phrase wrap between its words', () => {
+    const bottom = data.models.find((m) => tierName(m, data).includes(' '))!;
+    expect(tierLabel(bottom, data)).toBe(tierName(bottom, data));
+    expect(tierLabel(bottom, data)).not.toContain('<span');
   });
 });
 

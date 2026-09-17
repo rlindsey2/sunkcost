@@ -150,7 +150,12 @@ a:hover { color: var(--ink); }
 .cta:hover { color: var(--bg); opacity: 0.9; }
 
 .board { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: 14px; display: block; overflow-x: auto; white-space: nowrap; }
-.board .c-model, .board .answer-v { white-space: normal; }
+/* A machine name, a class and a "vs" link are prose, so they wrap. They used
+   to hold one line each, and on the leaderboard, which names two machines a
+   row, that made the table want 1253px against the 936px this page is ever
+   given: "Cheapest machine that runs it" sat off the right edge on every
+   screen there is. A memory figure like "17 GB" still never breaks. */
+.board .c-model, .board .answer-v, .board .c-hw, .board .c-tier, .board .c-vs { white-space: normal; }
 .board thead th { text-align: left; font-size: 11.5px; font-weight: 500; color: var(--faint); padding: 8px 10px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
 .board td, .board tbody th { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .board tbody th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; }
@@ -165,7 +170,9 @@ a:hover { color: var(--ink); }
 .is-frontier .c-score .bar span { background: var(--w-3); }
 .c-score abbr { text-decoration: none; color: var(--faint); cursor: help; }
 .c-vs { font-size: 12.5px; }
-.c-tier, .c-gb, .c-hw { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.c-tier, .c-gb, .c-hw { font-size: 13px; color: var(--ink-2); }
+.c-gb { white-space: nowrap; }
+.nobreak { white-space: nowrap; }
 .compare td { font-size: 14px; }
 
 /* A table too wide for the window fades at the edge people have not reached
@@ -200,6 +207,21 @@ a:hover { color: var(--ink); }
 
 .doc-foot { max-width: 980px; margin: 0 auto; padding: 26px 22px 44px; border-top: 1px solid var(--line); }
 .doc-foot p { font-size: 13.5px; color: var(--muted); margin: 0; }
+
+/* A window between a phone and a full-width page — a tablet upright, a phone on
+   its side, half a laptop screen — is wide enough to read a table as a table,
+   and was getting the sideways swipe a phone used to get: at 700px, 223 of the
+   362 tables ran past their own right edge, and what they hid was the pay-back
+   on most of them. So the table stays a table here and every cell wraps
+   instead. A figure keeps its line, because a number broken in half is worse
+   than a name broken in half. The band ends at 1024px, the window at which the
+   page first gets its whole 980px measure. */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .board thead th, .board td, .board tbody th { white-space: normal; padding: 8px 7px; }
+  .board .c-score, .board .c-quant, .board .c-gb { white-space: nowrap; }
+  .c-model { min-width: 118px; }
+  .board .c-score .bar { width: 56px; margin-right: 6px; }
+}
 
 @media (max-width: 640px) {
   .doc-main { padding: 22px 16px 8px; }
