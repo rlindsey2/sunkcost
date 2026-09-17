@@ -549,6 +549,7 @@ function checkMachineContexts() {
   const longestOffered = Math.max(...data.defaults.context.options);
   let capped = 0;
   let free = 0;
+  let links = 0;
   for (const hw of data.hardware) {
     const path = `/hardware/${hw.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
@@ -589,6 +590,18 @@ function checkMachineContexts() {
             : `${path} blames this machine's memory for stopping ${m.display_name} at ${should}, which is that model's own limit or the end of the list`,
         );
       if (isMemory) memory.push(m.display_name);
+      // The figure is the way in as well as the answer: it opens the calculator
+      // on this machine, this model and that length. So a page may not print one
+      // length and send the reader to another, and it may not offer a way in to a
+      // length it has just said this machine does not hold.
+      if (want == null) {
+        if (/<a /.test(cell)) problems.push(`${path} links a longest context for ${m.display_name}, which it holds at no length`);
+      } else {
+        const href = esc(calcLink({ hw: hw.id, model: m.id, ctx: want }, data));
+        if (!cell.includes(`href="${href}"`))
+          problems.push(`${path} prints ${should} for ${m.display_name} and does not open the calculator on it at that length`);
+        else links++;
+      }
     });
     const claimsFree = section.includes('Memory never runs out first here');
     if (claimsFree === (memory.length > 0))
@@ -622,6 +635,7 @@ function checkMachineContexts() {
     throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what machine pages say about how far they take the context`);
   }
   console.log(`  ${capped + free} machine pages say how far they take each model: ${capped} where their own memory stops one, ${free} where it never does`);
+  console.log(`  ${links} of those lengths open the calculator on that machine and model at that length`);
 }
 
 function checkArticles() {
@@ -1138,6 +1152,12 @@ function hardwarePage(hw: Hardware): string {
   });
   const longestOffered = Math.max(...data.defaults.context.options);
 
+  // Every other figure in this table is read and left; this one is acted on. The
+  // machine page's only way into the calculator was the machine on its own, at
+  // the default model and the default 32k, so a reader who had just read off the
+  // length this machine holds one model at had to set that model and that length
+  // again by hand. The length itself is the link, which puts a way in on every
+  // row without adding a second call to action under the table.
   const rows = shown
     .map((r) => {
       const holds = reach.get(r.model.id);
@@ -1148,7 +1168,7 @@ function hardwarePage(hw: Hardware): string {
   <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
   <td>${dotRow(r.model)}</td>
   <td>${fmtGb(r.fit.needGb)}</td>
-  <td>${holds == null ? '<span class="dim">unknown</span>' : `${ctxLabel(holds)}${memory ? '<span class="c-quant">memory</span>' : ''}`}</td>
+  <td>${holds == null ? '<span class="dim">unknown</span>' : `<a href="${esc(calcLink({ hw: hw.id, model: r.model.id, ctx: holds }, data))}">${ctxLabel(holds)}</a>${memory ? '<span class="c-quant">memory</span>' : ''}`}</td>
 </tr>`;
     })
     .join('');
@@ -1198,7 +1218,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1 })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included; a figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
 ${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
 ${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
