@@ -111,6 +111,23 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 - [x] Internal linking: no generated page is an orphan any more, and the build fails if one
       appears. Done 2026-09-16; the run entry has what was actually wrong, which was worse than
       this item assumed.
+- [x] No orphans was the floor, not the finish. 52 of the 188 pages sat at exactly one inbound
+      link, and 47 of those were the model head-to-heads, reachable only from one cell in the last
+      column of /leaderboard/. Done 2026-09-17: every model page now names the head-to-heads it is
+      in, the way the machine pages always have, and 52 pages on one link became 5. The run entry
+      below has the figures; `checkHeadToHeads()` holds both sides to the rule.
+- [ ] The 5 pages still on one inbound link, all of them model pages. Three are among the five
+      models the intelligence index has not scored — Kat Coder v2.5, Laguna XS 2.1 and Ornith 1.5
+      35B A3B — which are in no head-to-head and reached only from the note under the leaderboard
+      table. The other two unscored models, Ornith 1.5 9B and Spark X2.5 4B, are small enough to
+      be listed by name on machine pages, which is why they are not down here.
+      Two are second quantisations, Llama 3.1 8B Q8 and Qwen3 32B Q8, reached only from their own
+      Q4 page, because the leaderboard shows one row per model name. Neither group is hidden and
+      neither is wrong, so this is worth doing only where there is a link a reader would want.
+      The mechanism is already there and simply runs out: a machine page names the first twelve
+      models that fit it, which is how Ornith 1.5 9B reached 13 links and Spark X2.5 4B reached 7,
+      and the other three are in no machine's first twelve. What would reach them is the note that
+      already says "N more fit" naming a few of them, not a new page.
 - [ ] Question pages for the searches people actually type. The memory one is written and waiting
       in PR #1 as /how-much-memory/ and covers "how much RAM to run a 70B model" and its variants;
       the page type and its helpers are in place, so the next one is much less work than the first.
@@ -236,6 +253,56 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the 47 model head-to-heads were hanging off one link each
+
+**All three open PRs were checked first and all three still merge clean.** `git merge-tree`
+against `origin/main` came back clean on `seo/how-much-memory`, `seo/home-head` and
+`seo/compare-index`, so nothing needed repairing — the second run in a row that has been true.
+Ryan has not been pinged about any of them, per the standing rule.
+
+Then the run's own item, which was not on the backlog and turned up while reading what the build
+already prints. `checkLinks()` says "every page is linked from at least 1 other page" and stops
+there, so the next question is how many pages sit on that floor. Counting inbound links across
+the 188 built pages: **52 had exactly one, and 47 of those were the model head-to-heads**. Their
+single link was one cell in the last column of `/leaderboard/`. The 28 machine head-to-heads had
+two each, from the two machine pages they compare, because `hardwarePage` has carried that line
+since it was written. The model side never got it, so a quarter of the site was a page a crawler
+reaches last and a reader never reaches at all — and the reader on a model's own page is exactly
+the one with that comparison in front of them.
+
+**What changed.** Every model page now names the head-to-heads it is in, and says which side each
+one is on: "Head to head with its neighbours on the leaderboard: vs GLM-4.7-Flash above it, vs
+Qwen3.5 9B below." Pairs are cut as [higher, lower] from leaderboard order, so a model's page
+knows whether the model it is set against is the rung above it or the rung below; the top and the
+bottom of the table have only one neighbour and get the one-sided wording instead, "the next model
+down the leaderboard" and "the next model up". 48 of the 55 model pages carry the line. The other
+7 are in no pair: the five models the index has not scored, and the two second quantisations the
+leaderboard folds into their Q4 row.
+
+**What it did to the figures.** Pages on a single inbound link: **52 before, 5 after**. Every
+model head-to-head went from 1 to 3 — the leaderboard plus both models. The 5 that remain are
+model pages rather than comparisons, and they are the new backlog item above.
+
+`checkHeadToHeads()` now stops the build if a comparison is not linked from both of the things it
+compares, machine and model alike. It was proved twice: with the new line removed it failed at 94
+missing links, two for each of the 47 pairs, and with the line suppressed on one model it failed
+at one and named `/compare/glm-4-7-flash-q4-vs-gemma-4-12b-q4/` and the page that had stopped
+pointing at it.
+
+**Verified.** `npm test` 162 passing; typecheck clean; the full `npm run build`. Built the whole
+page set from a worktree at `origin/main` and compared all 188: **140 byte-identical, 48 changed,
+and every change is the one added line** — 46 pages with both neighbours, 2 with one. No title, no
+description and no JSON-LD moved. Measured over HTTP in Chromium at 320, 390, 430, 700, 1024, 1280
+and 1440px: **0 of 188 pages overflow the window and 0 of 362 tables scroll sideways** at any of
+them. Read the section as a picture at 1280px and at 390px, in the two-sided wording and in both
+of the one-sided ones.
+
+**Continue next:** check all three PR branches still merge before anything else. The top item that
+can still reach main on its own is the leaderboard's height on a phone, then the 5 pages on one
+link above. Everything above those on the backlog — the question pages, the `/compare/` index, the
+home page's JSON-LD, the calculator's fonts — is still written and waiting in a PR, and **the live
+site has had no new page since this agent started**.
 
 ### 2026-09-17 — an index of every head-to-head
 
