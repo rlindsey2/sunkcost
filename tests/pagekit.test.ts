@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
-  contextCappedBy, fmtDuration, fmtNum, fmtUsd, longestContext,
+  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
+  contextCappedBy, fitsShorter, fmtDuration, fmtNum, fmtUsd, longestContext,
   hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
   stack, strongestShared, tierLabel, tierName, FONT_PRELOAD,
@@ -10,7 +10,7 @@ import {
 } from '../src/pagekit';
 import { footprintGb } from '../src/fit';
 import { modelPairs } from '../src/versus-card';
-import { defaultState } from '../src/state';
+import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
 import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
@@ -723,9 +723,90 @@ describe('what memory buys once two machines hold the same models', () => {
     }
   });
 
+  it('only offers a shorter window where one really changes the answer', () => {
+    // what the machine pages print: every pair here misses at the context the site
+    // prices everything at, holds at the window named, and holds at nothing longer
+    const ctx = data.defaults.context.default_tokens;
+    const options = [...data.defaults.context.options].sort((a, b) => a - b);
+    let pairs = 0;
+    for (const h of data.hardware) {
+      for (const r of fitsShorter(h, data.models, data)) {
+        pairs++;
+        expect(r.ctx).toBeLessThan(ctx);
+        expect(footprintGb(r.model, r.ctx)!).toBeLessThanOrEqual(h.usable_memory_gb!);
+        expect(footprintGb(r.model, ctx)!).toBeGreaterThan(h.usable_memory_gb!);
+        const next = options.find((o) => o > r.ctx)!;
+        expect(footprintGb(r.model, next)!).toBeGreaterThan(h.usable_memory_gb!);
+        expect(r.ctx).toBe(longestContext(r.model, h, data));
+        expect(r.needGb).toBeCloseTo(footprintGb(r.model, r.ctx)!, 6);
+        expect(r.needAtDefaultGb).toBeCloseTo(footprintGb(r.model, ctx)!, 6);
+        expect(r.needGb).toBeLessThan(r.needAtDefaultGb);
+      }
+    }
+    expect(pairs).toBeGreaterThan(0);
+  });
+
+  it('never offers a window the model itself does not allow, and stays quiet where nothing is gained', () => {
+    // the page reads a shorter window as this machine's doing, so the window it
+    // names has to be one the model would have run at anyway
+    for (const h of data.hardware) {
+      for (const r of fitsShorter(h, data.models, data)) {
+        if (r.model.max_context_tokens != null) expect(r.ctx).toBeLessThanOrEqual(r.model.max_context_tokens);
+      }
+    }
+    // a machine that holds every model at the default context has nothing to add
+    const ctx = data.defaults.context.default_tokens;
+    const roomy = data.hardware.filter((h) => data.models.every((m) => (footprintGb(m, ctx) ?? Infinity) <= (h.usable_memory_gb ?? 0)));
+    for (const h of roomy) expect(fitsShorter(h, data.models, data)).toEqual([]);
+  });
+
   it('writes a context the way the calculator does', () => {
     expect(ctxLabel(32768)).toBe('32k');
     expect(ctxLabel(4096)).toBe('4k');
     expect(ctxLabel(262144)).toBe('256k');
+  });
+
+  it('opens the calculator on the configuration the length was measured at', () => {
+    // Machine pages and model pages both print the longest context a machine holds
+    // a model at and make that figure the way in. The link is only honest if the calculator reads
+    // back the same machine, the same model and the same length — and if that
+    // configuration still fits once it gets there. The cache type is the quiet
+    // one: longestContext() measures at the dataset's default, and the query
+    // string leaves that out when it is the default, so the two have to agree.
+    expect(defaultState(data).kv).toBe(data.defaults.kv_cache?.default ?? 'f16');
+    let checked = 0;
+    for (const h of data.hardware) {
+      for (const m of data.models) {
+        const ctx = longestContext(m, h, data);
+        if (ctx === null) continue;
+        const href = calcLink({ hw: h.id, model: m.id, ctx }, data);
+        const back = parseState(href.slice(href.indexOf('?')), data);
+        expect(back.hw).toBe(h.id);
+        expect(back.model).toBe(m.id);
+        expect(back.ctx).toBe(ctx);
+        expect(back.kv).toBe(defaultState(data).kv);
+        expect(footprintGb(m, ctx)!).toBeLessThanOrEqual(h.usable_memory_gb!);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(600);
+  });
+
+  it('never sends a model page reader to a shorter window than the row is priced at', () => {
+    // Every other figure in a model page's row — the speed, the pay-back — is
+    // quoted at the context the page assumes, and the machines listed are the ones
+    // that hold the model there. So the length beside them can only ever be that
+    // context or longer, and the way in cannot quietly downgrade the reader.
+    const ctx = data.defaults.context.default_tokens;
+    let checked = 0;
+    for (const m of data.models) {
+      for (const r of cheapestPerFamily(runnersFor(m, data))) {
+        const holds = longestContext(m, r.hw, data);
+        expect(holds).not.toBeNull();
+        expect(holds!).toBeGreaterThanOrEqual(ctx);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(300);
   });
 });

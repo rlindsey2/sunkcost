@@ -11,12 +11,36 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired eight times**, most recently at 10:50 on 2026-09-17.
-      The eighth was the import block at the top of `scripts/build-pages.ts` again, and this time
-      the same block in `tests/pagekit.test.ts` as well: this branch adds `/how-much-memory/`'s
-      helpers to both and main added `contextHeadroom`, `ctxLabel` and `longestContext`. Both lists
-      were kept in both files. Those two blocks are the likeliest place this branch breaks next,
-      because every run that adds a helper touches them.
+      **It has now needed its merge repaired twelve times**, most recently at 14:52 on 2026-09-17.
+      The twelfth was the import block in `tests/pagekit.test.ts` alone, the conflict this log has
+      been predicting for five runs: this branch's `/how-much-memory/` helpers against main's new
+      `cheapestPerFamily`. Every name from both sides was kept and none was lost, which was checked
+      by taking the union of the two import lists and asserting nothing dropped out rather than by
+      reading the result. Rebuilt (189 pages, 184 tests, typecheck clean, the full build including
+      `build:og` and `build:functions`) and re-measured over HTTP (**1,710 views, 0 overflows,
+      0 of 4,041 tables scrolling**) before pushing `5108b80`. One note for the next run: a fresh
+      checkout of this branch fails `build:pages` on "1 pages name an OG card that does not exist"
+      until `npm run build:og` has drawn `/how-much-memory/`'s card. That is `checkOgCards()`
+      working, not a fault on the branch.
+      The eleventh was the same note as the tenth, twice in a row now: this branch says
+      what the memory column counts and links `/how-much-memory/`, and main had just added that
+      each longest-context figure opens the calculator on that model at that length. Both kept,
+      in one note. Rebuilt (189 pages, 183 tests, typecheck clean) and re-measured over HTTP
+      (**1,701 views, 0 overflows, 0 of 4,041 tables scrolling**) before pushing `8b32992`.
+      That note is now as reliable a conflict as the import block: every run that touches the
+      machine page's "What it runs" table breaks it, so budget for both.
+      The tenth was not the import block for once: it was the note under a machine page's
+      "What it runs" table, where this branch had folded the hidden-models line and its link to
+      `/how-much-memory/` into one paragraph and main had just added a second note for the new
+      Longest context column. Both sides kept, in one note rather than two paragraphs of overlap.
+      Rebuilt (189 pages, 182 tests, typecheck clean) and re-measured over HTTP
+      (**1,701 views, 0 overflows, 0 of 4,041 tables scrolling**) before pushing `c270947`.
+      The eighth and the ninth were both the import block at the top of `scripts/build-pages.ts`
+      and the same block in `tests/pagekit.test.ts`: this branch adds `/how-much-memory/`'s helpers
+      to both, and main keeps adding its own — `contextHeadroom`, `ctxLabel` and `longestContext`
+      the eighth time, `contextCappedBy` and `longestContext` the ninth. Every name from both sides
+      was kept in both files. Those two blocks are now the only place this branch ever breaks, and
+      every run that adds a helper touches them, so assume it and budget for it.
       A future run that finds it still open should re-check that it still merges before doing
       anything else: a waiting branch does not stay mergeable on its own, and this one has the
       worst of it, because it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly
@@ -50,6 +74,10 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed a fifth repair at 12:06 on 2026-09-17**, the import block again and for the third
+      time: this branch's `shownTps` against main's `contextCappedBy` and `longestContext`. Both
+      kept; rebuilt (189 pages, 76 comparisons, 174 tests, typecheck clean) and re-measured over
+      HTTP (**1,710 views, 0 overflows, 0 of 4,023 tables scrolling**) before pushing `6c7f068`.
       **It needed a fourth repair at 10:52 on 2026-09-17**, the import block alone this time:
       this branch's `shownTps` against main's `contextHeadroom` and `ctxLabel`. Both kept; rebuilt
       (189 pages, 76 comparisons, 172 tests, typecheck clean) and re-measured over HTTP
@@ -161,6 +189,33 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       names the models the table's own order hides. Kat Coder v2.5, Laguna XS 2.1 and Ornith 1.5
       35B-A3B went from 1 inbound link to 42; Ornith 1.5 9B went from 13 to 57 and Spark-X2.5 4B
       from 7 to 57. The run entry below has the figures and the check that holds it.
+
+- [x] The 55 model pages were the thinnest page type on the site, median 481 words against 757 for
+      the machine pages, and every figure on them was priced at one context. Done 2026-09-17: the
+      machines table now says how long a window each machine holds the model at, and the sentence
+      above it says whether that differs (32 of 54 pages) or does not (22). Median 589 words now.
+      The run entry below has the figures, the cap that needed careful wording, and
+      `checkModelContexts()`, which holds both claims to the data.
+
+- [x] The machine pages have the mirror image of that gap. Done 2026-09-17, and the item's own
+      framing turned out to be the wrong half of the answer: every one of the 56 machines takes its
+      models to different lengths, so "do they differ" says nothing here. What splits the machines is
+      **whose fault the short window is** — 51 stop at least one model because their own memory ran
+      out, 5 stop none — and that is what the pages now say. The run entry below has the figures and
+      `checkMachineContexts()`, which holds the figures and the blame apart.
+
+- [x] A machine page's only prefilled calculator link was the machine on its own. Done 2026-09-17,
+      and the item's own condition is what decided the shape: rather than a second call to action
+      under the table, the **Longest context figure is the link**. 661 prefilled links across the
+      56 machine pages, no new column, no new line, four words added to the note. The run entry
+      below has the figures and the check that holds each link to the figure beside it.
+
+- [x] The model pages had the same gap the other way round. Done 2026-09-17, and the fix was the
+      second of the two the item proposed, which is the one the machine pages already use: the
+      **Longest context figure is the link** and the row's own "Run the numbers" link stays at the
+      context the row is priced at. 334 prefilled links across the 54 model pages, 265 of them at a
+      longer window than the row quotes, and 50 of the 54 pages gain at least one. The run entry
+      below has the figures and the rule `checkModelContexts()` now holds them to.
 
 - [ ] The 2 pages left on one inbound link, Llama 3.1 8B Q8 and Qwen3 32B Q8, reached only from
       their own Q4 page because the leaderboard shows one row per model name. Machine pages cannot
@@ -275,6 +330,13 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       same page is now 4,208px on a desktop, up from 3,377, which is the price of showing the two
       columns it used to hide; that one is not worth chasing.
 
+- [ ] The calculator's own page scrolls sideways on a phone. Measured over HTTP at 320, 360 and
+      390px: the page is 398px wide at all three, so the whole thing shifts under a sideways swipe.
+      It is the top bar — `.topbar-end`, holding the "Data checked" stamp and the icon button, is
+      398px wide and does not wrap. At 430px it fits. None of the 188 generated pages does this at
+      any width from 320 to 1440px; this is index.html and src/styles.css only, so the fix is a
+      pull request rather than a push. Turned up while measuring the model pages on 2026-09-17.
+
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
       `renderWaterline` and ends at x=1181, where every other line on the card now stops at 1144.
@@ -306,12 +368,350 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       have a table about memory — so a second one risks length without an extra answer. Worth a look only
       after the question pages, and only if it can replace something rather than sit beside it.
 
+- [ ] The call to action under a model page's machines table is now a duplicate. It reads "Run
+      Llama 3.1 8B at 128k on the Strix Halo Framework Desktop, 32GB" and opens exactly what the
+      Longest context cell in that machine's own row now opens, so the page offers the same
+      configuration twice. It is not wrong and it is not clutter — it names the machine and the
+      length in words, which a bare figure in a table does not, and it is the one prominent way in
+      to a long window. Worth a look only if a page reads as repeating itself, and the question to
+      answer first is whether the sentence earns its place now that all 334 figures are links.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the model pages send the reader to the length they print
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 needed repairing afterwards, from this run's own push; PR #2 and PR #3 were
+re-checked after it and still merge clean. Ryan has not been pinged about any of them, per the
+standing rule.
+
+**One housekeeping note for the next run.** The container's local `main` came up at `94aa957`, the
+seed commit, with HEAD detached, and `git fetch` reported a forced update to `647a751`: the seed is
+not in origin's history. Nothing is wrong with the remote — `git reset --hard origin/main` was the
+whole fix — but a run that trusts the local branch rather than `origin/main` would build the wrong
+tree and diff against the wrong baseline.
+
+**Why this item.** It was the top open item a push to main can carry, and the mirror of what the
+last run shipped. The question pages are still the top item overall, unchanged for the eighth run
+running and for the same reason: a question page is a new page type, the rules send that to a pull
+request, and three of those are already open and unmerged.
+
+**What was wrong.** Each row of a model page's "Machines that run it" table printed the longest
+context that machine holds the model at, and the only way in from the row was the last column's
+"Run the numbers" link, which opened the calculator at the default 32k. The machine pages send a
+reader to the length they print; the model pages printed one length and sent them to another.
+**265 of the 334 rows printed a window longer than the one the row's only link opened.**
+
+**What changed, and why the last column was left alone.** The backlog item named two ways to close
+it and this is the second, which is what the machine pages already do: **the length itself is the
+link.** 334 prefilled links across the 54 model pages, and 50 of those pages gain at least one way
+in to a window longer than 32k. The row's "Run the numbers" link stays at the assumed context on
+purpose — the speed and the pay-back beside it are quoted there, so that link is what makes the row
+reproducible, and the length cell is the other question. No new column, no new row, one sentence
+added to the note under the table.
+
+**Nothing else on the site moved.** Built the whole page set before and after and compared every
+file: **134 byte-identical, 54 changed**, and the 54 are the model pages. A line-level diff across
+all 54 found exactly two kinds of change — the 334 context cells becoming links, and the note
+gaining "Each one opens the calculator on that machine at that length." **No title, description,
+canonical, OG tag or JSON-LD line changed anywhere**, and the sitemap is byte-identical.
+
+`checkModelContexts()` now holds each link to the figure beside it: a page may not print one length
+and send the reader to another, name the wrong machine or the wrong model, or offer a way in to a
+length it holds the model at nowhere. Proved by breaking it four ways: dropping the link failed the
+build on **334** counts, linking at the default context on **265**, at the wrong machine on **280**,
+and at the wrong model on **326**.
+
+**What the 265 also measures.** The existing call to action under the table only ever offered the
+single furthest machine, so on a page like Llama 3.1 8B, where five of the eight machines hold it
+to 128k, four of those five had no way in to 128k at all. That is the part of the gap the figure
+in the cell was hiding.
+
+**Verified.** `npm ci`, `npm test` (171 tests, up from 170), `npx tsc --noEmit`, `npm run build` all
+the way through `build:functions` with no workaround, and the four deliberate breakages above.
+Measured over HTTP in Chromium at 320, 360, 390, 430, 640, 768, 1024, 1280 and 1440px: **1,701
+views, 0 of 3,987 tables scrolling**, unchanged from the baseline. The 3 page overflows are `/` at
+320, 360 and 390px, which is the calculator's own top bar and already on the backlog above; no
+generated page overflows at any width. Read the rendered table as text and **followed three of the
+new links in a browser** — a 128k row, a 256k one and a 64k one — each landing on the right machine,
+the right model and the right length, with the model fitting and a pay-back priced rather than a
+misfit reported.
+
+**One thing the browser check settled, for whoever measures these next.** The calculator rewrites
+`/?hw=…&m=…` to its own `/s/…` share path on arrival, so a link's query parameters are gone from the
+address bar by the time the page has loaded and `location.search` reads back no machine and no
+model. That is the app canonicalising its own state, not a broken link, and those /s/ pages are
+`noindex` by design. Read the calculator's rendered state instead: the chosen model's row and the
+verdict line name the machine, the model and the context.
+
+**No new number reached the page.** The links carry `longestContext()`, which the cell already
+printed, and the round-trip test the last run added over every machine-and-model pair already covers
+every link a model page now emits. The one test added is the property the row layout depends on: a
+machine listed in that table holds the model at the context the page assumes, so the length beside
+it can only ever be that context or longer, and the way in cannot quietly downgrade the reader.
+
+**Deploy confirmed.** **Run 83, on `82ffc4f`, finished green at 14:54 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #1 repaired afterwards**, for the twelfth time and from this run's own push: the import block
+in `tests/pagekit.test.ts` alone. Details in Ryan's side above; rebuilt (189 pages, 184 tests,
+typecheck clean) and re-measured over HTTP (**1,710 views, 0 overflows, 0 of 4,041 tables
+scrolling**) before pushing `5108b80`. All three branches merge clean again.
+
+**What to continue.** **The question pages are the top item, the biggest win, and still blocked
+behind three unmerged PRs** — eight runs now. What is left below them on main is cosmetics: the
+leaderboard's height on a phone, the seven long head-to-head titles, the waterline label's margin on
+a share card, and the small new item this run added about the now-duplicated call to action under
+the model table. Both mirror items the last two runs shipped are done, so a run that wants a real
+main-reachable item will have to find it by measuring the page set again, the way the model-pages
+run earlier today did, rather than by reading down this backlog. **The live site has still had no
+new page since this agent started.**
+
+### 2026-09-17 — the length a machine holds a model at is now the way in
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 needed repairing afterwards, from this run's own push; PR #2 and PR #3 were
+re-checked after it and still merge clean. Ryan has not been pinged about any of them, per the
+standing rule.
+
+**Why this item.** It was the top open item on the backlog that a push to main can carry, and the
+one the last run picked out as the only one left that adds an answer rather than tidies one. The
+top item overall is still the question pages, and it stayed where it is for the seventh run running:
+a question page is a new page type, the rules send that to a pull request, and three of those are
+already open and unmerged.
+
+**What was wrong.** The last run gave every machine page a **Longest context** column, so the page
+finally said how long a window this machine holds each model at. The figure was then read and left.
+The only way from a machine page into the calculator was the "Run the numbers on this machine"
+button at the top, which opens on that machine at the default model and the default 32k — so a
+reader who had just read off that this machine takes one of its models to 128k had to set both the
+model and the length again by hand to see it.
+
+**What changed, and why it is not another button.** The backlog item set its own condition: worth
+doing only if it can sit somewhere that is not a second call to action under the table, because two
+in a row would read as selling. So there is no new link. **The length itself is the link.** Each
+figure in the Longest context column opens the calculator on that machine, that model and that
+length. **661 prefilled links across the 56 machine pages**, no new column, no new row, and four
+words added to the note under the table.
+
+**Nothing else on the page moved.** Built the whole page set from a worktree at `origin/main` and
+compared every file: **133 byte-identical, 56 changed**, and the 56 are the machine pages. A
+line-level diff across all 56 found exactly two kinds of change — the Longest context cells, and
+the one note. **No title, description, canonical, OG tag or JSON-LD line changed anywhere.**
+
+**The quiet part was the cache type.** `longestContext()` measures at the dataset's default KV cache
+type, and `serializeState()` leaves that parameter out of the query string when it is the default.
+If those two ever disagreed, every one of the 661 links would open on a configuration that does not
+hold what the page just said it holds. `defaultState().kv` and `data.defaults.kv_cache.default` are
+both `f16` today, and the new test asserts it rather than assuming it.
+
+`checkMachineContexts()` now holds the link to the figure beside it: a page may not print one length
+and send the reader to another, name the wrong machine or the wrong model, or offer a way in to a
+length it has just said the machine does not hold. Proved by breaking it four ways: dropping the
+link failed the build on **661** counts, linking at the default context on **626**, at the wrong
+machine on **651**, and at the wrong model on **605**.
+
+**Verified.** `npm ci`, `npm test` (170 tests, up from 169 — one new one that round-trips every one
+of the 661 links through `parseState()` and checks the configuration still fits), `npx tsc --noEmit`,
+`npm run build` all the way through `build:functions` with no workaround, and the four deliberate
+breakages above. Measured over HTTP in Chromium at 320, 360, 390, 430, 640, 768, 1024, 1280 and
+1440px: **1,701 views, 0 of 3,987 tables scrolling**. The 3 page overflows are `/` at 320, 360 and
+390px, which is the calculator's own top bar and is already on the backlog below; no generated page
+overflows at any width. Read the table as a picture at 390 and 1280px, and **followed two of the
+links in a browser** — the 32k memory-capped row and a 256k one — which land on the right machine,
+the right model and the right length, and price the pay-back rather than reporting a model that does
+not fit.
+
+**Deploy confirmed.** **Run 81, on `cd33474`, finished green at 13:48 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #1 repaired afterwards**, for the eleventh time and from this run's own push: the note under
+the machine table again, twice in a row now. Both sides kept in one
+note. Rebuilt (189 pages, 183 tests, typecheck clean) and re-measured over HTTP (**1,701 views, 0
+overflows, 0 of 4,041 tables scrolling**) before pushing `8b32992`. All three branches merge clean
+again.
+
+**What to continue.** The new backlog item this run added is the mirror of what it fixed and is the
+top main-reachable one: **the model pages' per-row "Run the numbers" link still opens at the default
+32k, in the same row as a Longest context cell saying the machine holds it to 128k or 256k.** The
+machine pages now send the reader to the length they print; the model pages do not. Below that the
+list is cosmetics again — the leaderboard's height on a phone, the seven long head-to-head titles,
+the waterline label's margin on a share card. **The question pages are still the top item overall
+and still the biggest win, and still blocked behind three unmerged PRs.** **The live site has still
+had no new page since this agent started.**
+
+### 2026-09-17 — how far a machine takes each model, on the machine pages
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 needed repairing afterwards, from this run's own push; PR #2 and PR #3 were
+re-checked after it and still merge clean. Ryan has not been pinged about any of them, per the
+standing rule.
+
+**Why this item.** It was the top open item that a push to main can carry, and it is the other half
+of the question the last run answered from the model side. A machine page's "What it runs" table
+gave every model a speed, a class and a memory figure, all taken at 32k, and never said how long a
+window the machine actually holds it at. That is the question behind "can my 32GB card do 128k",
+and the machine page is where someone asks it.
+
+**What the item got wrong, and what was there instead.** It assumed the machine side would split
+the way the model side did, into pages where the lengths differ and pages where they do not.
+Measured, **all 56 machines take their models to different lengths**, so that sentence would have
+been the same on every page and would have said nothing. The split that does exist is a better
+question anyway: **whose fault a short window is**. On **51 of the 56** machines, at least one model
+is stopped by that machine's own memory; on **5** — the M5 and M3 Ultra 96GB and 512GB Macs and the
+DGX Spark — memory never runs out first, and every model reaches either 256k or its own ceiling.
+
+**What changed.** The table has a **Longest context** column, and the sentence above it says what
+the column adds up to from the machine's side. The RTX 3090's reads: 5 of the 12 are stopped by its
+own memory, Qwen3.6 35B-A3B soonest at 32k, and the rest reach 256k or their own limit. A 16GB Mac
+mini M6 stops 7 of 10, Ministral 3 8B soonest at 32k. A 12GB RTX 3060 stops 8 of 11.
+
+**The tag is the careful part.** A figure that stops at 32k because the machine is full says
+something about the machine. One that stops at 32k because the model's own ceiling is 40k says
+nothing at all, and printing the two alike would sell a machine on a limit it did not set. So
+`contextCappedBy()` decides, and only the memory-capped figures carry the small `memory` tag; the
+note under the table says what the tag means in one line.
+
+**The other quiet lie this nearly shipped.** The first draft ended the sentence "the rest reach
+256k, where the calculator's list ends, or the longest setting their own context limit allows" on
+every page. On the three 16GB Macs and the RTX 3060 **nothing reaches 256k at all**, so naming it
+as somewhere "the rest" get to would have sold a length those machines never hold. The tail clause
+is now built from what the machine actually reaches, and the check refuses a page that names 256k
+without taking a model there.
+
+**No figure here is new data.** `longestContext()` walks the calculator's own context list and asks
+`fit()`, the same function the calculator uses, so every length is the site's own arithmetic.
+
+**What it did to the figures.** Machine pages went from a median of **820 words to 976**, and from
+663 at the shortest to 804. A word-level diff of all 56 pages against a build from `origin/main`
+found **nothing removed** — the only line that changed rather than appeared is the table's own
+header row, which gained a sixth name.
+
+**Width.** The backlog warned that a sixth column pushed the model pages past their right edge until
+the machine name was allowed to wrap. Measured before and after over HTTP at 320, 360, 390, 430,
+640, 768, 1024, 1280 and 1440px: **1,692 views, 0 page overflows, 0 of 3,987 tables scrolling**,
+the same as the baseline. The model-name column was given the leaderboard's `c-model` class so it
+wraps rather than overflows; measured without it the table still fit, so the class is insurance for
+the next long model name rather than a fix for this one. The phone layout was read as a picture too:
+a row becomes a block and the new line reads "Longest context 64k memory".
+
+`checkMachineContexts()` holds it from here, and it holds the blame as well as the figure: every
+printed length is recomputed from `fit()` at build time, no machine may be shown taking a model past
+its own limit, the tag must fall on exactly the memory-capped rows, a page may not claim memory
+never runs out where it does, and a page may not name 256k unless it takes a model there. Proved by
+breaking it five ways: doubling the figures failed the build on 661 counts, emptying the column on
+817, dropping the tag on 156, putting the tag on every row on 505, and forcing "memory never runs
+out first here" onto every page on 153.
+
+**Verified.** `npm ci`, `npm test` (169 tests), `npx tsc --noEmit`, `npm run build` all the way
+through `build:functions`, the five deliberate breakages above, the width measurement above, and
+the rendered pages read in a browser at 390 and 1280px. Commit `9a44c1c`; deploy run 79 succeeded.
+
+**PR #1 repaired afterwards**, in the note under that same table. Commit `c270947`; details in
+Ryan's side above. Re-checked after pushing it: all three branches merge clean.
+
+**What to continue.** The top item is still the question pages, and it is still behind three
+unmerged PRs. Below it the main-reachable list is back to cosmetics: the leaderboard's height on a
+phone, the seven long head-to-head titles, the waterline label's margin on a share card. The new
+entry added to the backlog this run — a second prefilled calculator link on machine pages, at the
+longest context they hold a model at — is the only one of those that adds an answer rather than
+tidies one, and it is small.
+
+### 2026-09-17 — how far each machine takes the context, on the model pages
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 and PR #3 both needed repairing afterwards, from this run's own push; see
+the end of this entry. Ryan has not been pinged about any of them, per the standing rule.
+
+**Why this item and not the top one.** The top backlog item is still the question pages, and it
+stayed where it is for the same reason as the last six runs: a question page is a new page type,
+which the rules send to a pull request, and three of those are already open and unmerged. What is
+different this run is that the main-reachable list below it had run down to cosmetics — the last
+entry said as much — so rather than take one, this run measured the page set again and found a gap
+the backlog had not noticed.
+
+**What was missing.** The 55 model pages were **by far the thinnest page type on the site: median
+481 words, against 757 for the machine pages and 792 for the comparisons**. They were thin in a
+specific way. Everything on a model page is priced at one context, 32k: the speed, the pay-back,
+the memory. That leaves out the question someone asks immediately after "what hardware do I need to
+run this" — **how long a window will that machine hold it at** — and the only page that answered it
+was the one still waiting in PR #1.
+
+**What changed.** The "Machines that run it" table has a **Longest context** column, and a sentence
+above the table says what the column adds up to. Measured across all 54 model pages that have
+machines: **on 32 of them the machines reach different lengths, on 22 they all stop in the same
+place.** Those are opposite claims, so each page makes its own deliberately.
+
+The clearest are the ones that break a rule of thumb people use. **Llama 3.1 8B** is the model
+everyone says runs in 16GB, and it does: a Mac mini M6, 16GB holds it, **to 32k and no further**,
+where a $1,269 Framework Desktop with 32GB takes it to **128k**, its own ceiling. **Devstral 2 123B**
+fits five machines and **only the DGX Spark takes it past 32k**, to 64k, on 119.5 GB of usable
+memory against the Framework Desktop's 96. Qwen3-Coder 30B-A3B runs from **32k on a 32GB box to
+256k on the DGX Spark**.
+
+**No figure here is new data.** `longestContext()` walks the calculator's own context list and asks
+`fit()`, the same function the calculator uses, so a figure is capped by whichever runs out first:
+the machine's memory, the model's own limit, or the end of the list.
+
+**Which cap it is, is the part that needed care.** Only memory running out says anything about the
+machine, so `contextCappedBy()` is new and names the reason, and the page says it. The case that
+would have produced a quiet lie is **Qwen3 32B, whose own limit is 40k**: every machine holds it to
+32k, and calling that "its own ceiling" would be a gigabyte of wishful rounding. Those four pages
+read "the longest setting below this model's own 40k limit" instead.
+
+**What it did to the figures.** Model pages went from **median 481 words to 589**, and from 557 at
+the longest to 664. Nothing was removed: a word-level diff of all 55 pages against a build from
+`origin/main` found **no word taken out of any of them**.
+
+`checkModelContexts()` holds it from here. Every printed length is recomputed from `fit()` at build
+time rather than read back off the page; no machine may be shown taking a model past its own limit;
+and a page may not claim a spread it does not have, or miss one it does. Proved by breaking it four
+ways: doubling the figures failed the build on 334 counts with the machine and both lengths named,
+dropping the column failed the same way, suppressing the "not to the same length" sentence failed on
+exactly the 32 pages that need it, and forcing that sentence onto the level pages failed on the 22
+that do not.
+
+**One thing this turned up that had to be fixed before it shipped.** A sixth column pushed the table
+past its own right edge: measured over HTTP, **45 of the 54 model pages had it scrolling sideways at
+1024px and above**, by 10 to 32px, which is the swipe two earlier runs spent a run each removing.
+The machine name now wraps, the way it already does on the leaderboard and on /best/, and the table
+fits. That is why the name column carries `c-hw`.
+
+**Verified.** `npm test` 169 passing, up from 167 — two new ones, including one over every
+machine-and-model pair asserting that where `contextCappedBy()` says "memory", the next setting up
+is one the model itself allows and the machine really cannot hold. Typecheck clean. The full
+`npm run build` passed, `build:functions` included, with no workaround needed. Built the whole page
+set from a worktree at `origin/main` and compared every file: **136 byte-identical, 54 changed**, and
+the 54 are the model pages. **No title, description, canonical, OG tag or JSON-LD line changed
+anywhere.** Measured over HTTP in Chromium at 320, 360, 390, 430, 700, 900, 1024, 1280 and 1440px:
+**1,692 page views, 0 overflowing the window, 0 of 3,987 tables scrolling sideways**. Read the new
+section as a picture at 390 and 1280px.
+
+**Deploy confirmed.** **Run 77, on `233b406`, finished green at 12:02 UTC** with `npm ci`, `npm test`
+and the full `npm run build` passing on the runner, and republished.
+
+**PR #1 and PR #3 were both repaired straight afterwards**, both from this run's own push, and both
+the import block, which is now the only place either of them ever breaks. PR #1 was its **ninth**
+repair and hit `tests/pagekit.test.ts` as well as `scripts/build-pages.ts`; PR #3 was its **fifth**
+and hit only the one block. Every name from both sides was kept in every list. Both branches were
+rebuilt (189 pages each; 182 tests on PR #1, 174 on PR #3; typecheck clean) and re-measured over
+HTTP (**1,701 views, 0 overflows, 0 of 4,041 tables scrolling** on PR #1, /how-much-memory/ included;
+**1,710 views, 0 overflows, 0 of 4,023 tables** on PR #3, /compare/ included) before pushing
+`13eb66a` and `6c7f068`. All three branches merge clean again.
+
+**Continue next:** check all three PR branches still merge before anything else, and budget for it —
+every run that adds a helper breaks two of them in the same block. **The question pages are still
+the top item and still the biggest win.** The judgement to revisit is unchanged: if a PR has merged,
+the page type is on main and the next question page is much less work; if the pile is still three
+deep, weigh a fourth PR against a main-reachable item — and note that this run found a real one by
+measuring rather than by reading the backlog, so that is worth doing again. The obvious next
+measurement is the **machine pages**, which have the mirror image of the gap this run closed: see
+the new backlog item. **The live site has still had no new page since this agent started.**
 
 ### 2026-09-17 — what two machines that hold the same models differ by
 
