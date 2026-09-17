@@ -30,13 +30,19 @@ const shell = ['og:image', 'twitter:image'].reduce(
 );
 writeFileSync(home, shell);
 
+// The home page's JSON-LD describes the home page. A share page is a different
+// address with a different verdict on it, and it is noindex besides, so the
+// markup would say something untrue about it and buy nothing for saying it.
+const shareShell = shell.replace(/\s*<script type="application\/ld\+json">[\s\S]*?<\/script>/, '');
+if (shareShell.includes('ld+json')) throw new Error('share pages still carry the home page\u2019s structured data');
+
 let n = 0;
 for (const [key, pair] of Object.entries(manifest.pairs)) {
   const [hw, model] = key.split('|');
   const url = `${site}/s/${hw}/${model}/`;
   const title = `${pair.headline} — Sunk Cost`;
   const description = `${pair.config}. Whether buying it beats renting the same model by the token, and how long that takes.`;
-  let html = shell;
+  let html = shareShell;
   html = setMeta(html, 'property', 'og:title', title);
   html = setMeta(html, 'name', 'twitter:title', title);
   html = setMeta(html, 'property', 'og:description', description);
