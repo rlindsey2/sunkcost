@@ -11,7 +11,13 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired nine times**, most recently at 12:05 on 2026-09-17.
+      **It has now needed its merge repaired ten times**, most recently at 12:53 on 2026-09-17.
+      The tenth was not the import block for once: it was the note under a machine page's
+      "What it runs" table, where this branch had folded the hidden-models line and its link to
+      `/how-much-memory/` into one paragraph and main had just added a second note for the new
+      Longest context column. Both sides kept, in one note rather than two paragraphs of overlap.
+      Rebuilt (189 pages, 182 tests, typecheck clean) and re-measured over HTTP
+      (**1,701 views, 0 overflows, 0 of 4,041 tables scrolling**) before pushing `c270947`.
       The eighth and the ninth were both the import block at the top of `scripts/build-pages.ts`
       and the same block in `tests/pagekit.test.ts`: this branch adds `/how-much-memory/`'s helpers
       to both, and main keeps adding its own — `contextHeadroom`, `ctxLabel` and `longestContext`
@@ -174,14 +180,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       The run entry below has the figures, the cap that needed careful wording, and
       `checkModelContexts()`, which holds both claims to the data.
 
-- [ ] The machine pages have the mirror image of that gap. A machine page's "What it runs" table
-      gives each model a speed, a class and a memory figure, all at 32k, and never says how far that
-      machine takes each one — which is the same question, asked from the other side, and the one
-      behind "can my 32GB card do 128k". `longestContext()` already answers it and
-      `contextCappedBy()` already says which cap a figure hit, so the helpers are in place and the
-      work is the column, the sentence and the check. 56 pages, more than the 54 just done. Watch
-      the width: that table is already five columns and adding a sixth to the model pages pushed it
-      past its own right edge above 1024px until the machine name was allowed to wrap.
+- [x] The machine pages have the mirror image of that gap. Done 2026-09-17, and the item's own
+      framing turned out to be the wrong half of the answer: every one of the 56 machines takes its
+      models to different lengths, so "do they differ" says nothing here. What splits the machines is
+      **whose fault the short window is** — 51 stop at least one model because their own memory ran
+      out, 5 stop none — and that is what the pages now say. The run entry below has the figures and
+      `checkMachineContexts()`, which holds the figures and the blame apart.
+
+- [ ] A machine page's only prefilled calculator link is the machine on its own. Now that the page
+      knows the longest context it holds each model at, a second link could open the calculator on
+      that model at that length, the way the model pages have done since 2026-09-17. Small, and it
+      would put a deep link on all 56. Worth it only if it can sit somewhere that is not another
+      call to action under the table; two in a row would read as selling.
 
 - [ ] The 2 pages left on one inbound link, Llama 3.1 8B Q8 and Qwen3 32B Q8, reached only from
       their own Q4 page because the leaderboard shows one row per model name. Machine pages cannot
@@ -340,6 +350,83 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — how far a machine takes each model, on the machine pages
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 needed repairing afterwards, from this run's own push; PR #2 and PR #3 were
+re-checked after it and still merge clean. Ryan has not been pinged about any of them, per the
+standing rule.
+
+**Why this item.** It was the top open item that a push to main can carry, and it is the other half
+of the question the last run answered from the model side. A machine page's "What it runs" table
+gave every model a speed, a class and a memory figure, all taken at 32k, and never said how long a
+window the machine actually holds it at. That is the question behind "can my 32GB card do 128k",
+and the machine page is where someone asks it.
+
+**What the item got wrong, and what was there instead.** It assumed the machine side would split
+the way the model side did, into pages where the lengths differ and pages where they do not.
+Measured, **all 56 machines take their models to different lengths**, so that sentence would have
+been the same on every page and would have said nothing. The split that does exist is a better
+question anyway: **whose fault a short window is**. On **51 of the 56** machines, at least one model
+is stopped by that machine's own memory; on **5** — the M5 and M3 Ultra 96GB and 512GB Macs and the
+DGX Spark — memory never runs out first, and every model reaches either 256k or its own ceiling.
+
+**What changed.** The table has a **Longest context** column, and the sentence above it says what
+the column adds up to from the machine's side. The RTX 3090's reads: 5 of the 12 are stopped by its
+own memory, Qwen3.6 35B-A3B soonest at 32k, and the rest reach 256k or their own limit. A 16GB Mac
+mini M6 stops 7 of 10, Ministral 3 8B soonest at 32k. A 12GB RTX 3060 stops 8 of 11.
+
+**The tag is the careful part.** A figure that stops at 32k because the machine is full says
+something about the machine. One that stops at 32k because the model's own ceiling is 40k says
+nothing at all, and printing the two alike would sell a machine on a limit it did not set. So
+`contextCappedBy()` decides, and only the memory-capped figures carry the small `memory` tag; the
+note under the table says what the tag means in one line.
+
+**The other quiet lie this nearly shipped.** The first draft ended the sentence "the rest reach
+256k, where the calculator's list ends, or the longest setting their own context limit allows" on
+every page. On the three 16GB Macs and the RTX 3060 **nothing reaches 256k at all**, so naming it
+as somewhere "the rest" get to would have sold a length those machines never hold. The tail clause
+is now built from what the machine actually reaches, and the check refuses a page that names 256k
+without taking a model there.
+
+**No figure here is new data.** `longestContext()` walks the calculator's own context list and asks
+`fit()`, the same function the calculator uses, so every length is the site's own arithmetic.
+
+**What it did to the figures.** Machine pages went from a median of **820 words to 976**, and from
+663 at the shortest to 804. A word-level diff of all 56 pages against a build from `origin/main`
+found **nothing removed** — the only line that changed rather than appeared is the table's own
+header row, which gained a sixth name.
+
+**Width.** The backlog warned that a sixth column pushed the model pages past their right edge until
+the machine name was allowed to wrap. Measured before and after over HTTP at 320, 360, 390, 430,
+640, 768, 1024, 1280 and 1440px: **1,692 views, 0 page overflows, 0 of 3,987 tables scrolling**,
+the same as the baseline. The model-name column was given the leaderboard's `c-model` class so it
+wraps rather than overflows; measured without it the table still fit, so the class is insurance for
+the next long model name rather than a fix for this one. The phone layout was read as a picture too:
+a row becomes a block and the new line reads "Longest context 64k memory".
+
+`checkMachineContexts()` holds it from here, and it holds the blame as well as the figure: every
+printed length is recomputed from `fit()` at build time, no machine may be shown taking a model past
+its own limit, the tag must fall on exactly the memory-capped rows, a page may not claim memory
+never runs out where it does, and a page may not name 256k unless it takes a model there. Proved by
+breaking it five ways: doubling the figures failed the build on 661 counts, emptying the column on
+817, dropping the tag on 156, putting the tag on every row on 505, and forcing "memory never runs
+out first here" onto every page on 153.
+
+**Verified.** `npm ci`, `npm test` (169 tests), `npx tsc --noEmit`, `npm run build` all the way
+through `build:functions`, the five deliberate breakages above, the width measurement above, and
+the rendered pages read in a browser at 390 and 1280px. Commit `9a44c1c`; deploy run 79 succeeded.
+
+**PR #1 repaired afterwards**, in the note under that same table. Commit `c270947`; details in
+Ryan's side above. Re-checked after pushing it: all three branches merge clean.
+
+**What to continue.** The top item is still the question pages, and it is still behind three
+unmerged PRs. Below it the main-reachable list is back to cosmetics: the leaderboard's height on a
+phone, the seven long head-to-head titles, the waterline label's margin on a share card. The new
+entry added to the backlog this run — a second prefilled calculator link on machine pages, at the
+longest context they hold a model at — is the only one of those that adds an answer rather than
+tidies one, and it is small.
 
 ### 2026-09-17 — how far each machine takes the context, on the model pages
 
