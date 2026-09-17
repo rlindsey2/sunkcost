@@ -224,4 +224,26 @@ a:hover { color: var(--ink); }
   .board.compare tbody th { padding-left: 0; }
   .board.compare thead th:first-child { width: 34%; }
   .board.compare .c-quant { display: block; margin-left: 0; white-space: normal; }
+
+  /* Five columns do not fit in 358px, so a phone put the last of them off the
+     right edge — on most of these tables that was the pay-back, which is the
+     figure the page is for, and on a model's page it was the link into the
+     calculator as well. So a row stops being a row here and becomes a block:
+     the name, the figure that answers the page against the right edge, and
+     the rest underneath, each with its column heading in front of it. */
+  .board.stack { display: table; width: 100%; overflow-x: visible; white-space: normal; }
+  .board.stack thead { display: none; }
+  .board.stack tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 3px; padding: 10px 1px 11px; border-bottom: 1px solid var(--line); }
+  .board.stack tbody tr:last-child { border-bottom: 0; }
+  .board.stack td, .board.stack tbody th { padding: 0; border: 0; white-space: normal; }
+  .board.stack .k-name { grid-column: 1; grid-row: 1; }
+  .board.stack .k-fig { grid-column: 2; grid-row: 1; text-align: right; font-size: 13.5px; }
+  .board.stack .k-sub { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-2); }
+  .board.stack .k-sub[data-label]::before { content: attr(data-label); margin-right: 5px; color: var(--faint); }
+  .board.stack .k-sub:empty, .board.stack .k-none { display: none; }
+  .board.stack .k-wide { grid-column: 1 / -1; }
+  .board.stack tr.is-frontier { padding: 14px 1px 4px; border-bottom: 0; background: none; }
+  .board.stack tr.is-frontier .k-wide { font-size: 11.5px; color: var(--faint); }
+  .board.stack .c-quant { display: inline; }
+  .board.stack .c-score .bar { width: 46px; margin-right: 6px; }
 }

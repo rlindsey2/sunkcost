@@ -824,3 +824,58 @@ export function modelVerdict(
 
   return out.join(' ');
 }
+
+/* ------------------------------ phone tables ------------------------------ */
+
+/**
+ * Turns a wide table into one a phone reads down instead of across.
+ *
+ * Five columns do not fit in 358px, so a phone put the last of them past the
+ * right edge: on 147 of these tables that was the pay-back, which is the figure
+ * the whole site is for, and on 59 it was the link into the calculator. Rather
+ * than cut columns, each row is marked up so the narrow layout can set it as a
+ * line — the name, the figure that answers the page, and the rest underneath
+ * with its column heading in front of it. Nothing is dropped and nothing moves
+ * on a wide screen, where the table stays a table.
+ *
+ * `fig` is the column that earns the right-hand side of the first line. Headings
+ * too long to sit inside a row can be shortened per column with `labels`.
+ */
+export function stack(html: string, opts: { fig: number; labels?: Record<number, string> }): string {
+  const marked = html.replace('<table class="board">', '<table class="board stack">');
+  if (marked === html) throw new Error('stack() expects a <table class="board">');
+
+  const head = marked.match(/<thead>([\s\S]*?)<\/thead>/);
+  const heads = [...(head?.[1] ?? '').matchAll(/<th[^>]*>([\s\S]*?)<\/th>/g)].map((m) =>
+    m[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(),
+  );
+  const width = heads.length;
+  if (!width) throw new Error('stack() expects the table to name its columns');
+  if (opts.fig < 1 || opts.fig >= width) throw new Error(`stack(): no column ${opts.fig} to lead with`);
+
+  return marked.replace(/<tbody>([\s\S]*?)<\/tbody>/g, (_all, body: string) =>
+    `<tbody>${body.replace(/<tr([^>]*)>([\s\S]*?)<\/tr>/g, (_row, trAttrs: string, cells: string) => {
+      let col = 0;
+      const out = cells.replace(/<(td|th)([^>]*)>([\s\S]*?)<\/\1>/g, (_cell, tag: string, attrs: string, inner: string) => {
+        const span = Number(attrs.match(/colspan="(\d+)"/)?.[1] ?? 1);
+        const at = col;
+        col += span;
+        // a cell reaching across the row is a heading or an aside, not a column
+        let role = span >= width ? 'k-wide' : at === 0 ? 'k-name' : at === opts.fig ? 'k-fig' : 'k-sub';
+        // a column holding nothing but a dash has nothing to say on a line of its
+        // own, so the narrow layout leaves it to the wide one. A cell can be
+        // wordless and still carry its answer — the capability dots are drawn on
+        // empty spans — so this turns on the dash itself, never on the absence
+        // of text.
+        if (role === 'k-sub' && /^[—-]$/.test(inner.replace(/<[^>]*>/g, '').trim())) role = 'k-sub k-none';
+        const label = role === 'k-sub' && span === 1 ? (opts.labels?.[at] ?? heads[at] ?? '') : '';
+        const extra = label ? ` data-label="${label.replace(/"/g, '&quot;')}"` : '';
+        const withClass = /class="/.test(attrs)
+          ? attrs.replace(/class="/, `class="${role} `)
+          : `${attrs} class="${role}"`;
+        return `<${tag}${withClass}${extra}>${inner}</${tag}>`;
+      });
+      return `<tr${trAttrs}>${out}</tr>`;
+    })}</tbody>`,
+  );
+}

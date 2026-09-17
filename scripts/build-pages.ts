@@ -11,7 +11,7 @@ import {
   familyHeading, familyRange, fitsOf, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange, hardwareLabel,
   hardwareProduct, kvWorking, lowerFirst, machineVerdict, machinesConsidered, median, modelLabel, modelVerdict,
   otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere,
-  shortHardwareLabel, slug, speedWithBasis, strongestShared, tierName, tierScale, titleOf, verdictLine, CAP_SHORT,
+  shortHardwareLabel, slug, speedWithBasis, stack, strongestShared, tierName, tierScale, titleOf, verdictLine, CAP_SHORT,
   DESC_MAX, FONT_PRELOAD, SIZE_BANDS, TITLE_MAX, type Runner,
 } from '../src/pagekit';
 import {
@@ -269,6 +269,28 @@ function checkCardPrices() {
   console.log(`  ${cards.length} card-priced machines, every price of one says so`);
 }
 
+/**
+ * A table wider than a phone puts its last column off the right edge, where
+ * nobody finds it. Every table on these pages therefore has to say how it reads
+ * on a narrow screen: a head-to-head splits its width three ways, and everything
+ * else is marked up by stack() to read as a block per row. A new table that says
+ * neither stops the build rather than quietly hiding its pay-back column.
+ */
+function checkTables() {
+  const loose = meta.flatMap((p) =>
+    [...p.html.matchAll(/<table class="board([^"]*)"/g)]
+      .filter((m) => !/\b(compare|stack)\b/.test(m[1]))
+      .map(() => p.path),
+  );
+  if (loose.length) {
+    const where = [...new Set(loose)];
+    console.error(where.slice(0, 5).map((w) => `  ${w} has a table that says nothing about how it reads on a phone`).join('\n'));
+    throw new Error(`${loose.length} tables on ${where.length} pages would swipe sideways on a phone`);
+  }
+  const stacked = meta.reduce((n, p) => n + (p.html.match(/<table class="board stack"/g)?.length ?? 0), 0);
+  console.log(`  ${stacked} tables read as a block on a phone, the rest split their width`);
+}
+
 function checkFonts() {
   const css = readFileSync(new URL('page.css', outRoot), 'utf8');
   const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
@@ -370,10 +392,10 @@ function leaderboard(): string {
 <h1>Every open model, measured against the frontier</h1>
 <p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>.</p>
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${frontierRows}${rows}</tbody>
-</table>
+</table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' } })}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
@@ -434,10 +456,10 @@ function bestBuys(): string {
         .join('');
       return `<section id="${anchor(l.usage)}">
 <h2>${esc(fmtTokens(l.usage))} tokens a day <span class="dim">· ${esc(l.label)}</span></h2>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Machine</th><th>Speed</th><th>Pays back in</th><th></th></tr></thead>
 <tbody>${rows}</tbody>
-</table>
+</table>`, { fig: 3 })}
 </section>`;
     })
     .join('\n');
@@ -524,10 +546,10 @@ ${fe?.url ? ` <a href="${esc(fe.url)}" rel="noopener">Score source</a>.` : ''} <
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill.</p>
 
 ${hwRows ? `<h2>Machines that run it</h2>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Pay-back</th><th></th></tr></thead>
 <tbody>${hwRows}</tbody>
-</table>
+</table>`, { fig: 3 })}
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration.</p>` : ''}
 
 <h2>The specifics</h2>
@@ -638,20 +660,20 @@ function hardwarePage(hw: Hardware): string {
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id }, data))}">Run the numbers on this machine</a></p>
 
 ${rows ? `<h2>What it runs</h2>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th></tr></thead>
 <tbody>${rows}</tbody>
-</table>
+</table>`, { fig: 1 })}
 <p class="note">${fits.length > 12 ? `${fits.length - 12} more fit; the calculator lists them all. ` : ''}The memory column is the weights plus the cache for ${Math.round(state.ctx / 1024)}k of context: <a href="/how-much-memory/">how that sum works, and what each size needs</a>.</p>` : ''}
 
 ${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Memory</th><th>Models that fit</th><th>Pay-back</th></tr></thead>
 <tbody>
 ${range.length ? `<tr class="is-frontier"><th colspan="5">${esc(familyHeading(hw))}</th></tr>${range.map(relatedRow).join('')}` : ''}
 ${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price elsewhere on the list</th></tr>${rivals.map(relatedRow).join('')}` : ''}
 </tbody>
-</table>
+</table>`, { fig: 4 })}
 <p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.</p>` : ''}
 ${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.get(hw.id)!.map((h) => `<a href="${esc(h.href)}">vs ${esc(shortHardwareLabel(h.other))}</a>`).join(' · ')}</p>` : ''}
 
@@ -744,7 +766,7 @@ ${row('Pay-back', esc(verdictLine(sa)), esc(verdictLine(sb)))}
   const extraSection = extra.length
     ? `<h2>What the extra memory buys</h2>
 <p>The ${esc(roomier)} holds ${extra.length} model${extra.length === 1 ? '' : 's'} the ${esc(tighter)} cannot at ${ctxK}k of context. ${extra.length === 1 ? 'That is' : 'The strongest of them are'} what the difference in memory actually buys.</p>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Weights</th><th>Needs at ${ctxK}k</th><th>On the ${esc(roomier)}</th></tr></thead>
 <tbody>
 ${shown
@@ -754,7 +776,7 @@ ${shown
   })
   .join('\n')}
 </tbody>
-</table>
+</table>`, { fig: 3, labels: { 2: 'Needs' } })}
 ${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}`
     : `<h2>Memory is not what separates them</h2>
 <p>Every model on this list that fits one machine fits the other, at ${ctxK}k of context. So the choice between them is speed, price and power, not what they can hold.</p>`;
@@ -994,10 +1016,10 @@ function memoryPage(): string {
               : ''
           }`
     }</p>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Parameters</th><th>Weights</th><th>Cache at ${kctx}</th><th>Needs</th><th>Cheapest machine that runs it</th><th></th></tr></thead>
 <tbody>${ms.map(memoryRow).join('')}</tbody>
-</table>
+</table>`, { fig: 4, labels: { 5: 'Cheapest' } })}
 </section>`;
   }).join('\n');
 
@@ -1051,10 +1073,10 @@ ${
 
 <h2>Installed memory is not usable memory</h2>
 <p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level, counted against the ${currentModels.length} current models.</p>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Usable</th><th>Installed</th><th>Cheapest machine at that level</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th></tr></thead>
 <tbody>${ladderRows}</tbody>
-</table>
+</table>`, { fig: 3, labels: { 2: 'Cheapest', 4: 'Strongest' } })}
 ${
     plateau
       ? `<p>Read the last column before you spend anything. From ${fmtGb1(plateau.from.usable_memory_gb)} of usable memory up to ${fmtGb1(plateau.to.usable_memory_gb)}, the strongest model on this list does not change: it is <a href="/models/${esc(plateau.model.id)}/">${esc(plateau.model.display_name)}</a> the whole way. More memory across that stretch buys more models, more context and more room to work, not a cleverer one.${
@@ -1169,7 +1191,7 @@ ${row('API cost per month', apiCell(a, shared.a.view), apiCell(b, shared.b.view)
   const machinesSection = only.length
     ? `<h2>Machines that run one and not the other</h2>
 <p>${needLine}That puts ${esc(wider.display_name)} on ${only.length} of the ${considered} machines priced here that ${esc(narrower.display_name)} does not, starting at ${fmtUsd(only[0].hw.price_usd)}.</p>
-<table class="board">
+${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Memory</th><th>Speed on ${esc(wider.display_name)}</th><th>Pay-back</th></tr></thead>
 <tbody>
 ${shownRunners
@@ -1179,7 +1201,7 @@ ${shownRunners
   })
   .join('\n')}
 </tbody>
-</table>
+</table>`, { fig: 4, labels: { 3: 'Speed' } })}
 ${only.length > shownRunners.length ? `<p class="note">${only.length - shownRunners.length} more, on the <a href="/models/${esc(wider.id)}/">${esc(wider.display_name)} page</a>.</p>` : ''}`
     : `<h2>Memory is not what separates them</h2>
 <p>${needLine}Every machine priced here that runs one runs the other, at ${ctxK}k of context. So the choice between them is what each is good at, how fast it runs and what the same work costs on an API, not what you have to buy to hold it.</p>`;
@@ -1263,4 +1285,5 @@ checkOgCards();
 checkFonts();
 checkCounts();
 checkCardPrices();
+checkTables();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
