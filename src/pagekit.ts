@@ -9,6 +9,7 @@
  */
 import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
 import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
+import { fit as memoryFit, kvScaleFor } from './fit';
 import { defaultState, serializeState, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
 import { CAPABILITY_KEYS, CAPABILITY_LABELS } from './types';
@@ -436,6 +437,45 @@ export function strongestShared(va: View, vb: View): { model: Model; a: ModelRow
 export function runsOnlyOn(va: View, vb: View): Model[] {
   const inB = new Set(fitsOf(vb).map((r) => r.model.id));
   return fitsOf(va).filter((r) => !inB.has(r.model.id)).map((r) => r.model);
+}
+
+/** A context length as the calculator writes it: 32768 tokens is "32k". */
+export function ctxLabel(tokens: number): string {
+  return `${Math.round(tokens / 1024)}k`;
+}
+
+/**
+ * The longest context the calculator offers that this machine still holds this
+ * model at. Fit is the site's own: the weights plus the KV cache at that length
+ * against usable memory, and never past the model's own context limit. So a
+ * figure here is capped by whichever runs out first, the machine or the model.
+ */
+export function longestContext(m: Model, hw: Hardware, data: Dataset): number | null {
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  let longest: number | null = null;
+  for (const ctx of [...data.defaults.context.options].sort((x, y) => x - y)) {
+    if (memoryFit(m, hw, ctx, data.defaults.nearly_fits_ratio, kvScale).status === 'fits') longest = ctx;
+  }
+  return longest;
+}
+
+export interface Headroom {
+  model: Model;
+  a: number | null;
+  b: number | null;
+}
+
+/**
+ * Where two machines hold the same models, memory has not stopped mattering — it
+ * has moved into the context. The weights are fixed, but the KV cache grows with
+ * every token you keep, so the machine with more memory left over takes the same
+ * model further. These are the models where that shows, in the order the page
+ * already lists them.
+ */
+export function contextHeadroom(models: Model[], a: Hardware, b: Hardware, data: Dataset): Headroom[] {
+  return models
+    .map((model) => ({ model, a: longestContext(model, a, data), b: longestContext(model, b, data) }))
+    .filter((r) => r.a !== r.b);
 }
 
 /** A price, with the note that a graphics card is priced without the PC around it. */
