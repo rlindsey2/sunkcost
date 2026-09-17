@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clampText, fitLines, flagshipMachines, hardwareComparePath, hardwarePairs, hardwareVersusCard, modelComparePath,
-  modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT, VS_WIDTH,
+  clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
+  modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
+  VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
 import { runnersFor } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
-import type { Dataset } from '../src/types';
+import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
 import throughput from '../data/throughput.json';
@@ -133,10 +134,30 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, once', () => {
-    const n = flagshipMachines(data).length;
-    expect(hardwarePairs(data).length).toBe((n * (n - 1)) / 2);
-    for (const [a, b] of hardwarePairs(data)) expect(a.id).not.toBe(b.id);
+  it('pairs every flagship with every other, every card with every other card, once each', () => {
+    const pairs = hardwarePairs(data);
+    const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
+    const keys = pairs.map(([a, b]) => key(a, b));
+    for (const [a, b] of pairs) expect(a.id).not.toBe(b.id);
+    expect(new Set(keys).size).toBe(keys.length);
+
+    const flagships = flagshipMachines(data);
+    const cards = graphicsCards(data);
+    const want = new Set<string>();
+    for (const xs of [flagships, cards])
+      for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
+    expect(new Set(keys)).toEqual(want);
+
+    // a card is priced as the part, not as a computer, and the flagship grid on its own
+    // left five of the seven cards out of every head-to-head on the site
+    expect(cards.length).toBeGreaterThan(2);
+    for (const c of cards) expect(c.price_scope).toBe('card_only');
+
+    // the flagship grid is written first, so a pair both rules reach keeps its address
+    for (const [a, b] of pairs.slice(0, (flagships.length * (flagships.length - 1)) / 2)) {
+      expect(flagships.map((h) => h.id)).toContain(a.id);
+      expect(flagships.map((h) => h.id)).toContain(b.id);
+    }
   });
 
   it('pairs each scored model with the next one down the leaderboard', () => {

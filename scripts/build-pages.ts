@@ -915,7 +915,10 @@ function checkHiddenModels() {
  * machine and model pages use, where the figure a cell prints is the link. A price that
  * opened the wrong machine, the wrong model or a machine that does not hold the model
  * would send a reader to a configuration the row does not describe, so every link is
- * recomputed here from the data rather than read back off the page.
+ * recomputed here from the data rather than read back off the page. The column is
+ * measured at the context the calculator starts at, and one model fits nowhere there:
+ * that row names the cheapest machine that holds it at a shorter window, marks the
+ * window and opens the calculator at it, which is held to the data here the same way.
  */
 function checkLeaderboardLinks() {
   const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
@@ -929,7 +932,9 @@ function checkLeaderboardLinks() {
       seen.add(m.display_name);
       return true;
     });
+  const notes = html.split('<p class="note">').slice(1).map((p) => p.split('</p>')[0]);
   let linked = 0;
+  let shortened = 0;
   for (const m of ranked) {
     const row = html.split('<tr>').find((r) => r.includes(`href="/models/${esc(m.id)}/"`));
     if (!row) {
@@ -938,7 +943,26 @@ function checkLeaderboardLinks() {
     }
     const cheapest = cheapestPerFamily(runnersFor(m, data)).slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0];
     if (!cheapest) {
-      if (row.includes('/?hw=')) problems.push(`/leaderboard/ opens the calculator for ${m.display_name}, which nothing on the list runs`);
+      // Nothing holds this model at the context the column is measured at. Where a
+      // machine holds it at a shorter window the cell names that machine, its price and
+      // that window, and opens the calculator there; where none does, the cell may say
+      // so and promise nothing. The model's own page has to name the same machine, or
+      // the two pages answer the same question differently.
+      const shorter = machinesShorter(m, data)[0];
+      if (!shorter) {
+        if (row.includes('/?hw=')) problems.push(`/leaderboard/ opens the calculator for ${m.display_name}, which nothing on the list runs`);
+        else if (!row.includes('nothing on the list')) problems.push(`/leaderboard/ does not say that nothing on the list runs ${m.display_name}`);
+        continue;
+      }
+      const wantShort = `<a href="/hardware/${esc(shorter.hw.id)}/">${esc(hardwareLabel(shorter.hw))}</a> <a class="dim" href="${esc(calcLink({ hw: shorter.hw.id, model: m.id, ctx: shorter.ctx }, data))}">${fmtUsd(shorter.hw.price_usd)}</a>`;
+      if (row.includes(wantShort) && row.includes(`at ${ctxLabel(shorter.ctx)}`)) shortened++;
+      else problems.push(`/leaderboard/ does not open ${m.display_name} on the ${shortHardwareLabel(shorter.hw)} at ${fmtUsd(shorter.hw.price_usd)} and ${ctxLabel(shorter.ctx)}, which is the cheapest machine that holds it`);
+      if (row.includes('nothing on the list'))
+        problems.push(`/leaderboard/ says nothing on the list runs ${m.display_name}, which the ${shortHardwareLabel(shorter.hw)} holds at ${ctxLabel(shorter.ctx)}`);
+      if (!notes.some((p) => p.includes(esc(m.display_name)) && p.includes(ctxLabel(shorter.ctx))))
+        problems.push(`/leaderboard/ prices ${m.display_name} at ${ctxLabel(shorter.ctx)} and no note under the table says that row is measured at a shorter window`);
+      if (!(meta.find((p) => p.path === `/models/${m.id}/`)?.links ?? []).includes(`/hardware/${shorter.hw.id}/`))
+        problems.push(`/leaderboard/ says the ${shortHardwareLabel(shorter.hw)} holds ${m.display_name}, and /models/${m.id}/ does not name that machine`);
       continue;
     }
     const want = `<a class="dim" href="${esc(calcLink({ hw: cheapest.hw.id, model: m.id }, data))}">${fmtUsd(cheapest.hw.price_usd)}</a>`;
@@ -953,7 +977,7 @@ function checkLeaderboardLinks() {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
     throw new Error(`${problems.length} row${problems.length === 1 ? '' : 's'} on /leaderboard/ do not open the machine and model they print`);
   }
-  console.log(`  /leaderboard/ opens the calculator on ${linked} model-and-machine pairs, one a row`);
+  console.log(`  /leaderboard/ opens the calculator on ${linked + shortened} model-and-machine pairs, one a row${shortened ? `, ${shortened} of them at the shorter window that machine holds the model at` : ''}`);
 }
 
 function checkFonts() {
@@ -1025,23 +1049,37 @@ function leaderboard(): string {
     return true;
   });
 
-  const rows = unique
-    .map((m, idx) => {
-      const next = unique[idx + 1];
-      const score = m.frontier_equivalent!.score!;
-      const runners = cheapestPerFamily(runnersFor(m, data));
-      const cheapest = runners.slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0];
-      return `<tr>
+  // What runs each model, worked out once: the row's own cell wants the cheapest, and
+  // the note under the table wants the models where the cheapest answer needed a
+  // shorter window than the rest of the column is measured at. Tencent Hy3 is the one
+  // today — nothing holds it at 32k and a Mac Studio holds it at 16k — and answering
+  // "nothing on the list" there contradicted its own page, which prices it on that
+  // machine.
+  const leaderCtx = data.defaults.context.default_tokens;
+  const placed = unique.map((m, idx) => {
+    const cheapest = cheapestPerFamily(runnersFor(m, data)).slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0] ?? null;
+    return { m, next: unique[idx + 1], score: m.frontier_equivalent!.score!, cheapest, shorter: cheapest ? null : machinesShorter(m, data)[0] ?? null };
+  });
+
+  // A machine, its price as the way into the calculator, and the window where that is
+  // not the one the column is measured at. Both cases are drawn here, so the markup
+  // and the link cannot drift apart between them.
+  const hwCell = (hw: Hardware, m: Model, at: number | null) =>
+    `<a href="/hardware/${esc(hw.id)}/">${esc(hardwareLabel(hw))}</a> <a class="dim" href="${esc(calcLink(at == null ? { hw: hw.id, model: m.id } : { hw: hw.id, model: m.id, ctx: at }, data))}">${fmtUsd(hw.price_usd)}</a>${hw.price_scope === 'card_only' ? '<span class="dim">, card only</span>' : ''}${at == null ? '' : ` <span class="dim">at ${ctxLabel(at)}</span>`}`;
+
+  const rows = placed
+    .map(({ m, next, score, cheapest, shorter }) => `<tr>
   <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(m.quantisation)}</span></td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
-  <td class="c-hw">${cheapest ? `<a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> <a class="dim" href="${esc(calcLink({ hw: cheapest.hw.id, model: m.id }, data))}">${fmtUsd(cheapest.hw.price_usd)}</a>${cheapest.hw.price_scope === 'card_only' ? '<span class="dim">, card only</span>' : ''}` : '<span class="dim">nothing on the list</span>'}</td>
+  <td class="c-hw">${cheapest ? hwCell(cheapest.hw, m, null) : shorter ? hwCell(shorter.hw, m, shorter.ctx) : '<span class="dim">nothing on the list</span>'}</td>
   <td class="c-vs">${next ? `<a href="/compare/${slug(m.id)}-vs-${slug(next.id)}/">vs ${esc(next.display_name)}</a>` : ''}</td>
-</tr>`;
-    })
+</tr>`)
     .join('');
+
+  const shortened = placed.filter((p) => p.shorter);
 
   const frontierRows = refs
     .map(
@@ -1071,6 +1109,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' } })}
+${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
@@ -2290,8 +2329,11 @@ function compareIndex(): string {
     })
     .join('');
 
-  // the index's own answer, so the page says something before it starts listing
-  const ranked = flagships
+  // the index's own answer, so the page says something before it starts listing.
+  // Every machine the table above puts against another one, which is the family
+  // flagships plus the graphics cards the card grid brings in, and each of them once
+  const compared = [...new Map(pairs.flatMap(({ a, b }) => [[a.id, a], [b.id, b]] as const)).values()];
+  const ranked = compared
     .map((hw) => ({ hw, fits: fitsOf(hwViews.get(hw.id)!).length }))
     .sort((x, y) => y.fits - x.fits || x.hw.price_usd! - y.hw.price_usd!);
   // sorted by what each holds and then by price, so the first machine is the

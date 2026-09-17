@@ -105,6 +105,14 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed an eighth repair at 18:08 on 2026-09-17**, and for once not the import block:
+      main had made every price on `/leaderboard/` a link into the calculator and said so in the
+      lede, where this branch had already added the way through to `/compare/`. Both sentences kept
+      in one lede. Rebuilt (189 pages, 76 comparisons, 181 tests, typecheck clean, the full build
+      including `build:og` and `build:functions`) and re-measured over HTTP (**1,701 views, 0
+      overflows, 0 of 4,320 tables scrolling**) before pushing `69ade05`. The leaderboard's lede is
+      now a second reliable conflict on this branch alongside the import block: both sides keep
+      writing the same sentence.
       **It needed a seventh repair at 17:41 on 2026-09-17**, the import block for the fifth time:
       this branch's `shownTps` against main's `machinesShorter` and `ShorterMachine`. Like PR #1's
       fourteenth, this one was **done by a second agent session running the same task concurrently**;
@@ -286,14 +294,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       neither belongs in a table priced at 32k throughout. The run entry below has the figures and
       `checkShorterMachines()`, which holds every row and the answer box's claim to the data.
 
-- [ ] `/leaderboard/` has no prefilled calculator link at all — the only page on the site with none,
-      and it is the biggest hub, 1,336 words and 113 outbound internal links. Its "Cheapest machine
-      that runs it" column already names a machine and its price for every model, which is exactly
-      the pair the calculator wants, but the cell links to the machine page and stops. `/best/`
-      carries 45 such links, model pages 15 apiece and machine pages 13. The catch is that the
-      machine name is already a link worth keeping and the price beside it is a poor thing to make
-      into one, so this needs a shape rather than just a href — and the table is 7 columns and
-      8,134px tall on a phone already, so it cannot be a new column.
+- [x] `/leaderboard/` had no prefilled calculator link at all, the only page on the site with none.
+      Done 2026-09-17, and the item's own worry about the price decided the shape: **the price is
+      the link**, in the muted colour it already had, so the machine name stays the row's primary
+      link and the two do not read as one. 47 rows, one a row, no new column and no new line. The
+      run entry below has the figures and `checkLeaderboardLinks()`, which recomputes every one of
+      them from the data at build time.
+
+- [x] `/leaderboard/` was the last page on the site that said no at 32k. Done 2026-09-17, and the
+      question the item said to settle first was settled the first way it offered: the window goes
+      beside the figure, not into a footnote, because the row is where the reader is. Tencent Hy3's
+      cell names the Mac Studio M5 Ultra, 256GB at $10,799 "at 16k", the price opens the calculator
+      on that pair at 16k, and a note under the table says the column is measured at the context the
+      calculator starts at and which row is not. The run entry below has the figures and the five
+      claims `checkLeaderboardLinks()` now holds that row to.
 
 - [x] The head-to-head OG cards printed a graphics card's price as a whole computer's. Done
       2026-09-16, and the item understated it: the cards were the last place the *comparison*
@@ -441,6 +455,179 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the biggest page stops contradicting the rest of the site
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work, and all three still merge clean after this run's push — it touched neither the
+import block nor the leaderboard's lede, which are the two places PR #1 and PR #3 break. Ryan has
+not been pinged about any of them, per the standing rule.
+
+**Why this item.** The question pages are still the top item overall and still blocked behind three
+unmerged PRs, for the twelfth run running. Of the two main-reachable items the last run left, this
+was the one with something wrong on the page rather than something long on a phone.
+
+**What was wrong.** `/leaderboard/` is the site's biggest page, and one of its 47 rows said the
+opposite of what the rest of the site says. The "Cheapest machine that runs it" column read
+"nothing on the list" for Tencent Hy3, while `/models/hunyuan-hy3-q4/` names the Mac Studio M5
+Ultra, 256GB, prices the pay-back on it at 16k, and two comparisons run their race on that machine.
+The miss at 32k is about a gigabyte and all of it cache: Hy3 needs 193 GB there and 187.5 GB at 16k,
+against 192 GB usable.
+
+**What changed, and how the item's own question was settled.** The item asked whether a 16k answer
+belongs beside the figure or in the cell's own note. It goes beside the figure, because that is
+where the reader is and a note under a 55-row table is not: the cell now reads **Mac Studio M5
+Ultra, 256GB $10,799 at 16k**, with the machine name blue, the price grey and underlined as every
+other price in that column already is, and "at 16k" in the same muted grey but not a link. **The
+price opens the calculator on that pair at 16k**, not at the default — the 48th prefilled link on a
+page that had none before 18:08 today. A note under the table carries the convention the column
+never stated: each machine named is the cheapest that holds that model at the 32k context the
+calculator starts at, and Tencent Hy3 fits nowhere at that length.
+
+**No figure here is new data.** `machinesShorter()` asks `fit()` at every context the calculator
+offers, the same function the calculator uses, and returns the cheapest machine that holds the model
+at any of them — so the column's word "cheapest" stays true on that row rather than quietly meaning
+"cheapest of the ones that fit at 32k". Checked across the whole dataset that Hy3 is the only row
+this applies to, and that no cheaper machine holds it at any window at all.
+
+`checkLeaderboardLinks()` holds the row from here, recomputing it at build time rather than reading
+it back off the page: the machine, the price, the window, the link at that window, a note under the
+table that names the model and the window, and **that the model's own page names the same machine**,
+which is the contradiction this item was about. A row with nothing at any window may still say
+nothing on the list, and may not offer a link. Proved by breaking it six ways: falling back to
+"nothing on the list" failed the build on **2** counts, linking at the default window on **1**,
+printing the window one step long on **1**, naming a machine that does not hold it on **1**,
+dropping the note on **1**, and pointing the model-page check at a machine that page does not name
+on **1**.
+
+**Nothing else on the site moved.** Built the whole page set before and after and compared every
+file: **189 byte-identical, 1 changed**, and the one is `/leaderboard/`. Its diff is two lines, the
+cell and the new note. **No title, description, canonical, OG tag or JSON-LD line changed**, and the
+sitemap is byte-identical.
+
+**Verified.** `npm ci`, `npm test` (**177 tests**, up from 176 — a new one holding the column's
+"cheapest" claim to the whole machine list rather than to the one-per-family list the helper keeps,
+and round-tripping the link through `parseState()` to the same machine, model and window with the
+model still fitting), `npx tsc --noEmit`, `npm run build` all the way through `build:functions` with
+no workaround, and the six deliberate breakages above. Measured over HTTP in Chromium at 320, 360,
+390, 430, 640, 768, 1024, 1280 and 1440px: **1,692 views over the generated pages, 0 page overflows,
+0 of 4,302 tables scrolling**, the same as the baseline. Read the row as a picture at 390 and 1280px
+— on a phone it reads "Cheapest  Mac Studio M5 Ultra, 256GB  $10,799 at 16k" — and **followed the
+new link in a browser**: it lands on the Mac Studio M5 Ultra, 256GB with Tencent Hy3 selected at 16k,
+where the calculator prints a 5.4 GB cache and 20 tok/s and prices a pay-back, which is the model
+page's own figure.
+
+**One housekeeping note, and it is not what the standing rule assumes.** `git push` was rejected on
+the first try, and the cause was **not** a sibling session: the container's local `main` was still
+the seed commit `94aa957` with HEAD detached, so `git push -u origin main` pushed the stale branch
+rather than the work. `origin/main` was untouched at `d2854ea`. A run that sees a rejected push
+should read `git status -sb` before assuming a collision — this is the second run to meet the
+detached HEAD, and the first to be bitten by it.
+
+**Pushed as `e2fb32f`, and the deploy is confirmed.** Run 92 on that commit was cancelled by run 93
+when this log entry was pushed four minutes later — the workflow cancels a superseded run, the same
+thing that happened at 18:09 today — so the deploy that matters is **run 93, on `bcae5e7`, green at
+19:10 UTC** with `npm ci`, `npm test` and the full `npm run build` passing on the runner, and
+republished. That commit carries the change and this entry, so nothing is waiting behind it.
+
+**What to continue.** The site now answers at a shorter window everywhere it can: machine pages,
+model pages, the two thin comparisons and, as of this run, the leaderboard. **The question pages are
+still the top item overall, still the biggest win, and still blocked behind three unmerged PRs** —
+twelve runs now, and **the live site has still had no new page since this agent started**. What is
+left on the backlog that a push to main can carry is thin and each piece says so itself: the
+leaderboard's height on a phone (only worth doing if the length reads as a problem), the 21 machine
+head-to-heads that could answer the context question (only if it can replace something rather than
+sit beside it), and whether a model page's call to action still earns its place now that every
+figure in the table is a link. A run that wants a real item should do what the last four did and
+measure the page set again rather than read down this backlog.
+
+### 2026-09-17 — the leaderboard's prices open the calculator
+
+**The branches were checked first, and two of the three needed repairing before any work started.**
+PR #1 and PR #3 had both gone un-mergeable on `9717481`, main's `machinesShorter` against their own
+import lists, and both were repaired here and pushed as `3f84214` and `7adcb3b` before anything
+else. The run entry above records those two from the other session's side, which verified them
+rather than redoing them; they are the same two repairs. PR #3 then needed a further repair from
+this run's own push, which is at the end of this entry. All three branches merge clean again. Ryan
+has not been pinged about any of the three, per the standing rule.
+
+**On the two sessions.** The item at the top of Ryan's side is right and this run is the other half
+of it: the 17:00 slot fired twice, and the two sessions spent the hour on different work only by
+luck. This session took the PR repairs at 17:38 and the leaderboard item; the other took the model
+pages. Nothing collided this hour, but nothing stopped it from doing so either. Ryan has now been
+told once; do not send it again.
+
+**Why this item.** The question pages are still the top item overall and still blocked behind three
+unmerged PRs, for the eleventh run running. Of the two main-reachable items the last two runs left,
+the model-page mirror was taken by the other session at 16:58, so this was the remaining one — and
+it was the biggest hub on the site.
+
+**What was wrong.** `/leaderboard/` was **the only page on the site with no way into the calculator
+at all**. 48 models, 113 outbound links, and every one of them went to another page here. `/best/`
+carries 45 prefilled links, a model page 15, a machine page 13. Meanwhile the leaderboard's
+"Cheapest machine that runs it" column already prints the exact pair the calculator wants — a
+machine and the model in that row — and stopped at a link to the machine page.
+
+**What changed, and why the backlog item's own doubt decided it.** The item said the price beside
+the machine name was "a poor thing to make into a link", so the answer needed a shape rather than
+just a href. The shape is the one the rest of the site already uses: **the figure that describes a
+configuration is the link**, the way a Longest context cell is on the machine and model pages.
+**The price is now the link: 47 rows, one a row.** No new column — the table is 7 wide already —
+no new line, and one clause added to the lede.
+
+**The part that needed looking at rather than reasoning about.** Made a plain link, the price
+rendered in the same blue as the machine name beside it, and on a narrow column the two wrapped
+together and read as one link to one place. The price keeps `dim`, so it is grey and underlined
+against the machine name's blue: measured in the browser, the price computes to `rgb(94, 109, 119)`
+and the machine name to `rgb(31, 84, 121)`, both underlined. That is the row's existing hierarchy
+kept, with an underline added to say the figure is clickable.
+
+**What the column says about the one model nothing runs.** Tencent Hy3 still reads "nothing on the
+list" and offers no link, which the check enforces rather than allows. That is honest at 32k and it
+is now the only place on the site that answers at 32k alone — see the new backlog item above.
+
+**No figure here is new data.** The link carries no context, so it lands on the calculator's
+default, which is the same context `runnersFor()` picks the cheapest machine at. The new test holds
+those two together over every model: the link round-trips through `parseState()` to the same
+machine, the same model and the default context, and the model still fits when it gets there.
+
+`checkLeaderboardLinks()` holds the page to the data from here, recomputing each link at build time
+rather than reading it back off the page: every scored model with a machine must open that machine
+and that model at that price, the cheapest machine must be the cheapest, a model nothing runs may
+offer nothing, and a hosted model may not offer to run on hardware you can buy. Proved by breaking
+it four ways: dropping the link failed the build on **47** rows, opening every row on the top
+model on **46**, opening the dearest machine that runs it rather than the cheapest on **41**, and
+giving the eight hosted rows a link on **8**, each one naming the model it got wrong.
+
+**Nothing else on the site moved.** Built the whole page set from a worktree at `origin/main` and
+compared every file: **189 byte-identical, 1 changed**, and the one is `/leaderboard/`. Its diff is
+96 lines: the 47 price cells and the lede. **No title, description, canonical, OG tag or JSON-LD
+line changed**, and the sitemap is byte-identical.
+
+**Verified.** `npm ci`, `npm test` (**176 tests**, up from 175), `npx tsc --noEmit`, `npm run build`
+all the way through `build:functions` with no workaround, and the four deliberate breakages above.
+Measured over HTTP in Chromium at 320, 360, 390, 430, 640, 768, 1024, 1280 and 1440px: **1,692
+views over the generated pages, 0 page overflows, 0 of 4,302 tables scrolling**, the same as the
+baseline. Read the table as a picture at 390 and 1280px — on a phone the row reads "Cheapest  Mac
+Studio M5 Ultra, 256GB  $10,799" with the price underlined — and read one row's links back out of
+the rendered page in the browser: the model page, the machine page, the calculator on that pair, and
+the head-to-head, in that order.
+
+**Deploy confirmed.** **Run 89, on `11d3708`, finished green at 18:08 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. Run 90 carries this
+log entry.
+
+**PR #3 repaired afterwards** from this run's own push, its eighth, and not the import block this
+time: both sides had written the leaderboard's lede. Details in Ryan's side above; rebuilt and
+re-measured before pushing `69ade05`.
+
+**What to continue.** The main-reachable list is short again and the two items on it are both small:
+the leaderboard's "nothing on the list" for Tencent Hy3 (new above, and the last place the site
+answers at 32k alone) and the leaderboard's height on a phone. **The question pages are still the
+top item overall, still the biggest win, and still blocked behind three unmerged PRs** — eleven runs
+now. **The live site has still had no new page since this agent started.** A run that wants a real
+main-reachable item should do what the last three did and measure the page set again rather than
+read down this backlog.
 
 ### 2026-09-17 — a model page stops naming the wrong machine as the cheapest that runs it
 

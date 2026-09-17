@@ -150,11 +150,37 @@ export function rankedModels(data: Dataset): Model[] {
     .filter((m, i, xs) => xs.findIndex((x) => x.display_name === m.display_name) === i);
 }
 
-/** Every machine pair that has a page, in the order the build writes them. */
+/**
+ * Every graphics card on the list, dearest first. A card is the one class of machine
+ * bought as a part rather than as a computer, and the part is what people put against
+ * another part, so every card gets a head-to-head with every other card and not only
+ * with the middle of its own family.
+ */
+export function graphicsCards(data: Dataset): Hardware[] {
+  return data.hardware
+    .filter((h) => h.price_scope === 'card_only' && h.price_usd != null)
+    .sort((a, b) => b.price_usd! - a.price_usd!);
+}
+
+/**
+ * Every machine pair that has a page, in the order the build writes them: the grid of
+ * family flagships first, then the card grid. The flagships come first so that a pair
+ * both lists keeps the address it has always had, and a pair is only ever written once,
+ * whichever way round the two rules reach it.
+ */
 export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
-  const f = flagshipMachines(data);
   const out: [Hardware, Hardware][] = [];
-  for (let i = 0; i < f.length; i++) for (let j = i + 1; j < f.length; j++) out.push([f[i], f[j]]);
+  const seen = new Set<string>();
+  const add = (a: Hardware, b: Hardware) => {
+    if (seen.has(`${a.id}|${b.id}`) || seen.has(`${b.id}|${a.id}`)) return;
+    seen.add(`${a.id}|${b.id}`);
+    out.push([a, b]);
+  };
+  const grid = (xs: Hardware[]) => {
+    for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) add(xs[i], xs[j]);
+  };
+  grid(flagshipMachines(data));
+  grid(graphicsCards(data));
   return out;
 }
 

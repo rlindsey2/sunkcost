@@ -869,6 +869,40 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(checked).toBeGreaterThan(40);
   });
 
+  it('names the cheapest machine that runs a model nothing holds at the default context', () => {
+    // The leaderboard's machine column is measured at the context the site prices
+    // everything at. Where nothing holds a model there, the cell falls back to the
+    // machine that holds it at a shorter window — and the column calls that machine
+    // the cheapest, so the claim has to be true of the whole list rather than of the
+    // one machine per family the helper keeps: no cheaper machine may hold the model
+    // at any window the calculator offers. The link carries that window, so it also
+    // has to read back as the pair the row prints, still fitting when it arrives.
+    const ctx = data.defaults.context.default_tokens;
+    let checked = 0;
+    for (const m of data.models) {
+      if (cheapestPerFamily(runnersFor(m, data)).length) continue;
+      const shorter = machinesShorter(m, data)[0];
+      if (!shorter) {
+        // a model no machine holds at any window may promise nothing
+        for (const h of machinesConsidered(data)) expect(longestContext(m, h, data)).toBeNull();
+        continue;
+      }
+      for (const h of machinesConsidered(data)) {
+        if (h.price_usd! >= shorter.hw.price_usd!) continue;
+        expect(longestContext(m, h, data)).toBeNull();
+      }
+      const href = calcLink({ hw: shorter.hw.id, model: m.id, ctx: shorter.ctx }, data);
+      const back = parseState(href.slice(href.indexOf('?')), data);
+      expect(back.hw).toBe(shorter.hw.id);
+      expect(back.model).toBe(m.id);
+      expect(back.ctx).toBe(shorter.ctx);
+      expect(back.ctx).toBeLessThan(ctx);
+      expect(computeView(back, data).model?.id).toBe(m.id);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
   it('never sends a model page reader to a shorter window than the row is priced at', () => {
     // Every other figure in a model page's row — the speed, the pay-back — is
     // quoted at the context the page assumes, and the machines listed are the ones
