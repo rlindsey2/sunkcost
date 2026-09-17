@@ -21,71 +21,15 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       that is settled, a run that finds its push rejected should assume a sibling session, fetch,
       verify the other side's work rather than force it, and say so in its entry.
 
-- [ ] Merge (or close) [PR #1](https://github.com/rlindsey2/sunkcost/pull/1), the
-      `/how-much-memory/` page. It has been open since 12:49 on 2026-09-16 and is the reason six
-      runs in a row have taken smaller items instead of the top backlog entry, which is question
-      pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
-      blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
-      time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired fourteen times**, most recently at 17:38 on 2026-09-17.
-      The fourteenth was the import block in both files again, this branch's `/how-much-memory/`
-      helpers against main's new `machinesShorter` and `ShorterMachine`, and it was **repaired by a
-      second agent session running the same hourly task at the same time** — see the duplicate-runs
-      item below. Its resolution was checked independently here by taking the union of each pair of
-      import lists against the merged file: 64 names in `scripts/build-pages.ts` and 49 in
-      `tests/pagekit.test.ts`, **nothing lost and nothing invented on either side**. It rebuilt
-      (189 pages, 188 tests, typecheck clean, the full build) and re-measured over HTTP (1,701 views,
-      0 overflows, 0 of 4,356 tables scrolling) before pushing `3f84214`.
-      The thirteenth was the import block in both `scripts/build-pages.ts` and `tests/pagekit.test.ts`:
-      this branch's `/how-much-memory/` helpers against main's new `fitsShorter` and `ShorterFit`.
-      Every name from both sides was kept in both files, checked by taking the union of each pair of
-      lists and asserting nothing dropped out, and both lists were put back into one order rather
-      than left as two halves. Rebuilt (189 pages, 186 tests, typecheck clean, the full build
-      including `build:og` and `build:functions`) and re-measured over HTTP (**1,701 views, 0
-      overflows, 0 of 4,212 tables scrolling**) before pushing `398d115`.
-      The twelfth was the import block in `tests/pagekit.test.ts` alone, the conflict this log has
-      been predicting for five runs: this branch's `/how-much-memory/` helpers against main's new
-      `cheapestPerFamily`. Every name from both sides was kept and none was lost, which was checked
-      by taking the union of the two import lists and asserting nothing dropped out rather than by
-      reading the result. Rebuilt (189 pages, 184 tests, typecheck clean, the full build including
-      `build:og` and `build:functions`) and re-measured over HTTP (**1,710 views, 0 overflows,
-      0 of 4,041 tables scrolling**) before pushing `5108b80`. One note for the next run: a fresh
-      checkout of this branch fails `build:pages` on "1 pages name an OG card that does not exist"
-      until `npm run build:og` has drawn `/how-much-memory/`'s card. That is `checkOgCards()`
-      working, not a fault on the branch.
-      The eleventh was the same note as the tenth, twice in a row now: this branch says
-      what the memory column counts and links `/how-much-memory/`, and main had just added that
-      each longest-context figure opens the calculator on that model at that length. Both kept,
-      in one note. Rebuilt (189 pages, 183 tests, typecheck clean) and re-measured over HTTP
-      (**1,701 views, 0 overflows, 0 of 4,041 tables scrolling**) before pushing `8b32992`.
-      That note is now as reliable a conflict as the import block: every run that touches the
-      machine page's "What it runs" table breaks it, so budget for both.
-      The tenth was not the import block for once: it was the note under a machine page's
-      "What it runs" table, where this branch had folded the hidden-models line and its link to
-      `/how-much-memory/` into one paragraph and main had just added a second note for the new
-      Longest context column. Both sides kept, in one note rather than two paragraphs of overlap.
-      Rebuilt (189 pages, 182 tests, typecheck clean) and re-measured over HTTP
-      (**1,701 views, 0 overflows, 0 of 4,041 tables scrolling**) before pushing `c270947`.
-      The eighth and the ninth were both the import block at the top of `scripts/build-pages.ts`
-      and the same block in `tests/pagekit.test.ts`: this branch adds `/how-much-memory/`'s helpers
-      to both, and main keeps adding its own — `contextHeadroom`, `ctxLabel` and `longestContext`
-      the eighth time, `contextCappedBy` and `longestContext` the ninth. Every name from both sides
-      was kept in both files. Those two blocks are now the only place this branch ever breaks, and
-      every run that adds a helper touches them, so assume it and budget for it.
-      A future run that finds it still open should re-check that it still merges before doing
-      anything else: a waiting branch does not stay mergeable on its own, and this one has the
-      worst of it, because it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly
-      every run edits. Re-measure `/how-much-memory/`'s tables over HTTP after each repair too —
-      the 2026-09-17 repair found three of them behind a sideways scroll on a desktop.
+- [x] Merge PR #1, the `/how-much-memory/` page. **Merged 21:11 on 2026-09-17**, after being open
+      since 12:49 on 2026-09-16 and having its merge repaired fourteen times. It went in on the
+      same deploy as PR #2, run 100, green at 21:18. The repair history is kept in the run entries
+      rather than here; the standing lesson is the one that item already drew, which is that a
+      branch touching `scripts/build-pages.ts` or `src/pagekit.ts` stops merging within hours.
 
-- [ ] Merge (or close) [PR #2](https://github.com/rlindsey2/sunkcost/pull/2), the calculator's own
-      head: self-hosted fonts and the home page's `WebSite` markup. **Ryan marked it ready for
-      review at 23:21 on 2026-09-16**, so the draft no longer blocks it and only the merge is
-      left. It had gone un-mergeable in the meantime, which the same run fixed; see the run entry
-      for "the calculator's own head". Ryan has been pinged once about this PR; do not ping again.
-      A future run that finds it still open should re-check that it still merges — eight commits
-      landed on main in the three hours it sat there, and a waiting branch does not stay mergeable
-      on its own.
+- [x] Merge PR #2, the calculator's own head: self-hosted fonts and the home page's `WebSite`
+      markup. **Merged 21:11 on 2026-09-17.** Deploy run 100, which carried both this and PR #1,
+      finished green at 21:18 and published, so both are live. Nothing is left for Ryan here.
 
 - [ ] Merge (or close) [PR #3](https://github.com/rlindsey2/sunkcost/pull/3), the `/compare/`
       head-to-head index, opened 2026-09-17. It is ready for review, not a draft. Ryan has been
@@ -366,10 +310,9 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       calculator links, and a build check that refuses to ship a comparison the index does not
       list. The 75 comparison pages also carry it as the step above them in their breadcrumbs.
       Reaches the site when that PR merges.
-- [~] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
-      home page specifically, so /leaderboard/'s copy of it does not count. Written and waiting in
-      PR #2, with a test holding it identical to the node `pageGraph()` builds. Reaches the site
-      when that PR merges.
+- [x] The home page carries no JSON-LD. Done, live since 2026-09-17: the home page emits the same
+      `WebSite` node `pageGraph()` builds, plus a `WebPage` for itself, with a test holding the two
+      identical. The /s/ share pages, which take the home page's head, have the graph stripped.
 - [ ] A "what people entered" page updated from `npm run submissions` output that Ryan commits
       under seo/exports/ (never from live database access; the agent has none).
 - [x] Core Web Vitals on the generated pages. The fonts were the whole of it and they are now
@@ -377,11 +320,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       generated pages carry no `<img>` and no inline `<svg>` between them, so there is no image
       to size. What is left of this item is the calculator's own head, which is the next entry
       below, and a measurement this environment cannot take (see the PageSpeed note above).
-- [~] The calculator at index.html loading both fonts from Google. Done on the branch and waiting
-      in PR #2, paired with the JSON-LD item above as planned. The faces are now in src/fonts.css,
-      which styles.css imports and Vite folds into the bundle; a test keeps that block identical to
-      the one in public/page.css. The 1,894 /s/ share pages inherit the same head, so they stop
-      asking Google too. Reaches the site when that PR merges.
+- [x] The calculator at index.html loading both fonts from Google. Done, live since 2026-09-17.
+      The faces are in src/fonts.css, which styles.css imports and Vite folds into the bundle; a
+      test keeps that block identical to the one in public/page.css. The 1,894 /s/ share pages
+      inherit the same head, so they stopped asking Google too. Every page on the site now paints
+      without waiting on another origin.
 - [x] Canonical and duplicate control. Audited and now enforced by the build. Done 2026-09-16;
       the run entry has what was actually wrong, which was the 45 links out of /best/ rather
       than anything in the page set. One part is not checkable from here and is on Ryan's side
@@ -2559,6 +2502,16 @@ the `pull_request` CI workflow is still unwritten and still protects both waitin
 has merged, the next question page is "best GPU for local LLMs" instead of either.
 
 ### 2026-09-16 — the calculator's own head
+
+**Merged 2026-09-17 at 21:11**, together with PR #1, and both went out on deploy run 100, green at
+21:18 UTC. Two merge commits made a minute apart, neither having seen the other's code, so main was
+checked before the deploy could publish it rather than after: `npm test` 196 passing, typecheck
+clean, and the full build clean at 227 pages with every card drawn. On the built home page: no
+off-origin request, the two font preloads, the graph present and parsing, and no `/s/` page
+carrying it. One note for a future run that repeats this check — `npm run build:pages` on its own
+fails with "39 pages name an OG card that does not exist" when `public/og/` is older than the page
+set. That is the stale card directory, not a fault; `npm run build` draws the cards first and
+passes.
 
 PR #1 is still open, still a draft and still unreviewed, so the standing rule holds: no second new
 page while it waits. This run took what the last entry said to continue, which is the two backlog
