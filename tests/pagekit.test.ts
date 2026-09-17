@@ -10,7 +10,7 @@ import {
 } from '../src/pagekit';
 import { footprintGb } from '../src/fit';
 import { modelPairs } from '../src/versus-card';
-import { defaultState } from '../src/state';
+import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
 import type { Dataset, Hardware } from '../src/types';
 import hardware from '../data/hardware.json';
@@ -727,5 +727,31 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(ctxLabel(32768)).toBe('32k');
     expect(ctxLabel(4096)).toBe('4k');
     expect(ctxLabel(262144)).toBe('256k');
+  });
+
+  it('opens the calculator on the configuration the length was measured at', () => {
+    // A machine page prints the longest context it holds each model at and makes
+    // that figure the way in. The link is only honest if the calculator reads
+    // back the same machine, the same model and the same length — and if that
+    // configuration still fits once it gets there. The cache type is the quiet
+    // one: longestContext() measures at the dataset's default, and the query
+    // string leaves that out when it is the default, so the two have to agree.
+    expect(defaultState(data).kv).toBe(data.defaults.kv_cache?.default ?? 'f16');
+    let checked = 0;
+    for (const h of data.hardware) {
+      for (const m of data.models) {
+        const ctx = longestContext(m, h, data);
+        if (ctx === null) continue;
+        const href = calcLink({ hw: h.id, model: m.id, ctx }, data);
+        const back = parseState(href.slice(href.indexOf('?')), data);
+        expect(back.hw).toBe(h.id);
+        expect(back.model).toBe(m.id);
+        expect(back.ctx).toBe(ctx);
+        expect(back.kv).toBe(defaultState(data).kv);
+        expect(footprintGb(m, ctx)!).toBeLessThanOrEqual(h.usable_memory_gb!);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(600);
   });
 });
