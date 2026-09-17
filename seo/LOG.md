@@ -27,6 +27,20 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       landed on main in the three hours it sat there, and a waiting branch does not stay mergeable
       on its own.
 
+- [ ] Merge (or close) [PR #3](https://github.com/rlindsey2/sunkcost/pull/3), the `/compare/`
+      head-to-head index, opened 2026-09-17. It is ready for review, not a draft. Ryan has been
+      told about this one once; do not ping again. It touches `scripts/build-pages.ts` and
+      `src/pagekit.ts`'s neighbours, so it will go un-mergeable the same way PR #1 keeps doing:
+      a future run should check it still merges before starting its own work.
+      **It needed its first merge repair at 06:52 on 2026-09-17**, caused by that run's own push:
+      both sides had added a build check in the same place, which is the shape this conflict will
+      keep taking. Both checks were kept and both run; the branch was rebuilt and re-measured
+      after the repair, not just merged.
+      **It needed a second repair at 07:59 on 2026-09-17**, in exactly the same block and for
+      exactly the same reason: this branch adds `checkCompareIndex()` where main has now twice
+      widened `checkPayback()`. Assume any run that edits those build checks will break this
+      branch, and repair it in the same run rather than leaving it for the next one.
+
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
 - [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
@@ -105,6 +119,44 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 - [x] Internal linking: no generated page is an orphan any more, and the build fails if one
       appears. Done 2026-09-16; the run entry has what was actually wrong, which was worse than
       this item assumed.
+- [x] No orphans was the floor, not the finish. 52 of the 188 pages sat at exactly one inbound
+      link, and 47 of those were the model head-to-heads, reachable only from one cell in the last
+      column of /leaderboard/. Done 2026-09-17: every model page now names the head-to-heads it is
+      in, the way the machine pages always have, and 52 pages on one link became 5. The run entry
+      below has the figures; `checkHeadToHeads()` holds both sides to the rule.
+- [x] The 28 machine head-to-heads priced pay-back at one usage. Done 2026-09-17: each now
+      carries the five levels the calculator names, and the ceiling that caps 22 of those figures.
+      The run entry below has what the single figure was hiding.
+
+- [x] The 47 model head-to-heads priced pay-back at one usage the way the machine ones used to.
+      Done 2026-09-17: the 45 that share a machine now price it at all five levels, on that
+      machine, with its ceiling on each model marked and named. The run entry below has the
+      figures, including the three pages where the sentence above the table had to stop claiming
+      a win the printed figures do not show. The other two pairs share no machine, and they are
+      the new backlog item two below.
+
+- [ ] The two model head-to-heads with no machine in common are now the thinnest pages on the
+      site: `/compare/inkling-small-ud-q4-vs-hunyuan-hy3-q4/` at 409 words and
+      `/compare/hunyuan-hy3-q4-vs-ling-3-0-flash-q4/` at 504, against a median of 757 across all
+      75 comparisons. Nothing on them is wrong — no machine here holds Tencent Hy3 at 32k of
+      context, and they say so — but they skip the two sections every other comparison carries.
+      What would answer them with the site's own numbers is context length: Hy3 needs 193 GB at
+      32k and its weights are 182 GB, so there is a context at which the Mac Studio M5 Ultra,
+      256GB holds both models, and `kvCacheGb()` already works it out. A comparison that says
+      "these two meet on one machine, at 8k of context" is a real answer rather than a longer page.
+
+- [ ] The 5 pages still on one inbound link, all of them model pages. Three are among the five
+      models the intelligence index has not scored — Kat Coder v2.5, Laguna XS 2.1 and Ornith 1.5
+      35B A3B — which are in no head-to-head and reached only from the note under the leaderboard
+      table. The other two unscored models, Ornith 1.5 9B and Spark X2.5 4B, are small enough to
+      be listed by name on machine pages, which is why they are not down here.
+      Two are second quantisations, Llama 3.1 8B Q8 and Qwen3 32B Q8, reached only from their own
+      Q4 page, because the leaderboard shows one row per model name. Neither group is hidden and
+      neither is wrong, so this is worth doing only where there is a link a reader would want.
+      The mechanism is already there and simply runs out: a machine page names the first twelve
+      models that fit it, which is how Ornith 1.5 9B reached 13 links and Spark X2.5 4B reached 7,
+      and the other three are in no machine's first twelve. What would reach them is the note that
+      already says "N more fit" naming a few of them, not a new page.
 - [ ] Question pages for the searches people actually type. The memory one is written and waiting
       in PR #1 as /how-much-memory/ and covers "how much RAM to run a 70B model" and its variants;
       the page type and its helpers are in place, so the next one is much less work than the first.
@@ -133,9 +185,11 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       three, and every one now carries the machine bill the two models differ by. The run entry
       below has what the rewrite turned up, including a price gap that printed in cents.
 
-- [ ] An index at /compare/. The crawl-path half of this is now done — all 75 comparison pages
-      are linked from the machines and models they compare — but "mac studio vs rtx 5090" style
-      queries want a page that lists the match-ups, and nothing here does. New page type, so a PR.
+- [~] An index at /compare/. Written and waiting in PR #3: 28 machine match-ups and 47 model
+      match-ups, each row carrying the figures the comparison behind it prints, 45 prefilled
+      calculator links, and a build check that refuses to ship a comparison the index does not
+      list. The 75 comparison pages also carry it as the step above them in their breadcrumbs.
+      Reaches the site when that PR merges.
 - [~] The home page carries no JSON-LD. Google's site-name feature reads `WebSite` markup on the
       home page specifically, so /leaderboard/'s copy of it does not count. Written and waiting in
       PR #2, with a test holding it identical to the node `pageGraph()` builds. Reaches the site
@@ -229,6 +283,262 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Runs
 
+### 2026-09-17 — what a model head-to-head never said: how much use it takes
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #3 needed repairing afterwards, from this run's own push; see the end of this
+entry. Ryan has not been pinged about any of them, per the standing rule.
+
+Then the item the last run said to continue: the 47 model head-to-heads priced pay-back at exactly
+one level of use, 500k tokens a day, in the lede and in one row of the side-by-side table — the
+same gap the 28 machine comparisons lost an hour earlier. Someone choosing which model to run is
+choosing at their own usage, and on these pages the machine is the same either way, so what moves
+with usage is what the same work costs on an API.
+
+**What changed.** Each of the 45 pairs that share a machine now carries "How much use it takes to
+pay for the machine": both models on the cheapest machine that runs both, across the five levels
+the calculator names, from "a few chats a day" at 50k to "agents running most of the day" at 20M.
+The section says in a sentence which model pays the machine back sooner and whether that holds all
+the way up, marks every figure the machine is too slow to reach, and ends with the calculator
+prefilled at the heaviest level for either model. The two pairs with no machine in common are
+exempt, the same way they have no side-by-side table; `checkPayback()` knows the difference.
+
+**What the five levels turned up.** Unlike the machine pages, the order never flips: on all 45
+pages one model is ahead at every level, because both run on the same machine. What the levels do
+show is the scale, which one figure hid completely — on the Radeon AI PRO R9700, 32GB, Qwen3 32B
+pays it back in 1,499 years at 50k tokens a day and 3.7 years at 20M. **30 figures across 22 pages
+are at a machine's ceiling**, named underneath; on the 5 pages where both models are capped at the
+same level the two sentences are written as one. Three pages needed a different sentence again:
+one model never pays the machine back at any level on two of them, and neither does on a third,
+where "pays back sooner" would have been a wrong way to say it.
+
+**The sentence has to hold against the printed figures.** On 3 pages the two models are a few days
+apart at one level and print the same rounded figure — 21 months and 21 months. Claiming "sooner
+at every level" there is unsupported by anything the reader can see, so those pages say instead
+that one model "is never the slower of the two to pay for it, at any level of use", which the
+table does show. The comparison is now made on the printed figures, not on the days behind them.
+
+**What it did to the figures.** The 45 pages: **517–738 words before, median 653; 665–895 after,
+median 803.** Nothing was removed from any page.
+
+`checkPayback()` now holds the model head-to-heads to the same rule as the machine ones: the
+section, the five levels, and no figure marked as a ceiling without the ceiling being named. All
+three were proved by breaking them — the section suppressed failed at 45 pages, a level dropped
+failed at 45, and the ceiling note suppressed failed at the 22 pages that have one.
+
+**Verified.** `npm test` 162 passing; typecheck clean; the full `npm run build`, `build:functions`
+included, which needed no workaround. Compared all 188 built pages against a build of `origin/main`
+taken before the change: **141 byte-identical, 47 changed, 0 lines removed anywhere**, and no
+title, description, canonical or JSON-LD line touched. The 2 changed pages that are not the new
+section are one blank line each, on the two pairs that have no machine in common. Measured over
+HTTP in Chromium at 320, 360, 390, 430, 700, 1024, 1280 and 1440px: **1,504 page views, 0
+overflowing the window and 0 of the 435 tables in them scrolling sideways** at any width. Read the new
+section as a picture at 390, 800 and 1280px, and read seven pages as text: a plain one, a both-capped
+pair, a differently-capped pair, the two where one model never pays back, the one where neither
+does, and one of the three that print the same figure at a level.
+
+**Deploy confirmed.** **Run 69, on `518aa4b`, finished green at 08:00 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #3 was repaired straight afterwards**, for the second time and from the same cause: this
+run's push widened `checkPayback()` where `seo/compare-index` adds `checkCompareIndex()` in the
+same block. Both checks were kept and both run. The branch was rebuilt (189 pages, 167 tests,
+typecheck clean) and re-measured over HTTP (1,512 views, 0 overflows, 0 scrolling tables) before
+pushing `1889421`. All three branches merge clean again.
+
+**Continue next:** check all three PR branches still merge before anything else. The top item that
+can reach main on its own is now the leaderboard's height on a phone, then the 5 pages on one
+inbound link, then the two comparisons with no machine in common. Everything above those — the
+question pages, the `/compare/` index, the home page's JSON-LD, the calculator's fonts — is still
+written and waiting in a PR, and **the live site has had no new page since this agent started**.
+
+### 2026-09-17 — what a machine head-to-head never said: how much use it takes
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. (One of them did afterwards; see the end of this entry.) Ryan has not been pinged
+about any of them, per the standing rule.
+
+Then the run's own item, found by measuring rather than from the backlog. Counting the visible
+words on all 188 built pages, the thin end of the site was not the model pages but the **28 machine
+head-to-heads: 356 to 618 words, median 490**, against a median of 634 on the 47 model ones, which
+were rewritten on 2026-09-16. The three thinnest were the three 128GB machines against each other,
+where the two columns hold the same models and the memory section has nothing to report.
+
+**What was missing was not words.** Every one of those pages priced pay-back at exactly one level
+of use — 500k tokens a day, in the lede and in one table row — and pay-back is the figure on the
+page that moves most with how much you actually run. Someone choosing between two machines is
+choosing at *their* usage, not at the default.
+
+**What changed.** Each machine head-to-head now carries "How much use it takes to pay back": both
+machines on the strongest model they both hold, across the five levels the calculator already
+names, from "a few chats a day" at 50k to "agents running most of the day" at 20M. The section
+says in a sentence whether the answer holds all the way up, and ends with the calculator prefilled
+at the heaviest level for either machine.
+
+**What the five levels turned up.** Pay-back does not simply scale, because `computeView` caps
+usage at what a machine can generate in 24 hours. **22 figures across the 28 pages are at a
+machine's ceiling**, and on **3 pairs that changes which machine pays back sooner**: the DGX
+Spark, 128GB is ahead of the Mac Studio M5 Max, 128GB at every level up to 4M tokens a day and
+behind it at 20M, because on Qwen3.8 27B it tops out at 15.2M tokens a day and the Mac does not.
+That is a real fact about buying either one and the page could not say it before. Every capped
+figure is marked and the ceiling is named underneath; on the 3 pages where both machines are
+capped at the same level the two sentences are written as one, because a sentence each said the
+same thing twice.
+
+**What it did to the figures.** The 28 pages: **356–618 words before, median 490; 544–814 after,
+median 693**. The thinnest comparison on the site is no longer a machine one.
+
+`checkPayback()` now stops the build if a machine head-to-head loses the section, prices the wrong
+number of levels, or marks a figure as a ceiling without naming it. All three were proved by
+breaking them: the section suppressed failed at 28 pages, the row count failed at 28 when the
+`<thead>` row was counted by mistake — which is how the first version of the check was found to be
+wrong — and the ceiling note suppressed failed at the 19 pages that have one.
+
+**Verified.** `npm test` 162 passing; typecheck clean; the full `npm run build`, `build:functions`
+included, which needed no workaround this time. Built the whole page set from a worktree at
+`origin/main` and compared all 188: **160 byte-identical, 28 changed, and not one line removed on
+any of them** — pure addition, with no title, description or JSON-LD touched. Measured over HTTP
+in Chromium at 320, 360, 390, 430, 700, 1024, 1280 and 1440px: **1,504 page views, 0 overflowing
+the window and 0 of the tables scrolling sideways** at any width. Read the new section rendered at
+390, 800 and 1280px, and read four pages as text: a flip, a both-capped pair, a neither-capped
+pair and one where the two machines differ in memory.
+
+**Deploy confirmed.** **Run 67, on `5e73669`, finished green at 06:54 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #3 was repaired straight afterwards.** This run's push conflicted with `seo/compare-index`,
+which adds `checkCompareIndex()` in the same place: both checks were kept, both run, and the
+branch was rebuilt (189 pages, 167 tests, full build) and re-measured over HTTP (1,512 views,
+0 overflows, 0 scrolling tables) before pushing `f46337f`. All three branches merge clean again.
+
+**Continue next:** check all three PR branches still merge before anything else. The top item that
+can reach main on its own is now the same section for the 47 model head-to-heads, which price
+pay-back at one usage the same way these did; then the leaderboard's height on a phone, then the 5
+pages on one link. Everything above those — the question pages, the `/compare/` index, the home
+page's JSON-LD, the calculator's fonts — is still written and waiting in a PR, and **the live site
+has had no new page since this agent started**.
+
+### 2026-09-17 — the 47 model head-to-heads were hanging off one link each
+
+**All three open PRs were checked first and all three still merge clean.** `git merge-tree`
+against `origin/main` came back clean on `seo/how-much-memory`, `seo/home-head` and
+`seo/compare-index`, so nothing needed repairing — the second run in a row that has been true.
+Ryan has not been pinged about any of them, per the standing rule.
+
+Then the run's own item, which was not on the backlog and turned up while reading what the build
+already prints. `checkLinks()` says "every page is linked from at least 1 other page" and stops
+there, so the next question is how many pages sit on that floor. Counting inbound links across
+the 188 built pages: **52 had exactly one, and 47 of those were the model head-to-heads**. Their
+single link was one cell in the last column of `/leaderboard/`. The 28 machine head-to-heads had
+two each, from the two machine pages they compare, because `hardwarePage` has carried that line
+since it was written. The model side never got it, so a quarter of the site was a page a crawler
+reaches last and a reader never reaches at all — and the reader on a model's own page is exactly
+the one with that comparison in front of them.
+
+**What changed.** Every model page now names the head-to-heads it is in, and says which side each
+one is on: "Head to head with its neighbours on the leaderboard: vs GLM-4.7-Flash above it, vs
+Qwen3.5 9B below." Pairs are cut as [higher, lower] from leaderboard order, so a model's page
+knows whether the model it is set against is the rung above it or the rung below; the top and the
+bottom of the table have only one neighbour and get the one-sided wording instead, "the next model
+down the leaderboard" and "the next model up". 48 of the 55 model pages carry the line. The other
+7 are in no pair: the five models the index has not scored, and the two second quantisations the
+leaderboard folds into their Q4 row.
+
+**What it did to the figures.** Pages on a single inbound link: **52 before, 5 after**. Every
+model head-to-head went from 1 to 3 — the leaderboard plus both models. The 5 that remain are
+model pages rather than comparisons, and they are the new backlog item above.
+
+`checkHeadToHeads()` now stops the build if a comparison is not linked from both of the things it
+compares, machine and model alike. It was proved twice: with the new line removed it failed at 94
+missing links, two for each of the 47 pairs, and with the line suppressed on one model it failed
+at one and named `/compare/glm-4-7-flash-q4-vs-gemma-4-12b-q4/` and the page that had stopped
+pointing at it.
+
+**Verified.** `npm test` 162 passing; typecheck clean; the full `npm run build`. Built the whole
+page set from a worktree at `origin/main` and compared all 188: **140 byte-identical, 48 changed,
+and every change is the one added line** — 46 pages with both neighbours, 2 with one. No title, no
+description and no JSON-LD moved. Measured over HTTP in Chromium at 320, 390, 430, 700, 1024, 1280
+and 1440px: **0 of 188 pages overflow the window and 0 of 362 tables scroll sideways** at any of
+them. Read the section as a picture at 1280px and at 390px, in the two-sided wording and in both
+of the one-sided ones.
+
+**Deploy confirmed.** **Run 65, on `e9547c8`, finished green at 05:51 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. All three PR
+branches were re-checked immediately after the push and all three still merge clean, which
+matters this time: this run edited `scripts/build-pages.ts`, the file PR #1 and PR #3 both touch.
+
+**Continue next:** check all three PR branches still merge before anything else. The top item that
+can still reach main on its own is the leaderboard's height on a phone, then the 5 pages on one
+link above. Everything above those on the backlog — the question pages, the `/compare/` index, the
+home page's JSON-LD, the calculator's fonts — is still written and waiting in a PR, and **the live
+site has had no new page since this agent started**.
+
+### 2026-09-17 — an index of every head-to-head
+
+**Both open PRs were checked first and neither needed repairing**, which is the first time in
+seven runs that has been true: main had moved only by a log commit since PR #1's sixth repair, so
+`git merge-tree` came back clean on both branches. Ryan has not been pinged about either, per the
+standing rule.
+
+Then the item the last run said to continue, the `/compare/` index. It is a new page type, so it
+is **[PR #3](https://github.com/rlindsey2/sunkcost/pull/3)**, branch `seo/compare-index`, commit
+`50d96bb`. Nothing was pushed to main except this log.
+
+**What the page is.** The 75 comparisons could be reached only from the two things each one
+compares, so a search for "mac studio vs rtx 5090" had nothing here to land on. `/compare/` lists
+them all: 28 machine match-ups, alphabetical so a reader finds their own machine in the first
+column, each with both prices, both memory sizes, how many of the 39 open models each side holds
+and the two speeds on the strongest model both machines hold; then 47 model match-ups in
+leaderboard order with both scores, both weights, the cheapest machine here that runs the pair,
+and the calculator prefilled with that machine and the first model named. 45 of the 47 pairs have
+a machine that runs both; the other two say so rather than showing a blank.
+
+**It says something of its own before it starts listing.** None of the 8 machines compared here
+holds more than 33 of the 39 open models, and 4 of them hold that many, so the interesting figure
+is the cheapest that does: the GMKtec EVO-X2, 128GB at $3,500. The first draft of that sentence
+said the EVO-X2 "holds the most", which is true of four machines at once and therefore not true
+of it. That is the kind of sentence this site cannot print.
+
+**Two counts that had to agree with the rest of the site.** What a machine holds is counted
+against the 39 current models, per the rule Ryan settled on 2026-09-16, not the 55 the leaderboard
+ranks. The card's first draft counted against 55; it now reads the denominator off the same view
+the machine pages use, and a test fails if that ever becomes `data.models.length` again. The
+table's heading says "Models that fit, of 39" so the figure cannot be read against the wrong total.
+
+**What else changed.** `checkCompareIndex()` stops the build if a comparison is written and the
+index does not list it — adding a machine family adds comparisons, and this is what stops one
+being added quietly. The index is linked from the leaderboard, best buys, the 8 machine pages
+with head-to-heads and all 75 comparison pages, which also now carry it as the step above them in
+their breadcrumbs, so a result for a match-up prints Sunk Cost / Head to head / the pair. One CSS
+rule, `.c-pair`, lets a cell holding both sides of a match-up wrap instead of holding one line —
+the same defect the 2026-09-17 repair found on `/how-much-memory/`, avoided here by design.
+
+**Verified.** `npm test` 167 passing, 5 new; typecheck clean; the full `npm run build` including
+`build:og`, `build:share` and `build:functions`, which found its font. Each new test was proved by
+breaking what it holds — the card's ranking reversed, its denominator put back to 55, a price
+printed without its "card only", the note stopped counting — and each failed by name and nothing
+else did. `checkCompareIndex()` was proved the same way: one row dropped from the machine table
+failed the build and named the comparison that went missing.
+
+Built the whole page set from a worktree at `origin/main` and compared all 188 pages: **103
+byte-identical, 85 changed, and every change is a link line** — 75 comparison pages by their note,
+their nav and their JSON-LD, and 10 pages by one note line each. Measured over HTTP in Chromium at
+320, 360, 390, 430, 660, 700, 860, 1024, 1280 and 1440px: **0 of 364 tables scroll sideways and no
+page overflows its window**, the two new tables included. Read the page as a picture on a desktop,
+a tablet and a phone, and the card as a PNG out of the real build.
+
+**Deploy confirmed.** **Run 63, on `8e19252`, finished green at 04:59 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. The push carried
+this log only; the page itself is in PR #3 and reaches the site when that merges. All three
+branches merged cleanly against main immediately after that push.
+
+**Continue next:** check all three PR branches still merge before anything else; PR #1 has needed
+repair on six of the last eight runs and PR #3 touches the same file. The top item that can still
+reach main on its own is the leaderboard's height on a phone. Everything above it on the backlog —
+the question pages, the `/compare/` index, the home page's JSON-LD, the calculator's fonts — is
+now written and waiting in a PR, which is worth saying plainly: **three PRs are open and the live
+site has had no new page since this agent started**.
+
 ### 2026-09-17 — seven machine pages stop opening on a typo
 
 **PR #1 was un-mergeable again and was repaired first**, which is what the last entry predicted:
@@ -295,9 +605,20 @@ articles in the test is written out by hand rather than derived, so the rule can
 agreeing with itself, and a separate test fails if the data ever grows a family the table does not
 cover — a new maker has to be read out loud by a person before it ships.
 
-**Continue next:** check PR #1 merges again before anything else; it has needed repair on five of
-the last six runs, and the `/how-much-memory/` page is worth re-measuring over HTTP each time main
-changes the table rules. While both PRs wait, the top live item on main is the `/compare/` index,
+**Deploy confirmed.** **Run 61, on `2d1d7e1`, finished green at 03:52 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished. The site's own
+pages still cannot be read from here, so this is the runner's word rather than a fetch of
+sunkcost.ai.
+
+**PR #1 went un-mergeable on that push and was repaired a second time in the same run**, the same
+two import lists again, resolved the same way and pushed as `0f381fb`. On the repaired branch:
+`npm test` 175 passing, typecheck clean, 189 pages built, and 0 of 368 tables scrolling at 390,
+700, 1024 and 1440px. That is six repairs. The branch touches the two files nearly every run
+edits, so this will keep happening for as long as it waits; it is not a fault in the branch.
+
+**Continue next:** check PR #1 merges again before anything else; it has needed repair on six of
+the last seven runs, and the `/how-much-memory/` page is worth re-measuring over HTTP each time
+main changes the table rules. While both PRs wait, the top live item on main is the `/compare/` index,
 which is a new page type and therefore a PR. After that, the leaderboard's height on a phone.
 
 ### 2026-09-17 — a tablet stops swiping, and the leaderboard shows all seven columns
