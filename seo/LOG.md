@@ -220,19 +220,34 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       second page on the same two families at another price is a near-duplicate. The run entry below
       has the figures, the three machines the grouping correctly refuses to pair, and the titles.
 
-- [ ] What is left of that gap: **20 machines are still in no head-to-head**, and they split in two.
-      **13 are previous-generation** (the M4 minis, the M4 Pro minis, the M4 Max and M3 Ultra Studios)
-      and carry launch prices on a machine you cannot order, so pay-back on them is a different kind
-      of claim; the honest pair for those may be against their own successor — an M4 Mac mini 32GB
-      against an M6 Mac mini 32GB is a real search and the site holds both. **7 are current** and are
-      the only tier of their exact silicon: the Mac Studio M5 Max 36GB, whose GPU differs from the
-      tier above; the three M5 Ultras, one of them unpriced; the unpriced Framework Desktop 495; the
-      Framework Desktop 385, 32GB; and the Corsair AI Workstation 300, 64GB, which is the only 385
-      part in a 64GB box. The Strix Halo boxes that used to head this list are done, by the item
-      above. Each of these has no twin at the same memory and no second tier of its own chip, so none
-      of the four rules reaches it. The honest pair for a base tier is probably the tier above it in
-      the same case, which is a GPU-count question rather than a memory one; two of the seven have no
-      price, and pay-back without a price is not a page.
+- [x] What was left of that gap: **20 machines in no head-to-head**, 13 of them previous-generation
+      Macs. Done 2026-09-17, and the rule chosen was the one this item leaned towards: **each
+      discontinued machine against the one that replaced it**, with the successor read out of
+      Apple's own chip names rather than guessed at. 12 new comparisons, and **51 of the 56 machines
+      are in a head-to-head where 36 were** — the 12 previous-generation Macs whose successor is
+      priced, plus three current Studios that had no pair either. The run entry below has the
+      figures, the power-figure find and the guard.
+
+- [ ] **5 machines are still in no head-to-head**, and none of the five is reachable by any of the
+      five rules without inventing something. Two have no price at all (the Mac Studio M5 Ultra,
+      512GB and the Framework Desktop 495), so there is no pay-back to compare. The Mac Studio
+      M3 Ultra, 512GB has a price but its successor does not, which is the same problem one step
+      along. That leaves the Framework Desktop 385, 32GB and the Corsair AI Workstation 300, 64GB:
+      both are Ryzen AI Max 385 parts, and they are the only two, so the same-silicon rule cannot
+      pair them (different memory) and the memory-tier rule cannot either (different makers). The
+      honest pair for those two is probably the 385 against the 395 in the same case, which is a
+      GPU-count question rather than a memory one and would want its own wording. Worth doing only
+      after the question pages; three of the five need a price that does not exist yet.
+
+- [ ] **A stand-in power figure prints bare on every comparison page but the 12 new ones.** 30 of
+      the 56 machines carry `load_watts_status: "stand_in"` — every 2026 Apple machine, because
+      Apple has not published figures for them — and the electricity in every pay-back figure on
+      the site comes from it. The calculator's own panel says "(stand-in figure)" and a machine page
+      says "(stand in)" with the note, but a comparison page's Power row prints "145 W" and stops.
+      The generation pages had to say it, because there the stand-in is the *other column's*
+      figure, and that is what turned this up. The fix is one span on the row, the way the
+      card-only prices are marked, plus a guard: cheap, and it is the same class of honesty as the
+      card prices were.
 
 - [ ] The assumptions note on every machine comparison says "Graphics cards are priced as the card
       alone, so add the PC around one before comparing it with a complete computer" — including on the
@@ -250,12 +265,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       against another card, against the same machine with different memory — would fix both at once,
       and the third group could drop the repeated name and read "vs 48GB · vs 64GB".
 
-- [ ] Four of the seven cards are last generation in the data (RTX 4090, 3090, 4080, 3060) and no
-      comparison page says so. A reader putting a 3090 against a 5090 knows, but the site holds the
-      fact in `generation` and prints nothing, and the same is true of the 20 previous-generation
-      Macs on their own pages. The honest question is whether "previous generation" belongs beside
-      the name or under the price, and whether it belongs on the machine pages before the
-      comparisons. Cheap, and it is the kind of thing a buyer wants said out loud.
+- [x] Four of the seven cards are last generation in the data (RTX 4090, 3090, 4080, 3060) and no
+      comparison page says so. Done 2026-09-17, as a by-product of the generation head-to-heads,
+      and the item's own question answered itself: it belongs in the lede, not beside the name,
+      because what is wrong without it is not the label but the recommendation. The lede of every
+      comparison with a previous-generation side now closes by saying that every figure for it is
+      priced at what it launched at rather than at a price you can pay today — **30 pages**, the
+      12 new ones and 18 card head-to-heads. The machine pages already said it, in the Price row
+      and under Availability.
 
 - [x] Audit every generated page's `<title>` and meta description (scripts/build-pages.ts,
       src/pagekit.ts): each title unique, under 60 characters, leading with the words people
@@ -508,8 +525,97 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
-
 ## Runs
+
+### 2026-09-17 — the Macs nobody sells any more meet the ones that replaced them
+
+**Took the top open backlog item.** The last two entries both named the question pages as what to
+continue, and both named "best GPU for local LLMs"; both also said a new page type is a PR, and PR
+#3 has now cost thirteen merge repairs in a day. The item above it goes straight to main and was
+live in four minutes. The judgement is the same one the last run made and it is worth stating
+plainly so the next run can overrule it: a PR here has been worth nothing to search until Ryan
+merges it, and a push has been worth something the same hour.
+
+**What was wrong.** Thirteen Macs on the list are discontinued — the M4 minis, the M4 Pro minis,
+the M4 Max Studios and the M3 Ultra Studios — and they appeared in **no head-to-head at all**. Every
+other pairing rule takes current machines only, for good reasons: a flagship is the middle of a
+family's current range, a memory tier is a choice you can still make, and a same-silicon pair is two
+boxes you can both order. But the machine you already own is the one you are deciding whether to
+replace, and a used one is the cheapest way onto this list.
+
+**The rule.** `generationPairs()` reads the successor out of Apple's own chip names, which carry a
+generation and a tier: the newest machine still sold with the **same chip tier and the same memory
+in the same case**. No other family on the list names its parts that way, and no other family needs
+it — the four previous-generation cards are already in the card grid, and an RTX 4090 and an RTX
+5090 carry different amounts of memory anyway. **12 new comparisons, 133 in place of 121**, and
+**51 of the 56 machines are in a head-to-head where 36 were**: the 12 previous-generation Macs whose
+successor is priced, plus the Mac Studio M5 Max 36GB and two M5 Ultras, which had no pair either.
+The thirteenth Mac, the M3 Ultra 512GB, gets no page: its successor has no published price, and
+pay-back without a price is not a page.
+
+**What the pages say, and what only they could say.** The rule holds the memory equal on both sides,
+so every one of these pairs holds exactly the same models at every context — which means the newer
+chip buys no room, and the reader's question is what it does buy. It buys bandwidth, and the section
+names both figures and says why that is the one to watch: decoding reads the whole model out of
+memory for every token it writes. The second thing is the price. The older machine's price in this
+data is the one it launched at, so the section says when its maker stopped selling it, reading the
+date out of the availability note rather than holding it in a second place, and hands the reader the
+calculator with that machine loaded so they can put in what a used one would actually cost them.
+
+**The find of the run, and it is the reason the section was worth writing.** On every one of these
+12 pairs the newer machine's wattage is a **stand-in, and the figure standing in for it is the older
+machine's own published one** — Apple has published nothing for the 2026 machines, so the data
+carries the previous chip's number. Two equal figures in the Power row therefore read as "the newer
+chip is no more efficient" when what they mean is "nobody has measured it", and the electricity
+priced into *both* pay-back columns comes from the older machine in the same comparison. All 12
+pages now say so in a note under the table. Everywhere else on the site a stand-in still prints
+bare, which is the new backlog item above.
+
+**The lede, on 30 pages rather than 12.** On these pages the discontinued machine is the cheaper
+one, so it is the one the lede hands the win to: "The Mac mini M4, 32GB costs $300 less… pays for
+itself sooner, in 13 years against 17." Left there, that sells a machine nobody sells. The lede now
+closes by saying that every figure for a previous-generation side is priced at what it launched at
+rather than at a price you can pay today — last, where it qualifies the price and the pay-back
+together. That reaches the 18 card head-to-heads with an older card in them as well, which ticks
+the other backlog item above: the RTX 3060 "costs $1,670 less" now carries the fact that $329 is a
+launch price for a two-generation-old card.
+
+**The guards.** `checkGenerationPairs()` holds five claims: the pair really is one family, one chip
+tier and one memory size a generation apart in the data; the page says the older side's price is a
+launch price; it names both bandwidth figures and calls the newer one wider only where the data says
+it is; it says where a power figure is standing in; and it hands the reader a way to price the older
+machine at what they would pay. Both new claims were proved by breaking them — the first attempt at
+the bandwidth check passed a page that had stopped naming the figures, because the comparison table
+prints both on its own, so it now asks for the sentence in the form the data supports. Five new
+tests cover the pairing rule, the chip-name reader, the naming, the date and the lede clause.
+
+**Verified**: 203 tests, typecheck clean, 247 pages with every guard passing, and the full
+`npm run build` including `build:og` (133 head-to-head cards), `build:share` and `build:functions`.
+Read four of the new pages and two of the card pages rendered out of `dist/` before committing,
+which is where three fixes came from: the launch-price clause sat next to the price where it read as
+being only about the price, the core-count sentence named both machines in full twice, and the
+description led with "19 of the 39 models fit, 19 fit" where it now leads with the bandwidth.
+Pushed as `32ad604`; **deploy run 107 was green at 23:02 and the pages are live**. The push was
+clean — no sibling session this hour.
+
+**Then PR #3, its thirteenth repair, and the standing lesson on that branch paid for itself again.** The merge
+was clean — no conflict at all, for the first time in a day — and the page was still wrong twice.
+Its section copy said "Four kinds of match-up" over a table that now carries five. And the new rule
+put **discontinued machines into the index's compared set for the first time**, so its own answer
+box had started recommending them: the cheapest machine there holding 38 of the 39 models is now the
+Mac Studio M3 Ultra, 256GB at $7,099, and the cheapest at all is the RTX 3060 at $329, both prices
+those machines launched at and neither payable. One sentence now covers whichever of the two it
+names are discontinued. Rebuilt and re-read on the merge: 248 pages, 134 comparisons, 208 tests,
+typecheck clean, the full build. Pushed as `8bd24d3`. Ryan was not pinged, per the standing rule on
+that PR.
+
+**Continue next:** the question pages, which have now been the top of the backlog and unblocked for
+five runs. "best GPU for local LLMs" is still the strongest candidate and nothing on the site
+filters the list to cards. It is a new page type, so it is a PR, and that is the thing to decide
+first rather than halfway through: PR #3 has been open since yesterday, has cost thirteen repairs, and a second open branch
+touching `scripts/build-pages.ts` doubles that cost until Ryan merges. If that is judged too dear
+again, the cheapest honest item on the list is the stand-in power figures, which is one span on a
+table row across every comparison page and a guard to hold it.
 
 ### 2026-09-17 — the same box from six makers gets its price put side by side
 
