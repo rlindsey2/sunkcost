@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
-  memoryTierNames, memoryTierPairs,
+  memoryTierNames, memoryTierPairs, sameSiliconPairs,
   modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
-import { runnersFor, shortHardwareLabel } from '../src/pagekit';
+import { gpuPart, runnersFor, sameSilicon, shortHardwareLabel } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
 import type { Dataset, Hardware } from '../src/types';
@@ -135,7 +135,7 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, once each', () => {
+  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, once each', () => {
     const pairs = hardwarePairs(data);
     const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
     const keys = pairs.map(([a, b]) => key(a, b));
@@ -145,10 +145,11 @@ describe('the pairs the cards and the pages cut', () => {
     const flagships = flagshipMachines(data);
     const cards = graphicsCards(data);
     const tiers = memoryTierPairs(data);
+    const twins = sameSiliconPairs(data);
     const want = new Set<string>();
     for (const xs of [flagships, cards])
       for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
-    for (const [a, b] of tiers) want.add(key(a, b));
+    for (const [a, b] of [...tiers, ...twins]) want.add(key(a, b));
     expect(new Set(keys)).toEqual(want);
 
     // a card is priced as the part, not as a computer, and the flagship grid on its own
@@ -164,9 +165,10 @@ describe('the pairs the cards and the pages cut', () => {
     // two of the flagships are themselves cards, so one pair is in both grids and is
     // written once: the union is the page set, not the sum
     expect(pairs.length).toBe(want.size);
-    // and the tier pairs are appended last, after both grids, for the same reason
-    const tail = pairs.slice(-tiers.length).map(([a, b]) => key(a, b));
-    expect(tail).toEqual(tiers.map(([a, b]) => key(a, b)));
+    // and the two later rules are appended after both grids, in the order they run, for
+    // the same reason: a pair keeps the address it has always had
+    const tail = pairs.slice(-(tiers.length + twins.length)).map(([a, b]) => key(a, b));
+    expect(tail).toEqual([...tiers, ...twins].map(([a, b]) => key(a, b)));
   });
 
   it('puts two memory tiers of one machine against each other, and nothing else', () => {
@@ -195,6 +197,46 @@ describe('the pairs the cards and the pages cut', () => {
     }
     const want = [...groups.values()].filter((g) => g.length > 1).reduce((n, g) => n + (g.length * (g.length - 1)) / 2, 0);
     expect(tiers.length).toBe(want);
+  });
+
+  it('puts each box against the cheapest box of the same hardware, and nothing else', () => {
+    const twins = sameSiliconPairs(data);
+    expect(twins.length).toBeGreaterThan(0);
+
+    for (const [a, b] of twins) {
+      // the page says these are the same machine inside, so every figure that decides
+      // what it holds and how fast it runs has to be equal on both sides
+      expect(sameSilicon(a, b)).toBe(true);
+      expect(gpuPart(a)).toBe(gpuPart(b));
+      expect(gpuPart(a)).not.toBe('');
+      expect(a.unified_memory_gb).toBe(b.unified_memory_gb);
+      expect(a.memory_bandwidth_gbs).toBe(b.memory_bandwidth_gbs);
+      expect(a.usable_memory_gb).toBe(b.usable_memory_gb);
+      // and a different manufacturer, or it is the same machine twice
+      expect(a.chip).not.toBe(b.chip);
+      // the whole page is the price, so both sides need one, and the question only
+      // arises while you can still buy either
+      for (const h of [a, b]) {
+        expect(h.price_usd).not.toBeNull();
+        expect(h.generation ?? 'current').toBe('current');
+      }
+      // cheapest side first: the page asks what the dearer box charges on top
+      expect(a.price_usd!).toBeLessThanOrEqual(b.price_usd!);
+    }
+
+    // not a grid. Every box in a group runs the same models at the same speed, so a grid
+    // would write the same answer many times over; each dearer box goes against the one
+    // cheapest box, and that is the only pairing this rule makes
+    const groups = new Map<string, Hardware[]>();
+    for (const h of data.hardware) {
+      if (h.price_usd == null || (h.generation ?? 'current') !== 'current' || gpuPart(h) === '') continue;
+      const k = `${h.family}|${gpuPart(h)}|${h.unified_memory_gb}|${h.memory_bandwidth_gbs}|${h.usable_memory_gb}`;
+      groups.set(k, [...(groups.get(k) ?? []), h]);
+    }
+    const want = [...groups.values()].filter((g) => g.length > 1).reduce((n, g) => n + g.length - 1, 0);
+    expect(twins.length).toBe(want);
+    const cheapest = new Set(twins.map(([a]) => a.id));
+    expect(cheapest.size).toBe([...groups.values()].filter((g) => g.length > 1).length);
   });
 
   it('names the machine once on a memory-tier pair, and not at all on any other', () => {

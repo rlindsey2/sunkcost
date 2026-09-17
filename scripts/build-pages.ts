@@ -10,16 +10,17 @@ import {
   bandFit, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView,
   contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, dotRow, esc, familyHeading, familyRange,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
-  hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
+  gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
   machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
   modelVerdict, otherQuantisations, pageShell, priceRivals, priceWithScope, priceWithScopeText, rowFor,
-  runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, SIZE_BANDS, slug, speedWithBasis,
-  stack,
+  runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
+  speedWithBasis, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
-  flagshipMachines, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath, modelPairs, versusCardPath,
+  flagshipMachines, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath, modelPairs,
+  sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
@@ -460,7 +461,13 @@ function checkHeadroom() {
     if (!rows.length) {
       flat++;
       if (section) problems.push(`${path} holds both machines to the same length everywhere and still claims a difference`);
-      if (!html.includes('<h2>Memory is not what separates them</h2>')) problems.push(`${path} does not say that memory separates the two machines nowhere`);
+      // a same-silicon pair says it under its own heading, where the equal memory is
+      // one line of a longer answer rather than the whole of the finding
+      const saidIt = sameSilicon(a, b)
+        ? html.includes('<h2>The same machine inside</h2>')
+        : html.includes('<h2>Memory is not what separates them</h2>');
+      if (!saidIt) problems.push(`${path} does not say that memory separates the two machines nowhere`);
+      if (!html.includes('there is no model one holds and the other does not')) problems.push(`${path} does not say the two machines hold the same models at every context`);
       continue;
     }
     named++;
@@ -482,6 +489,46 @@ function checkHeadroom() {
     throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} do not say what the memory they do not share buys`);
   }
   console.log(`  ${named + flat} head-to-heads between machines holding the same models: ${named} name what the spare memory buys in context, ${flat} that it buys nothing`);
+}
+
+/**
+ * Seven Strix Halo boxes carry the same GPU with the same memory at the same bandwidth,
+ * and they sit $2,095 apart. A page putting two of them together is the one place on the
+ * site where the interesting figure is the price and every other row is a tie, so it is
+ * also the one place where the page could quietly say the wrong thing: print a gap that
+ * is not the gap, or let the table's two speed cells read as a race between machines
+ * that are the same part benchmarked twice.
+ *
+ * So this holds three claims. The pair really is the same GPU, memory and bandwidth in
+ * the data. The money the page names is the money between the two prices. And no such
+ * page calls one side faster than the other.
+ */
+function checkSameSilicon() {
+  const problems: string[] = [];
+  let pages = 0;
+  for (const [a, b] of sameSiliconPairs(data)) {
+    pages++;
+    const path = hardwareComparePath(a, b);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    if (!html) {
+      problems.push(`${path} is a same-silicon pair with no page`);
+      continue;
+    }
+    if (gpuPart(a) !== gpuPart(b) || a.unified_memory_gb !== b.unified_memory_gb || a.memory_bandwidth_gbs !== b.memory_bandwidth_gbs || a.usable_memory_gb !== b.usable_memory_gb)
+      problems.push(`${path} pairs two machines that are not the same GPU, memory and bandwidth`);
+    const gap = fmtUsd(Math.abs((a.price_usd ?? 0) - (b.price_usd ?? 0)), { cents: false });
+    if (!html.includes(`the whole question on this page is the ${gap} between them`))
+      problems.push(`${path} does not name ${gap}, the gap between its two prices`);
+    if (unesc(html).includes('× faster'))
+      problems.push(`${path} calls one of two identical parts faster than the other`);
+    if (!html.includes(`${a.usable_memory_gb} GB of that memory to the GPU`))
+      problems.push(`${path} does not say how much of the memory either machine leaves to the GPU`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} same-silicon head-to-head${problems.length === 1 ? '' : 's'} do not hold to the data`);
+  }
+  console.log(`  ${pages} head-to-heads between boxes built on the same GPU, memory and bandwidth, each naming the price between them and neither side faster`);
 }
 
 /**
@@ -1033,10 +1080,14 @@ const hwViews = new Map(data.hardware.map((hw) => [hw.id, computeView({ ...defau
 const fitsOn = (hw: Hardware) => hwViews.get(hw.id)!.rows.filter((r) => r.fit.status === 'fits');
 
 // Which machines get a head-to-head: the middle of each family's range by price, the
-// one most people cross-shop, and then every graphics card against every other, since
-// a card is bought as a part and a part is what people put against another part. The
-// machine pages link to the ones they appear in. The pairing lives in src/versus-card.ts,
-// so that the card build and the page build cut the same list and agree on names.
+// one most people cross-shop; then every graphics card against every other, since a card
+// is bought as a part and a part is what people put against another part; then every
+// memory tier of one machine against the others, which is the question left once you
+// have picked the box; and last, each box against the cheapest box built on the same
+// GPU with the same memory, where the whole question is what the dearer one charges on
+// top. The machine pages link to the ones they appear in. The pairing
+// lives in src/versus-card.ts, so that the card build and the page build cut the same
+// list and agree on names.
 const flagships = flagshipMachines(data);
 
 const headToHeads = new Map<string, { href: string; other: Hardware }[]>();
@@ -1788,6 +1839,51 @@ ${rows
 ${top.a !== null && top.b !== null ? `<p><a class="cta" href="${esc(calcLink({ hw: a.id, model: top.model.id, ctx: top.a }, data))}">Run ${esc(top.model.display_name)} on the ${esc(la)} at ${ctxLabel(top.a)}</a> · <a href="${esc(calcLink({ hw: b.id, model: top.model.id, ctx: top.b }, data))}">or on the ${esc(lb)} at ${ctxLabel(top.b)}</a></p>` : ''}`;
 }
 
+/**
+ * Two boxes built on the same hardware. Everything the rest of the page compares is equal
+ * by construction, so this says what is the same and why, and hands the reader the one
+ * thing that is not: the price. It replaces the memory section rather than joining it,
+ * since the same usable memory means there is nothing for that section to find.
+ */
+function sameSiliconSection(a: Hardware, b: Hardware, va: View, ctxK: number, fa: ModelRow[], fb: ModelRow[]): string {
+  const options = [...data.defaults.context.options].sort((x, y) => x - y);
+  const span = `${ctxLabel(options[0])} to ${ctxLabel(options[options.length - 1])}`;
+  const [cheap, dear] = (a.price_usd ?? 0) <= (b.price_usd ?? 0) ? [a, b] : [b, a];
+  const gap = fmtUsd(Math.abs((a.price_usd ?? 0) - (b.price_usd ?? 0)), { cents: false });
+
+  const ta = shownTps(fa[0]);
+  const tb = shownTps(fb[0]);
+  const speedLine = ta != null && tb != null && ta === tb
+    ? ` They run those models at the same speed too: decoding reads the weights out of memory, and both read them at ${a.memory_bandwidth_gbs} GB/s.`
+    : ta != null && tb != null
+      ? ` The two speeds in the table above are not equal, and the reason is where each figure came from rather than what either machine is: ${esc(fa[0].throughput.source)} for the ${esc(shortHardwareLabel(a))}, ${esc(fb[0].throughput.source)} for the ${esc(shortHardwareLabel(b))}. A runtime, a build or a thermal limit moves a figure on identical hardware.`
+      : '';
+
+  // one of these pairs is the PRO variant of the other's chip, which the data records
+  // and the page should say rather than quietly smooth over, even though the graphics
+  // half of the two names is identical and the graphics half is what runs the model
+  const variantLine = (a.chip_variant ?? '') !== (b.chip_variant ?? '')
+    ? ` Their chips are not listed identically, ${esc(a.chip_variant ?? '')} against ${esc(b.chip_variant ?? '')}, but the graphics part is the same on both and the graphics part is what runs the model.`
+    : '';
+
+  // where the two draw different power the pay-back gap is not the price alone, and
+  // a page that says it is would be overstating what its own table shows
+  const wattsDiffer = a.load_watts != null && b.load_watts != null && a.load_watts !== b.load_watts;
+  const forSame = ta != null && tb != null && ta === tb ? 'for the same models at the same speed' : 'for the same models';
+  const onlyGap = wattsDiffer
+    ? `every difference in pay-back on this page comes from that and from the ${Math.abs((a.load_watts ?? 0) - (b.load_watts ?? 0))} W between them`
+    : 'every difference in pay-back on this page comes from that and nothing else';
+  const watts = a.load_watts != null && b.load_watts != null
+    ? wattsDiffer
+      ? ` The ${esc(shortHardwareLabel(a.load_watts! > b.load_watts! ? a : b))} draws ${Math.max(a.load_watts, b.load_watts)} W under load against ${Math.min(a.load_watts, b.load_watts)} W, and this page prices the electricity into both.`
+      : ` Both draw ${a.load_watts} W under load, and this page prices the electricity into both.`
+    : '';
+
+  return `<h2>The same machine inside</h2>
+<p>Both have the same ${esc(gpuPart(a))}, the same ${a.unified_memory_gb} GB of memory and the same ${a.memory_bandwidth_gbs} GB/s to read it at, and both leave ${a.usable_memory_gb} GB of that memory to the GPU. What a machine holds is decided by that last figure, so they hold the same ${fa.length} models, and not only at ${ctxK}k of context: across all ${va.rows.length} models the calculator counts, at every context from ${span}, there is no model one holds and the other does not.${speedLine}${variantLine}</p>
+<p>So the whole question on this page is the ${gap} between them. The ${esc(shortHardwareLabel(dear))} costs that much more than the ${esc(shortHardwareLabel(cheap))} ${forSame}, and ${onlyGap}.${watts} What else separates them is not something this site measures: it prices what a machine holds, how fast it runs it and what it draws, and everything from the case to the ports to the warranty is yours to weigh against the ${gap}.</p>`;
+}
+
 function comparePage(a: Hardware, b: Hardware): string {
   const st = defaultState(data);
   const va = computeView({ ...st, hw: a.id }, data);
@@ -1798,7 +1894,18 @@ function comparePage(a: Hardware, b: Hardware): string {
   const lb = hardwareLabel(b);
   // two memory tiers of one machine: the name is said once and the sizes carry the page
   const tiers = memoryTierNames(a, b);
-  const heading = tiers ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}` : `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`;
+  // the same hardware in two boxes: the rest of the page compares rows that are equal on
+  // both sides, so the price gap has to be said outright rather than left to be inferred
+  const twins = sameSilicon(a, b);
+  // both sides of a same-silicon pair carry the same memory, so a title that prints the
+  // size twice spends a search result's 60 characters saying it again instead of naming
+  // the second machine, which is the half of the pair the reader has not typed yet
+  const withoutSize = (h: Hardware) => shortHardwareLabel(h).replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
+  const heading = tiers
+    ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
+    : twins
+      ? `${withoutSize(a)} vs ${shortHardwareLabel(b)}`
+      : `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`;
   const ctxK = Math.round(st.ctx / 1024);
   const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
 
@@ -1854,7 +1961,9 @@ ${shown
 </tbody>
 </table>`, { fig: 3, labels: { 2: 'Needs' } })}
 ${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}`
-    : sameListSection(a, b, va, la, lb, ctxK, headroom);
+    : twins
+      ? ''
+      : sameListSection(a, b, va, la, lb, ctxK, headroom);
 
   // the whole page above is one usage level, and pay-back is the figure that moves
   // most with it: a machine too slow to generate the tokens asked for stops gaining
@@ -1935,7 +2044,7 @@ ${ceilingLine}
     : '';
 
   const body = `<article class="prose">
-<h1>${esc(tiers ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}` : `${la} vs ${lb}`)} for local AI</h1>
+<h1>${esc(tiers || twins ? heading : `${la} vs ${lb}`)} for local AI</h1>
 <p class="lede">${machineVerdict(a, b, va, vb, data)}</p>
 <table class="board compare">
 <thead><tr><th></th><th><a href="/hardware/${esc(a.id)}/">${esc(la)}</a></th><th><a href="/hardware/${esc(b.id)}/">${esc(lb)}</a></th></tr></thead>
@@ -1952,6 +2061,7 @@ ${row('Pay-back on that model', esc(verdictLine(va)), esc(verdictLine(vb)))}
 </tbody>
 </table>
 <p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(lb)}</a></p>
+${twins ? sameSiliconSection(a, b, va, ctxK, fa, fb) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
@@ -1966,7 +2076,20 @@ ${extraSection}
         heading,
       ]),
       description: descOf(
-        tiers
+        twins
+          ? (() => {
+              const [cheap, dear] = (a.price_usd ?? 0) <= (b.price_usd ?? 0) ? [a, b] : [b, a];
+              const gap = fmtUsd(Math.abs((a.price_usd ?? 0) - (b.price_usd ?? 0)), { cents: false });
+              const c = shortHardwareLabel(cheap);
+              const d = shortHardwareLabel(dear);
+              return [
+                `The ${d} costs ${gap} more than the ${c} for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What the money buys, and whether either pays back.`,
+                `${d} against ${c}: ${gap} apart for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What the money buys.`,
+                `${d} or ${c}: the same machine inside, ${gap} apart. What the money buys, and whether it pays back.`,
+                `${d} or ${c}: the same machine inside, ${gap} apart.`,
+              ];
+            })()
+          : tiers
           ? fa.length !== fb.length
             ? [
                 `The ${tiers.machine} with ${tiers.b} holds ${fb.length} of the ${va.rows.length} open models here, with ${tiers.a} ${fa.length}. What the extra memory buys, and whether it pays back.`,
@@ -2674,7 +2797,7 @@ function compareIndex(): string {
 ${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.</p>` : ''}
 
 <h2>Machine against machine</h2>
-<p>Three kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; and every memory tier of one machine against the others, which is the question left once you have picked the box. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+<p>Four kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; and each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
 <tbody>${machineRows}</tbody>
@@ -2747,6 +2870,7 @@ checkCompareIndex();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();
+checkSameSilicon();
 checkModelContexts();
 checkMachineContexts();
 checkShorterFits();

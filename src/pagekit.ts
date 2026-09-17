@@ -70,6 +70,38 @@ export function shortHardwareLabel(h: Hardware): string {
   return hardwareLabel(h);
 }
 
+/**
+ * The part that decides how fast a machine runs a model. `chip_variant` writes the CPU
+ * and the GPU either side of a middle dot where a machine has both, so the GPU is the
+ * last segment of it; where the field names one thing, that one thing is the answer.
+ */
+export function gpuPart(h: Hardware): string {
+  const v = h.chip_variant ?? '';
+  const i = v.lastIndexOf('\u00b7');
+  return (i === -1 ? v : v.slice(i + 1)).trim();
+}
+
+/**
+ * The same hardware in someone else's box: the same GPU, the same memory at the same
+ * bandwidth, the same amount of it left to the GPU, sold by a different manufacturer.
+ * Seven Strix Halo boxes carry the same 40-CU Radeon 8060S with 128 GB at 256 GB/s, and
+ * they sit $2,095 apart. Fit is memory and memory is equal, so the whole question on
+ * such a pair is the price.
+ */
+export function sameSilicon(a: Hardware, b: Hardware): boolean {
+  return (
+    a.id !== b.id &&
+    a.family === b.family &&
+    a.chip !== b.chip &&
+    gpuPart(a) !== '' &&
+    gpuPart(a) === gpuPart(b) &&
+    a.unified_memory_gb === b.unified_memory_gb &&
+    a.memory_bandwidth_gbs === b.memory_bandwidth_gbs &&
+    a.usable_memory_gb === b.usable_memory_gb
+  );
+}
+
+
 /** "Pays back in two years" as a clause inside a sentence. */
 export function lowerFirst(s: string): string {
   return s.charAt(0).toLowerCase() + s.slice(1);
@@ -764,7 +796,15 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
   const fb = fitsOf(vb);
   const out: string[] = [];
 
-  if (fa.length === fb.length) {
+  // the same hardware in two boxes: what they hold and how fast they run it are the
+  // same by construction, so the page has to open with that rather than let a reader
+  // work through a table of identical rows looking for the difference
+  const twins = sameSilicon(a, b);
+  if (twins) {
+    out.push(
+      `The ${la} and the ${lb} are the same machine inside: ${gpuPart(a)}, ${a.unified_memory_gb} GB of memory at ${a.memory_bandwidth_gbs} GB/s. Both hold ${fa.length} of the ${va.rows.length} open models here.`,
+    );
+  } else if (fa.length === fb.length) {
     out.push(`Both hold ${fa.length} of the ${va.rows.length} open models here.`);
   } else {
     const [more, mc, less, lc] = fa.length > fb.length ? [la, fa.length, lb, fb.length] : [lb, fb.length, la, fa.length];
@@ -794,9 +834,14 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
     const num = (t: number) => fmtNum(t, t < 10 ? 1 : 0);
     const basis = basisClause(shared.a, shared.b, la, lb);
     const both = `On ${shared.model.display_name}, the strongest model both hold,`;
+    // on a same-silicon pair the two figures are one GPU benchmarked twice, so a gap
+    // between them is a gap between the sources, not between the machines, and calling
+    // one of them faster would be the site inventing a difference its own data denies
     out.push(hi / lo < 1.05
       ? `${both} they run at much the same speed: ${num(ta)} and ${num(tb)} tok/s${basis}.`
-      : `${both} the ${ta > tb ? la : lb} is about ${fmtNum(hi / lo, 1)}× faster: ${num(hi)} tok/s against ${num(lo)}${basis}.`);
+      : twins
+        ? `${both} the two figures are ${num(ta)} and ${num(tb)} tok/s${basis}, and with the same GPU at the same bandwidth on both sides that gap is between the two figures rather than between the two machines.`
+        : `${both} the ${ta > tb ? la : lb} is about ${fmtNum(hi / lo, 1)}× faster: ${num(hi)} tok/s against ${num(lo)}${basis}.`);
   } else if (!shared) {
     out.push('No model on this list fits both machines, so there is nothing to time them on side by side.');
   }
