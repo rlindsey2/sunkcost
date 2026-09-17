@@ -10,7 +10,9 @@ import { esc, fmtDuration, fmtGb, fmtNum, fmtUsd } from './format';
 import { clampText, EM, EM_BOLD, fitLines, fitsIn, fitOneLine, wrapText } from './text-fit';
 import { computeView, hardwareLabel } from './compute';
 import { defaultState } from './state';
-import { gpuPart, priceWithScopeText, runnersFor, sameSilicon, shortHardwareLabel, slug } from './pagekit';
+import {
+  appleChip, generationNames, gpuPart, priceWithScopeText, runnersFor, sameSilicon, shortHardwareLabel, slug,
+} from './pagekit';
 import type { Dataset, Hardware, Model } from './types';
 
 // the text fitting these cards do lives in text-fit.ts, so the share card can use it
@@ -227,9 +229,32 @@ export function sameSiliconPairs(data: Dataset): [Hardware, Hardware][] {
 }
 
 /**
+ * Each discontinued machine against the one that replaced it, older side first. Thirteen
+ * Macs on this list are no longer sold and appeared in no head-to-head at all, because
+ * every other rule here takes current machines only: a flagship is the middle of a
+ * family's current range, and a memory tier is a choice you can still make. But the
+ * machine you already own is the one you are deciding whether to replace, and a used
+ * one is the cheapest way onto this list, so "what would the newer chip change" is a
+ * real question with an answer in the data. The successor is the newest machine still
+ * sold with the same chip tier and the same memory in the same case; where its price is
+ * not published there is no pay-back to compare, so there is no page.
+ */
+export function generationPairs(data: Dataset): [Hardware, Hardware][] {
+  const out: [Hardware, Hardware][] = [];
+  for (const old of data.hardware) {
+    const newer = data.hardware
+      .filter((h) => generationNames(old, h))
+      .sort((x, y) => appleChip(y)!.gen - appleChip(x)!.gen || x.id.localeCompare(y.id));
+    if (newer[0]) out.push([old, newer[0]]);
+  }
+  return out;
+}
+
+/**
  * Every machine pair that has a page, in the order the build writes them: the grid of
  * family flagships first, then the card grid, then the memory tiers of one machine, then
- * each box against the cheapest box of the same hardware. Each
+ * each box against the cheapest box of the same hardware, then each discontinued machine
+ * against the one that replaced it. Each
  * rule is appended after the ones before it, so a pair keeps the address it has always
  * had, and a pair is only ever written once, whichever way round the rules reach it.
  */
@@ -248,6 +273,7 @@ export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   grid(graphicsCards(data));
   for (const [a, b] of memoryTierPairs(data)) add(a, b);
   for (const [a, b] of sameSiliconPairs(data)) add(a, b);
+  for (const [a, b] of generationPairs(data)) add(a, b);
   return out;
 }
 

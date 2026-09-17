@@ -101,6 +101,52 @@ export function sameSilicon(a: Hardware, b: Hardware): boolean {
   );
 }
 
+/**
+ * Apple writes a generation and a tier into every chip name — M4, M4 Pro, M5 Max,
+ * M3 Ultra — so the machine that replaced a discontinued one can be read out of the
+ * data rather than guessed at from prices or dates. No other family on this list names
+ * its parts that way: a GeForce RTX 4090 does not say in its name that an RTX 5090
+ * followed it, and the two carry different amounts of memory anyway.
+ */
+export function appleChip(h: Hardware): { gen: number; tier: string } | null {
+  const m = /^M(\d+)(?: (Pro|Max|Ultra))?(?: \(|,|$)/.exec(h.chip);
+  return m ? { gen: Number(m[1]), tier: m[2] ?? '' } : null;
+}
+
+/**
+ * The same machine one generation on: the same case, the same class of chip and the
+ * same memory size, with the older one discontinued and the newer one still sold.
+ * Somebody with an M4 Mac mini asks what the M6 would change, and somebody looking at
+ * a used one asks what they are giving up; both are the same pair of machines. The
+ * names come back split so a title can say the family once and spend its characters on
+ * the two chips, which is what the reader typed. Both sides need a price, because
+ * pay-back is what the page is for. Null for every other pair.
+ */
+export function generationNames(
+  a: Hardware,
+  b: Hardware,
+): { machine: string; a: string; b: string; size: string } | null {
+  if ((a.generation ?? 'current') !== 'previous' || (b.generation ?? 'current') !== 'current') return null;
+  if (a.price_usd == null || b.price_usd == null) return null;
+  if (a.family !== b.family || a.unified_memory_gb !== b.unified_memory_gb) return null;
+  const ca = appleChip(a);
+  const cb = appleChip(b);
+  if (!ca || !cb || ca.tier !== cb.tier || ca.gen >= cb.gen) return null;
+  return { machine: a.family, a: a.chip, b: b.chip, size: `${a.unified_memory_gb}GB` };
+}
+
+/**
+ * The day a machine stopped being sold, where the data records one. It is written into
+ * the availability note the machine's own page prints, as an ISO date at the front, so
+ * this reads that rather than holding the same fact in a second place.
+ */
+export function discontinuedOn(h: Hardware): string | null {
+  const m = /^Discontinued (\d{4})-(\d{2})-(\d{2})\b/.exec(h.status ?? '');
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
 
 /** "Pays back in two years" as a clause inside a sentence. */
 export function lowerFirst(s: string): string {
@@ -864,6 +910,16 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
       out.push(`The ${da < db ? la : lb} pays for itself sooner, in ${fmtDuration(Math.min(da, db))} against ${fmtDuration(Math.max(da, db))} at ${usage} tokens a day${onEachOwn}.`);
     }
   }
+
+  // a previous generation's price in this data is the price it launched at, and on these
+  // pages it is usually the cheaper of the two, so it is usually the one the sentences
+  // above hand the win to. Said last, it qualifies the price and the pay-back together;
+  // said next to the price, it would read as being only about the price.
+  const older = [a, b].filter((h) => (h.generation ?? 'current') === 'previous' && h.price_usd != null);
+  if (older.length === 1)
+    out.push(`The ${shortHardwareLabel(older[0])} is the previous generation, so every figure here for it is priced at what it launched at rather than at a price you can pay today.`);
+  else if (older.length === 2)
+    out.push('Both are previous-generation parts, so every figure here is priced at what they launched at rather than at prices you can pay today.');
 
   return out.join(' ');
 }

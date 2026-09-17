@@ -7,8 +7,9 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  bandFit, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView,
-  contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, dotRow, esc, familyHeading, familyRange,
+  appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, esc,
+  familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
   gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
   machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
@@ -19,8 +20,8 @@ import {
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
-  flagshipMachines, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath, modelPairs,
-  sameSiliconPairs, versusCardPath,
+  flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath,
+  modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
 import { BEST_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
@@ -1866,6 +1867,59 @@ function sameSiliconSection(a: Hardware, b: Hardware, va: View, ctxK: number, fa
 <p>So the whole question on this page is the ${gap} between them. The ${esc(shortHardwareLabel(dear))} costs that much more than the ${esc(shortHardwareLabel(cheap))} ${forSame}, and ${onlyGap}.${watts} What else separates them is not something this site measures: it prices what a machine holds, how fast it runs it and what it draws, and everything from the case to the ports to the warranty is yours to weigh against the ${gap}.</p>`;
 }
 
+/**
+ * The same machine a generation apart. The rule that paired them holds the memory equal,
+ * so the newer chip sells no extra room and the reader's question is what it does sell;
+ * and the older machine's price in this data is the one it launched at, on a machine its
+ * maker has stopped selling. Neither is something the rest of the page can say. The table
+ * prints two bandwidth figures without saying which of them the money buys, and it prints
+ * a price without saying that the price is history.
+ */
+function generationSection(old: Hardware, now: Hardware): string {
+  const lo = shortHardwareLabel(old);
+  const ln = shortHardwareLabel(now);
+  const bwOld = old.memory_bandwidth_gbs;
+  const bwNow = now.memory_bandwidth_gbs;
+  // every one of these pairs today reads its memory faster on the newer chip, which is
+  // the whole of what the money buys. The other two branches exist because the claim has
+  // to follow the data rather than the other way round.
+  const bandwidth = bwOld == null || bwNow == null
+    ? `The data does not have a bandwidth figure for both of them.`
+    : bwNow > bwOld
+      ? `What separates them is bandwidth: the ${esc(now.chip)} reads its memory at ${bwNow} GB/s where the ${esc(old.chip)} reads it at ${bwOld}. Decoding reads the whole model out of memory for every token it writes, so that is the figure the speeds in the table follow.`
+      : bwNow === bwOld
+        ? `It does not buy bandwidth either: both read their memory at ${bwNow} GB/s, and decoding reads the whole model out of memory for every token it writes, so that is the figure the speeds in the table follow.`
+        : `The older chip has the wider path to memory, ${bwOld} GB/s against ${bwNow}. Decoding reads the whole model out of memory for every token it writes, so that is the figure the speeds in the table follow.`;
+
+  // the core counts are the other thing a generation changed, and the data lists them
+  const variant = (old.chip_variant ?? '') !== (now.chip_variant ?? '') && old.chip_variant && now.chip_variant
+    ? ` The ${esc(now.chip)} here is listed as ${esc(now.chip_variant)}, against the ${esc(old.chip)}'s ${esc(old.chip_variant)}.`
+    : '';
+
+  // the find that made this section worth writing: on every one of these pairs the newer
+  // machine's wattage is a stand-in, and the figure standing in for it is the older
+  // machine's own published one. Two equal numbers in the power row therefore read as
+  // "the new chip is no more efficient" when what they mean is "nobody has measured it",
+  // and the electricity priced into both pay-back figures comes from the older machine.
+  const standIn = now.load_watts_status === 'stand_in';
+  const borrowed = standIn && now.load_watts != null && now.load_watts === old.load_watts && old.load_watts_status === 'published';
+  const power = borrowed
+    ? `<p class="note">The two power figures are equal for a reason that is not about either machine: ${esc(brandOf(now))} has not published one for the ${esc(now.chip)}, so the data stands the ${esc(old.chip)}'s published ${old.load_watts} W in for it and this page prices the electricity into both columns from that. Read it as a placeholder, not as a finding that the newer chip draws the same.</p>`
+    : standIn
+      ? `<p class="note">The ${old.load_watts === now.load_watts ? 'two power figures are equal because the' : 'power figure for the'} ${esc(now.chip)} is a stand-in rather than a published one, and this page prices the electricity in its column from it.</p>`
+      : '';
+
+  const when = discontinuedOn(old);
+  const stopped = when
+    ? `${esc(brandOf(old))} stopped selling the ${esc(lo)} on ${when}`
+    : `The ${esc(lo)} is the previous generation`;
+
+  return `<h2>What the newer chip buys</h2>
+<p>These are the same machine a generation apart, in the same case and at the same memory size, so this is the upgrade question rather than a choice between two things on sale. ${bandwidth}${variant}</p>
+${power}
+<p>${stopped}, so the ${fmtUsd(old.price_usd!, { cents: false })} above is the price it launched at, and every figure on this page for it is priced at that. A used or refurbished one costs whatever it costs, and pay-back follows the price rather than the machine. <a href="${esc(calcLink({ hw: old.id }, data))}">Open the calculator on the ${esc(lo)}</a> and put in what you would actually pay; the years move with it. Its <a href="/hardware/${esc(old.id)}/">own page</a> has what the data records about buying one now.</p>`;
+}
+
 function comparePage(a: Hardware, b: Hardware): string {
   const st = defaultState(data);
   const va = computeView({ ...st, hw: a.id }, data);
@@ -1879,12 +1933,18 @@ function comparePage(a: Hardware, b: Hardware): string {
   // the same hardware in two boxes: the rest of the page compares rows that are equal on
   // both sides, so the price gap has to be said outright rather than left to be inferred
   const twins = sameSilicon(a, b);
+  // the same machine a generation apart: the family and the memory size are equal, so the
+  // name is said once at each end and the two chips carry the middle, which is the pair of
+  // words the reader typed
+  const gens = generationNames(a, b);
   // both sides of a same-silicon pair carry the same memory, so a title that prints the
   // size twice spends a search result's 60 characters saying it again instead of naming
   // the second machine, which is the half of the pair the reader has not typed yet
   const withoutSize = (h: Hardware) => shortHardwareLabel(h).replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
   const heading = tiers
     ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
+    : gens
+    ? `${gens.machine} ${gens.a} vs ${gens.b}, ${gens.size}`
     : twins
       ? `${withoutSize(a)} vs ${shortHardwareLabel(b)}`
       : `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`;
@@ -2026,7 +2086,7 @@ ${ceilingLine}
     : '';
 
   const body = `<article class="prose">
-<h1>${esc(tiers || twins ? heading : `${la} vs ${lb}`)} for local AI</h1>
+<h1>${esc(tiers || twins || gens ? heading : `${la} vs ${lb}`)} for local AI</h1>
 <p class="lede">${machineVerdict(a, b, va, vb, data)}</p>
 <table class="board compare">
 <thead><tr><th></th><th><a href="/hardware/${esc(a.id)}/">${esc(la)}</a></th><th><a href="/hardware/${esc(b.id)}/">${esc(lb)}</a></th></tr></thead>
@@ -2044,6 +2104,7 @@ ${row('Pay-back on that model', esc(verdictLine(va)), esc(verdictLine(vb)))}
 </table>
 <p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(lb)}</a></p>
 ${twins ? sameSiliconSection(a, b, va, ctxK, fa, fb) : ''}
+${gens ? generationSection(a, b) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
@@ -2069,6 +2130,23 @@ ${extraSection}
                 `${d} against ${c}: ${gap} apart for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What the money buys.`,
                 `${d} or ${c}: the same machine inside, ${gap} apart. What the money buys, and whether it pays back.`,
                 `${d} or ${c}: the same machine inside, ${gap} apart.`,
+              ];
+            })()
+          : gens
+          ? (() => {
+              // the answer a search result should carry on an upgrade question is what the
+              // newer chip actually changes, which is the bandwidth, not the memory
+              const bw = a.memory_bandwidth_gbs != null && b.memory_bandwidth_gbs != null
+                ? [
+                    `The ${gens.b} reads its memory at ${b.memory_bandwidth_gbs} GB/s against the ${gens.a}'s ${a.memory_bandwidth_gbs}, on the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What a generation buys.`,
+                    `${gens.b} against ${gens.a} at ${gens.size}: the same ${fa.length} models, ${b.memory_bandwidth_gbs} GB/s against ${a.memory_bandwidth_gbs}. What a generation buys, and whether it pays back.`,
+                    `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} models, and what the newer chip's bandwidth buys.`,
+                  ]
+                : [];
+              return [
+                ...bw,
+                `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} models either way. What a generation buys, and whether it pays back.`,
+                `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: what a generation buys, and whether it pays back.`,
               ];
             })()
           : tiers
@@ -2713,6 +2791,75 @@ const urls = ['/', ...paths]
   .join('\n');
 writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
+/**
+ * A generation head-to-head is the one page on the site that prices a machine nobody
+ * sells, so it has more ways to mislead than any other. The launch price is the whole
+ * of its pay-back column; the memory is equal on both sides by the rule that paired
+ * them, so the page's answer rests on the bandwidth; and the newer machine's wattage is
+ * a stand-in borrowed from the older one, which makes two equal numbers in the power row
+ * look like a finding.
+ *
+ * So this holds five claims. The pair really is one family, one chip tier and one memory
+ * size a generation apart in the data. The page says the older side's price is a launch
+ * price. It names both bandwidth figures, and calls the newer one wider only where the
+ * data says it is. It says so where a power figure is standing in for another. And it
+ * hands the reader a way to price the older machine at what they would actually pay.
+ */
+function checkGenerationPairs() {
+  const problems: string[] = [];
+  let pages = 0;
+  let standIns = 0;
+  for (const [old, now] of generationPairs(data)) {
+    pages++;
+    const path = hardwareComparePath(old, now);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    if (!html) {
+      problems.push(`${path} is a generation pair with no page`);
+      continue;
+    }
+    const co = appleChip(old);
+    const cn = appleChip(now);
+    if (!co || !cn || co.tier !== cn.tier || co.gen >= cn.gen || old.family !== now.family
+      || old.unified_memory_gb !== now.unified_memory_gb
+      || (old.generation ?? 'current') !== 'previous' || (now.generation ?? 'current') !== 'current')
+      problems.push(`${path} is not one family, one chip tier and one memory size a generation apart`);
+    if (old.price_usd == null || now.price_usd == null)
+      problems.push(`${path} prices pay-back on a machine with no published price`);
+    if (!unesc(html).includes(`${shortHardwareLabel(old)} is the previous generation, so every figure here for it is priced at what it launched at`))
+      problems.push(`${path} does not say the ${shortHardwareLabel(old)}'s price is the one it launched at`);
+    const when = discontinuedOn(old);
+    if (when && !html.includes(`stopped selling the ${esc(shortHardwareLabel(old))} on ${when}`))
+      problems.push(`${path} does not name ${when}, the day the data says the ${shortHardwareLabel(old)} stopped being sold`);
+    // the comparison table prints both bandwidths on its own, so this asks for the
+    // sentence that says which of them the money buys, in the form the data supports
+    const bo = old.memory_bandwidth_gbs;
+    const bn = now.memory_bandwidth_gbs;
+    const claim = bo == null || bn == null
+      ? 'The data does not have a bandwidth figure for both of them.'
+      : bn > bo
+        ? `the ${now.chip} reads its memory at ${bn} GB/s where the ${old.chip} reads it at ${bo}.`
+        : bn === bo
+          ? `both read their memory at ${bn} GB/s,`
+          : `The older chip has the wider path to memory, ${bo} GB/s against ${bn}.`;
+    if (!unesc(html).includes(claim))
+      problems.push(`${path} does not say what the ${now.chip} changes about reading memory, in the form the data supports`);
+    if (bn != null && bo != null && bn <= bo && unesc(html).includes(`the ${now.chip} reads its memory at ${bn} GB/s where`))
+      problems.push(`${path} calls the ${now.chip} the faster read when the data does not say so`);
+    if (now.load_watts_status === 'stand_in' || old.load_watts_status === 'stand_in') {
+      standIns++;
+      if (!unesc(html).includes('stand'))
+        problems.push(`${path} prints a stand-in power figure without saying it is one`);
+    }
+    if (!html.includes(`href="${esc(calcLink({ hw: old.id }, data))}"`))
+      problems.push(`${path} gives no way to price the ${shortHardwareLabel(old)} at what a reader would pay`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} generation head-to-head${problems.length === 1 ? '' : 's'} do not hold to the data`);
+  }
+  console.log(`  ${pages} head-to-heads between a discontinued machine and the one that replaced it, each naming both bandwidths, the launch price it prices and a way to enter your own; ${standIns} say a power figure is standing in`);
+}
+
 checkMeta();
 checkLinks();
 checkHeadToHeads();
@@ -2727,6 +2874,7 @@ checkPayback();
 checkMeetingPoint();
 checkHeadroom();
 checkSameSilicon();
+checkGenerationPairs();
 checkModelContexts();
 checkMachineContexts();
 checkShorterFits();
