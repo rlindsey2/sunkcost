@@ -17,7 +17,7 @@ import {
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
-  flagshipMachines, hardwareComparePath, hardwarePairs, modelComparePath, modelPairs, versusCardPath,
+  flagshipMachines, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath, modelPairs, versusCardPath,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
@@ -1010,10 +1010,11 @@ const sharedNames = new Set(
 const hwViews = new Map(data.hardware.map((hw) => [hw.id, computeView({ ...defaultState(data), hw: hw.id }, data)]));
 const fitsOn = (hw: Hardware) => hwViews.get(hw.id)!.rows.filter((r) => r.fit.status === 'fits');
 
-// The machine most people cross-shop in each family: the middle of the range by
-// price. These are the pairs that get a head-to-head page, and the machine pages
-// link to the ones they appear in. The pairing lives in src/versus-card.ts, so
-// that the card build and the page build cut the same list and agree on names.
+// Which machines get a head-to-head: the middle of each family's range by price, the
+// one most people cross-shop, and then every graphics card against every other, since
+// a card is bought as a part and a part is what people put against another part. The
+// machine pages link to the ones they appear in. The pairing lives in src/versus-card.ts,
+// so that the card build and the page build cut the same list and agree on names.
 const flagships = flagshipMachines(data);
 
 const headToHeads = new Map<string, { href: string; other: Hardware }[]>();
@@ -1730,9 +1731,8 @@ ${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.
  * takes them. On the other 3 it does not, at any length the calculator offers,
  * and saying so is a stronger answer than the one they gave.
  */
-function sameListSection(a: Hardware, b: Hardware, va: View, la: string, lb: string, ctxK: number): string {
+function sameListSection(a: Hardware, b: Hardware, va: View, la: string, lb: string, ctxK: number, rows: ReturnType<typeof contextHeadroom>): string {
   const counted = va.rows.length;
-  const rows = contextHeadroom(va.rows.map((r) => r.model), a, b, data);
   const options = [...data.defaults.context.options].sort((x, y) => x - y);
   const span = `${ctxLabel(options[0])} to ${ctxLabel(options[options.length - 1])}`;
   const roomierIsA = (a.usable_memory_gb ?? 0) >= (b.usable_memory_gb ?? 0);
@@ -1774,6 +1774,9 @@ function comparePage(a: Hardware, b: Hardware): string {
   const fb = fitsOf(vb);
   const la = hardwareLabel(a);
   const lb = hardwareLabel(b);
+  // two memory tiers of one machine: the name is said once and the sizes carry the page
+  const tiers = memoryTierNames(a, b);
+  const heading = tiers ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}` : `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`;
   const ctxK = Math.round(st.ctx / 1024);
   const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
 
@@ -1807,6 +1810,9 @@ ${row('Pay-back', esc(verdictLine(sa)), esc(verdictLine(sb)))}
   // other's; whichever way round that falls, this is what the difference buys
   const extraA = runsOnlyOn(va, vb);
   const extraB = runsOnlyOn(vb, va);
+  // where both hold the same models, what the spare memory buys is context, and that is
+  // the answer the section below prints and the description above has to promise
+  const headroom = contextHeadroom(va.rows.map((r) => r.model), a, b, data);
   const [roomier, tighter, extra, roomierView] = extraA.length >= extraB.length
     ? [la, lb, extraA, va]
     : [lb, la, extraB, vb];
@@ -1826,7 +1832,7 @@ ${shown
 </tbody>
 </table>`, { fig: 3, labels: { 2: 'Needs' } })}
 ${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}`
-    : sameListSection(a, b, va, la, lb, ctxK);
+    : sameListSection(a, b, va, la, lb, ctxK, headroom);
 
   // the whole page above is one usage level, and pay-back is the figure that moves
   // most with it: a machine too slow to generate the tokens asked for stops gaining
@@ -1907,7 +1913,7 @@ ${ceilingLine}
     : '';
 
   const body = `<article class="prose">
-<h1>${esc(la)} vs ${esc(lb)} for local AI</h1>
+<h1>${esc(tiers ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}` : `${la} vs ${lb}`)} for local AI</h1>
 <p class="lede">${machineVerdict(a, b, va, vb, data)}</p>
 <table class="board compare">
 <thead><tr><th></th><th><a href="/hardware/${esc(a.id)}/">${esc(la)}</a></th><th><a href="/hardware/${esc(b.id)}/">${esc(lb)}</a></th></tr></thead>
@@ -1934,14 +1940,34 @@ ${extraSection}
   return pageShell(
     {
       title: titleOf([
-        `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)} for local LLMs`,
-        `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`,
+        `${heading} for local LLMs`,
+        heading,
       ]),
-      description: descOf([
-        `${fa.length} of the ${va.rows.length} open models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
-        `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
-        `${shortHardwareLabel(a)} against ${shortHardwareLabel(b)}: memory, speed, what each runs and which pays back sooner.`,
-      ]),
+      description: descOf(
+        tiers
+          ? fa.length !== fb.length
+            ? [
+                `The ${tiers.machine} with ${tiers.b} holds ${fb.length} of the ${va.rows.length} open models here, with ${tiers.a} ${fa.length}. What the extra memory buys, and whether it pays back.`,
+                `${tiers.machine}, ${tiers.b} against ${tiers.a}: ${fb.length} models fit against ${fa.length}. What the extra memory buys, and whether it pays back.`,
+                `${tiers.machine}, ${tiers.a} or ${tiers.b}: what the extra memory buys, and whether it pays back.`,
+              ]
+            : headroom.length
+              ? [
+                  `The ${tiers.machine} holds the same ${fa.length} models with ${tiers.a} or ${tiers.b}. What the extra memory buys is context: ${headroom.length} of them run to a longer window.`,
+                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} models either way, and ${headroom.length} of them run to a longer window with ${tiers.b}.`,
+                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same models either way, ${headroom.length} of them to a longer window.`,
+                ]
+              : [
+                  `The ${tiers.machine} holds the same ${fa.length} models with ${tiers.a} or ${tiers.b}, to the same length at every context, so the extra memory buys nothing here.`,
+                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} models to the same length either way, so the memory buys nothing here.`,
+                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the extra memory buys nothing local AI can use.`,
+                ]
+          : [
+              `${fa.length} of the ${va.rows.length} open models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
+              `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
+              `${shortHardwareLabel(a)} against ${shortHardwareLabel(b)}: memory, speed, what each runs and which pays back sooner.`,
+            ],
+      ),
       canonical: hardwareComparePath(a, b),
       ogImage: versusCardPath(hardwareComparePath(a, b)),
       // the index is the step above a match-up, so the trail a search result
@@ -1949,7 +1975,7 @@ ${extraSection}
       crumbs: [
         { href: '/', label: 'Sunk Cost' },
         { href: '/compare/', label: 'Head to head' },
-        { href: '#', label: `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}` },
+        { href: '#', label: heading },
       ],
     },
     body,
@@ -2348,7 +2374,7 @@ function compareIndex(): string {
 ${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.</p>` : ''}
 
 <h2>Machine against machine</h2>
-<p>One machine per family, the middle of its range by price, against every other: the machines people actually cross-shop. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+<p>Three kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; and every memory tier of one machine against the others, which is the question left once you have picked the box. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
 <tbody>${machineRows}</tbody>

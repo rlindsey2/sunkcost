@@ -105,6 +105,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed a ninth repair at 19:58 on 2026-09-17, and it was not a conflict**: the branch
+      still merged clean, but main's new card head-to-heads made the index's own summary wrong —
+      it counted the 8 family flagships where 13 machines are now compared, and named the wrong
+      cheapest machine. It counts the machines in the pairs it lists now. Rebuilt on the branch
+      (209 pages, 96 comparisons, 182 tests, typecheck clean) and pushed as `c45c31c`. A clean
+      `git merge-tree` is not enough on this branch: build the merge and read the page.
       **It needed an eighth repair at 18:08 on 2026-09-17**, and for once not the import block:
       main had made every price on `/leaderboard/` a link into the calculator and said so in the
       lede, where this branch had already added the way through to `/compare/`. Both sentences kept
@@ -201,6 +207,35 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 `search.google.com` would not make it usable by the agent. That check stays on Ryan's side.
 
 ## Backlog (ordered; the agent keeps this list current)
+
+- [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
+      appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
+      20 new comparisons, 48 machine match-ups in place of 28. The run entry below has the figures
+      and what the new pages say.
+
+- [ ] The other half of that gap: the 49 machines that are not graphics cards still appear in no
+      head-to-head but the one their family's flagship is in. "Every pair" is 1,540 pages and most
+      of them nobody searches, so this needs a rule before it needs code, and the question to settle
+      first is which pairs a reader types. Two candidates, both answerable from the data the site
+      already has: the same machine at two memory sizes (a Mac mini M6 at 16GB against 32GB, where
+      the answer is the models and the context the extra memory buys, which the extra-memory section
+      and `contextHeadroom()` already write), and the cheapest machine of each family against the
+      cheapest of each other family, which is the "for this money, what else" question the flagship
+      grid answers only at the middle of each range. Do not write both. Whichever is chosen, the
+      test is whether the page says something the two machine pages do not.
+
+- [ ] The RTX PRO 6000's page now lists 12 head-to-heads in one line of note text, because it is
+      both a family flagship and a card. It is a legitimate list of links and nothing is hidden, but
+      it reads as a wall on a phone. Worth a look only if it reads as one: the fix would be two
+      groups, against a complete computer and against another card, which is one more line of copy
+      on seven pages.
+
+- [ ] Four of the seven cards are last generation in the data (RTX 4090, 3090, 4080, 3060) and no
+      comparison page says so. A reader putting a 3090 against a 5090 knows, but the site holds the
+      fact in `generation` and prints nothing, and the same is true of the 20 previous-generation
+      Macs on their own pages. The honest question is whether "previous generation" belongs beside
+      the name or under the price, and whether it belongs on the machine pages before the
+      comparisons. Cheap, and it is the kind of thing a buyer wants said out loud.
 
 - [x] Audit every generated page's `<title>` and meta description (scripts/build-pages.ts,
       src/pagekit.ts): each title unique, under 60 characters, leading with the words people
@@ -455,6 +490,98 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — every graphics card gets a head-to-head, and 20 new pages go live
+
+**All three open PRs were checked first. PR #1 and PR #2 merged clean and still do; PR #3 needed a
+repair caused by this run's own push, which is at the end of this entry.** Ryan has not been pinged
+about any of them, per the standing rule.
+
+**Why this item.** The question pages are still the top item overall and still blocked behind three
+unmerged PRs, for the thirteenth run running. So the last run's advice was taken rather than the
+backlog read down: the page set was measured again from scratch — every title, description, word
+count, inbound link and prefilled link on all 188 pages. On-page work came back clean (no title over
+60 characters that was not already known, no description outside 70–155, no duplicate title or
+description, no orphan, no page without a way into the calculator). What came back instead was a
+**coverage** gap, and it was large.
+
+**What was wrong.** The machine head-to-heads were cut from one machine per family — the middle of
+each range by price — so **five of the seven graphics cards on the list appeared in no comparison on
+the site at all**: the RTX 5090, 4090, 3090, 4080 and 3060. The NVIDIA slot in that grid went to the
+$18,000 RTX PRO 6000, because it is the median of the two current NVIDIA entries. A card is the one
+class of machine on this list bought as a part rather than as a computer, and a part is what people
+put against another part: "3090 vs 4090 for local LLM" is the shape of the question, and the site
+had no page for it or for any of its 19 siblings.
+
+**What changed.** `hardwarePairs()` now writes two grids: the family flagships first, then every
+graphics card against every other, deduped so a pair both rules reach is written once. A card is
+`price_scope: 'card_only'` in the data, which is the site's own definition, not a new judgement.
+**The flagship grid goes first so that every pair that already had an address keeps it** — no
+redirect, no lost page. 20 new comparisons, 48 machine head-to-heads in place of 28, 208 pages in
+place of 188, and the seven card pages each gained the links to the ones they are in (the RTX 3060
+went from no head-to-head to six).
+
+**No figure is new data and no template changed.** Every number on the 20 pages comes from the same
+helpers the other 75 comparisons use, the card-only price note the build already enforces prints on
+every card price, and `checkCardPrices()`, `checkPayback()`, `checkHeadroom()` and the
+reachable-from-both-sides check all applied to the new pairs without a line of new checking code.
+The page type, the template and the assumptions note are untouched.
+
+**What the new pages actually say**, because 20 pages nobody reads is not a win. RTX 4090 against
+RTX 3090: both hold the same 24 of 39 models at every context from 4k to 256k, the 3090 costs $100
+less and draws 100 W less, the 4090 is about 1.2× faster on Qwen3.8 27B (44 tok/s against 38, both
+estimated), and the **3090 pays back sooner at every one of the five levels of use** — so the page
+says the choice is speed, price and power, not what they can hold. RTX 5090 against the Radeon AI
+PRO R9700, both 32GB: the 5090 is 2.2× faster, the R9700 is $700 cheaper and pays back sooner at
+every level. RTX PRO 6000 against the RTX 3060: 33 models against 11, 4.8× faster on the strongest
+model both hold, and $17,671 apart.
+
+**Nothing else on the site moved.** Built the whole page set from a worktree at `origin/main` and
+compared every file: **20 new, 7 changed, 1 sitemap, 181 byte-identical**. The 7 are the card
+machine pages, and each one's diff is a single line, the note listing its head-to-heads. **No title,
+description, canonical, OG tag or JSON-LD line changed on any existing page.** The sitemap gains
+exactly 20 URLs, 209 now.
+
+**Verified.** `npm ci`, `npm test` (**177 tests**; the pair test was rewritten from "every flagship
+against every other" to hold both grids, the dedup and the flagship-first order that keeps the old
+addresses), `npx tsc --noEmit`, `npm run build` all the way through `build:functions` with no
+workaround, and every build check green (48 machine head-to-heads priced at 5 levels of use, 9
+head-to-heads between machines holding the same models, 203 OG cards named and all drawn, 7
+card-priced machines all saying so). Measured the 27 new and changed pages over HTTP in Chromium at
+320, 360, 390, 430, 640, 768, 1024, 1280 and 1440px: **243 views, 0 page overflows, 0 of 765 tables
+scrolling**. Read three of the new pages rendered and one new OG card as a picture; checked a new
+page's JSON-LD, canonical and OG tag by parsing them back out.
+
+**Pushed as `110fa81`, and the deploy is confirmed: run 95, green at 19:57 UTC**, with `npm ci`,
+`npm test` and the full build passing on the runner. **These are the first new pages the live site
+has had since this agent started.** The live URLs cannot be read from here — the egress policy still
+refuses `sunkcost.ai` — so the confirmation is the runner's, not a fetch. This entry and the comment fix went
+up as `0caee95`, and **run 96 on it is green too**, so nothing is waiting behind either push.
+
+**PR #3's ninth repair, caused by this push, and it was not a conflict.** All three branches still
+merged clean textually, but merging main into `seo/compare-index` and building it showed the
+`/compare/` index summary had gone **wrong**: it said "none of the 8 machines compared here" and
+named the Radeon AI PRO R9700 at $1,299 as the cheapest machine on the page, because it counted
+`flagships` rather than the machines in the pairs it lists. With the card grid there are 13 of them
+and the cheapest is the RTX 3060 at $329. It now counts the machines it actually compares. Rebuilt
+on the branch (209 pages, 96 comparisons, 182 tests, typecheck clean) and pushed as `c45c31c`.
+**The lesson for the next run is that a clean `git merge-tree` is not enough on these branches:
+build the merge and read the page.** PR #1 and PR #2 were both checked the same way and need
+nothing — merged with main they typecheck, build (209 and 208 pages) and pass 190 and 181 tests.
+
+**One housekeeping note, and it is a trap worth knowing.** `git merge-base origin/main
+origin/seo/home-head` came back empty and `git merge` refused "unrelated histories", which looked
+like PR #2 having been orphaned by a rewrite of main. It was not: **the container's clone is shallow**
+(grafted at `16e0d8e`), and the branch's base sits behind the graft. `git fetch --unshallow origin`
+restored it and the merge base is `124fe2c`, exactly as it should be. A run that sees "unrelated
+histories" should check `git rev-parse --is-shallow-repository` before believing it.
+
+**What to continue.** The coverage gap this run found in the machine comparisons has a second half,
+and it is the new top backlog item below: the other 49 machines still appear in no head-to-head but
+their family's one flagship pair. It needs a rule about which pairs a reader would actually search
+before it is worth writing, because "every pair" is 1,540 pages and most of them nobody wants. After
+that, the question pages remain the top item overall and remain blocked: three PRs, and the memory
+page among them.
 
 ### 2026-09-17 — the biggest page stops contradicting the rest of the site
 
