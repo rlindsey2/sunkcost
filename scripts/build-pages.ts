@@ -124,6 +124,30 @@ function checkLinks() {
 }
 
 /**
+ * A head-to-head has to be reachable from both things it compares. Machine
+ * pages have always carried theirs; the model match-ups did not, so all 47 of
+ * them hung off a single link — the leaderboard's last column — while every
+ * machine match-up had two. One inbound link from one cell of one table is a
+ * page a crawler finds late and a reader never finds at all, and the reader on
+ * a model's own page is the one with the comparison in front of them.
+ */
+function checkHeadToHeads() {
+  const sides = new Map<string, string[]>();
+  for (const [a, b] of hardwarePairs(data)) sides.set(hardwareComparePath(a, b), [`/hardware/${a.id}/`, `/hardware/${b.id}/`]);
+  for (const [a, b] of modelPairs(data)) sides.set(modelComparePath(a, b), [`/models/${a.id}/`, `/models/${b.id}/`]);
+  const problems: string[] = [];
+  for (const [path, both] of sides)
+    for (const side of both)
+      if (!inbound.get(path)?.has(side)) problems.push(`${path} is not linked from ${side}, one of the two it compares`);
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head link${problems.length === 1 ? '' : 's'} missing, of the two every comparison needs`);
+  }
+  const fewest = Math.min(...[...sides.keys()].map((p) => inbound.get(p)!.size));
+  console.log(`  ${sides.size} head-to-heads, each linked from both sides and from at least ${fewest} pages in all`);
+}
+
+/**
  * One page, one address. A search engine that reaches the same content at two
  * URLs splits it in two and ranks neither, so four things have to hold across
  * every generated page:
@@ -336,6 +360,16 @@ for (const [a, b] of hardwarePairs(data)) {
     headToHeads.set(self.id, [...(headToHeads.get(self.id) ?? []), { href, other }]);
 }
 
+// The same thing for models. A pair is always [higher, lower] on the index, so
+// each model knows whether the one it is set against is the rung above it or
+// the rung below, and its page can say which.
+const modelHeadToHeads = new Map<string, { href: string; other: Model; side: 'above' | 'below' }[]>();
+for (const [a, b] of modelPairs(data)) {
+  const href = modelComparePath(a, b);
+  for (const [self, other, side] of [[a, b, 'below'], [b, a, 'above']] as const)
+    modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), { href, other, side }]);
+}
+
 /* ------------------------------ leaderboard ------------------------------ */
 
 function leaderboard(): string {
@@ -524,6 +558,22 @@ function modelPage(m: Model): string {
   const ce = m.cloud_equivalent;
   const ctx = data.defaults.context.default_tokens;
   const alsoAt = otherQuantisations(m, data);
+
+  // The two head-to-heads this model is in, named from its own point of view.
+  // Machine pages have carried their match-ups from the start; these were
+  // reachable only from the leaderboard's last column.
+  const versus = modelHeadToHeads.get(m.id) ?? [];
+  const above = versus.find((v) => v.side === 'above');
+  const below = versus.find((v) => v.side === 'below');
+  const versusLink = (v: { href: string; other: Model }) => `<a href="${esc(v.href)}">vs ${esc(v.other.display_name)}</a>`;
+  const versusLine =
+    above && below
+      ? `<p class="note">Head to head with its neighbours on the leaderboard: ${versusLink(above)} above it, ${versusLink(below)} below.</p>`
+      : below
+        ? `<p class="note">Head to head: ${versusLink(below)}, the next model down the leaderboard.</p>`
+        : above
+          ? `<p class="note">Head to head: ${versusLink(above)}, the next model up the leaderboard.</p>`
+          : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
 <p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}. ${esc(m.capability_note)}</p>
@@ -543,7 +593,7 @@ ${cheapest
       : 'It has not been placed on the intelligence index yet.'}
 ${fe?.url ? ` <a href="${esc(fe.url)}" rel="noopener">Score source</a>.` : ''} <a href="/leaderboard/">See the whole table</a>.</p>
 <ul class="caps">${caps}</ul>
-
+${versusLine}
 <h2>What it costs either way</h2>
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill.</p>
 
@@ -1003,6 +1053,7 @@ writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UT
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
 checkMeta();
 checkLinks();
+checkHeadToHeads();
 checkCanonicals();
 checkOgCards();
 checkFonts();
