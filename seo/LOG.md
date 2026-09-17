@@ -595,7 +595,7 @@ three rewrites came from: the one-sided note named the machine three times in fo
 same-silicon sentence opened "Read the power row with that in mind" two clauses after another
 "that", and the memory-tier pages were being told their equal watts said nothing about either
 machine, which on two tiers of one Mac mini is answering a question nobody asked. Pushed as
-`74db430`; deploy run 109 started at 23:49.
+`74db430`; **deploy run 110 was green at 23:56 and the pages are live**.
 
 **Then one more line, from re-reading the pushed diff.** The same-silicon branch for a pair whose
 watts differ *and* where a figure is borrowed said "where one figure is a stand-in rather than a
@@ -603,25 +603,46 @@ measurement" — wrong if both sides were borrowed, and it said in one clause wh
 sentence says properly. No page reaches that branch today, because the three same-silicon pairs
 with unequal watts have a real figure on both sides, but the same rule applies here as on the
 generation pages: the branch exists because the data will change and the claim must not. It names
-the gap and leaves the caveat to the sentence that explains it.
+the gap and leaves the caveat to the sentence that explains it. Pushed with this entry as
+`be924f5`.
 
-**PR #3 needed no repair this hour, for the first time since it opened.** The standing lesson on
-that branch is that a clean `git merge-tree` is not enough, so the merge was built and read rather
-than trusted: 248 pages, 134 comparisons, 210 tests, typecheck clean, every guard passing
-including the new one and the branch's own `checkCompareIndex()`. The `/compare/` index prints no
-power figure anywhere and this change adds no comparison and no kind of match-up, so its counts
-and its section copy are untouched. Nothing was pushed to the branch. Ryan was not pinged, per the
-standing rule on that PR.
+**Worth knowing, because every run does what caused it.** `deploy.yml` has
+`concurrency: deploy-production` with `cancel-in-progress: true`, so **a run's second push kills
+its own first deploy**. This run pushed the code at 23:49 and the log four minutes later, and run
+109 shows in the Actions list as a cancelled build with Publish skipped — not a failure, and
+nothing was lost, because run 110 carried both commits and published at 23:56. But the shape of
+this job is push the work, then push the log, so the cancelled run in the middle is the normal
+case rather than a warning, and a future run reading its own Actions list should not chase it. To
+see the deploy that actually published, read the newest run rather than the one matching the
+commit you pushed first.
 
-**Continue next:** the question pages, now the top of the backlog and unblocked for seven runs.
-"best GPU for local LLMs" is still the strongest candidate — nothing on this site filters the list
-to cards, and `/best/` answers by usage rather than by part. It is a new page type, so it is a
-pull request, and the thing to decide first rather than halfway through is whether a second open
-branch is worth it while PR #3 is still open. Worth knowing that PR #3 has now gone one full hour
-without needing a repair, so that cost may be falling. If it is judged too dear again, the
-cheapest items left that go straight to main are the assumptions note's card sentence, which
-answers a question ~30 pages do not raise, and grouping the head-to-head lists on the RTX PRO 6000
-and Mac Studio M5 Max pages.
+**PR #3 needed no repair this hour, for the first time since it opened — and then Ryan merged
+it.** The check came first: the standing lesson on that branch is that a clean `git merge-tree` is
+not enough, so the merge was built and read rather than trusted, and it came back at 248 pages,
+134 comparisons, 210 tests, typecheck clean, every guard passing including the new one and the
+branch's own `checkCompareIndex()`. The `/compare/` index prints no power figure anywhere and this
+change adds no comparison and no kind of match-up, so its counts and its section copy were
+untouched and nothing was pushed to the branch. **Ryan merged it at 23:57**, while this entry was
+being written, which is why this run's log push came back rejected — not a sibling session this
+time but the merge commit. Merged main was rebuilt here afterwards and the full `npm run build`
+passes on it, `checkStandInPower()` and `checkCompareIndex()` side by side. The session that
+opened that PR was woken by the merge and has its own entry above, including the measured cost of
+its going in as a merge commit rather than a squash; nothing here duplicates it and Ryan was not
+pinged, per the standing rule on that PR.
+
+**Continue next: the question pages, and the reason seven runs in a row deferred them is gone.**
+Every one of those seven made the same call — a new page type is a pull request, a pull request
+was worth nothing to search until Ryan merged it, and PR #3 was already open and costing a merge
+repair most hours. **PR #3 merged at 23:57 and no pull request is open now.** So the next run
+faces the choice on its merits rather than on the cost of a second branch, and it should take it:
+"best GPU for local LLMs" is the strongest candidate, nothing on this site filters the list to
+cards, and `/best/` answers by usage rather than by part. Worth knowing before starting that a
+branch touching `scripts/build-pages.ts` still goes un-mergeable within hours, so the run that
+opens it should expect to repair it in later runs rather than leave it. If it is deferred an
+eighth time, say plainly what the new reason is, because the old one has expired. The cheapest
+items left that go straight to main are the assumptions note's card sentence, which answers a
+question ~30 pages do not raise, and grouping the head-to-head lists on the RTX PRO 6000 and Mac
+Studio M5 Max pages.
 
 ### 2026-09-17 — the Macs nobody sells any more meet the ones that replaced them
 
