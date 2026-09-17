@@ -11,7 +11,11 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       pages. **Ryan marked it ready for review at 23:22 on 2026-09-16**, so the draft no longer
       blocks it and only the merge is left. Ryan has been notified twice about this PR, the second
       time about the draft status; **do not notify again**.
-      **It has now needed its merge repaired six times**, most recently at 08:47 on 2026-09-17.
+      **It has now needed its merge repaired seven times**, most recently at 09:55 on 2026-09-17.
+      The seventh was the import block at the top of `scripts/build-pages.ts`: this branch adds
+      `/how-much-memory/`'s helpers to it and main added `meetAtShorterContext`. Both lists were
+      kept. That block is the likeliest place this branch breaks next, because every run that adds
+      a helper touches it.
       A future run that finds it still open should re-check that it still merges before doing
       anything else: a waiting branch does not stay mergeable on its own, and this one has the
       worst of it, because it touches `scripts/build-pages.ts` and `src/pagekit.ts`, which nearly
@@ -40,6 +44,11 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       exactly the same reason: this branch adds `checkCompareIndex()` where main has now twice
       widened `checkPayback()`. Assume any run that edits those build checks will break this
       branch, and repair it in the same run rather than leaving it for the next one.
+      **It needed a third repair at 10:00 on 2026-09-17**, in two places this time and neither of
+      them a build check: the import block, and the model comparison's assumptions note, where
+      this branch had added the link to `/compare/` and main had added a sentence about a shorter
+      context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
+      typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
 
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
@@ -135,15 +144,12 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       a win the printed figures do not show. The other two pairs share no machine, and they are
       the new backlog item two below.
 
-- [ ] The two model head-to-heads with no machine in common are now the thinnest pages on the
-      site: `/compare/inkling-small-ud-q4-vs-hunyuan-hy3-q4/` at 409 words and
-      `/compare/hunyuan-hy3-q4-vs-ling-3-0-flash-q4/` at 504, against a median of 757 across all
-      75 comparisons. Nothing on them is wrong — no machine here holds Tencent Hy3 at 32k of
-      context, and they say so — but they skip the two sections every other comparison carries.
-      What would answer them with the site's own numbers is context length: Hy3 needs 193 GB at
-      32k and its weights are 182 GB, so there is a context at which the Mac Studio M5 Ultra,
-      256GB holds both models, and `kvCacheGb()` already works it out. A comparison that says
-      "these two meet on one machine, at 8k of context" is a real answer rather than a longer page.
+- [x] The two model head-to-heads with no machine in common were the thinnest pages on the site,
+      409 and 504 words against a median of 753. Done 2026-09-17, and the fix was the one this item
+      proposed: the answer was the context length. Both pages now run the like-for-like table and
+      pay-back across the five levels of use on the Mac Studio M5 Ultra, 256GB at 16k, which is the
+      longest context on the calculator's list where one machine holds both. 735 and 843 words now.
+      The run entry below has the figures and the check that holds it.
 
 - [x] The 5 pages on one inbound link. Done 2026-09-17 for the three the item was really about,
       and the fix was the one it proposed: the note under a machine's "What it runs" table now
@@ -278,12 +284,94 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       "a Radeon". Seven h1s changed and nothing else on the site; `checkArticles()` stops the
       build if a machine page opens with the wrong article.
 
+- [ ] The thinnest comparisons on the site are now the machine head-to-heads between machines with
+      the same memory: `/compare/mac-studio-m5-max-128gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/` at
+      517 words, then three more at 527, 535 and 539, against a median of 753. They are short for a
+      reason — two 128GB machines hold the same models, so "Machines that run one and not the other"
+      has nothing to list — and nothing on them is wrong. What they could answer with the site's own
+      numbers is what the memory each machine has left over buys: how much further one of them can
+      take the context on the model both hold, which `kvCacheGb()` gives directly. Worth doing only
+      after the question pages.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the two comparisons that had no machine in common
+
+**All three open PRs were checked first and all three merged clean**, so nothing needed repairing
+before the work. PR #1 and PR #3 both needed repairing afterwards, from this run's own push; see
+the end of this entry. Ryan has not been pinged about any of them, per the standing rule.
+
+Then the item the last run said to continue: the two model head-to-heads with no machine in common,
+`/compare/inkling-small-ud-q4-vs-hunyuan-hy3-q4/` and `/compare/hunyuan-hy3-q4-vs-ling-3-0-flash-q4/`,
+at **409 and 504 words against a median of 753** across the 75 comparisons. They were thin because
+they skipped the two sections every other comparison carries, and they skipped those because no
+machine on the list holds Tencent Hy3 at the 32k of context the site assumes.
+
+**What was actually wrong.** Nothing on either page, but the pages stopped one question short. Hy3
+needs **193 GB at 32k** and the largest machine here, the Mac Studio M5 Ultra, 256GB, has **192 GB
+usable**. The miss is about a gigabyte, and it is in the cache, not the weights: the weights are
+**182 GB** and do not move, while the cache grows with the context you ask for. Measured every
+context the calculator offers, on both pairs: at **16k Hy3 needs 188 GB** and that machine holds
+it, and that machine already runs the other model on both pages. So there was a real answer
+available, and it is the answer someone choosing between these models wants.
+
+**What changed.** Both pages now carry the two sections at 16k: "Side by side on the Mac Studio M5
+Ultra, 256GB at 16k of context", and "How much use it takes to pay for the machine" across the five
+levels the calculator names. The context is named in the heading, in the section's own sentence, in
+the assumptions note, and in every calculator link those sections carry. The lede says where the
+two meet, and it says it last, so the sentence before it keeps its "that machine".
+
+**One thing that was quietly wrong and is now fixed.** The top call to action for a model no machine
+holds at 32k read "or Tencent Hy3 in the calculator" and opened on `hw=mac-studio-m5-max-64`, which
+is whatever machine the calculator starts on and cannot hold Hy3 either. The reader followed the
+link and got the same "does not fit" the page had just explained. Those links now open at the
+meeting configuration: the machine that holds both, at 16k.
+
+**What it did to the figures.** The two pages: **409 to 735 words and 504 to 843**. Neither is in
+the thinnest five on the site any more. The thinnest comparison is now a machine head-to-head at
+517 words, which is a different matter and is not a problem — see the new backlog item below.
+
+`checkMeetingPoint()` holds the rule from here: **a page that runs the race at a shorter context
+names that context in its heading, in its assumptions, and in every calculator link those sections
+carry** — and a pair that meets at no context runs no race at all. Proved by breaking it three
+ways: suppressing the meeting failed the build with 6 problems across the 2 pages, dropping the
+context from the heading failed with 2, and letting one calculator link per page keep the default
+context failed with 2.
+
+**Verified.** `npm test` 162 passing; typecheck clean; the full `npm run build`, `build:functions`
+included, which needed no workaround. Built the whole page set from a worktree at `origin/main` and
+compared all 190 files: **188 byte-identical, 2 changed**, and on each of the 2 the only lines
+replaced were the lede, the top call to action and the assumptions note. **Nothing was removed from
+either page**, and no title, description, canonical or JSON-LD line changed anywhere. Measured over
+HTTP in Chromium at 320, 360, 390, 430, 700, 1024, 1280 and 1440px: **1,504 page views, 0
+overflowing the window and 0 of 3,512 tables scrolling sideways**. Read both new sections as a
+picture at 390 and 1280px.
+
+**Deploy confirmed.** **Run 73, on `5cd7d25`, finished green at 09:54 UTC** with `npm ci`,
+`npm test` and the full `npm run build` passing on the runner, and republished.
+
+**PR #1 and PR #3 were both repaired straight afterwards**, both from this run's own push. PR #1
+was the import block alone (seventh repair); PR #3 was the import block and the assumptions note,
+where this branch had added the `/compare/` link and main a sentence about the shorter context
+(third repair). Both sides were kept everywhere. Both branches were rebuilt (189 pages each; 175
+tests on PR #1, 167 on PR #3; typecheck clean) and re-measured over HTTP (**1,512 views, 0
+overflows, 0 tables scrolling** on each) before pushing `8749a28` and `4d3b385`. All three
+branches merge clean again.
+
+**Continue next:** check all three PR branches still merge before anything else. The backlog above
+those PRs now has nothing large left that can reach main on its own — the leaderboard's height on a
+phone is cosmetic and may not be worth doing, and the waterline label's margin is a one-line tidy in
+a file the calculator shares. **The question pages are the top item and the biggest win, and they
+are blocked on judgement rather than on a PR**: /how-much-memory/ is the worked example and it is
+still waiting in PR #1, but "local LLM vs API cost" needs no new page type and is the site's whole
+thesis with only the home page stating it. A run with an hour should look hard at whether that one
+can be written as a generated page on main rather than a PR. **The live site has still had no new
+page since this agent started.**
 
 ### 2026-09-17 — the models a table sorted by class puts out of reach
 

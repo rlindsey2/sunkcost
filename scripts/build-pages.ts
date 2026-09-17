@@ -7,10 +7,10 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  bandFit, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, descOf, dotRow, esc,
-  familyHeading, familyRange, fitsOf, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, gbRange,
-  hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, lowerFirst, machinesConsidered, machineVerdict,
-  median, meetAtShorterContext, modelLabel, modelVerdict, otherQuantisations, pageShell, priceRivals,
+  bandFit, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextHeadroom, ctxLabel,
+  descOf, dotRow, esc, familyHeading, familyRange, fitsOf, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd,
+  gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, lowerFirst, machinesConsidered,
+  machineVerdict, median, meetAtShorterContext, modelLabel, modelVerdict, otherQuantisations, pageShell, priceRivals,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, slug,
   speedWithBasis, stack, strongestShared, tierLabel, tierName, tierScale, titleOf, verdictLine, CAP_SHORT,
   DESC_MAX, FONT_PRELOAD, SIZE_BANDS, TITLE_MAX, type Runner, type SharedMachine,
@@ -410,6 +410,57 @@ function checkMeetingPoint() {
     throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} run a race at a context they do not name`);
   }
   console.log(`  ${met} model head-to-head${met === 1 ? '' : 's'} with no machine in common at 32k run the race at the context where one holds both`);
+}
+
+/**
+ * The 7 head-to-heads where both machines hold the same models used to stop at
+ * "memory is not what separates them", which was true at 32k and left the next
+ * question open. Memory can still separate two machines further up the context,
+ * because the cache grows with every token you keep. The rule this holds them
+ * to: a page whose two machines differ nowhere names no models and says so, and
+ * a page where they do differ names every model they differ on, with the longest
+ * context each machine holds it at, worked out again here from the data rather
+ * than read back off the page.
+ */
+function checkHeadroom() {
+  const problems: string[] = [];
+  let named = 0;
+  let flat = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    const st = defaultState(data);
+    const va = computeView({ ...st, hw: a.id }, data);
+    const vb = computeView({ ...st, hw: b.id }, data);
+    // the other 21 pages answer with the models one machine holds and the other does not
+    if (runsOnlyOn(va, vb).length || runsOnlyOn(vb, va).length) continue;
+    const path = hardwareComparePath(a, b);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    const rows = contextHeadroom(va.rows.map((r) => r.model), a, b, data);
+    const section = html.split('<h2>The same models, not to the same length</h2>')[1]?.split('<h2>')[0] ?? '';
+    if (!rows.length) {
+      flat++;
+      if (section) problems.push(`${path} holds both machines to the same length everywhere and still claims a difference`);
+      if (!html.includes('<h2>Memory is not what separates them</h2>')) problems.push(`${path} does not say that memory separates the two machines nowhere`);
+      continue;
+    }
+    named++;
+    if (!section) {
+      problems.push(`${path} takes ${rows.length} model${rows.length === 1 ? '' : 's'} further on one machine than the other and names none of them`);
+      continue;
+    }
+    const printed = (section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>/g) ?? []).length;
+    if (printed !== rows.length) problems.push(`${path} lists ${printed} models where the two machines reach different lengths, not the ${rows.length} they do`);
+    for (const r of rows) {
+      if (!section.includes(`>${esc(r.model.display_name)}</a>`)) problems.push(`${path} does not name ${r.model.display_name}, which the two machines take to different lengths`);
+      for (const tokens of [r.a, r.b])
+        if (tokens !== null && !section.includes(`<td>${ctxLabel(tokens)}</td>`))
+          problems.push(`${path} does not print ${ctxLabel(tokens)}, the longest one of the machines holds ${r.model.display_name} at`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} do not say what the memory they do not share buys`);
+  }
+  console.log(`  ${named + flat} head-to-heads between machines holding the same models: ${named} name what the spare memory buys in context, ${flat} that it buys nothing`);
 }
 
 function checkArticles() {
@@ -941,6 +992,51 @@ ${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.
 
 /* ---------------------------- comparison pages ---------------------------- */
 
+/**
+ * What to say on the 7 head-to-heads where both machines hold exactly the same
+ * models. "Memory is not what separates them" was true and stopped a question
+ * short: the weights are fixed, but the KV cache grows with every token you
+ * keep, so memory can still separate two machines further up the context. On 4
+ * of the 7 it does, and those pages now name the models and how far each machine
+ * takes them. On the other 3 it does not, at any length the calculator offers,
+ * and saying so is a stronger answer than the one they gave.
+ */
+function sameListSection(a: Hardware, b: Hardware, va: View, la: string, lb: string, ctxK: number): string {
+  const counted = va.rows.length;
+  const rows = contextHeadroom(va.rows.map((r) => r.model), a, b, data);
+  const options = [...data.defaults.context.options].sort((x, y) => x - y);
+  const span = `${ctxLabel(options[0])} to ${ctxLabel(options[options.length - 1])}`;
+  const roomierIsA = (a.usable_memory_gb ?? 0) >= (b.usable_memory_gb ?? 0);
+  const [roomier, tighter] = roomierIsA ? [a, b] : [b, a];
+  const roomierLabel = roomierIsA ? la : lb;
+
+  if (!rows.length) {
+    const memory = a.usable_memory_gb === b.usable_memory_gb
+      ? `Both leave ${a.usable_memory_gb} GB to the GPU.`
+      : `The gap in what the GPU can use, ${roomier.usable_memory_gb} GB against ${tighter.usable_memory_gb} GB, is not big enough to change a single answer.`;
+    return `<h2>Memory is not what separates them</h2>
+<p>Every model on this list that fits one machine fits the other, and not only at ${ctxK}k of context: across all ${counted} models the calculator counts, at every context from ${span}, there is no model one holds and the other does not. ${memory} So the choice between them is speed, price and power, not what they can hold.</p>`;
+  }
+
+  const reach = (tokens: number | null) => (tokens === null ? '<span class="dim">no length it holds</span>' : ctxLabel(tokens));
+  const top = rows[0];
+  const same = counted - rows.length;
+  return `<h2>The same models, not to the same length</h2>
+<p>Every model on this list that fits one machine fits the other at ${ctxK}k of context, so memory does not change what they run. What it changes is how far you can take the context on ${rows.length === 1 ? 'one of them' : `${rows.length} of them`}. The ${esc(roomierLabel)} has ${roomier.usable_memory_gb} GB usable against ${tighter.usable_memory_gb} GB, and spare memory is what the KV cache grows into as you keep more tokens.</p>
+<table class="board compare">
+<thead><tr><th>Model</th><th>${esc(la)}</th><th>${esc(lb)}</th></tr></thead>
+<tbody>
+${rows
+  .map(
+    (r) => `<tr><th><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${fmtGb(r.model.weights_gb)} of weights</span></th><td>${reach(r.a)}</td><td>${reach(r.b)}</td></tr>`,
+  )
+  .join('\n')}
+</tbody>
+</table>
+<p class="note">Each figure is the longest context the calculator offers that the machine still holds that model at, and no model is taken past its own context limit. The other ${same} models the calculator counts reach the same length on both machines, at every setting from ${span}.</p>
+${top.a !== null && top.b !== null ? `<p><a class="cta" href="${esc(calcLink({ hw: a.id, model: top.model.id, ctx: top.a }, data))}">Run ${esc(top.model.display_name)} on the ${esc(la)} at ${ctxLabel(top.a)}</a> · <a href="${esc(calcLink({ hw: b.id, model: top.model.id, ctx: top.b }, data))}">or on the ${esc(lb)} at ${ctxLabel(top.b)}</a></p>` : ''}`;
+}
+
 function comparePage(a: Hardware, b: Hardware): string {
   const st = defaultState(data);
   const va = computeView({ ...st, hw: a.id }, data);
@@ -1001,8 +1097,7 @@ ${shown
 </tbody>
 </table>`, { fig: 3, labels: { 2: 'Needs' } })}
 ${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}`
-    : `<h2>Memory is not what separates them</h2>
-<p>Every model on this list that fits one machine fits the other, at ${ctxK}k of context. So the choice between them is speed, price and power, not what they can hold.</p>`;
+    : sameListSection(a, b, va, la, lb, ctxK);
 
   // the whole page above is one usage level, and pay-back is the figure that moves
   // most with it: a machine too slow to generate the tokens asked for stops gaining
@@ -1748,5 +1843,6 @@ checkTables();
 checkArticles();
 checkPayback();
 checkMeetingPoint();
+checkHeadroom();
 checkHiddenModels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
