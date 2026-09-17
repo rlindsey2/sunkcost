@@ -81,6 +81,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed a twelfth repair at 22:00 on 2026-09-17**, caused by this hour's own push to main:
+      one conflict, the import block for the seventh time, this branch's `shownTps` against main's
+      `sameSilicon`. Union asserted by name, 71 in and 71 out. The merge built clean and the page was
+      still wrong again: the index's section copy said "Three kinds of match-up" where main now cuts
+      four. It names all four. Rebuilt and re-read (236 pages, 122 comparisons, 203 tests, typecheck
+      clean, the full build) before pushing `2b37c7c`, and GitHub reports `mergeable_state: clean`.
       **It needed an eleventh repair at 21:40 on 2026-09-17**, the largest yet, because Ryan's two
       merges landed while this run was working: four files rather than one, and every conflict was
       both sides adding their own thing. `src/list-card.ts` was the awkward one — this branch's
@@ -214,19 +220,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       second page on the same two families at another price is a near-duplicate. The run entry below
       has the figures, the three machines the grouping correctly refuses to pair, and the titles.
 
-- [ ] What is left of that gap: **26 machines are still in no head-to-head**, and they split in two.
+- [ ] What is left of that gap: **20 machines are still in no head-to-head**, and they split in two.
       **13 are previous-generation** (the M4 minis, the M4 Pro minis, the M4 Max and M3 Ultra Studios)
       and carry launch prices on a machine you cannot order, so pay-back on them is a different kind
       of claim; the honest pair for those may be against their own successor — an M4 Mac mini 32GB
-      against an M6 Mac mini 32GB is a real search and the site holds both. **13 are current** and are
-      the only tier of their exact silicon: the four other Strix Halo boxes (GMKtec EVO-X3 $3,600,
-      Minisforum MS-S1 Max $3,799, Beelink GTR9 Pro $4,349, HP Z2 Mini G1a $5,544), the MacBook Air,
-      the Mac Studio base tiers whose GPU differs from the tier above, and the M5 Ultras. Those four
-      boxes are the strongest case on the list: 128GB each, 96 GB usable each, 256 GB/s each and the
-      same 40-CU Radeon 8060S (the HP is the PRO variant of the same part), so they hold the same
-      models at the same speed and **the whole question is the $1,944 between them** — which is a
-      page the site can answer from what it already has, and nothing on it compares them today.
-      Settle that one first.
+      against an M6 Mac mini 32GB is a real search and the site holds both. **7 are current** and are
+      the only tier of their exact silicon: the Mac Studio M5 Max 36GB, whose GPU differs from the
+      tier above; the three M5 Ultras, one of them unpriced; the unpriced Framework Desktop 495; the
+      Framework Desktop 385, 32GB; and the Corsair AI Workstation 300, 64GB, which is the only 385
+      part in a 64GB box. The Strix Halo boxes that used to head this list are done, by the item
+      above. Each of these has no twin at the same memory and no second tier of its own chip, so none
+      of the four rules reaches it. The honest pair for a base tier is probably the tier above it in
+      the same case, which is a GPU-count question rather than a memory one; two of the seven have no
+      price, and pay-back without a price is not a page.
 
 - [ ] The assumptions note on every machine comparison says "Graphics cards are priced as the card
       alone, so add the PC around one before comparing it with a complete computer" — including on the
@@ -504,6 +510,102 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the same box from six makers gets its price put side by side
+
+**Took the top open backlog item rather than the "continue next" of the two entries above.** Both
+named "best GPU for local LLMs" as the next question page, and both were written by runs whose own
+work was a PR repair. The question page is a new page type, so it is a PR, and there is already one
+PR open that has cost twelve merge repairs in a day. The item above it goes straight to main and was
+live within six minutes. The question-page item is still the top of the backlog by traffic and is
+still unblocked; this run bought a deploy instead of a fourth open branch.
+
+**What was wrong.** Seven Strix Halo machines in the data carry the same 40-CU Radeon 8060S with
+128 GB at 256 GB/s and 96 GB of it usable: the Framework Desktop at $3,449, the GMKtec EVO-X2 at
+$3,500, the EVO-X3 at $3,600, the Minisforum MS-S1 Max at $3,799, the Beelink GTR9 Pro at $4,349,
+the Corsair AI Workstation 300 at $4,700 and the HP Z2 Mini G1a at $5,544. That is **$2,095 between
+the cheapest and the dearest for the same parts**, and nothing on the site put any two of them
+together. Four were in no head-to-head at all. The flagship grid takes one machine per family and
+all eleven Strix boxes are one family; the memory-tier rule needs the same maker.
+
+**The rule, and why it is not a grid.** `sameSiliconPairs()` groups the current, priced machines by
+family, GPU, memory, bandwidth and usable memory, and puts **each box against the cheapest box in
+its group**. A grid over seven boxes would be 21 pages writing one answer, because every box in a
+group holds the same models at the same speed; the question a buyer actually has is what the dearer
+box charges on top of the cheapest one that does the same work. **8 new comparisons**, and **36 of
+the 56 machines are in a head-to-head where 30 were**. Six machines gained their first: the Beelink,
+the Minisforum, the EVO-X3, the HP, the Corsair 128GB and the 13-inch MacBook Air. Two pairs come
+from outside the Strix group and are both real searches — Framework Desktop against GMKtec EVO-X2 at
+64GB, and MacBook Air 13-inch against 15-inch, which is the same M5 and the same 16 GB $200 apart.
+
+**The honesty problem these pages carry, which is the find of the run.** The site holds *measured*
+throughput for several of these boxes, and the figures disagree on identical silicon: the GMKtec
+EVO-X2 benches Qwen3 30B at 86.1 tok/s where the Framework Desktop benches it at 66.3, and
+gpt-oss-120b at 53.4 against 50.05. Those are different people's runs with different runtimes and
+builds, not a difference between two machines that are the same part. `machineVerdict()` would have
+written "the GMKtec EVO-X2 is about 1.3× faster" straight into the lede. It cannot now: on a
+same-silicon pair it names both figures and says the gap is between the sources rather than between
+the machines, and where the two figures are equal the page says so and says why (decoding reads the
+weights out of memory, and both read them at the same GB/s). None of the 8 pages hits the unequal
+branch today, because on every one of them the strongest shared model is estimated on both sides;
+the branch exists because the data will change and the claim must not.
+
+**What the pages say.** The lede opens with the answer: these two are the same machine inside, this
+GPU, this much memory at this bandwidth, and both hold the same N models. Then a section that gives
+the reason (fit is usable memory and usable memory is equal, so they hold the same models at every
+context from 4k to 256k), names the price gap as the whole question, and prices the power where the
+two differ — the EVO-X2 draws 150 W against the Framework's 133 W, so on that pair the pay-back gap
+is the price *and* 17 W, and the page says both rather than only the price. It closes by saying
+what the site does not measure: case, ports, cooling, warranty, who picks up the phone. That is the
+list a reader has to weigh against the money, and pretending the site has an opinion on it would be
+the dishonest version of this page.
+
+The HP is the one pair where the two chips are not listed identically, `Ryzen AI Max+ PRO 395`
+against `Ryzen AI Max+ 395`. The page says so rather than smoothing it over, and says the graphics
+half of the two names is the same and the graphics half is what runs the model.
+
+**Titles.** Both sides of one of these pairs carry the same memory, so the title says the size once:
+"Framework Desktop vs Corsair AI Workstation 300, 128GB" rather than the size twice. That took the
+two longest of the new titles under the 60-character limit, and the build's own note went from
+**9 titles over 60 to 7** — the two it lost are these, and no existing title changed.
+
+**The guards.** `checkSameSilicon()` holds every such page to three claims: the pair really is one
+GPU with one memory size at one bandwidth in the data; the money the page names is the money between
+the two prices; and no page calls one side faster than the other. `checkHeadroom()` learned that a
+same-silicon page says "memory separates them nowhere" under its own heading, and now also requires
+the claim itself on both kinds of page rather than only the heading. Two new tests: the pairing rule
+(each box against the cheapest, every figure equal on both sides, cheapest side first, and the count
+is one per group member rather than a grid) and the lede (never "× faster", always the opening
+sentence and the memory-and-bandwidth figures).
+
+**Verified**: 198 tests, typecheck clean, 235 pages with every guard passing, and the full
+`npm run build` including `build:og` (1,894 cards + 121 head-to-head cards), `build:share` and
+`build:functions`. Read four of the eight pages rendered out of `dist/` end to end before
+committing, which is where three fixes came from: "the pay-back table above" pointed at two
+different tables, "Both boxes carry" did not fit a pair of laptops, and the closing list of what the
+site does not measure had been a list of desktop parts. Pushed as `db8ea11`; **deploy run 105 was
+green at 22:03 and the pages are live**.
+
+**A sibling session had pushed to main while this ran**, so the push came back rejected for the
+third time in a day. Per the standing rule it was fetched and read rather than forced: the other
+side was `45bc394`, a LOG entry recording that the 21:00 slot fired three sessions. Nothing of this
+run's work touched it, so this commit was rebased on top and nothing was lost.
+
+**Then PR #3, which this push broke, repaired in the same run.** One conflict, the import block for
+the seventh time: this branch's `shownTps` against main's `sameSilicon`. Union asserted by name,
+71 names in and 71 out. And the branch's standing lesson paid again — the merge built clean and the
+page was still wrong: `/compare/`'s section copy said **"Three kinds of match-up"** and named three,
+over a table that now carries a fourth. It names all four now. Rebuilt and re-read on the merged
+branch: 236 pages, 122 comparisons, 203 tests, typecheck clean, the full build. Pushed as `2b37c7c`;
+GitHub reports the PR `mergeable_state: clean`. Ryan was not pinged, per the standing rule on that PR.
+
+**Continue next:** the question pages. `/how-much-memory/` is on main with its page type, its
+helpers and its card, and "best GPU for local LLMs" is the strongest candidate: nothing on the site
+filters the list to cards, and `/best/` answers by usage rather than by part. It is a new page type,
+so it is a PR. Worth knowing before starting: PR #3 has been open a day and has cost twelve repairs,
+so a second open branch touching `scripts/build-pages.ts` doubles that cost until Ryan merges. If
+that is judged too dear this hour, the next item down is the assumptions note that tells ~30
+machine-against-machine pages to add a PC around a graphics card neither of them is.
 
 ### 2026-09-17 — PR #1 landed, and PR #3 was carrying 151.8 MB of build output
 
