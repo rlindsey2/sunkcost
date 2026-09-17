@@ -594,6 +594,27 @@ export function cheapestRunsBoth(a: Model, b: Model, ra: Runner[], rb: Runner[])
   return null;
 }
 
+/**
+ * Where no machine holds both at the context the site assumes, the longest
+ * context on the calculator's own list where one does.
+ *
+ * What pushes a big model past a machine's memory is usually the cache, not the
+ * weights: the weights are fixed and the cache grows with the context you ask
+ * for. So a pair with no machine in common at 32k can still have one at 16k,
+ * and that is a real answer rather than a longer page — it is the context to
+ * open the calculator at if you want to run both.
+ */
+export function meetAtShorterContext(a: Model, b: Model, data: Dataset): { ctx: number; shared: SharedMachine } | null {
+  const shorter = data.defaults.context.options
+    .filter((c) => c < data.defaults.context.default_tokens)
+    .sort((x, y) => y - x);
+  for (const ctx of shorter) {
+    const shared = cheapestRunsBoth(a, b, runnersFor(a, data, { ctx }), runnersFor(b, data, { ctx }));
+    if (shared) return { ctx, shared };
+  }
+  return null;
+}
+
 /** The machines that run the first model and not the second, cheapest first. */
 export function runsOnlyThere(ra: Runner[], rb: Runner[]): Runner[] {
   const inB = new Set(rb.map((r) => r.hw.id));
@@ -622,6 +643,7 @@ export function modelVerdict(
   rb: Runner[],
   shared: SharedMachine | null,
   data: Dataset,
+  meeting?: { ctx: number; shared: SharedMachine } | null,
 ): string {
   const out: string[] = [];
   const sa = a.frontier_equivalent?.score ?? null;
@@ -714,6 +736,20 @@ export function modelVerdict(
           : `At ${usage} tokens a day that machine pays for itself in ${fmtDuration(days!)} running ${name}.`,
       );
     }
+  }
+
+  // Where nothing on the list holds both at the context the site assumes, the lede
+  // says where they do meet, because that is the question someone weighing the two
+  // has just been told has no answer. It goes last so the sentence before it, which
+  // is about the machine one model runs on, keeps its "that machine".
+  if (meeting) {
+    const k = Math.round(meeting.ctx / 1024);
+    const sameOne = (ca ?? cb)?.hw.id === meeting.shared.hw.id;
+    out.push(
+      sameOne
+        ? `Shorten the context to ${k}k and that machine holds both.`
+        : `Shorten the context to ${k}k and one machine here holds both: the ${shortHardwareLabel(meeting.shared.hw)}, at ${fmtUsd(meeting.shared.hw.price_usd)}.${cardPriceNote([meeting.shared.hw])}`,
+    );
   }
 
   return out.join(' ');
