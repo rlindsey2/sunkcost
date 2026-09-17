@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
+  memoryTierNames, memoryTierPairs,
   modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
-import { runnersFor } from '../src/pagekit';
+import { runnersFor, shortHardwareLabel } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
 import type { Dataset, Hardware } from '../src/types';
@@ -134,7 +135,7 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, every card with every other card, once each', () => {
+  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, once each', () => {
     const pairs = hardwarePairs(data);
     const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
     const keys = pairs.map(([a, b]) => key(a, b));
@@ -143,9 +144,11 @@ describe('the pairs the cards and the pages cut', () => {
 
     const flagships = flagshipMachines(data);
     const cards = graphicsCards(data);
+    const tiers = memoryTierPairs(data);
     const want = new Set<string>();
     for (const xs of [flagships, cards])
       for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
+    for (const [a, b] of tiers) want.add(key(a, b));
     expect(new Set(keys)).toEqual(want);
 
     // a card is priced as the part, not as a computer, and the flagship grid on its own
@@ -157,6 +160,62 @@ describe('the pairs the cards and the pages cut', () => {
     for (const [a, b] of pairs.slice(0, (flagships.length * (flagships.length - 1)) / 2)) {
       expect(flagships.map((h) => h.id)).toContain(a.id);
       expect(flagships.map((h) => h.id)).toContain(b.id);
+    }
+    // two of the flagships are themselves cards, so one pair is in both grids and is
+    // written once: the union is the page set, not the sum
+    expect(pairs.length).toBe(want.size);
+    // and the tier pairs are appended last, after both grids, for the same reason
+    const tail = pairs.slice(-tiers.length).map(([a, b]) => key(a, b));
+    expect(tail).toEqual(tiers.map(([a, b]) => key(a, b)));
+  });
+
+  it('puts two memory tiers of one machine against each other, and nothing else', () => {
+    const tiers = memoryTierPairs(data);
+    expect(tiers.length).toBeGreaterThan(0);
+
+    for (const [a, b] of tiers) {
+      // the page names one machine and two sizes, so the two sides must be that machine
+      expect(a.family).toBe(b.family);
+      expect(a.chip).toBe(b.chip);
+      expect(a.chip_variant ?? '').toBe(b.chip_variant ?? '');
+      expect(a.unified_memory_gb).toBeLessThan(b.unified_memory_gb);
+      // pay-back needs a price, and the question only arises while you can still choose
+      for (const h of [a, b]) {
+        expect(h.price_usd).not.toBeNull();
+        expect(h.generation ?? 'current').toBe('current');
+      }
+    }
+
+    // every tier of every machine a buyer can still configure, not just the adjacent ones
+    const groups = new Map<string, Hardware[]>();
+    for (const h of data.hardware) {
+      if (h.price_usd == null || (h.generation ?? 'current') !== 'current') continue;
+      const k = `${h.family}|${h.chip}|${h.chip_variant ?? ''}`;
+      groups.set(k, [...(groups.get(k) ?? []), h]);
+    }
+    const want = [...groups.values()].filter((g) => g.length > 1).reduce((n, g) => n + (g.length * (g.length - 1)) / 2, 0);
+    expect(tiers.length).toBe(want);
+  });
+
+  it('names the machine once on a memory-tier pair, and not at all on any other', () => {
+    for (const [a, b] of memoryTierPairs(data)) {
+      const n = memoryTierNames(a, b)!;
+      expect(n).not.toBeNull();
+      // the name carries no size, and each side is the size it belongs to
+      expect(n.machine).not.toMatch(/GB/);
+      expect(n.a).toBe(`${a.unified_memory_gb}GB`);
+      expect(n.b).toBe(`${b.unified_memory_gb}GB`);
+      expect(shortHardwareLabel(a)).toBe(`${n.machine}, ${n.a}`);
+      expect(shortHardwareLabel(b)).toBe(`${n.machine}, ${n.b}`);
+      // and the title it builds still fits a search result
+      expect(`${n.machine}: ${n.a} vs ${n.b} for local LLMs`.length).toBeLessThanOrEqual(60);
+    }
+
+    // two different machines are never one machine with more memory, whatever their sizes
+    const tierKeys = new Set(memoryTierPairs(data).map(([a, b]) => [a.id, b.id].sort().join('|')));
+    for (const [a, b] of hardwarePairs(data)) {
+      if (tierKeys.has([a.id, b.id].sort().join('|'))) continue;
+      expect(memoryTierNames(a, b)).toBeNull();
     }
   });
 

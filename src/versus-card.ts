@@ -163,10 +163,52 @@ export function graphicsCards(data: Dataset): Hardware[] {
 }
 
 /**
+ * A memory-tier pair names its machine once: "Mac mini M6", "16GB", "32GB". Both sides
+ * are the same machine, so writing the name twice spends a search result's 60 characters
+ * saying it again instead of saying the two sizes, which is what the reader typed. Null
+ * for every other pair, which is every pair the flagship and card grids write.
+ */
+export function memoryTierNames(a: Hardware, b: Hardware): { machine: string; a: string; b: string } | null {
+  if (a.family !== b.family || a.chip !== b.chip || (a.chip_variant ?? '') !== (b.chip_variant ?? '')) return null;
+  if (a.unified_memory_gb === b.unified_memory_gb) return null;
+  const label = shortHardwareLabel(a);
+  const suffix = `, ${a.unified_memory_gb}GB`;
+  if (!label.endsWith(suffix)) return null;
+  return {
+    machine: label.slice(0, -suffix.length),
+    a: `${a.unified_memory_gb}GB`,
+    b: `${b.unified_memory_gb}GB`,
+  };
+}
+
+/**
+ * The same machine with more memory: every pair of memory tiers on one configuration,
+ * the smaller side first. "How much memory should I buy" is the question a buyer asks once they
+ * have picked the box, and a tier is the one choice on a spec sheet that changes what a
+ * machine can hold. Grouped by chip variant, so the two sides are the same silicon in
+ * the same case and the memory is what the money bought; discontinued machines are left
+ * out, because the question only arises while you can still choose.
+ */
+export function memoryTierPairs(data: Dataset): [Hardware, Hardware][] {
+  const groups = new Map<string, Hardware[]>();
+  for (const h of data.hardware) {
+    if (h.price_usd == null || (h.generation ?? 'current') !== 'current') continue;
+    const key = `${h.family}|${h.chip}|${h.chip_variant ?? ''}`;
+    groups.set(key, [...(groups.get(key) ?? []), h]);
+  }
+  const out: [Hardware, Hardware][] = [];
+  for (const g of [...groups.values()].filter((g) => g.length > 1)) {
+    const xs = [...g].sort((a, b) => a.unified_memory_gb - b.unified_memory_gb);
+    for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) out.push([xs[i], xs[j]]);
+  }
+  return out;
+}
+
+/**
  * Every machine pair that has a page, in the order the build writes them: the grid of
- * family flagships first, then the card grid. The flagships come first so that a pair
- * both lists keeps the address it has always had, and a pair is only ever written once,
- * whichever way round the two rules reach it.
+ * family flagships first, then the card grid, then the memory tiers of one machine. Each
+ * rule is appended after the ones before it, so a pair keeps the address it has always
+ * had, and a pair is only ever written once, whichever way round the rules reach it.
  */
 export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   const out: [Hardware, Hardware][] = [];
@@ -181,6 +223,7 @@ export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   };
   grid(flagshipMachines(data));
   grid(graphicsCards(data));
+  for (const [a, b] of memoryTierPairs(data)) add(a, b);
   return out;
 }
 
