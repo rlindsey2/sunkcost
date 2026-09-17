@@ -20,6 +20,12 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       Worth checking the schedule for a duplicate trigger, or whatever fired the job twice. Until
       that is settled, a run that finds its push rejected should assume a sibling session, fetch,
       verify the other side's work rather than force it, and say so in its entry.
+      **It happened a third time at 21:22 on 2026-09-17**: `session_01BkmaydTHe1vj4nWki6YR5D` wrote
+      the housekeeping entry for Ryan's two merges while `session_01EPxEDkq2mnCiU4hPFTT68M` was
+      mid-run on the memory-tier pages, and this run's log push was rejected because of it. Nothing
+      was lost — the two sessions had written about different things, the other side's work was read
+      and kept rather than forced over, and this entry was rebased onto it — but it is the second
+      time in five hours that a push came back rejected, and the collision was luck again.
 
 - [x] Merge PR #1, the `/how-much-memory/` page. **Merged 21:11 on 2026-09-17**, after being open
       since 12:49 on 2026-09-16 and having its merge repaired fourteen times. It went in on the
@@ -49,6 +55,23 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       this branch had added the link to `/compare/` and main had added a sentence about a shorter
       context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
       typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
+      **It needed an eleventh repair at 21:40 on 2026-09-17**, the largest yet, because Ryan's two
+      merges landed while this run was working: four files rather than one, and every conflict was
+      both sides adding their own thing. `src/list-card.ts` was the awkward one — this branch's
+      `compareIndexCard` against main's `memoryCard`, which share a closing tail, so the conflict
+      swallowed the seam between the two functions and both had to be closed by hand. Also
+      `scripts/build-og.ts` (four list cards drawn now), the import block in `scripts/build-pages.ts`
+      for the sixth time (union asserted: 54 names, this branch's `shownTps` and main's seven new
+      ones all kept) and both describe blocks in `tests/list-card.test.ts`, whose closing braces the
+      conflict cut off. Rebuilt (228 pages, 114 comparisons, 201 tests, typecheck clean, the full
+      build with all four list cards drawn) and re-measured over HTTP (**2,052 views, 0 overflows,
+      0 of 5,535 tables scrolling**) before pushing `3cda5bd`.
+      **It needed a tenth repair at 21:05 on 2026-09-17**, in the breadcrumbs: this branch adds
+      `/compare/` as the step above a comparison, main now writes the leaf label from the page's own
+      heading. Both kept. And the lesson below paid for itself again — the merge built clean and the
+      page was still wrong: the index's section copy said "one machine per family, the middle of its
+      range by price" over a table that now also holds card-against-card and tier-against-tier rows.
+      It names all three rules now. Pushed as `ccfe26b`.
       **It needed a ninth repair at 19:58 on 2026-09-17, and it was not a conflict**: the branch
       still merged clean, but main's new card head-to-heads made the index's own summary wrong —
       it counted the 8 family flagships where 13 machines are now compared, and named the wrong
@@ -157,22 +180,43 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       20 new comparisons, 48 machine match-ups in place of 28. The run entry below has the figures
       and what the new pages say.
 
-- [ ] The other half of that gap: the 49 machines that are not graphics cards still appear in no
-      head-to-head but the one their family's flagship is in. "Every pair" is 1,540 pages and most
-      of them nobody searches, so this needs a rule before it needs code, and the question to settle
-      first is which pairs a reader types. Two candidates, both answerable from the data the site
-      already has: the same machine at two memory sizes (a Mac mini M6 at 16GB against 32GB, where
-      the answer is the models and the context the extra memory buys, which the extra-memory section
-      and `contextHeadroom()` already write), and the cheapest machine of each family against the
-      cheapest of each other family, which is the "for this money, what else" question the flagship
-      grid answers only at the middle of each range. Do not write both. Whichever is chosen, the
-      test is whether the page says something the two machine pages do not.
+- [x] The other half of that gap: the 49 machines that are not graphics cards appeared in no
+      head-to-head but the one their family's flagship is in. Done 2026-09-17, and the rule chosen was
+      the first of the two the item offered: **two memory tiers of one machine**, grouped by chip
+      variant. 18 new comparisons, 30 of the 56 machines in a head-to-head where 13 were. The other
+      candidate was deliberately left — the flagship grid already puts family against family, so a
+      second page on the same two families at another price is a near-duplicate. The run entry below
+      has the figures, the three machines the grouping correctly refuses to pair, and the titles.
+
+- [ ] What is left of that gap: **26 machines are still in no head-to-head**, and they split in two.
+      **13 are previous-generation** (the M4 minis, the M4 Pro minis, the M4 Max and M3 Ultra Studios)
+      and carry launch prices on a machine you cannot order, so pay-back on them is a different kind
+      of claim; the honest pair for those may be against their own successor — an M4 Mac mini 32GB
+      against an M6 Mac mini 32GB is a real search and the site holds both. **13 are current** and are
+      the only tier of their exact silicon: the four other Strix Halo boxes (GMKtec EVO-X3 $3,600,
+      Minisforum MS-S1 Max $3,799, Beelink GTR9 Pro $4,349, HP Z2 Mini G1a $5,544), the MacBook Air,
+      the Mac Studio base tiers whose GPU differs from the tier above, and the M5 Ultras. Those four
+      boxes are the strongest case on the list: 128GB each, 96 GB usable each, 256 GB/s each and the
+      same 40-CU Radeon 8060S (the HP is the PRO variant of the same part), so they hold the same
+      models at the same speed and **the whole question is the $1,944 between them** — which is a
+      page the site can answer from what it already has, and nothing on it compares them today.
+      Settle that one first.
+
+- [ ] The assumptions note on every machine comparison says "Graphics cards are priced as the card
+      alone, so add the PC around one before comparing it with a complete computer" — including on the
+      roughly 30 pages where neither side is a card, which is now most of them. It is true and it is
+      not a maintainer note, but it answers a question the page does not raise. One conditional, and
+      it would touch pages this run just proved byte-identical, so it wants its own run.
 
 - [ ] The RTX PRO 6000's page now lists 12 head-to-heads in one line of note text, because it is
       both a family flagship and a card. It is a legitimate list of links and nothing is hidden, but
       it reads as a wall on a phone. Worth a look only if it reads as one: the fix would be two
       groups, against a complete computer and against another card, which is one more line of copy
-      on seven pages.
+      on seven pages. **The tier pages of 2026-09-17 gave this item a second half**: the Mac Studio
+      M5 Max, 128GB page now lists nine, and two of them read "vs Mac Studio M5 Max, 48GB" on a page
+      whose own name is Mac Studio M5 Max, 128GB. Grouping that line — against another machine,
+      against another card, against the same machine with different memory — would fix both at once,
+      and the third group could drop the repeated name and read "vs 48GB · vs 64GB".
 
 - [ ] Four of the seven cards are last generation in the data (RTX 4090, 3090, 4080, 3060) and no
       comparison page says so. A reader putting a 3090 against a 5090 knows, but the site holds the
@@ -245,17 +289,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       longer window than the row quotes, and 50 of the 54 pages gain at least one. The run entry
       below has the figures and the rule `checkModelContexts()` now holds them to.
 
-- [ ] The 2 pages left on one inbound link, Llama 3.1 8B Q8 and Qwen3 32B Q8, reached only from
-      their own Q4 page because the leaderboard shows one row per model name. Machine pages cannot
-      reach them: a second quantisation is not in the 39 the calculator counts, so it is in no
-      machine's fits list at all and the note that fixed the other three does not see it.
-      **This may already be solved by PR #1**, which is the only thing that should be done about it
-      until that PR lands: /how-much-memory/ lists every model by size, both quantisations
-      included, and on that branch the fewest inbound links any page has is 2 rather than 1.
-      Re-measure once it merges, and only then decide whether anything else is wanted.
-- [ ] Question pages for the searches people actually type. The memory one is written and waiting
-      in PR #1 as /how-much-memory/ and covers "how much RAM to run a 70B model" and its variants;
-      the page type and its helpers are in place, so the next one is much less work than the first.
+- [x] The 2 pages left on one inbound link, Llama 3.1 8B Q8 and Qwen3 32B Q8. Settled by PR #1
+      merging on 2026-09-17, exactly as this item predicted: `/how-much-memory/` lists every model
+      by size with both quantisations, so nothing on the site is on one inbound link any more. The
+      build says so itself now — **"every page is linked from at least 2 other pages"**, and the
+      check holds that floor, so a page cannot drop back to one without failing the build.
+      Re-measured on merged main at 21:30 on 2026-09-17. Nothing further is wanted.
+- [ ] Question pages for the searches people actually type, and **this is the top item again, now
+      unblocked**. The memory one is live: `/how-much-memory/` merged at 21:11 on 2026-09-17 and
+      covers "how much RAM to run a 70B model" and its variants. The page type, its helpers
+      (`SIZE_BANDS`, `bandFit`, `cheapestThatHolds`) and its OG card are all on main now, so the
+      next question page is much less work than the first was, and no PR is in the way of it —
+      fourteen runs took smaller items because this one was blocked, and it no longer is.
       Still open, roughly in the order they are worth writing: "best GPU for local LLMs" (nothing
       here filters the list to cards, and /best/ answers by usage rather than by part), "local
       LLM vs API cost" (the site's whole thesis, and the home page is the only thing that states
@@ -433,6 +478,127 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-17 — the memory question gets its own 18 pages
+
+**Ryan merged PR #1 and PR #2 during this run, at 21:11.** All three PRs were checked first and all
+three merged clean; PR #1 and PR #2 were also built as merges rather than just tested for conflicts,
+the way the last run said to check them (227 pages, 192 tests and 226 pages, 183 tests, both through
+the full build), and both went in twenty minutes later. **So `/how-much-memory/` is live, and the
+question pages are no longer blocked** — the housekeeping for those two merges was written by a
+concurrent session as `2261cdb`, which is the third collision of the day and is recorded at the top
+of Ryan's side. PR #3 needed two repairs from this run, one from its own push and a much larger one
+from the two merges; both are at the end of this entry. Ryan has not been pinged about any PR, per
+the standing rule.
+
+**Why this item.** It was the top of the backlog: the 49 machines that are not graphics cards
+appeared in no head-to-head but the one their family's flagship is in. The item said the rule mattered
+more than the code and named two candidates, one to be written and not both.
+
+**The rule, and why this one.** **Two memory tiers of one machine.** "How much memory should I buy"
+is the question a buyer asks once they have picked the box, it is the one line on a spec sheet that
+changes what a machine can hold, and the site answered it nowhere. The other candidate — the cheapest
+machine of each family against the cheapest of each other — was left, because the flagship grid
+already puts family against family and a second page on the same two families at a different price
+is the near-duplicate this site should not write. The item's own test is met: a tier page says what
+neither machine page does, which is what the difference in memory buys.
+
+**What changed.** `hardwarePairs()` writes a third grid after the flagships and the cards: every pair
+of memory tiers on one configuration, grouped by **chip variant**, priced, and still on sale. **18
+new comparisons, 226 pages in place of 208**, and **30 of the 56 machines are now in a head-to-head,
+up from 13**. The grid is appended last, so every pair that already had an address keeps it.
+
+**The grouping is the honest part of the rule and it rejects three machines it might have taken.**
+The Corsair AI Workstation 300 at $1,700 and at $4,700 look like one machine at two sizes and are
+not: the cheaper one is a Ryzen AI Max 385 with 32 compute units against the Max+ 395's 40, so the
+money buys an APU as well as memory. The Framework Desktop 385 at 32GB and the Mac Studio M5 Max at
+36GB are the same case. None of them is paired. The Mac mini M6 pair *is* written, and it is the one
+place the two sides are not identical silicon — 153 GB/s against 170 — which the bandwidth row prints
+and the lede reads as "about 1.1× faster". Nothing on any of these pages claims only the memory
+differs.
+
+**The titles were the second half of the work.** "Mac mini M6, 16GB vs Mac mini M6, 32GB for local
+LLMs" is 53 characters of a 60-character budget spent saying the machine twice, and on the longer
+names it broke the limit: the first build of these pages **added seven titles over 60, worst 73**.
+A tier pair now names its machine once — **"Mac mini M6: 16GB vs 32GB"** — in the title, the h1, the
+breadcrumb and the description, which is also the shape of the query. **All 18 fit inside 60, and the
+site is back to the 7 over-length titles it had before**, all of them the known cross-family pairs.
+
+**Where both tiers hold the same models, the description stops counting them.** Four pages would have
+read "holds 27 of the 39 open models here, with 48GB 27" and then promised what the extra memory
+buys. On those pages what it buys is context, and that is what the page itself prints: the
+description now says so and quotes the same `contextHeadroom()` row count the table below it lists.
+The build's own duplicate-description check caught the first attempt at this, which had dropped the
+machine name and made four descriptions identical.
+
+**No figure is new data and no template changed.** The 18 pages run the same helpers and the same
+build checks as the other 95 comparisons; `checkPayback()`, `checkHeadroom()`, `checkCardPrices()`,
+the OG-card check and the reachable-from-both-sides check all applied without a line of new checking
+code. Word counts run 570 to 748.
+
+**What a tier page actually says**, because 18 pages nobody reads is not a win. Mac mini M6 16GB
+against 32GB: the 32GB holds 19 of 39 models against 10, and the nine it adds are named with what
+each needs at 32k — Qwen3.8 27B wants 19 GB against 10.5 GB usable. Mac Studio M5 Max 48GB against
+64GB: **both hold the same 27 models, so the page answers in context instead** — Gemma 4 31B it runs
+to 64k on the 48GB and 128k on the 64GB, and the figures are links that open the calculator there.
+Followed that one in a browser: at 128k the 48GB machine says "Nearly fits — needs 41.9 GB, this
+config has 36 GB usable" and the 64GB one runs it, which is the table's claim, from the calculator
+itself.
+
+**Verified.** `npm ci`, `npm test` (**179 tests**, up from 177: one holding the tier rule to the data
+— same family, chip and chip variant, priced, current, every tier of every such machine and not just
+the adjacent ones — and one holding the name-it-once title to `shortHardwareLabel` and to the 60
+characters), `npx tsc --noEmit`, `npm run build` all the way through `build:functions` with no
+workaround, and **four deliberate breakages**: letting discontinued machines in failed **1** test,
+ignoring the chip variant **2**, never writing the tier grid **1**, pairing only adjacent tiers **1**.
+Measured over HTTP in Chromium at 320, 360, 390, 430, 640, 768, 1024, 1280 and 1440px: **1,548 views,
+0 page overflows on any generated page, 0 of 4,833 tables scrolling**. The only three overflows in
+the whole sweep are `/` itself at 320, 360 and 390px, which is the calculator's top bar and already
+on the backlog. Read two of the new pages rendered end to end and one new OG card as a picture.
+
+**Nothing else on the site moved.** Built the whole page set from `origin/main` with `public/` wiped
+either side — `build:pages` does not clear it, and a first attempt at this comparison was
+contaminated by stale files from the previous build. Clean: **18 new, 22 changed, 203
+byte-identical, 0 removed**. The 22 are the 21 machine pages now in a tier pair, each diff a single
+line listing the head-to-heads it is in, and the sitemap, which gains exactly 18 URLs, **227** now.
+**No title, description, canonical, OG tag or JSON-LD line changed on any existing page**, checked by
+parsing every head element out of all 56 machine pages before and after.
+
+**Pushed as `568de38`, and the deploy is confirmed: run 98, green at 20:58 UTC**, with `npm ci`,
+`npm test` and the full build passing on the runner. The live URLs cannot be read from here — the
+egress policy still refuses `sunkcost.ai` — so the confirmation is the runner's, not a fetch.
+
+**PR #3's tenth repair, caused by this push, and for once not the import block.** The conflict was in
+the breadcrumbs: this branch adds `/compare/` as the step above a comparison, main now writes the
+leaf label from the page's own heading. Both kept, so a tier pair reads "Mac mini M6: 16GB vs 32GB"
+there too. Then the lesson from the last run paid for itself again — **the merge built clean and the
+page was still wrong**. The index's summary recounted itself correctly (66 machine match-ups, 30
+machines compared, cheapest the RTX 3060 at $329), but the section's own copy still read "one machine
+per family, the middle of its range by price" over a table that now holds card-against-card and
+tier-against-tier rows as well. It names all three rules now. Rebuilt on the branch (227 pages, 114
+comparisons, 184 tests, typecheck clean, the full build) and re-measured over HTTP (**1,530 views,
+0 overflows, 0 of 4,797 tables scrolling**) before pushing `ccfe26b`.
+
+**And then its eleventh, when Ryan's two merges landed twenty minutes later**: four conflicted files
+rather than one, the details in Ryan's side above. The one worth repeating is `src/list-card.ts`,
+where this branch's `compareIndexCard` and main's `memoryCard` end in the same three lines, so the
+conflict markers fell either side of a seam that belonged to both functions and neither was closed.
+Both cards are drawn now — four list cards in all — and the branch builds 228 pages with 201 tests.
+Pushed as `3cda5bd`.
+
+**Merged main was checked here too, since two merge commits a minute apart had not seen each other's
+code**: 196 tests, typecheck clean, the full build at 227 pages, and one figure that answers an open
+backlog item — the build's own link check now reports **"every page is linked from at least 2 other
+pages"** where it used to say 1, which is `/how-much-memory/` doing exactly what that item predicted
+it would.
+
+**What to continue.** **The question pages are the top item again and nothing is in the way of them
+any more**, which has not been true for fourteen runs: `/how-much-memory/` is on main with its page
+type, its helpers and its card, so the next one — "best GPU for local LLMs" is the strongest
+candidate — is far less work than the first was. After that, the coverage gap is down to **26
+machines in no head-to-head**, 13 previous-generation Macs and 13 current machines that are the only
+tier of their exact silicon; the four Strix Halo boxes among them are the best-defined piece of it
+and the backlog item below says why. Only PR #3 is still open, and it now carries eleven repairs.
 
 ### 2026-09-17 — every graphics card gets a head-to-head, and 20 new pages go live
 
