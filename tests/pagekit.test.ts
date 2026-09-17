@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
+  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, computeView, contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf,
   contextCappedBy, fmtDuration, fmtNum, fmtUsd, longestContext,
   hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, machinesConsidered, machineVerdict, modelVerdict, otherQuantisations, pageGraph, pageShell,
   priceRivals, priceWithScope, priceWithScopeText, runnersFor, runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, speedWithBasis,
@@ -730,8 +730,8 @@ describe('what memory buys once two machines hold the same models', () => {
   });
 
   it('opens the calculator on the configuration the length was measured at', () => {
-    // A machine page prints the longest context it holds each model at and makes
-    // that figure the way in. The link is only honest if the calculator reads
+    // Machine pages and model pages both print the longest context a machine holds
+    // a model at and make that figure the way in. The link is only honest if the calculator reads
     // back the same machine, the same model and the same length — and if that
     // configuration still fits once it gets there. The cache type is the quiet
     // one: longestContext() measures at the dataset's default, and the query
@@ -753,5 +753,23 @@ describe('what memory buys once two machines hold the same models', () => {
       }
     }
     expect(checked).toBeGreaterThan(600);
+  });
+
+  it('never sends a model page reader to a shorter window than the row is priced at', () => {
+    // Every other figure in a model page's row — the speed, the pay-back — is
+    // quoted at the context the page assumes, and the machines listed are the ones
+    // that hold the model there. So the length beside them can only ever be that
+    // context or longer, and the way in cannot quietly downgrade the reader.
+    const ctx = data.defaults.context.default_tokens;
+    let checked = 0;
+    for (const m of data.models) {
+      for (const r of cheapestPerFamily(runnersFor(m, data))) {
+        const holds = longestContext(m, r.hw, data);
+        expect(holds).not.toBeNull();
+        expect(holds!).toBeGreaterThanOrEqual(ctx);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(300);
   });
 });
