@@ -94,6 +94,16 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       kept. After resolving, `npm test` and `npm run build:pages` catch any miss, because
       `checkLinks()` fails on a page nothing links to and both guards recompute their own figures.
 
+- [ ] Merge (or close) [PR #9](https://github.com/rlindsey2/sunkcost/pull/9), the calculator's own
+      footer. It is a pull request rather than a push because it is markup and CSS a visitor reads
+      on the calculator, which is the standing rule here. Three files: `index.html`, `src/styles.css`
+      and one `describe` block in `tests/pagekit.test.ts`. **It collides with nothing.** Checked with
+      a real test merge against `main`, against PR #7 and against PR #8: clean on all three, because
+      neither of the other two touches `index.html` or `src/styles.css`, and this one touches
+      nothing they do. It should therefore not need the hourly repair those two have needed
+      twenty-odd times between them. Verified before opening on `main` at `3cda750`: 233 tests,
+      typecheck clean, the full `npm run build`, and the page rendered and read at 360px and 1280px.
+
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
       fastest a PR has gone in here by a wide margin, and the first that did not need a single merge
@@ -389,23 +399,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       build says so itself now — **"every page is linked from at least 2 other pages"**, and the
       check holds that floor, so a page cannot drop back to one without failing the build.
       Re-measured on merged main at 21:30 on 2026-09-17. Nothing further is wanted.
-- [ ] **No page on the site lists all 56 machines, and nothing is served at `/hardware/` or
-      `/models/` at all.** Found 2026-09-18 while grouping the head-to-heads. `/leaderboard/` is the
-      index of models, `/best/` is by level of use and `/compare/` is the index of match-ups, but the
-      two biggest page families — 56 machines and 55 models, 111 of the 249 pages — have no hub of
-      their own, and the build writes no `index.html` in either directory. Nothing on the site links
-      the bare addresses, so no internal link is broken, and what a Pages deploy serves at
-      `https://sunkcost.ai/hardware/` could not be checked from here: the egress policy refuses the
-      site. A reader who truncates a URL, and a crawler that tries the same, most likely gets a 404.
-      The page worth writing is the machine index: all 56 with price, usable memory, models that fit,
-      the best one each runs and pay-back, each price a prefilled calculator link the way
-      `/leaderboard/` already does it. It answers "local LLM hardware" as a list rather than as an
-      opinion, and it is the natural middle step in every machine page's breadcrumb, which is two
-      levels where three are available. `/models/` is the weaker half: `/leaderboard/` already lists
-      every model, so a second index of the same 55 would be the duplicate this site does not write —
-      better to leave it or to decide it is `/leaderboard/`'s address. **It is a new page, so it is a
-      pull request**, and PR #7 and PR #8 are both open and already collide with each other in six
-      files; a third would collide with both. Worth doing as soon as that queue clears.
+- [x] The foot of every page named three of the site's four top-level pages. Done 2026-09-18, and
+      the omission was the one with the most behind it: `/compare/`, the index of all 133
+      head-to-heads, sat at 187 inbound pages where the other three had 248. It is 248 now, and the
+      footer is one list in `src/pagekit.ts` that `checkFooter()` holds every page to, so a page
+      written at the top level of the site cannot be added without it. The calculator's own foot,
+      which is the other half and the more valuable one, is PR #9. The run entry below has the
+      figures and the four breaks that proved the guard.
+
+- [x] **No page on the site listed all 56 machines, and nothing was served at `/hardware/` or
+      `/models/` at all.** Done 2026-09-18 as [PR #10](https://github.com/rlindsey2/sunkcost/pull/10),
+      and the item's own reading of the value was right for the wrong reason: the page is worth having
+      as a hub, but what it turned up is that **39 of the 56 machines top out at the same model**,
+      from a $999 Mac mini to an $18,000 card. All 56 in one table, grouped by family, each row with
+      price, usable memory, models held, the strongest of them with that machine's speed on it, and
+      pay-back; `/hardware/` is in the footer of all 249 pages and is the new middle step in every
+      machine page's breadcrumb. The run entry below has the figures, the two faults reading it
+      turned up and the five breaks that proved the guard. The `/models/` half of this item stays
+      closed for the reason the item gave: `/leaderboard/` already lists every model, so a second
+      index of the same 55 would be a duplicate.
 
 - [ ] Question pages for the searches people actually type. **Still the top item, and three of them
       are now written.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
@@ -432,6 +444,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       so the figures exist; what is missing is the page that puts a monthly bill against a monthly
       electricity cost at each level of use. Worth doing only after PR #8 merges, since it would sit
       on the same helpers.
+- [ ] `/hardware/` answers "which machine" and `/leaderboard/` answers "which model", and neither
+      names the other in its own table. Found 2026-09-18 while writing the machine index. The
+      leaderboard's last column is the next model down; the machine index's last column is pay-back.
+      Each links the other in its lede and both sit in the footer, so this is not an orphan problem —
+      it is that a reader on the leaderboard who has picked a model has to go to that model's page to
+      find the machines, and a reader on `/hardware/` who has picked a machine has to go to that
+      machine's page to find the models. Whether that second click is a fault or a feature is the
+      question to settle before writing anything; the pages are indexes and an index that answers
+      both questions at once is the table nobody can read. Probably leave, but worth one look.
+
 - [x] The model pages have the mirror of what the machine pages gained on 2026-09-17. Done
       2026-09-17, and the item undersold it twice over: 16 model pages, not ten, and what the
       omission hid is not a missing machine but a wrong price. On 12 of the 16 the cheapest machine
@@ -542,20 +564,33 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       also missed the worst of it, which was not in the band at all — see the leaderboard note in
       the run entry below. 0 of the 362 tables scroll at any width from 320 to 1440px now.
 
-- [ ] The leaderboard's table is 8,134px tall on a phone, because a 7-column row becomes 6 lines
-      and there are 55 of them. "Good at" is four dots and "Weights" is "17 GB"; either pair of
-      short columns could share a line and save about a line a row. `stack()` would need to be
-      told which columns are short enough to sit together, and the grid rules would place them on
-      the same row. Only worth doing if the length reads as a problem — nothing is hidden. The
-      same page is now 4,208px on a desktop, up from 3,377, which is the price of showing the two
-      columns it used to hide; that one is not worth chasing.
+- [ ] What is left of the leaderboard's table on a phone. **The half that read badly is fixed**, on
+      2026-09-18: the eight hosted rows repeated *Runs in someone else's data centre. You cannot
+      download it.* eight times down the first screenful, and that is said once above the block now,
+      with each row carrying the score the index gives it with reasoning turned down. The run entry
+      below has the figures and the five breaks that proved the guard.
+      **The length is not the problem it looked like and is still open.** Measured at 360px the table
+      is 8,410px over 57 rows, and each row reads cleanly: name and score on one line, then Class,
+      Good at, Weights, Cheapest and Then under it. Nothing is cramped and nothing is hidden. The
+      pairing this item proposed does work — "Good at" renders 52px wide and "Weights" 42px, so with
+      their labels the two sit in 326px with room over — but it saves about 1,100px of 8,410, which
+      is not what makes the page long.
+      **The bigger one is elsewhere**: `/compare/` is 20,986px on a phone, its machine table alone
+      13,002px over 86 rows, and `/how-much-memory/` is 16,294px. If a pairing rule is written it
+      should be written for `stack()` and applied wherever it fits, not for the leaderboard alone.
+      The leaderboard is 4,208px on a desktop, which is not worth chasing.
 
-- [ ] The calculator's own page scrolls sideways on a phone. Measured over HTTP at 320, 360 and
-      390px: the page is 398px wide at all three, so the whole thing shifts under a sideways swipe.
-      It is the top bar — `.topbar-end`, holding the "Data checked" stamp and the icon button, is
-      398px wide and does not wrap. At 430px it fits. None of the 188 generated pages does this at
-      any width from 320 to 1440px; this is index.html and src/styles.css only, so the fix is a
-      pull request rather than a push. Turned up while measuring the model pages on 2026-09-17.
+- [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
+      Re-measured in Chromium at 360px on 2026-09-18 while reading PR #9's footer: the document is
+      373px wide, and the two elements that reach past the edge are `.topbar-end` and the icon
+      button inside it, both ending at 373. Nothing else on the page does — the new footer ends at
+      exactly 360. The earlier 398px was measured before the top bar's contents changed; the fault
+      is the same one, which is that `.topbar-end` holds the "Data checked" stamp and the theme
+      button on one line and does not wrap. At 430px it fits. None of the 249 generated pages does
+      this at any width from 320 to 1440px; this is index.html and src/styles.css only, so the fix
+      is a pull request rather than a push. It was deliberately left out of PR #9 rather than folded
+      in: a footer and a top bar are different faults, and a reviewer reading a PR about one should
+      not have to review the other.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -603,6 +638,249 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the 56 machines finally have a list of their own
+
+**Why this item.** The backlog put the machine index behind the pull-request queue, and the queue
+has not cleared: PR #7, #8 and #9 were all still open at the start of this run, a day after the last
+of them was written. All three were checked against `main` first and all three still merge clean, so
+there was nothing to repair and no reason to spend the run on one. The item said "worth doing as
+soon as that queue clears"; three more push-shaped polish runs while the biggest structural gap on
+the site sits unwritten is the worse trade, so this run wrote the page.
+
+**What was missing.** Nothing was served at `/hardware/` at all. The build wrote 56 machine
+directories under it and no `index.html`, so a reader who cut a machine's address back — and a
+crawler that tried the same — got a 404. `/leaderboard/` is the index of models, `/best/` ranks by
+level of use and `/compare/` lists the 133 match-ups; the 56 machines, the largest page family on the
+site, had no list in front of them and their breadcrumbs had two levels where three were available.
+
+**What the page says.** All 56 configurations in one table, grouped by family, families in the order
+of what the cheapest of them costs, and inside a family the machines you can still buy first. Six
+columns: the machine, its price, the memory its GPU can address against the memory fitted, how many
+of the 39 open models it holds at 32k, the strongest of those with that machine's speed on it, and
+how long that pair takes to pay back. Every figure is read from the same view the machine's own page
+is built from, so the index and the page behind it cannot drift apart, and every price opens the
+calculator on that machine running the model beside it. The two machines with no published price say
+so and offer the calculator's own price box instead of a figure nobody published.
+
+**The page's own answer is not the one it was drafted with.** The first version of the opening
+paragraph said more money buys a bigger model. The table says otherwise: **39 of the 56 machines top
+out at the same model**, Qwen3.8 27B, and that run goes from a $999 Mac mini M4, 32GB to an $18,000
+RTX PRO 6000 Blackwell. The strongest model a machine holds changes in **four steps** across the whole
+range; five machines hold something stronger than the plateau, the cheapest of them the $7,099 Mac
+Studio M3 Ultra, 256GB, and two hold all 39. So the paragraph says what the data says: more money
+buys memory, memory buys a stronger model in only four steps, and between the steps it buys speed,
+spare memory and a longer window. Pay-back runs the other way, because the strongest model a machine
+holds is the slowest thing it can run: at 500k tokens a day the quickest figure in the table is 13
+years and the slowest is 1,044.
+
+**Two faults found by reading it rather than diffing it.** The share card at eight family rows put
+"of 39" under each figure and that second line ran into the row beneath it, which is the same fault
+the best-gpu card had at seven rows; the denominator is in the column heading now and the rows are
+one line each. And the strongest-model column printed the same name 39 times, which on a phone is
+the leaderboard's own hosted-row fault in another place — so the cell carries that machine's speed on
+that model as well, which is different on every row and is a figure people shop on.
+
+**What else moved.** `/hardware/` joins the footer every page carries, which `checkFooter()` forces
+rather than permits: a page written at the top level of the site fails the build unless the footer
+names it. The 56 machine pages gain it as the step above them, so their breadcrumbs and their
+BreadcrumbList now read Sunk Cost / Hardware / the machine. `familyGroup()` moved into
+`src/pagekit.ts` so the table's group headings and the card's rows name a family the same way.
+
+**The guard.** `checkHardwareIndex()` recomputes every row from the data: the count, the strongest
+model, the speed, the pay-back and the calculator link, on all 56; that the index lists every machine
+the build writes a page for; and that every machine page passes through it. Proved by five breaks,
+each caught with the row named: dropping the Mac mini M6, 32GB from the table (*has no row for*,
+and *does not list /hardware/mac-mini-m6-32/*), printing one model more than each machine holds,
+naming the second-strongest model instead of the strongest, moving every pay-back figure a year, and
+taking the new step out of the machine pages' breadcrumbs.
+
+**Verified**: 235 tests where there were 230, typecheck clean, the full `npm run build` at exit 0
+including `build:og`, `build:share` and `build:functions`, 249 pages with every guard passing.
+Measured in Chromium at 320, 360, 390, 430, 768, 1024, 1280 and 1440px: nothing overflows the window
+at any width and the table never scrolls sideways; it is 8,040px on a phone over 64 rows, in line
+with the leaderboard's 8,410. The page and its card were read rendered at 360 and 1280px before
+committing.
+
+**Where it is.** [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), branch
+`seo/hardware-index`. It merges clean into `main` and against PR #9. It **conflicts with PR #7 and
+PR #8**, which also add a list-page card: the import lists in `scripts/build-og.ts`,
+`src/list-card.ts` and `tests/list-card.test.ts`, and the card registry in `build-og.ts`. Whichever
+merges first, the repair on the others is the union of those lists, the same repair two earlier runs
+made by hand.
+
+**What to continue.** Four pull requests are now open and none has been reviewed. The next run
+should check all four against `main` before anything else and repair whichever has gone stale; a
+fifth branch is not worth opening while four wait. If they all still merge clean, the push-shaped
+work left is the pairing rule for `stack()` on the long tables — `/compare/` at 20,986px on a phone
+is the worst, not the leaderboard — and after that the monthly-cost question page, which is still
+waiting on PR #8.
+
+### 2026-09-18 — the leaderboard said the same thing eight times before it said anything
+
+**Why this item.** All three pull requests were still open at the start of this run, so a new page
+would have been a fourth branch colliding with the three, and the machine index at `/hardware/` has
+to wait for that queue. The last entry named the push-shaped work to take instead, and this run took
+it: the hosted rows at the top of `/leaderboard/` on a phone.
+
+**What was wrong.** The leaderboard opens with eight hosted models, from Anthropic and OpenAI, so
+the open models have a scale to be read against. Every one of them carried the same sentence in its
+own row: *Runs in someone else's data centre. You cannot download it.* On a wide screen that is one
+cell inside a row and reads as a group. On a phone, where `stack()` turns a row into a block, it was
+a two-line paragraph repeated **eight times** down the first screenful, before the reader reached
+the first model they can actually download. The last entry called it seven; it is eight, because
+`frontier_reference` has eight entries.
+
+**What it says now.** One heading above the block, which is where a thing true of all eight belongs:
+*Hosted models, here for scale. You cannot download any of these; they run in someone else's data
+centre.* Each row then keeps the one thing only it knows, and it is a figure the site already had
+and printed nowhere: **the score the index gives that model with its reasoning turned down**.
+`score_alt` is in `data/defaults.json` on all eight, and `frontier_reference_note` says what it is:
+the non-reasoning or lowest-effort figure where Artificial Analysis reports both. So GPT-6 Astra
+reads 53, *or 45 with reasoning turned down*; Claude Opus 5 reads 51, *or 40*; GPT-5.6 Luna 38,
+*or 17*. No figure was invented and none was changed. The note under the table already told the
+reader that hybrid models are shown at their highest-effort score with the alternative on each
+model's page, and it now adds that the hosted rows carry theirs beside the score.
+
+**That gap is worth a reader's attention, which is the second reason for showing it.** The page's
+own lede says the best open model scores 42 against the best hosted 53, *the thing no amount of
+hardware closes*. Six of the eight hosted models fall below that 42 with reasoning turned down: only
+GPT-6 Astra at 45 and Claude Fable 5.1 at 47 stay above it. The page
+does not draw that conclusion, because the index's two figures are not measured at the same cost and
+the site does not model effort settings; it prints both and leaves it there.
+
+**A class that meant two things now means one.** `is-frontier` marked both a heading row inside a
+table (three of those, on the machine pages and `/best/`) and a hosted data row on the leaderboard,
+and the phone stylesheet is written for the first: `padding: 14px 1px 4px; border-bottom: 0;
+background: none`. So the eight hosted rows were being styled as eight group headings, which is why
+they lost their rules and ran together. Hosted rows are `is-hosted` now. On a wide screen they look
+exactly as they did, tint and all; on a phone they keep the rule underneath and read as eight rows
+under one heading.
+
+**Measured, at 360px in Chromium, both figures taken in this run with the same tooling so they
+compare:** the table was **8,483px over 56 rows** before and is **8,410px over 57** after, so the
+table is 73px shorter having gained a row. Length was never the fault and this does not fix it. What
+changed is that the first screenful now carries eight different facts instead of the same one eight
+times. Nothing overflows: the widest element on the page ends at exactly 360.
+
+**The guard.** `checkLeaderboardLinks()` holds four claims about the block, and the fourth is the one
+that keeps this from coming back: **the sentence is said once, above the rows, not inside them**.
+The others are one row per hosted model in the data, no hosted row offering hardware you can buy,
+and the second figure equal to the data's own `score_alt`. Proved by five breaks, each caught with
+the row named: dropping the heading (*says a hosted model is not a download 0 times, and it belongs
+once, in the heading above the hosted rows*), putting the sentence back in every row (*tells the
+reader inside GPT-6 Astra's own row … which a phone repeats once a row*), printing `score_alt + 1`
+(*does not give GPT-6 Astra the 45 the index scores it at with reasoning turned down*), moving the
+heading below the block, and giving a hosted row a calculator link. The build now says what it holds:
+*ranks 8 hosted models alongside the open ones, 8 of them also at the score the index gives them with
+reasoning turned down, and says once above the block that none of them is a download*.
+
+**Verified**: 230 tests, typecheck clean, 248 pages with every guard passing, and the full
+`npm run build` including `build:og`, `build:share` and `build:functions`. The page was read as
+rendered at 360, 768 and 1280px rather than diffed, and reads as finished at all three.
+
+**The commit and the deploy.** `cf0ee16` on `main`. Its own run, 131, was cancelled three minutes
+in by the push of this entry, which is the workflow's concurrency rule doing what it is for rather
+than a failure. **Run 132, on `f8edf39`, carried both and finished green at 06:51**, so the page is
+live. A run that pushes its work and its log a few minutes apart will keep reading as one cancelled
+deploy and one green one; the green one is the one that matters, and it carries both commits.
+
+**All three pull requests still merge clean against this push**, checked with a real test merge of
+each rather than assumed, so none needed the repair the last seventeen entries have recorded. The
+change sits in `leaderboard()` and in two CSS rules, and none of the three branches touches either.
+
+**Continue next: the machine index at `/hardware/`**, still the biggest gap the log has found, and
+still waiting on the pull-request queue, which is three deep and has been since 05:53. If it is
+still three deep at the next run, the push-shaped work left is `stack()`'s pairing rule, which the
+last entry measured and this one leaves open: `Good at` renders 52px and `Weights` 42px at 360px, so
+the two could share a line wherever `stack()` is used, and `/compare/` at 20,986px on a phone would
+gain more from it than the leaderboard did.
+
+### 2026-09-18 — the page everything links back to linked back to half the site
+
+**Why this item, and it was not on the list.** PR #7 and PR #8 are both still open, so a new page
+would be a third pull request colliding with both, and the two push-shaped items the last entry
+named are judgement calls it said to read the page before doing. Both were read. The leaderboard's
+phone table does not read as the problem the item assumed, and the backlog item now says so and says
+what does read badly there. Reading it turned up something better: **the home page links to two of
+the site's four top-level pages, and the foot of every generated page links to three.**
+
+**What was actually wrong.** Counted on the built site rather than guessed: `/leaderboard/`, `/best/`
+and `/how-much-memory/` each had **248 inbound pages** — every page on the site, because the footer
+in `pageShell()` names them. `/compare/` had **187**, the pages that happen to mention a match-up in
+their own text. It is the index of 133 comparisons and it was the one hub a reader could finish a
+page without meeting. And `index.html`, the page all 248 generated pages link back to and the one
+external links land on, has **no footer at all**: its only route onward is two links in the models
+aside, the leaderboard and the best buys.
+
+**What changed, and where each half went:**
+
+- **On `main` (`3cda750`, and `305728a` for its wording):** the footer is a list, `FOOTER_LINKS` in
+  `src/pagekit.ts`, rather than markup in the shell, and it names `/compare/` as *Every head-to-head*.
+  248 pages, `/compare/` from 187 inbound to 248.
+- **As [PR #9](https://github.com/rlindsey2/sunkcost/pull/9):** `index.html` gains the same footer,
+  in the same order and the same words, less its link back to itself. It is the calculator, so it is
+  a pull request, which is the standing rule here.
+
+**The guard.** `checkFooter()` holds three claims, and the first is the one that matters as the site
+grows: **a page written at the top level of this site stands above the machines and the models, so
+it belongs at the foot of every page**, and adding one without adding it there stops the build. The
+other two are that the footer links nothing the build does not write, and that every page carries
+the same footer, so a page type cannot grow one of its own. Proved by four breaks, each caught with
+the page named: dropping `/compare/` from the list (caught as *`/compare/` sits at the top level of
+the site and the foot of every page walks past it*), pointing the list at `/comparisons/`, taking
+the footer out of the shell (248), and giving `/best/` a footer of its own (1).
+
+**A word the guard printed was wrong before either open PR could merge, and was corrected rather
+than left.** The first version said *is an index of the site*. `/best-gpu/` and
+`/local-llm-vs-api-cost/` are both top-level pages and neither indexes anything — they answer a
+question — so the message would have been false the moment either merged. `305728a` says *sits at
+the top level of the site* instead. Wording only; no page changed.
+
+**PR #9 collides with nothing, which is deliberate.** Checked with real test merges, not guessed:
+clean against `main`, against PR #7 and against PR #8. It touches `index.html`, `src/styles.css` and
+one `describe` block; neither of the other two branches touches either file, and it touches nothing
+they do. That should spare it the hourly repair those two have needed twenty-odd times between them.
+The 84px that kept the last pane clear of the fixed mini bar on a phone moves to the footer, which
+is the last thing on the page now, and the footer was read as rendered at 360px and 1280px rather
+than diffed.
+
+**Verified**: 230 tests on `main` (226 before, four new in `tests/pagekit.test.ts`) and 233 on the
+branch (three more, holding the home page's footer to `FOOTER_LINKS` so the two cannot drift apart
+the way the fonts block could before its own test); typecheck clean on both; 248 pages with every
+guard passing; and the full `npm run build` including `build:og`, `build:share` and `build:functions`
+on both. The footer was read as rendered text on a machine page at 360px and 1200px, where it wraps
+to three lines and one.
+
+**The deploy.** `3cda750`, run 128, green at **05:51**.
+
+**Both pull requests stopped merging, and both were repaired in this run** — the seventeenth time
+the log has recorded it. Both conflicts were the import lists and the footer, every hunk a union, and
+**both branches had already written their own page into that footer**, so the repair was to move
+each one's entry into `FOOTER_LINKS` keeping its own words: *Which graphics card* on PR #7, *What a
+token costs either way* on PR #8. Verified on each branch rather than assumed: **238 tests, typecheck
+clean, 249 pages with every guard passing and the full build**, on both. PR #7 is now `a5c4ece` and
+PR #8 `cd6e83d`, and each merges clean against `main` at `305728a`, checked with a real merge.
+
+**PR #8 was carrying 24 KB of build output, and this run dropped it.** `public/best-gpu/index.html`
+— a page the *other* branch generates — was committed to PR #8 by the 04:53 merge repair, because
+only PR #7's `.gitignore` covers that directory and PR #8's does not. Nothing was lost: it is
+generated by `npm run build:pages`.
+
+**Their collision with each other is unchanged in shape and has one more hunk.** Measured with a real
+test merge: the same six files, and `FOOTER_LINKS` is now a seventh hunk in `src/pagekit.ts` — a
+plain union, one line each, keep both. **The one hunk that can still quietly lose something is
+unchanged**: the closing `<p class="note">` on `/best/`, where PR #7 links `/best-gpu/` and PR #8
+links `/local-llm-vs-api-cost/` in different edits to the same paragraph. Taking either side whole
+drops the other page's link. Both edits have to be kept.
+
+**Continue next: the machine index at `/hardware/`**, still the biggest gap the log has found. It is
+a new page and wants the PR queue to clear, and the queue is now three. If all three are still open
+at the next run, the push-shaped work left is the frontier rows on the leaderboard's phone layout,
+which this run measured and narrowed the backlog item to: seven rows repeating the same sentence
+seven times, an inch apart. That is a real fault rather than a judgement call, and it is `stack()`
+plus the frontier rows in `scripts/build-pages.ts`, so it is a push.
+
 
 ### 2026-09-18 — the models two machines share are not held to the same length
 

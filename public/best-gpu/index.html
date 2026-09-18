@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Best GPU for local LLMs: what seven cards really run</title>
+<meta name="description" content="What each graphics card here holds at 32k context, the strongest open model it runs, how fast, and how much use it takes before it pays for itself." />
+<meta name="theme-color" content="#f1f3f2" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0b1014" media="(prefers-color-scheme: dark)" />
+<link rel="canonical" href="https://sunkcost.ai/best-gpu/" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Sunk Cost" />
+<meta property="og:title" content="Best GPU for local LLMs: what seven cards really run" />
+<meta property="og:description" content="What each graphics card here holds at 32k context, the strongest open model it runs, how fast, and how much use it takes before it pays for itself." />
+<meta property="og:image" content="https://sunkcost.ai/og/best-gpu.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Best GPU for local LLMs: what seven cards really run" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preload" href="/fonts/instrument-sans-v4-400-700-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/fonts/ibm-plex-mono-v20-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="/page.css" />
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://sunkcost.ai/#website","url":"https://sunkcost.ai/","name":"Sunk Cost","description":"Works out whether buying a machine to run open models at home pays back against API prices."},{"@type":"WebPage","@id":"https://sunkcost.ai/best-gpu/#webpage","url":"https://sunkcost.ai/best-gpu/","name":"Best GPU for local LLMs: what seven cards really run","description":"What each graphics card here holds at 32k context, the strongest open model it runs, how fast, and how much use it takes before it pays for itself.","isPartOf":{"@id":"https://sunkcost.ai/#website"},"breadcrumb":{"@id":"https://sunkcost.ai/best-gpu/#breadcrumb"},"primaryImageOfPage":{"@type":"ImageObject","url":"https://sunkcost.ai/og/best-gpu.png","width":1200,"height":630}},{"@type":"BreadcrumbList","@id":"https://sunkcost.ai/best-gpu/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Sunk Cost","item":"https://sunkcost.ai/"},{"@type":"ListItem","position":2,"name":"Which graphics card","item":"https://sunkcost.ai/best-gpu/"}]}]}</script>
+</head>
+<body class="doc">
+<header class="topbar">
+  <a class="topbar-brand" href="/">
+    <span class="mark" aria-hidden="true"></span>
+    <span class="wordmark">Sunk Cost</span>
+    <span class="domain">sunkcost.ai</span>
+  </a>
+  <nav class="topbar-line" aria-label="Breadcrumb">
+    <a href="/">Sunk Cost</a><span class="sep">/</span><a href="/best-gpu/">Which graphics card</a>
+  </nav>
+  <span class="stamp">Data checked 2026-09-03</span>
+</header>
+<main class="doc-main">
+<article class="prose">
+<h1>Which graphics card should you buy for local LLMs?</h1>
+<p class="lede">Memory decides what you can run; bandwidth decides how fast it runs. Seven cards are priced here, from $329 to $18,000 for the card alone, and they are closer together than that gap suggests. The strongest open model any of them holds is Qwen3.8 27B, and the cheapest card that holds it is the Radeon AI PRO R9700, 32GB at $1,299, card only. The RTX PRO 6000 Blackwell, 96GB at $18,000 runs more models and runs them faster. It does not run a better one.</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">What decides it</span><span class="answer-v">Memory first: the weights and the cache for your context window have to fit in the card at the same time. Bandwidth second: it sets the speed.</span></div>
+  <div class="answer-row"><span class="answer-k">Best model a card runs</span><span class="answer-v"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a>, Sonnet-class. Five of the seven cards hold it at 32k context, the cheapest being the <a href="/hardware/radeon-ai-pro-r9700-32/">Radeon AI PRO R9700, 32GB</a> at $1,299, card only.</span></div>
+  <div class="answer-row"><span class="answer-k">Best open model there is</span><span class="answer-v"><a href="/models/glm-5.3-flash-ud-q4/">GLM-5.3-Flash</a>, 189 GB of weights. No card here holds it. The cheapest machine that does is the <a href="/hardware/mac-studio-m5-ultra-256/">Mac Studio M5 Ultra, 256GB</a> at $10,799.</span></div>
+  <div class="answer-row"><span class="answer-k">Does one pay for itself</span><span class="answer-v">Not at ordinary use. At 20M tokens a day — agents running most of the day — the quickest here is the GeForce RTX 3060, 12GB, in 4.0 months on Ministral 3 8B — the cheapest card working a small model, not the best card working a good one.</span></div>
+</div>
+
+<p><a class="cta" href="/?hw=radeon-ai-pro-r9700-32&amp;m=qwen3.8-27b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">Run the numbers on the Radeon AI PRO R9700, 32GB with Qwen3.8 27B</a></p>
+
+<h2>Every card here, side by side</h2>
+<p>What each one holds at 32k context, counted against the 39 current models, with the strongest of them and how fast it runs. Each price opens the calculator on that card and that model.</p>
+<table class="board stack">
+<thead><tr><th>Card</th><th>Price</th><th>Usable memory</th><th>Bandwidth</th><th>Models it runs</th><th>Strongest of them</th><th>Speed on it</th></tr></thead>
+<tbody><tr>
+  <td class="k-name c-hw"><a href="/hardware/rtx-pro-6000-blackwell-96/">RTX PRO 6000 Blackwell, 96GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=rtx-pro-6000-blackwell-96&amp;m=qwen3.8-27b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$18,000</a><span class="c-quant">card only</span></td>
+  <td class="k-sub" data-label="Usable">95 GB</td>
+  <td class="k-sub" data-label="Bandwidth">1,792 GB/s</td>
+  <td class="k-fig"><b>33</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a> <span class="dim">Sonnet-class</span></td>
+  <td class="k-sub" data-label="Speed">78 tok/s <span class="dim">estimated</span></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/radeon-ai-pro-r9700-32/">Radeon AI PRO R9700, 32GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=radeon-ai-pro-r9700-32&amp;m=qwen3.8-27b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$1,299</a><span class="c-quant">card only</span></td>
+  <td class="k-sub" data-label="Usable">31 GB</td>
+  <td class="k-sub" data-label="Bandwidth">640 GB/s</td>
+  <td class="k-fig"><b>27</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a> <span class="dim">Sonnet-class</span></td>
+  <td class="k-sub" data-label="Speed">30 tok/s <span class="dim">estimated</span></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-5090-32/">GeForce RTX 5090, 32GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=geforce-rtx-5090-32&amp;m=qwen3.8-27b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$1,999</a><span class="c-quant">card only</span></td>
+  <td class="k-sub" data-label="Usable">31 GB</td>
+  <td class="k-sub" data-label="Bandwidth">1,792 GB/s</td>
+  <td class="k-fig"><b>27</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a> <span class="dim">Sonnet-class</span></td>
+  <td class="k-sub" data-label="Speed">66 tok/s <span class="dim">estimated</span></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-3090-24/">GeForce RTX 3090, 24GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=geforce-rtx-3090-24&amp;m=qwen3.8-27b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$1,499</a><span class="c-quant">card only, at launch</span></td>
+  <td class="k-sub" data-label="Usable">23 GB</td>
+  <td class="k-sub" data-label="Bandwidth">936 GB/s</td>
+  <td class="k-fig"><b>24</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a> <span class="dim">Sonnet-class</span></td>
+  <td class="k-sub" data-label="Speed">38 tok/s <span class="dim">estimated</span></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-4090-24/">GeForce RTX 4090, 24GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=geforce-rtx-4090-24&amp;m=qwen3.8-27b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$1,599</a><span class="c-quant">card only, at launch</span></td>
+  <td class="k-sub" data-label="Usable">23 GB</td>
+  <td class="k-sub" data-label="Bandwidth">1,008 GB/s</td>
+  <td class="k-fig"><b>24</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a> <span class="dim">Sonnet-class</span></td>
+  <td class="k-sub" data-label="Speed">44 tok/s <span class="dim">estimated</span></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-4080-16/">GeForce RTX 4080, 16GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=geforce-rtx-4080-16&amp;m=gemma-4-12b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$1,199</a><span class="c-quant">card only, at launch</span></td>
+  <td class="k-sub" data-label="Usable">15 GB</td>
+  <td class="k-sub" data-label="Bandwidth">717 GB/s</td>
+  <td class="k-fig"><b>13</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/gemma-4-12b-q4/">Gemma 4 12B</a> <span class="dim">Below every hosted tier</span></td>
+  <td class="k-sub" data-label="Speed">74 tok/s <span class="dim">estimated</span></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-3060-12/">GeForce RTX 3060, 12GB</a></td>
+  <td class="k-sub" data-label="Price"><a class="dim" href="/?hw=geforce-rtx-3060-12&amp;m=gemma-4-12b-q4&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">$329</a><span class="c-quant">card only, at launch</span></td>
+  <td class="k-sub" data-label="Usable">11 GB</td>
+  <td class="k-sub" data-label="Bandwidth">360 GB/s</td>
+  <td class="k-fig"><b>11</b> <span class="dim">of 39</span></td>
+  <td class="k-sub c-model" data-label="Strongest"><a href="/models/gemma-4-12b-q4/">Gemma 4 12B</a> <span class="dim">Below every hosted tier</span></td>
+  <td class="k-sub" data-label="Speed">38 tok/s <span class="dim">estimated</span></td>
+</tr></tbody>
+</table>
+<p class="note">Prices are the card on its own: none of them includes the computer you put it in. Four of the seven are previous-generation cards priced at what they launched at, which is not what you would pay for one today — each card's own page says what to enter instead. Usable memory is what a model gets after the card's own overhead, and speed is on the strongest model in the row, so the column is not a race between equals.</p>
+
+<h2>Memory is the gate</h2>
+<p>A card runs a model or it does not, and nothing about the card changes that except how much memory it has. Qwen3.8 27B is 16 GB of weights before a single token of context, and the cache on top grows with every token you keep. That sum, and not the price, is what puts a model on a card. <a href="/how-much-memory/">How the two add up</a> is a page of its own.</p>
+<p>It is also where these cards stop. Six of the 34 current models with an index score fit none of the seven cards, and the three strongest open models on the site are among them: <a href="/models/glm-5.3-flash-ud-q4/">GLM-5.3-Flash</a>, <a href="/models/qwen3.8-flash-next-q4/">Qwen3.8 Flash Next</a> and <a href="/models/deepseek-v4-flash-ud-q4/">DeepSeek V4-Flash</a>. The dearest card on the list, 95 GB of memory for $18,000, holds none of them either. For a model that size you are buying unified memory instead: GLM-5.3-Flash runs on the <a href="/hardware/mac-studio-m5-ultra-256/">Mac Studio M5 Ultra, 256GB</a> at $10,799, and on nothing cheaper.</p>
+
+<h2>Bandwidth is the speed</h2>
+<p>Once a model fits, the card reads every active weight for every token it writes, so tokens a second tracks memory bandwidth more closely than anything else on the spec sheet. On Qwen3.8 27B the RTX PRO 6000 Blackwell, 96GB does 78 tok/s <span class="dim">estimated</span> at 1,792 GB/s, against 30 tok/s <span class="dim">estimated</span> for the Radeon AI PRO R9700, 32GB at 640 GB/s. Same model, same context, 2.8× the bandwidth.</p>
+<p>Every speed on this page is estimated rather than measured, but not out of thin air: each card's estimate is calibrated against that card's own measured llama.cpp runs, which are listed with their sources on its page. Estimates for small models run high, so read them as an upper bound rather than a promise.</p>
+
+<h2>What the same money buys with a computer around it</h2>
+<p>A card's price here buys the card. You still need the machine it goes in, and this site does not guess at what you would build, so every figure above leaves that cost out. What it can show is what the same money already holds when the computer comes with it. Each card is set against the complete machine nearest it in price, with both prices printed, so a near miss is visible rather than smoothed over.</p>
+<table class="board stack">
+<thead><tr><th>Card</th><th>Its memory</th><th>Models</th><th>Nearest complete computer</th><th>Its memory</th><th>Models</th></tr></thead>
+<tbody><tr>
+  <td class="k-name c-hw"><a href="/hardware/rtx-pro-6000-blackwell-96/">RTX PRO 6000 Blackwell, 96GB</a> <span class="dim">$18,000, card only</span></td>
+  <td class="k-sub" data-label="Card memory">95 GB</td>
+  <td class="k-fig"><b>33</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/mac-studio-m5-ultra-256/">Mac Studio M5 Ultra, 256GB</a> <span class="dim">$10,799</span></td>
+  <td class="k-sub" data-label="Its memory">192 GB</td>
+  <td class="k-sub" data-label="Its models"><b>38</b></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/radeon-ai-pro-r9700-32/">Radeon AI PRO R9700, 32GB</a> <span class="dim">$1,299, card only</span></td>
+  <td class="k-sub" data-label="Card memory">31 GB</td>
+  <td class="k-fig"><b>27</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/mac-mini-m6-32/">Mac mini M6, 32GB</a> <span class="dim">$1,299</span></td>
+  <td class="k-sub" data-label="Its memory">21 GB</td>
+  <td class="k-sub" data-label="Its models"><b>19</b></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-5090-32/">GeForce RTX 5090, 32GB</a> <span class="dim">$1,999, card only</span></td>
+  <td class="k-sub" data-label="Card memory">31 GB</td>
+  <td class="k-fig"><b>27</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/macbook-pro-14-m5-16/">MacBook Pro M5 (14-inch), 16GB</a> <span class="dim">$1,999</span></td>
+  <td class="k-sub" data-label="Its memory">10.5 GB</td>
+  <td class="k-sub" data-label="Its models"><b>10</b></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-3090-24/">GeForce RTX 3090, 24GB</a> <span class="dim">$1,499, card only</span></td>
+  <td class="k-sub" data-label="Card memory">23 GB</td>
+  <td class="k-fig"><b>24</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/macbook-air-m5-15-16/">MacBook Air M5 (15-inch), 16GB</a> <span class="dim">$1,499</span></td>
+  <td class="k-sub" data-label="Its memory">10.5 GB</td>
+  <td class="k-sub" data-label="Its models"><b>10</b></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-4090-24/">GeForce RTX 4090, 24GB</a> <span class="dim">$1,599, card only</span></td>
+  <td class="k-sub" data-label="Card memory">23 GB</td>
+  <td class="k-fig"><b>24</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/mac-mini-m5-pro-24/">Mac mini M5 Pro, 24GB</a> <span class="dim">$1,699</span></td>
+  <td class="k-sub" data-label="Its memory">16 GB</td>
+  <td class="k-sub" data-label="Its models"><b>13</b></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-4080-16/">GeForce RTX 4080, 16GB</a> <span class="dim">$1,199, card only</span></td>
+  <td class="k-sub" data-label="Card memory">15 GB</td>
+  <td class="k-fig"><b>13</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/framework-desktop-385-32/">Framework Desktop, 32GB</a> <span class="dim">$1,269</span></td>
+  <td class="k-sub" data-label="Its memory">24 GB</td>
+  <td class="k-sub" data-label="Its models"><b>24</b></td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-3060-12/">GeForce RTX 3060, 12GB</a> <span class="dim">$329, card only</span></td>
+  <td class="k-sub" data-label="Card memory">11 GB</td>
+  <td class="k-fig"><b>11</b></td>
+  <td class="k-sub c-hw" data-label="Computer"><a href="/hardware/mac-mini-m6-16/">Mac mini M6, 16GB</a> <span class="dim">$899</span></td>
+  <td class="k-sub" data-label="Its memory">10.5 GB</td>
+  <td class="k-sub" data-label="Its models"><b>10</b></td>
+</tr></tbody>
+</table>
+<p>On two of the seven the complete computer holds more models than the card does: the Mac Studio M5 Ultra, 256GB holds 38 where the RTX PRO 6000 Blackwell, 96GB holds 33, and the Framework Desktop, 32GB holds 24 where the GeForce RTX 4080, 16GB holds 13. The widest gap is the GeForce RTX 4080, 16GB: 11 models fewer than the Framework Desktop, 32GB, which costs $70 more and is a computer rather than a part for one. What the card has instead is bandwidth: 717 GB/s against 256 GB/s.</p>
+<p>Per gigabyte, most of these cards are the expensive way round. The GeForce RTX 3060, 12GB is $30 for each usable gigabyte and the RTX PRO 6000 Blackwell, 96GB is $189. The cheapest gigabyte in a complete computer is the <a href="/hardware/corsair-ai-workstation-300-64/">Strix Halo Corsair AI Workstation 300, 64GB</a> at $35, and it arrives with the computer attached. One card beats that — the GeForce RTX 3060, 12GB at $30 — and it is the smallest card here. Divide the price by the usable memory yourself: the two figures are in the tables above. What a card gives back is bandwidth, and only at the top of the range: two of the seven read memory faster than any complete computer here, at 1,792 GB/s against 1,200 GB/s for the <a href="/hardware/mac-studio-m5-ultra-96/">Mac Studio M5 Ultra, 96GB</a>. The other five are slower than that machine.</p>
+
+<h2>How much use it takes for a card to pay for itself</h2>
+<p>Everything above is at 500k tokens a day. Pay-back moves with how hard you work a machine, so here is each card at the five levels of use the calculator names, on whichever model it holds that gets there soonest. The levels run from a few chats a day to agents running most of the day.</p>
+<table class="board stack">
+<thead><tr><th>Card</th><th>Soonest on</th><th>50k a day</th><th>200k a day</th><th>1M a day</th><th>4M a day</th><th>20M a day</th></tr></thead>
+<tbody><tr>
+  <td class="k-name c-hw"><a href="/hardware/rtx-pro-6000-blackwell-96/">RTX PRO 6000 Blackwell, 96GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a></td>
+  <td class="k-sub" data-label="50k a day">2,273 years</td><td class="k-sub" data-label="200k a day">568 years</td><td class="k-sub" data-label="1M a day">114 years</td><td class="k-sub" data-label="4M a day">28 years</td><td class="k-fig">5.7 years</td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/radeon-ai-pro-r9700-32/">Radeon AI PRO R9700, 32GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a></td>
+  <td class="k-sub" data-label="50k a day">167 years</td><td class="k-sub" data-label="200k a day">42 years</td><td class="k-sub" data-label="1M a day">8.3 years</td><td class="k-sub" data-label="4M a day">2.1 years</td><td class="k-fig">5.0 months</td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-5090-32/">GeForce RTX 5090, 32GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a></td>
+  <td class="k-sub" data-label="50k a day">254 years</td><td class="k-sub" data-label="200k a day">64 years</td><td class="k-sub" data-label="1M a day">13 years</td><td class="k-sub" data-label="4M a day">3.2 years</td><td class="k-fig">7.6 months</td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-3090-24/">GeForce RTX 3090, 24GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a></td>
+  <td class="k-sub" data-label="50k a day">191 years</td><td class="k-sub" data-label="200k a day">48 years</td><td class="k-sub" data-label="1M a day">9.6 years</td><td class="k-sub" data-label="4M a day">2.4 years</td><td class="k-fig">5.7 months</td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-4090-24/">GeForce RTX 4090, 24GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a></td>
+  <td class="k-sub" data-label="50k a day">206 years</td><td class="k-sub" data-label="200k a day">51 years</td><td class="k-sub" data-label="1M a day">10 years</td><td class="k-sub" data-label="4M a day">2.6 years</td><td class="k-fig">6.2 months</td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-4080-16/">GeForce RTX 4080, 16GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/ministral-3-14b-q4/">Ministral 3 14B</a></td>
+  <td class="k-sub" data-label="50k a day">369 years</td><td class="k-sub" data-label="200k a day">92 years</td><td class="k-sub" data-label="1M a day">18 years</td><td class="k-sub" data-label="4M a day">4.6 years</td><td class="k-fig">11 months</td>
+</tr><tr>
+  <td class="k-name c-hw"><a href="/hardware/geforce-rtx-3060-12/">GeForce RTX 3060, 12GB</a></td>
+  <td class="k-sub c-model" data-label="Soonest on"><a href="/models/ministral-3-8b-q4/">Ministral 3 8B</a></td>
+  <td class="k-sub" data-label="50k a day">134 years</td><td class="k-sub" data-label="200k a day">34 years</td><td class="k-sub" data-label="1M a day">6.7 years</td><td class="k-sub" data-label="4M a day">20 months</td><td class="k-fig">4.0 months</td>
+</tr></tbody>
+</table>
+
+<p class="note">These are the best case for each card and they still run to years at anything short of constant use, because the pay-back is against renting the same model from an API, and the small models a card holds are the cheap ones to rent. The card price is also the whole of the outlay here, so a real build pays back later than the table says. For the same question asked the other way round — which machine pays back soonest at a level of use — see <a href="/best/">best buys by usage</a>.</p>
+
+<p class="note">Every figure is at 32k context and at the quantisation named on each model's page, with 15:1 input to output, $0.17 per kWh and today's API prices held flat. Models counted are the 39 current ones, the same set every machine page counts. Card prices are list or launch prices for the card alone, read on 2026-09-03, with the source on each card's page. Set two cards against each other in <a href="/compare/">the head-to-heads</a>, rank the models themselves on <a href="/leaderboard/">the leaderboard</a>, or <a href="/?hw=mac-studio-m5-max-64&amp;u=500000&amp;r=15&amp;kwh=0.17&amp;ctx=32768&amp;cs=80&amp;s=smartest">open the calculator</a> and enter what you actually paid.</p>
+</article>
+</main>
+<footer class="doc-foot">
+  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a> · <a href="/compare/">Every head-to-head</a> · <a href="/how-much-memory/">How much memory you need</a> · <a href="/best-gpu/">Which graphics card</a></p>
+</footer>
+</body>
+</html>

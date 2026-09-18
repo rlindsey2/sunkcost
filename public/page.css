@@ -163,15 +163,18 @@ a:hover { color: var(--ink); }
 .board thead th { text-align: left; font-size: 11.5px; font-weight: 500; color: var(--faint); padding: 8px 10px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
 .board td, .board tbody th { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .board tbody th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; }
-.board tr.is-frontier { background: var(--panel-3); }
-.board tr.is-frontier .c-model { font-weight: 600; }
+/* Two things wear the tint: a heading row that opens a group inside a table, and a
+   hosted row on the leaderboard, which is the yardstick the open models are read
+   against rather than something you can buy. */
+.board tr.is-frontier, .board tr.is-hosted { background: var(--panel-3); }
+.board tr.is-frontier .c-model, .board tr.is-hosted .c-model { font-weight: 600; }
 .c-model { min-width: 190px; }
 .c-model a { text-decoration-thickness: 1px; }
 .c-quant { font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-left: 7px; white-space: nowrap; }
 .c-score { white-space: nowrap; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .c-score .bar { display: inline-block; width: 84px; height: 6px; background: var(--panel-3); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-right: 8px; }
 .c-score .bar span { display: block; height: 100%; background: var(--w-2); }
-.is-frontier .c-score .bar span { background: var(--w-3); }
+.is-frontier .c-score .bar span, .is-hosted .c-score .bar span { background: var(--w-3); }
 .c-score abbr { text-decoration: none; color: var(--faint); cursor: help; }
 .c-vs { font-size: 12.5px; }
 .c-tier, .c-gb, .c-hw { font-size: 13px; color: var(--ink-2); }
@@ -270,6 +273,12 @@ a:hover { color: var(--ink); }
   .board.stack .k-wide { grid-column: 1 / -1; }
   .board.stack tr.is-frontier { padding: 14px 1px 4px; border-bottom: 0; background: none; }
   .board.stack tr.is-frontier .k-wide { font-size: 11.5px; color: var(--faint); }
+  /* A hosted row is a row and not a heading, so here it keeps the rule under it and
+     reads as one of eight rather than merging into the slab above. The tint goes at
+     this width: the block is set to the page edge, so the colour would run wider than
+     the table it belongs to, and the heading above the block already says what these
+     rows are. */
+  .board.stack tr.is-hosted { background: none; }
   .board.stack .c-quant { display: inline; }
   .board.stack .c-score .bar { width: 46px; margin-right: 6px; }
 }
