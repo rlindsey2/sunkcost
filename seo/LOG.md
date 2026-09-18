@@ -29,6 +29,26 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       can name — never inventing one, and stopping where a figure is missing — say so and the rule
       can be lifted for this the way it was lifted for the usage slider in PR #6.
 
+- [ ] **Two one-line data faults, both surfaced on 2026-09-18 by naming the source links, and both
+      in files the agent must not edit.**
+
+      **The calculator prints a `TODO:` to visitors.** `electricity.source` in `data/defaults.json`
+      reads "US EIA average residential retail price, ~17 cents/kWh in 2025. TODO: confirm the latest
+      monthly figure at eia.gov/electricity/monthly and update", and `src/render.ts:547` prints the
+      field whole in the assumptions panel. Confirmed rendered in Chromium on the built site: open
+      Assumptions on sunkcost.ai and the note is there, maintainer sentence and all. It is the one
+      rule this repository holds everywhere else — no process language in anything a visitor reads —
+      and it is live. The fix is to end the sentence at "in 2025." and keep the reminder wherever
+      reminders live; the figure itself is sourced and right, so nothing about the maths changes.
+
+      **Gemma 4 31B cites the same Hugging Face repository twice.**
+      `google/gemma-4-31b-it/raw/main/config.json` and `google/gemma-4-31B-it/raw/main/config.json`
+      are both in that model's `sources` in `data/models.json`, differing only in the case of one
+      letter. It was invisible while the page said "source 2, source 3"; now the page prints the two
+      repository names side by side and they read almost identically. One of them is the typo —
+      Hugging Face's own repository is `google/gemma-4-31b-it` — and dropping it leaves the page with
+      two sources instead of three. No figure changes either way.
+
 - [ ] **Two agent sessions keep running this hourly task at the same time, and they duplicate each
       other's work.** It has now happened at least twice: once around 03:38 on 2026-09-17 (see the run
       entry "a tablet stops swiping, and the leaderboard shows all seven columns", which ends with a
@@ -462,14 +482,13 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       `src/render.ts:542`, one line above. So both want the same shared home, `src/format.ts`, and
       both should ride the same pull request: it is one paragraph of one file, and two faults.
 
-- [ ] **The links under Sources name nothing.** Every machine page ends "source 1, source 2,
-      source 3, source 4" — 56 pages, 4 to 5 links each — and `/how-much-memory/` has a bare
-      "(source)" in the middle of a paragraph. Anchor text is one of the few things on a page that
-      says what is on the other end of a link, to a reader deciding whether to click and to a
-      crawler deciding what the link is worth, and a number says neither. The host would: *NVIDIA*,
-      *TechPowerUp*, *llama.cpp*. It is one line of `scripts/build-pages.ts` and the domain is in
-      the URL already, so nothing has to be invented; the question to settle first is what to print
-      when two sources share a host, which several machines have.
+- [x] **The links under Sources name nothing.** Done 2026-09-18, and the item undercounted it:
+      **111 pages and 259 links**, the 55 model pages as well as the 56 machine ones, plus the three
+      that printed the word *source* itself. The question it said to settle first is the whole design
+      and the data answers it three ways — the repository on Hugging Face and GitHub, the publisher
+      everywhere else, and the URL's own word for the page where one publisher is cited twice. The
+      run entry below has the figures, the 13 pages where the rule honestly stops, the five breaks
+      that proved it, and the guard that was written and thrown away for being unfireable.
 
 - [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
       appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
@@ -511,6 +530,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       kept in `seo/page-dates.json`. The run entry below has the design, the four breaks that proved
       the guard, and the one thing to know about it: the first record dates nothing, so the sitemap
       ships with no dates at all and fills in as pages change.
+
+- [ ] **The sitemap and the date ledger are written before any guard runs.** `scripts/build-pages.ts`
+      writes `sitemap.xml` and `seo/page-dates.json` at line 3824; every `check*()` runs after it. So a
+      build that fails a guard still leaves both on disk, fingerprinted from pages the guard refused,
+      and the next honest build reads them, finds a mismatch and publishes no lastmod for those pages.
+      It heals on the build after that, and CI cannot ship it, because a throwing guard fails the
+      deploy before anything is published. But a run that breaks a guard on purpose — which is how
+      every guard here is proved — silently costs the next build's dates, and the run that noticed
+      spent a while deciding whether it had shipped a fault. Found 2026-09-18 while proving
+      `checkSourceLinks()`. The fix is to write both after the guards pass, which is a move rather
+      than a rewrite; the question to settle first is that `checkCanonicals()` and `checkPageDates()`
+      both read `sitemap.xml` back off disk, so the move is not simply to the end of the file.
 
 - [ ] **The home page's date is read from `index.html` alone**, so a change made in `src/render.ts`
       or `src/main.ts` — the calculator's own words — does not date `/`. That is deliberate and it
@@ -957,6 +988,113 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — every source link stops being a number and says whose page it is
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job, and its
+top open item is the one the run before this one turned up while reading the machine pages: **56
+machine pages and 55 model pages ended in "source 1, source 2, source 3, source 4"**, 259 links in
+all. Anchor text is one of the few things on a page that says what is on the other end, to a reader
+deciding whether to click and to a crawler deciding what the link is worth, and a number says
+neither.
+
+**The question the item said to settle first is the whole design, and the data answers it three
+different ways.** It asked what to print when two sources share a host. Measured rather than
+guessed: **37 of the 56 machines and 35 of the 55 models cite one host twice**, so a rule that
+prints the host and stops would have produced "Hugging Face, Hugging Face" on 35 pages, which is
+the numbered list again with longer words.
+
+- **On Hugging Face and GitHub the host is not the answer, the repository is.** Every model on this
+  site cites Hugging Face and half the machines cite GitHub, and the repository is the name of the
+  thing: `bartowski/Qwen_Qwen3-8B-GGUF` says which weights the size was read off,
+  `Qwen/Qwen3-8B` says which config the architecture came from, `ggml-org/llama.cpp` says which
+  runtime. That alone settles all 91 model links and 16 of the machine ones, with nothing invented
+  and nothing repeated.
+- **Everywhere else the publisher is the answer**, from an explicit list of 31 hosts — Apple, Apple
+  Support, TechPowerUp, NVIDIA Newsroom, Daring Fireball, Low End Mac — and a host with no entry
+  keeps its own domain rather than being given a name nobody checked.
+- **Where a publisher is still cited twice, each link carries what its own URL says it is.** Apple
+  (specs) beside Apple (newsroom); Framework (configurator), Framework (blog) and bare Framework;
+  ggml-org/llama.cpp (discussion) beside ggml-org/llama.cpp (common.h), a file in a repository named
+  by the file. **41 of the 259 links carry one.** The words come from a closed list the path has to
+  match outright — specs, newsroom, news, issue, discussion, blog, config, comparison, review, store,
+  configurator — so no link is described by anything that is not in its own address.
+
+**The one place the rule stops, and it stops rather than guessing.** On **13 Mac pages** the two
+sources are `support.apple.com/en-us/121555` and `support.apple.com/en-us/103253`, two documents in a
+support system whose URLs are numbers. Nothing in either says which is which, and reading them is not
+possible from here (every outbound fetch is refused by the policy proxy), so both print **Apple
+Support** and the reader is told the truth: Apple Support published both. A repeat is still more than
+a number was, and the alternative was to describe a page nobody had read.
+
+**Three links that said the word itself go the same way.** `/how-much-memory/` closed its cache
+paragraph with a bare "(source)" and now names the header it reads, `ggml-org/llama.cpp`. On
+`/leaderboard/` and on every model page the index's own name carries the link instead — *Scores are
+the [Artificial Analysis Intelligence Index v4.3](…)* — which also retires the trailing "Score
+source." link at the end of every model page's score paragraph, since the sentence above it now goes
+to that model's own row.
+
+**`checkSourceLinks()` holds two claims and says plainly what it cannot hold.** No link anywhere on
+the site is named after nothing — a number, *source*, *here*, *this*, *read more* — and every link in
+a Sources line is named after its publisher, worked out from the URL in the guard rather than read
+off the page. What it cannot check is whether a name is the *right* one: it reads the page with the
+same function that wrote it, so a wrong entry in the publisher list would pass. That claim needs a
+second opinion rather than a second copy, so **tests/pagekit.test.ts names hosts and expects names**,
+and holds one host to one name so two publishers cannot collapse into one.
+
+**Five breaks, three caught by the build and two by the tests, and the split is the point.** The
+machine Sources line back to numbers, 336 faults — 168 from the sweep for links named after nothing
+and 168 from the publisher claim, which is the same fault counted from both ends. The cache note's
+bare "(source)", 1. A link named "here", 55 — one on every model page. Then the two the build genuinely cannot see: the
+repository no longer being the name on Hugging Face and GitHub, and every host answering "Apple" —
+**both passed the build and both failed the tests**, 2 and 5 of them. A sixth check was written and
+thrown away: a guard refusing two links printed under one name, which can never fire, because the
+builder appends the distinguishing word before the guard ever sees the page. Dead guard code reads
+like a held claim and is worse than none.
+
+**Verified.** 303 tests (9 new), `tsc --noEmit` clean, and the full `npm run build` end to end
+including `build:functions`. The 113 changed pages — 56 machines, 55 models, `/leaderboard/` and
+`/how-much-memory/`, and no comparison page — read rendered in Chromium at nine widths from 320 to
+1440px, served over HTTP: **0 elements past the window and 0 tables scrolling at any of them**, which
+was the real risk, because `bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF` is an unbroken 42
+characters and a 320px column is 271px. It wraps at its own slashes and hyphens. Three pages read as
+pictures before committing — a model page at 320px, the RTX PRO 6000 at 390px and a Mac mini at
+900px — and all three read as finished copy. Commit `a48ef96`, pushed to main; **deploy run 173 finished green at 20:59**, so all 111 pages are live.
+
+**PR #8 merges clean and did not work, which is this file's standing lesson arriving on schedule.**
+All three open pull requests were really merged into this push in throwaway worktrees rather than
+trusted to `git merge-tree`, which called all three clean. PR #12 (303 tests) and PR #10 (308 tests,
+254 pages, every guard passing) are green and need nothing. **PR #8 failed the new guard**: its own
+page closes with *Electricity is at United States prices (source)*, a link named after nothing that
+was fine the moment it was written and became a build failure when this push landed. Repaired on its
+branch (`6dec521`): it names **US EIA**, the agency that publishes the figure. 311 tests on the
+merged tree, typecheck clean, 254 pages with every guard passing, and the sentence read rendered.
+
+**Two things for Ryan, both in files this agent must not touch, and both surfaced by naming the
+links.** `data/models.json` has Gemma 4 31B citing **the same Hugging Face repository twice, differing
+only in case** — `google/gemma-4-31b-it` and `google/gemma-4-31B-it` — which was invisible as "source
+2, source 3" and is now two links reading almost identically. And the calculator's assumptions panel
+prints a **`TODO:` to visitors**: `electricity.source` in `data/defaults.json` ends "TODO: confirm the
+latest monthly figure at eia.gov/electricity/monthly and update", and `src/render.ts:547` prints the
+field whole. Confirmed rendered in Chromium on the built site, behind the assumptions disclosure.
+Both are one line of data each and neither is the agent's to edit.
+
+**One thing the breaks turned up about the ledger, worth knowing before the next run breaks a
+guard.** `seo/page-dates.json` and `sitemap.xml` are written at line 3824, *before* any guard runs,
+so a build that throws in a guard still leaves both on disk, written from the pages the guard
+refused. The "here" break above did exactly that: it stamped the 55 model pages with the
+fingerprints of a page carrying a link named *here*, and the next honest build then read those,
+found a mismatch and published no lastmod for any of them. It heals on the build after that, and it
+was checked here rather than assumed: **113 of 254 entries now carry 2026-09-18** — the 56 machines,
+the 55 models, `/leaderboard/` and `/how-much-memory/` — with the ledger clean against the commit.
+In CI it cannot ship, because a throwing guard fails the deploy before anything is published.
+Locally it costs one build's dates, silently.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8, which is now repaired and ready. The small pull
+request has three reasons to exist rather than two: `powerSourceLabel()`, `splitHardwareNote()` and
+now the `TODO` above all point at `src/render.ts`'s assumptions panel, and the first two want the
+same shared home in `src/format.ts`.
 
 ### 2026-09-18 — every machine note moves to the figure it is about
 
