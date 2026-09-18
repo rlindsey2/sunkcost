@@ -139,11 +139,12 @@ function checkLinks() {
  * on the site was the one hub a reader could finish a page without meeting.
  *
  * Three things hold, and the first is the one that matters when the site grows:
- * a page written at the top level of the site is an index, so it belongs at the
- * foot of every page, and adding one without adding it there stops the build.
- * The other two are that the footer links nothing this build does not write,
- * and that every page carries the same one, so a page type cannot quietly grow
- * a footer of its own.
+ * a page written at the top level of this site stands above the machines and
+ * the models rather than beside them, so it belongs at the foot of every page,
+ * and adding one without adding it there stops the build. The other two are
+ * that the footer links nothing this build does not write, and that every page
+ * carries the same one, so a page type cannot quietly grow a footer of its
+ * own.
  */
 function checkFooter() {
   const problems: string[] = [];
@@ -151,7 +152,7 @@ function checkFooter() {
   const named = new Set(FOOTER_LINKS.map((l) => l.href));
   // '/best/' splits to ['', 'best', ''] and '/models/x/' to one part more
   for (const p of paths.filter((p) => p.split('/').length === 3))
-    if (!named.has(p)) problems.push(`${p} is an index of the site and the foot of every page walks past it`);
+    if (!named.has(p)) problems.push(`${p} sits at the top level of the site and the foot of every page walks past it`);
   for (const { href } of FOOTER_LINKS)
     if (href !== '/' && !own.has(href)) problems.push(`the foot of every page links ${href}, which no page here writes`);
   const want = footerHtml();
@@ -164,7 +165,7 @@ function checkFooter() {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
     throw new Error(`${problems.length} problem${problems.length === 1 ? '' : 's'} with the footer that links every index`);
   }
-  console.log(`  ${meta.length} pages end with the same way back to all ${FOOTER_LINKS.length - 1} indexes and the calculator`);
+  console.log(`  ${meta.length} pages end with the same way back to the calculator and all ${FOOTER_LINKS.length - 1} pages above the machines and models`);
 }
 
 /**
