@@ -874,7 +874,9 @@ card and had never been drawn in this container. Drawn from `hardwareIndexCard()
 passed. The deploy runs `build:og` before `build:pages` every time, so it cannot reach CI.
 
 **Where it is.** `ecec366` on `seo/local-vs-api-cost` (PR #8) and `3d0b989` on `seo/hardware-index`
-(PR #10). Nothing was pushed to `main` but this entry, and nothing a visitor reads changed on the
+(PR #10). **Deploy run 158, on `5fbb320`, finished green at 14:55** and published; it carries this
+entry and nothing else, since the run's work went to the two branches. Nothing was pushed to `main`
+but this entry, and nothing a visitor reads changed on the
 live site. **Merging either still breaks the other**, as both items above say; the repair is the same
 union.
 
