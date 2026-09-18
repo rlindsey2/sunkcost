@@ -6,7 +6,7 @@ import {
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  priceWithScope, priceWithScopeText, runnersFor,
+  footerHtml, FOOTER_LINKS, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   strongestShared, tierLabel, tierName, widestHeadroom, type LdNode,
 } from '../src/pagekit';
@@ -1180,5 +1180,36 @@ describe('what a price on the page buys', () => {
     const note = cardScopeNote([odd, computers[0]]);
     expect(note).not.toContain('<b>');
     expect(note).toContain('&amp;');
+  });
+});
+
+describe('the way back to the indexes', () => {
+  it('names every index once, and the calculator', () => {
+    const foot = footerHtml();
+    for (const { href } of FOOTER_LINKS) expect(foot.match(new RegExp(`href="${href}"`, 'g'))).toHaveLength(1);
+    expect(foot.match(/<a /g)).toHaveLength(FOOTER_LINKS.length);
+    expect(FOOTER_LINKS.map((l) => l.href)).toContain('/compare/');
+  });
+
+  it('sends the reader to a page rather than to a redirect', () => {
+    for (const { href } of FOOTER_LINKS) expect(href.endsWith('/')).toBe(true);
+  });
+
+  it('says what each one answers rather than naming the address', () => {
+    for (const { label } of FOOTER_LINKS) {
+      expect(label.length).toBeGreaterThan(12);
+      expect(label).not.toMatch(/^\//);
+    }
+    expect(new Set(FOOTER_LINKS.map((l) => l.label)).size).toBe(FOOTER_LINKS.length);
+  });
+
+  it('is the footer every generated page ends with', () => {
+    const html = pageShell(
+      { title: 'T', description: 'D', canonical: '/models/x/', crumbs: [{ href: '/', label: 'Sunk Cost' }] },
+      '<article class="prose"><h1>T</h1></article>',
+      data,
+    );
+    expect(html).toContain(footerHtml());
+    expect(html.match(/<footer/g)).toHaveLength(1);
   });
 });

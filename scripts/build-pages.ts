@@ -10,7 +10,8 @@ import {
   appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, esc,
   familyHeading, familyRange, generationNames,
-  fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
+  fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
+  footerHtml, gbRange,
   gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
   machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
   modelVerdict, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
@@ -128,6 +129,42 @@ function checkLinks() {
   }
   const counts = paths.map((p) => inbound.get(p)!.size);
   console.log(`  every page is linked from at least ${Math.min(...counts)} other page${Math.min(...counts) === 1 ? '' : 's'}`);
+}
+
+/**
+ * Four pages here are indexes rather than answers, and the foot of the page is
+ * the only thing that offers all of them from everywhere. `/compare/` was not
+ * among them: it was reachable only from the 187 pages that happen to name a
+ * match-up, against 248 for the other three, so the index of every head-to-head
+ * on the site was the one hub a reader could finish a page without meeting.
+ *
+ * Three things hold, and the first is the one that matters when the site grows:
+ * a page written at the top level of the site is an index, so it belongs at the
+ * foot of every page, and adding one without adding it there stops the build.
+ * The other two are that the footer links nothing this build does not write,
+ * and that every page carries the same one, so a page type cannot quietly grow
+ * a footer of its own.
+ */
+function checkFooter() {
+  const problems: string[] = [];
+  const own = new Set(paths);
+  const named = new Set(FOOTER_LINKS.map((l) => l.href));
+  // '/best/' splits to ['', 'best', ''] and '/models/x/' to one part more
+  for (const p of paths.filter((p) => p.split('/').length === 3))
+    if (!named.has(p)) problems.push(`${p} is an index of the site and the foot of every page walks past it`);
+  for (const { href } of FOOTER_LINKS)
+    if (href !== '/' && !own.has(href)) problems.push(`the foot of every page links ${href}, which no page here writes`);
+  const want = footerHtml();
+  for (const p of meta) {
+    const foot = p.html.match(/<footer class="doc-foot">[\s\S]*?<\/footer>/)?.[0];
+    if (!foot) problems.push(`${p.path} ends without the footer every page carries`);
+    else if (foot !== want) problems.push(`${p.path} has a footer of its own rather than the site's`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} problem${problems.length === 1 ? '' : 's'} with the footer that links every index`);
+  }
+  console.log(`  ${meta.length} pages end with the same way back to all ${FOOTER_LINKS.length - 1} indexes and the calculator`);
 }
 
 /**
@@ -3308,6 +3345,7 @@ function checkCardScope() {
 
 checkMeta();
 checkLinks();
+checkFooter();
 checkHeadToHeads();
 checkCanonicals();
 checkOgCards();
