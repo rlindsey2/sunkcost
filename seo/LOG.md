@@ -119,7 +119,8 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
-      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge** (`8789b62`):
+      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge**, and repaired
+      again at 12:50 against the tier-label push (`b7c44e9`, one hunk, two guards on one list):
       16 union hunks in six files, the `/best/` note merged so both pages keep their link, a
       seventh footer entry carried into `index.html`, and one stray file dropped. Verified on the
       merged tree: 258 tests, typecheck clean, 254 pages with every guard passing, the full
@@ -176,7 +177,7 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 - [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
       machines at `/hardware/`. **Repaired against green `main` at 11:47 on 2026-09-18 and ready
-      to merge** (`81cd7d1`): 10 union hunks in four files, the build's own count line kept from
+      to merge**, and repaired again at 12:51 against the tier-label push (`0d16555`): 10 union hunks in four files, the build's own count line kept from
       this branch because `/hardware/` is a page rather than a machine, and `/hardware/` carried
       into `index.html`'s footer, which no conflict marker asked for. Verified on the merged tree:
       255 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`,
@@ -891,7 +892,19 @@ own footer entry in `FOOTER_LINKS`'s order. That is a repair of a few minutes, n
 either back.
 
 **Where it is.** Two pushes, no change to `main` but this entry: `8789b62` on
-`seo/local-vs-api-cost` and `81cd7d1` on `seo/hardware-index`. Whether the live site is serving the
+`seo/local-vs-api-cost` and `81cd7d1` on `seo/hardware-index`.
+
+**Both needed a second repair fifty minutes later, and that is the item's own lesson arriving on
+time.** `858e28c` landed on `main` at about 12:40 — the `.c-quant` tier label, which is the work
+this entry recommends next — and it appends `checkTierLabels()` to the guard list at the foot of
+`scripts/build-pages.ts`, which is the same list both branches append their own guard to. So both
+stopped merging again within the hour, in one file and one hunk each. Both are unions: main's guard
+and the branch's, side by side. PR #10's carries the same count-line decision as before, because
+main's commit also rewords that line. Repaired and pushed as `b7c44e9` and `0d16555`, each verified
+on its own merged tree — 259 and 256 tests, typecheck clean, 254 pages with every guard passing, and
+`checkTierLabels()` reporting its 311 labels on both trees. Both merge clean against `main` again.
+**A branch that touches the foot of `build-pages.ts` has a shelf life of about an hour here**, which
+is an argument for merging these two rather than for repairing them a third time. Whether the live site is serving the
 11:06 deploy could not be checked from here; `sunkcost.ai` is still off this environment's
 allow-list, which is the first item under Ryan's side above.
 
