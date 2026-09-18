@@ -438,6 +438,48 @@ export function dotRow(m: Model): string {
   ).join('')}</span>`;
 }
 
+/**
+ * The data's capability_note glues two different sentences together, and only
+ * one of them is about the model. "Not yet rated: released after our last
+ * ratings pass." is about this site's own five capability ratings, and 36 of
+ * the 55 models carry it; what follows is the description — what the model is
+ * for, what it needs, what it is quick at.
+ *
+ * A model page printed the whole thing as its opening paragraph, so 36 pages
+ * opened by telling the reader the model was unrated, and on 31 of them the
+ * next section printed the score: Qwen3.8 27B said "Not yet rated" and then
+ * scored 34. Split, each half says something where it lands. The description
+ * opens the page. The ratings line goes under the five ratings, which is the
+ * one place a reader is looking at a blank and wondering why.
+ */
+const RATING_SENTENCES = [
+  'Not yet rated: released after our last ratings pass.',
+  'Sizes and prices are current.',
+];
+
+export function splitCapabilityNote(note: string | null | undefined): { ratings: string; about: string } {
+  const text = (note ?? '').trim();
+  let cut = 0;
+  for (;;) {
+    const next = RATING_SENTENCES.find((s) => text.startsWith(s, cut));
+    if (!next) break;
+    cut += next.length;
+    while (text[cut] === ' ') cut++;
+  }
+  return { ratings: text.slice(0, cut).trim(), about: text.slice(cut).trim() };
+}
+
+/**
+ * A sentence that ends in a note out of the data ends where the note does. The
+ * architecture notes all carry their own full stop, so a template adding one
+ * printed "on all 80 layers.." on 41 model pages — a typo the data never had
+ * and the template could not see.
+ */
+export function endStop(text: string): string {
+  const t = text.trim();
+  return !t || /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
 export function tierScale(m: Model, data: Dataset): string {
   const tier = m.frontier_equivalent?.tier ?? null;
   const bars = data.defaults.frontier_tiers
