@@ -966,7 +966,16 @@ this run's branch and this file records three separate hours lost to two session
 branch a minute apart.
 
 **Where it is.** `20b1ab1` on `seo/topbar-narrow`, open as PR #12. Nothing was pushed to `main` but
-this entry, and nothing a visitor reads changes until PR #12 merges.
+this entry, and nothing a visitor reads changes until PR #12 merges. **Deploy run 162, on `9c93d38`,
+finished green at 17:11** and published.
+
+**One thing about reading that deploy is worth the next run's time.** This run watched run 162 for
+twenty minutes and twice wrote it down as stalled, because the workflow-runs endpoint kept answering
+`in_progress` with `updated_at` frozen at 17:05:56. It was not stalled. The job-level endpoint, asked
+at the same moment, had it finishing the build at 17:11:18 and publishing at 17:11:37, which is 5m45s
+end to end and within seconds of run 161's. **The runs list is cached and the job list is not**, so a
+deploy that looks stuck there is worth one look at its jobs before it is called stuck. Ryan was told
+it had stalled and then told it had not, which is one notification more than this was worth.
 
 **What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
 is still the biggest item and still waits on PR #8. The small pull request left is the assumptions
