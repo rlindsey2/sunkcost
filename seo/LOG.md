@@ -141,6 +141,28 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       merge rather than trusting a clean `git merge-tree` — which is the standing lesson here, and
       is precisely what the red `main` above shows the cost of skipping.
 
+- [ ] Merge (or close) **[PR #12](https://github.com/rlindsey2/sunkcost/pull/12)**, three lines of
+      `src/styles.css` that fix the calculator's top bar. **It collides with nothing**: PR #8 and
+      PR #10 touch nine files between them and neither goes near `src/styles.css`, and no test spans
+      that file and anything they do touch, which is the clause PR #9 got wrong. Opened 2026-09-18.
+      It is a pull request rather than a push because it is the calculator's own head, which is the
+      standing rule here. What it fixes: the page scrolled sideways at every phone width from 320 to
+      373px; the "Data checked" stamp sat mid-bar with the right gutter empty at every width from 374
+      to 899px; and the theme button drew a sun and a moon at once in the default light state, which
+      is what a first visit and a crawler both get. 274 tests, typecheck clean, the full build, and
+      0 elements past the window at 26 widths where three were.
+
+- [ ] **Merging PR #10 puts 23 KB of build output into `main`, and PR #8 will not clean it up.**
+      Found 2026-09-18. PR #10's branch tracks `public/local-llm-vs-api-cost/index.html`, a generated
+      page, and it is **PR #8's page rather than its own**. It arrived in `f87b28e`, a repair merge
+      that swept up an untracked file; it was untracked but not ignored because the `.gitignore` line
+      for that directory is part of PR #8's diff and lives on PR #8's branch, not on `main`. An ignore
+      rule does not untrack a tracked file, so merging PR #8 afterwards leaves it there, and every
+      build will then show it modified. **One `git rm --cached public/local-llm-vs-api-cost/index.html`
+      on PR #10's branch settles it.** Same shape as the `public/og/og/` find and three orders of
+      magnitude smaller. Left rather than pushed because PR #10 is not that run's branch and this file
+      records three hours lost to two sessions repairing one branch a minute apart.
+
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
       **Repaired again at 14:51 on 2026-09-18 against the marker push and ready to merge**
@@ -410,6 +432,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       see — the base Mac Studio M5 Max and M5 Ultra, whose entry configurations carry a cut-down
       GPU that no page on the site mentioned. **53 of the 56 machines are in a head-to-head where
       51 were.** The run entry below has the figures and the five breaks that proved the guard.
+
+- [x] **Every URL in the sitemap carried the same lastmod, and it was the wrong date.** Done
+      2026-09-18. All 254 carried `data_last_checked`, the day the prices were verified, which was
+      2026-09-03 and is not a page changing — so a comparison written that morning announced itself
+      as a fortnight old. Each entry is now dated by the day that page's own words last changed,
+      fingerprinted from its title, its description and the body between `<main>` and `</main>`, and
+      kept in `seo/page-dates.json`. The run entry below has the design, the four breaks that proved
+      the guard, and the one thing to know about it: the first record dates nothing, so the sitemap
+      ships with no dates at all and fills in as pages change.
+
+- [ ] **The home page's date is read from `index.html` alone**, so a change made in `src/render.ts`
+      or `src/main.ts` — the calculator's own words — does not date `/`. That is deliberate and it
+      is the safe direction to be wrong in: it under-states freshness rather than claiming it. It
+      would want revisiting only if the home page starts losing crawls, and there is no way to see
+      that from here. Written down 2026-09-18 so the next run does not read it as a bug.
 
 - [ ] **3 machines are still in no head-to-head, and all three are waiting on a price rather than
       on a rule.** The Mac Studio M5 Ultra, 512GB and the Framework Desktop 495 have no price at
@@ -709,7 +746,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       ruled out. 24,930px saved over 253 pages, the leaderboard 969px of it and `/how-much-memory/`
       1,109px. The run entry below has the figures and the six breaks that proved the guard.
 
-- [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
+- [x] The calculator's own page scrolls sideways on a phone. Done 2026-09-18 as
+      **[PR #12](https://github.com/rlindsey2/sunkcost/pull/12)**, and the item had the fault right
+      and its size wrong in both directions: **53px over at 320px**, a width it never looked at, and
+      the wrapping it proposed was not the fix. What it missed entirely is the larger half, which
+      overflowed nothing: hiding the tagline below 900px removes the row's only flex-grow item, so
+      the stamp and the theme button sat marooned at x=373 at **every width from 374 to 899px**. The
+      run entry below has the figures, the line that was measured and thrown away, the doubled theme
+      icon that reading the page turned up, and the three breaks that proved each line.
+      The original wording follows, kept for its measurements.
+      The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
       Re-measured in Chromium at 360px on 2026-09-18 while reading PR #9's footer: the document is
       373px wide, and the two elements that reach past the edge are `.topbar-end` and the icon
       button inside it, both ending at 373. Nothing else on the page does — the new footer ends at
@@ -821,12 +867,208 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       to a long window. Worth a look only if a page reads as repeating itself, and the question to
       answer first is whether the sentence earns its place now that all 334 figures are links.
 
+- [ ] **The calculator's page stops fitting below 307px, and the top bar is no longer what stops it.**
+      Measured 2026-09-18 after PR #12: the bar itself fits down to 303px, and the binding element is
+      `.chip.chip-standin`, 278px wide and 1px over its window at 306px. Every width this site tests
+      starts at 320, so nothing is wrong today. It is written down so the next run that sweeps the
+      home page knows what the floor is and does not read it as a new fault.
+
+- [ ] **`src/styles.css:98` declares `--ok-text`, `--warn-text` and `--bad-text` twice in a row**, with
+      identical values and the wrong indentation on the first of the pair, inside the
+      `prefers-color-scheme: dark` block. It changes nothing — the second wins and says the same thing —
+      so it is untidy rather than broken. Found 2026-09-18 while reading the file for PR #12 and
+      deliberately left out of it: a reviewer reading a pull request about the top bar should not have
+      to review a palette edit. One line to delete, and it should ride with the next pull request that
+      touches that file.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — the top bar fits a phone, and the theme button stops drawing two icons
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job. Its
+biggest item, the monthly-cost question page, still waits on PR #8, and neither PR #8 nor PR #10 has
+moved since yesterday. A third branch into `scripts/build-pages.ts` and `src/pagekit.ts` would add a
+conflict rather than a page. So the run took what the last entry named instead: the calculator's own
+top bar overflowing a 360px screen, which is `src/styles.css` only and collides with neither branch.
+It went out as **[PR #12](https://github.com/rlindsey2/sunkcost/pull/12)**, three lines.
+
+**The item had the fault right and its size wrong, in both directions.** It recorded 360px, where the
+document is 373px wide. Measured across 26 widths before anything was touched: the page is **53px
+over at 320px**, 33px at 340px and 13px at 360px. The item never looked at 320, which is the
+narrowest width every other sweep in this file uses.
+
+**And the bigger half was not in the item at all.** `.topbar-line`, the tagline, is the row's only
+`flex: 1 1 auto` item, and the layout hides it below 900px. Hiding it removed the thing that pushed
+the right-hand group to the edge, so **at every width from 374px to 899px the "Data checked" stamp
+and the theme button ended at x=373 and stayed there**, marooned mid-bar with the right gutter empty.
+That is most phones in landscape and every tablet in portrait, and no sweep had caught it because
+nothing was overflowing: the group sits inside the window, just in the wrong place. An auto left
+margin puts it back, and resolves to nothing at 900px and above, where the tagline already absorbs
+the free space. Above 899px the bar is pixel-for-pixel what it was.
+
+**What pays for the overflow is the domain, and the arithmetic says why.** Brand 160.3px plus an
+18px gap plus the 181px stamp group plus two 14px gutters wants 387.3px. `sunkcost.ai` beside the
+wordmark is 70px of that, counting its gap, and it is the part that says least: the reader is on
+sunkcost.ai and the wordmark beside it already says so. It goes below 420px. The boundary is on a
+knife edge in neither direction. The domain needs a 388px viewport, so it has 33px spare on the wide
+side, and dropping it leaves the bar fitting down to 303px.
+
+**One line was written, measured and thrown away**, which is worth recording because the arithmetic
+looked convincing. Narrowing the bar's gap from 18px to 12px at phone widths reads like 6px of
+headroom. It buys nothing: the page's floor is **307px either way**, because an overflowing flex row
+drops its right padding, so the bar stops being the binding element well before the page does. What
+sets 307 is `.chip-standin`, 1px over at 306px, and that is below every width the site tests. The fix
+is two lines rather than three because the third was measured instead of argued.
+
+**Then the rendered page turned up a fault nobody was looking for.** Reading the bar as a picture
+before committing, the theme button was drawing **a sun and a moon at once**, stacked and clipped
+inside a 30px box. `.icon-btn svg { display: block }` is a class plus an element; the bare
+`.i-moon { display: none }` under it is a class. The button rule wins on specificity, not on order.
+The dark and explicitly-chosen states were safe only because their selectors carry three points, so
+this broke in **exactly one of the six states, and it is the default one**: a light system with no
+theme chosen yet, which is what a first visit and a crawler both get. Matching the button in the
+moon's own rule settles it, and leaves the four rules under it ordered as they were. It had been live
+for as long as `.icon-btn svg` has existed, and eight sweeps of this page at sixteen widths never saw
+it, because every one of them measured geometry and none of them looked.
+
+**Three breaks, one per line, each bringing back its own fault and no other.** No auto margin: the
+stamp returns to x=373 at 430, 640 and 899px, with no overflow anywhere. Domain kept: 320, 340 and
+360px go back to 53, 33 and 13px over, with the right edge still correct. Moon rule at its old
+specificity: one of the six theme states shows two icons again, and it is the default one.
+
+**Verified.** 26 widths from 320 to 1440px in Chromium, reading every element's right edge against
+the document's client width: **0 elements past the window at any of them**, where three were. The
+420px boundary swept at 418, 419, 420, 421, 422 and 424px, the domain dropping at 420 and returning
+at 421 with no overflow either side. All six theme states show exactly one icon. 274 tests, `tsc
+--noEmit` clean, and the full `npm run build` end to end including `build:functions`. `src/styles.css`
+is the only changed file, and `seo/page-dates.json` is untouched, correctly: no generated page's words
+moved. The bar was read rendered at 320, 360, 430, 640 and 900px before committing.
+
+**The collision check was done by file list rather than by `git merge-tree`**, which is this file's
+standing lesson. This branch touches `src/styles.css`; PR #8 and PR #10 touch nine files between them
+and neither goes near it, and no test spans `src/styles.css` and anything they do touch. That last
+clause is the one PR #9 got wrong, so it is the one worth stating.
+
+**And the check turned up something on PR #10 that is not this run's to fix.** Its branch tracks
+`public/local-llm-vs-api-cost/index.html`, 23 KB of generated build output, and it is **PR #8's
+page**. It arrived in `f87b28e`, a repair merge that swept up an untracked file. It was untracked but
+not ignored because the `.gitignore` line for that directory is part of PR #8's diff and so lives on
+PR #8's branch, not on `main`. So merging PR #10 commits a stale copy of another branch's page into
+`main`, and merging PR #8 afterwards will not untrack it: an ignore rule does not remove a tracked
+file. One `git rm --cached` on PR #10's branch settles it. It is the same shape as the `public/og/og/`
+find and three orders of magnitude smaller, and it was left rather than pushed because PR #10 is not
+this run's branch and this file records three separate hours lost to two sessions repairing the same
+branch a minute apart.
+
+**Where it is.** `20b1ab1` on `seo/topbar-narrow`, open as PR #12. Nothing was pushed to `main` but
+this entry, and nothing a visitor reads changes until PR #12 merges. **Deploy run 162, on `9c93d38`,
+finished green at 17:11** and published.
+
+**One thing about reading that deploy is worth the next run's time.** This run watched run 162 for
+twenty minutes and twice wrote it down as stalled, because the workflow-runs endpoint kept answering
+`in_progress` with `updated_at` frozen at 17:05:56. It was not stalled. The job-level endpoint, asked
+at the same moment, had it finishing the build at 17:11:18 and publishing at 17:11:37, which is 5m45s
+end to end and within seconds of run 161's. **The runs list is cached and the job list is not**, so a
+deploy that looks stuck there is worth one look at its jobs before it is called stuck. Ryan was told
+it had stalled and then told it had not, which is one notification more than this was worth.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8. The small pull request left is the assumptions
+panel printing *stand in* at `src/render.ts:542`; it wants a shared home for four words in
+`src/format.ts`, and `index.html` is not involved, so it collides with nothing now. Worth knowing for
+whoever writes the next CSS fix: **eight geometry sweeps of the home page missed a doubled icon that
+was always there.** Measuring a layout is not the same as looking at it, and this run only caught it
+because the rules here say to open the page before committing.
+
+### 2026-09-18 — the sitemap stops telling crawlers the same wrong date 254 times
+
+**Why this item.** `npm run model-watch` said *done for today*, so the backlog was the job. Its top
+item — the monthly-cost question page — still waits on PR #8, because a third branch into the same
+four files adds a conflict rather than a page, and what is left below it is three items this file
+already marks *probably leave*. So the run went looking at what the build actually ships, and the
+sitemap was the first thing read.
+
+**Every one of the 254 URLs carried `<lastmod>2026-09-03</lastmod>`.** That is
+`data.defaults.data_last_checked`, the day the prices and scores were last verified. It is a real
+date about the data and it says nothing about a page: `/best-gpu/` was written on the 18th and
+announced itself as a fortnight old, and so did every comparison added since the 16th. A crawler
+uses lastmod to decide what to fetch again and how soon, and one date across a whole site is either
+ignored or believed, and believed is worse — it puts the newest pages at the wrong end of the queue.
+
+**What it says now.** The build fingerprints what a searcher actually reads on each page: the title,
+the description and the body between `<main>` and `</main>`. The header and the footer are left out
+on purpose, because a site-wide link changing is not 253 pages changing — this site has added a
+footer entry three times this week and each one would otherwise have claimed the whole site was new.
+The answers live in `seo/page-dates.json`, committed with the change they record. A page that still
+hashes to what is recorded keeps its date; one that differs, or one the file has not seen, changed,
+and the date is the day the build found it.
+
+**The rule that makes it safe is that the sitemap publishes a date only while the recorded
+fingerprint still matches the page.** The obvious design — date whatever changed in this build — has
+a failure nobody would notice: a record that was not committed alongside its change makes every
+later build see a mismatch and stamp *today* on the same page every day, for ever. Under the rule
+here that costs a few lastmods on one deploy instead, and the next build puts them back. That is the
+whole of the trade: a date is published only once it has been written down and the page still agrees
+with it.
+
+**The first record dates nothing, and that is the one thing worth knowing about this.** With nothing
+to compare against there is no honest per-page date to seed — a build is not evidence that 254 pages
+changed this morning, and the site's own rule is that a figure without a source does not get printed.
+A date is a figure. So the sitemap went out with **0 of 254** entries dated, where before it had 254
+wrong ones, and each page takes its real date the first time its content moves. On a site that
+changed nearly every page twice in the last two days that is days, not weeks, and a page added
+tomorrow is dated correctly from the start — which is the case that was costing something.
+
+**Four breaks proved `checkPageDates()`**, each run against the real build. A date in the future:
+refused. A date recorded for content the page no longer has, forced past `publishedDate()`: refused,
+naming the URL. A record reading *last Tuesday*: refused — it was already being dropped silently, and
+something dropped silently is something nobody fixes. Two `<lastmod>` elements on one URL: refused,
+all 254 of them. The mechanism itself was proved the same way rather than argued: one page's record
+was made to disagree with the page, and the next two builds dated **that page and no other**.
+
+**Verified.** 274 tests where `main` ran 259, the 15 new ones in `tests/page-dates.test.ts`; both of
+the design's two load-bearing rules were mutated in `src/page-dates.ts` and each took a test down
+with it. Typecheck clean. The full `npm run build`, `build:functions` included. 253 pages, every
+guard passing, and `dist/sitemap.xml` parsed as XML at 254 entries. The live file could not be read
+back — the egress policy still refuses `sunkcost.ai` — so the confirmation is deploy run 160, green
+at 15:58 on `874b9c5`.
+
+**Both open branches were repaired against it, because this push edits the file both live in.**
+PR #10 conflicted in one hunk, the guard call list, and the union keeps the branch's own count line —
+`/hardware/` is a page rather than a machine, so the 56 it counts must exclude it. PR #8 merged
+clean, and was built anyway, which is this file's standing lesson and paid again: `build:og` had not
+drawn that branch's own card in this container, the same environment fault as yesterday, and the
+deploy draws it every time so it cannot reach CI. Each merged tree was then built rather than
+trusted — PR #10: 279 tests, typecheck clean, 254 pages; PR #8: 282 tests, typecheck clean, 254
+pages. Both now merge clean into `main`.
+
+**And the merged trees showed the thing working on real changes.** PR #10 dates two pages: its new
+`/hardware/`, and `/` — the home page's own HTML gained a footer link. PR #8 dates 58: the new page,
+`/best/`, `/` and **all 55 model pages**, each of which gained a sentence in its body pointing at
+what a million tokens costs. Both counts were read out of the ledger and the model-page one was
+checked by finding the link inside `<main>` rather than taking the number on trust. One wrinkle
+worth naming: a branch's dates are the day the build found the change, so a page that sits unmerged
+for three days goes live carrying the earlier date. That under-states freshness, which is the safe
+direction, and the alternative is dating a page for a day nothing happened on it.
+
+**Where it is.** `874b9c5` on `main`, deploy run 160 green at 15:58 and published. `ab8dbc4` on
+`seo/hardware-index` and `59ff00c` on `seo/local-vs-api-cost`. Nothing a visitor reads changed:
+`sitemap.xml` and `robots.txt` are not pages, and no page's words were touched.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8. Of the small pull requests left, the calculator's
+top bar overflowing a 360px screen is CSS only and collides with neither branch; the assumptions
+panel printing *stand in* at `src/render.ts:542` is the other. And from the next run on there is a
+new habit to keep rather than a task: **`npm run build:pages` rewrites `seo/page-dates.json`, and it
+belongs in the same commit as the change it records.** Leaving it out costs that deploy's lastmods
+and nothing worse, and the build says so in its own line — look for how many of the sitemap entries
+carry a date.
+
 
 ### 2026-09-18 — a clean merge that was not a working one, twice over
 
