@@ -4,7 +4,7 @@ import {
   brandOf, calcLink, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
+  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelsInBand, modelVerdict,
   footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
@@ -1246,6 +1246,78 @@ describe('what memory buys once two machines hold the same models', () => {
       }
     }
     expect(checked).toBeGreaterThan(300);
+  });
+});
+
+describe('the machines that miss a model altogether', () => {
+  const ctx = data.defaults.context.default_tokens;
+  const shortest = Math.min(...data.defaults.context.options);
+
+  it('names only machines that hold the model at no window at all', () => {
+    let rows = 0;
+    for (const m of data.models) {
+      const runs = new Set(runnersFor(m, data).map((r) => r.hw.id));
+      const shorter = new Set(machinesShorter(m, data).map((r) => r.hw.id));
+      for (const r of missedMachines(m, data)) {
+        rows++;
+        // the three tables on a model page answer different questions, and a
+        // machine in two of them would read as a contradiction
+        expect(runs.has(r.hw.id)).toBe(false);
+        expect(shorter.has(r.hw.id)).toBe(false);
+        expect(longestContext(m, r.hw, data)).toBeNull();
+        for (const option of data.defaults.context.options) {
+          if (m.max_context_tokens != null && option > m.max_context_tokens) continue;
+          expect(footprintGb(m, option)!).toBeGreaterThan(r.hw.usable_memory_gb!);
+        }
+      }
+    }
+    expect(rows).toBeGreaterThan(0);
+  });
+
+  it('measures the gap at the shortest window the calculator offers', () => {
+    // the kindest reading a machine can get: anything longer would overstate how
+    // far short it falls, and the page prints the figure as the whole answer
+    for (const m of data.models) {
+      for (const r of missedMachines(m, data)) {
+        expect(r.needGb).toBeCloseTo(footprintGb(m, shortest)!, 6);
+        expect(r.shortGb).toBeCloseTo(r.needGb - r.hw.usable_memory_gb!, 6);
+        expect(r.shortGb).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('keeps one machine per family, the one that comes closest, nearest first', () => {
+    for (const m of data.models) {
+      const out = missedMachines(m, data);
+      const seen = new Set<string>();
+      let last = -Infinity;
+      for (const r of out) {
+        expect(seen.has(r.hw.family)).toBe(false);
+        seen.add(r.hw.family);
+        expect(r.shortGb).toBeGreaterThanOrEqual(last);
+        last = r.shortGb;
+        // the row a family gets is its roomiest machine, not any other
+        const roomiest = Math.max(
+          ...machinesConsidered(data).filter((h) => h.family === r.hw.family && longestContext(m, h, data) == null).map((h) => h.usable_memory_gb ?? 0),
+        );
+        expect(r.hw.usable_memory_gb).toBe(roomiest);
+      }
+    }
+  });
+
+  it('leaves out no family that misses the model, and adds none that does not', () => {
+    for (const m of data.models) {
+      const misses = machinesConsidered(data).filter((h) => longestContext(m, h, data) == null);
+      expect(new Set(missedMachines(m, data).map((r) => r.hw.family))).toEqual(new Set(misses.map((h) => h.family)));
+    }
+  });
+
+  it('is empty for a model every machine here holds', () => {
+    for (const m of data.models) {
+      if (machinesConsidered(data).every((h) => (footprintGb(m, ctx) ?? Infinity) <= (h.usable_memory_gb ?? 0))) {
+        expect(missedMachines(m, data)).toEqual([]);
+      }
+    }
   });
 });
 
