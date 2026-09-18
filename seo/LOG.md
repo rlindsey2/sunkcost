@@ -293,11 +293,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       calculator, so it is a pull request rather than a push, and it is small enough to ride with
       the next one that touches that file rather than justify a branch of its own.
 
-- [ ] The assumptions note on every machine comparison says "Graphics cards are priced as the card
-      alone, so add the PC around one before comparing it with a complete computer" — including on the
-      roughly 30 pages where neither side is a card, which is now most of them. It is true and it is
-      not a maintainer note, but it answers a question the page does not raise. One conditional, and
-      it would touch pages this run just proved byte-identical, so it wants its own run.
+- [x] The assumptions note on every machine comparison told the reader about graphics cards even
+      where neither side was one. Done 2026-09-18, and the item undercounted it: **53 of the 86
+      machine head-to-heads**, not roughly 30, and the same sentence was on all 56 machine pages
+      under their own comparison table. The fix was the one conditional the item proposed plus two
+      the item did not ask for: where one machine is a card the note **names it**, where both are it
+      says both rather than sending the reader looking for which one it means. 35 machine pages now
+      name their one card row, 19 with more than one keep the general sentence and 2 drop it. The
+      run entry below has the figures and the four breaks that proved the guard.
 
 - [x] The RTX PRO 6000's page listed 12 head-to-heads in one line of note text, and the Mac Studio
       M5 Max, 128GB page listed two of its own name back at it. Done 2026-09-18, and the fix was
@@ -598,6 +601,88 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — a caveat about graphics cards stops appearing on pages with no graphics card
+
+**Why this item and not the top one.** The top backlog item is still the question pages, and its one
+live candidate — "how much does it cost to run a local LLM per month" — sits on helpers that only
+exist on PR #8's branch. PR #7 and PR #8 are both still open, so a new page would be a third pull
+request colliding with both. The last entry named the next push-shaped item down, and this run took
+it.
+
+**What the sentence was doing.** Every machine head-to-head closed its assumptions note with
+*Graphics cards are priced as the card alone, so add the PC around one before comparing it with a
+complete computer.* True, and the reason it exists is a real one: $1,299 buys a Radeon AI PRO R9700
+or a Mac mini M6 with 32 GB, and both sit in the same tables here. But the note printed it whether or
+not a card was on the page. The item guessed roughly 30 pages; measured, it is **53 of the 86**
+machine head-to-heads where neither side is a card, and the same sentence sat under the comparison
+table on **all 56 machine pages**. A note that answers a question the page does not raise is how a
+reader learns to skip the notes, and these notes carry the things a reader does need — the usage,
+the electricity price, the context, which speeds are estimated.
+
+**What it says now**, worked out from the machines each page actually prints:
+
+- **53 machine head-to-heads** where neither side is a card say nothing about cards.
+- **12** where exactly one side is a card name it: *The Radeon AI PRO R9700, 32GB is priced as the
+  card alone, so add the PC around it before comparing it with a complete computer.* That is a
+  better sentence than the general one, because the reader no longer has to work out which column
+  it means.
+- **21** where both sides are cards say *Both are priced as the card alone, so neither figure
+  includes the PC to put it in.* The general sentence was actively unhelpful there: it told a
+  reader comparing two cards to add a PC around one of them.
+- On the machine pages, the same rule reads the rows of the "Other machines to weigh against it"
+  table. **35 of the 56** have exactly one card among their rows and now name it, **19** have more
+  than one and keep the general sentence, and **2** — the Framework Desktop 495 and the Mac Studio
+  M5 Ultra, 512GB, the two with no published price — have no card in the table and drop it.
+
+**What was deliberately not claimed.** The two-card sentence nearly read "so the gap between them is
+like for like". It was cut. Four of the seven cards are previous-generation and priced at what they
+launched at, which the lede on those pages already says, so "like for like" would have been a second
+claim about the price that the first one contradicts. What is true of all 21 is only that neither
+figure includes a PC, so that is all it says.
+
+**Nothing new is being asserted about a price.** The named-card wording is the caveat the lede of
+those same pages has carried since 2026-09-16, moved into the note that gives the reader the
+instruction. No figure moved, and `checkCardPrices()` — the older guard that refuses to print a
+card's price anywhere that does not say what it buys — still passes on all 249 pages.
+
+**The guard.** `checkCardScope()` recomputes the expected sentence from the data for every machine
+head-to-head and every machine page, then reads the page's own assumptions note back and holds three
+claims: the sentence appears where a card is priced, it is the right one of the three, and a page
+with no card in it does not mention cards. Proved by four breaks, each caught with the page and the
+sentence named: printing the old unconditional sentence everywhere (caught on the 53), dropping the
+caveat entirely (caught on the 33), using the general wording where one card should be named, and
+counting only a machine page's family rows and not its nearest-in-price rows.
+
+**Where the code went.** `cardScopeNote()` is in `src/pagekit.ts` beside `priceWithScope()`, which is
+where the rest of the card-price wording lives. It escapes the machine name it prints, because it
+goes into the page as markup. Neither `src/calc.ts`, `src/compute.ts`, `src/fit.ts` nor `data/*.json`
+was touched.
+
+**Verified**: 222 tests (215 before, seven new in `tests/pagekit.test.ts`), typecheck clean, 248
+pages with every guard passing, and the full `npm run build` including `build:og`, `build:share` and
+`build:functions`. All three wordings were read as rendered text on the page, and a no-card
+comparison was read end to end to check the note still runs on cleanly without it.
+
+**The deploy.** `eae0d85`, run 124, green at **03:49**.
+
+**Both pull requests stopped merging, and both were repaired in this run.** The push broke them
+within minutes, which is the pattern this log has recorded fourteen times: a branch touching
+`scripts/build-pages.ts` stops merging as soon as main does. Both conflicts were the same two files
+and every hunk was a union — the import list, two guards sharing a closing brace, and two `describe`
+blocks at the end of the test file. Resolved by keeping both sides of each, then verified on each
+branch rather than assumed: **230 tests, typecheck clean, 249 pages with every guard passing and the
+full build**, on both. PR #7 is now `f08d6cd` and PR #8 is `a058043`, and each merges clean against
+`main` at `eae0d85`. Their collision **with each other** is unchanged and its resolution is still in
+the Ryan's-side item above; nothing in this run touched the `/best/` paragraph that is the one hunk
+in it that can quietly lose a link.
+
+**Continue next: the machine index**, still the biggest gap the log has found — no page lists all 56
+machines and the build writes nothing at `/hardware/`. It is a new page, so it wants the PR queue to
+clear. If #7 and #8 are still open at the next run, the push-shaped work left on the list is the 21
+machine head-to-heads that answer the memory difference with the models one holds and the other does
+not and stop there, without saying what the memory buys on the models they share.
+
 
 ### 2026-09-18 — twelve links in one line become four short answers
 
