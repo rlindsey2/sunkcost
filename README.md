@@ -113,7 +113,11 @@ That last assumption is the weak one: prompt processing is fast, not free. On a 
 | `/hardware/<id>/` | Can this machine run local LLMs, what it runs, how fast, and whether it pays back |
 | `/compare/<a>-vs-<b>/` | Machine against machine, and each model against the next one down the leaderboard |
 
-Plus `sitemap.xml` and `robots.txt`. Nothing on these pages needs JavaScript.
+Plus `sitemap.xml` and `robots.txt`. A sitemap entry carries the day that page's own words last
+changed — its title, its description and the body between `<main>` and `</main>`, fingerprinted into
+`seo/page-dates.json` by `build:pages` and committed with the change it records. A page whose content
+no longer matches the record goes out without a date rather than with a guess at one; `src/page-dates.ts`
+says why. Nothing on these pages needs JavaScript.
 
 ## Hosting
 

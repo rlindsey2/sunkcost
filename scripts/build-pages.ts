@@ -32,6 +32,7 @@ import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
 import { fit, footprintGb, kvCacheGb } from '../src/fit';
+import { fingerprint, mainOf, nextDates, publishedDate, type PageDates } from '../src/page-dates';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 import type { ModelRow, View } from '../src/compute';
 
@@ -3859,11 +3860,29 @@ for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), compa
 // which is the comparison someone actually has to make
 for (const [a, b] of modelPairs(data)) write(modelComparePath(a, b), modelComparePage(a, b));
 
-const urls = ['/', ...paths]
-  .map((p) => `  <url><loc>${site}${p}</loc><lastmod>${data.defaults.data_last_checked}</lastmod></url>`)
+// A page's lastmod is the day its own words last changed, read out of
+// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
+// prices were checked, and why a page whose fingerprint has moved goes into the
+// sitemap without a date rather than with a guess at one.
+const datesFile = new URL('../seo/page-dates.json', import.meta.url);
+const recordedDates: PageDates | null = existsSync(datesFile)
+  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
+  : null;
+const fingerprints = [
+  // the home page has no body of its own; the calculator draws it
+  { path: '/', hash: fingerprint({ title: '', description: '', body: readFileSync(new URL('../index.html', import.meta.url), 'utf8') }) },
+  ...meta.map((p) => ({ path: p.path, hash: fingerprint({ title: p.title, description: p.description, body: mainOf(p.html) }) })),
+];
+const today = new Date().toISOString().slice(0, 10);
+const urls = fingerprints
+  .map(({ path, hash }) => {
+    const changed = publishedDate(recordedDates, path, hash);
+    return `  <url><loc>${site}${path}</loc>${changed ? `<lastmod>${changed}</lastmod>` : ''}</url>`;
+  })
   .join('\n');
 writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
+writeFileSync(datesFile, `${JSON.stringify(nextDates(recordedDates, fingerprints, today), null, 2)}\n`);
 /**
  * A generation head-to-head is the one page on the site that prices a machine nobody
  * sells, so it has more ways to mislead than any other. The launch price is the whole
@@ -4299,6 +4318,55 @@ function checkCardScope() {
   console.log(`  ${said} of the ${pairs + machines} machine head-to-heads and machine pages price a graphics card, and only those say what a card price leaves out`);
 }
 
+/**
+ * The sitemap's dates are a claim to a crawler, and a claim it stops reading once it
+ * catches one out. So: every date is a real day, none of them is in the future, no URL
+ * carries two, and a page only carries a date where seo/page-dates.json still recognises
+ * its content. The last is the one worth a build failing over — a date left behind by a
+ * page that has since changed is exactly the wrong signal, and it is the fault that
+ * cannot be seen by reading the sitemap.
+ */
+function checkPageDates() {
+  const problems: string[] = [];
+  const xml = readFileSync(new URL('sitemap.xml', outRoot), 'utf8');
+  const entries = [...xml.matchAll(/<url><loc>([^<]+)<\/loc>(.*?)<\/url>/g)];
+  const byPath = new Map(fingerprints.map((f) => [site + f.path, f.hash]));
+  let dated = 0;
+  for (const [, url, rest] of entries) {
+    const stamps = [...rest.matchAll(/<lastmod>([^<]*)<\/lastmod>/g)].map((m) => m[1]);
+    if (stamps.length > 1) problems.push(`${url} carries ${stamps.length} dates`);
+    if (!stamps.length) continue;
+    dated++;
+    const at = stamps[0];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(at)) problems.push(`${url} is dated "${at}", which is not a day`);
+    else if (at > today) problems.push(`${url} is dated ${at}, which has not happened yet`);
+    const hash = byPath.get(url);
+    const was = recordedDates?.pages?.[url.slice(site.length)];
+    if (!hash || !was || was.hash !== hash) problems.push(`${url} is dated ${at} but its content is not the content that date was recorded for`);
+    else if (was.changed !== at) problems.push(`${url} is dated ${at} where the record says ${was.changed}`);
+  }
+  // a record that cannot be read is dropped silently by publishedDate, and something
+  // dropped silently is something nobody fixes, so say it here instead
+  for (const [path, was] of Object.entries(recordedDates?.pages ?? {})) {
+    if (was.changed !== null && !/^\d{4}-\d{2}-\d{2}$/.test(was.changed)) problems.push(`${path} is recorded as changing "${was.changed}", which is not a day`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
+    throw new Error(`${problems.length} sitemap dates are wrong or cannot be read`);
+  }
+  // two different reasons a page has no date, and only one of them is a fault to fix
+  const waiting = fingerprints.filter((f) => recordedDates?.pages?.[f.path]?.hash === f.hash && !recordedDates.pages[f.path].changed).length;
+  const stale = entries.length - dated - waiting;
+  const why = [
+    waiting ? `${waiting} have not changed since the record began and take a date when they do` : '',
+    stale ? `${stale} changed since the record was last written and go out without one` : '',
+  ].filter(Boolean);
+  console.log(
+    `  ${dated} of ${entries.length} sitemap entries carry the day that page's own words last changed` +
+      (why.length ? `; ${why.join(', ')}` : ''),
+  );
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -4331,4 +4399,5 @@ checkLeaderboardLinks();
 checkBestGpu();
 checkTierLabels();
 checkMarkerWords();
+checkPageDates();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/').length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

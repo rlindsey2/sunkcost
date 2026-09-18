@@ -143,7 +143,12 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
-      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge**, and repaired
+      **Repaired again at 14:51 on 2026-09-18 against the marker push and ready to merge**
+      (`ecec366`): two union hunks in `scripts/build-pages.ts`, and then the fault git had nothing
+      to say about — `checkMarkerWords()` refused two markers on the page itself, which is written
+      up in the run entry below. Verified on the merged tree: 267 tests, typecheck clean, 254 pages
+      with every guard passing, and the page read rendered at 1,557 words.
+      Repaired against green `main` at 11:41 on 2026-09-18, and repaired
       again at 12:50 against the tier-label push (`b7c44e9`, one hunk, two guards on one list):
       16 union hunks in six files, the `/best/` note merged so both pages keep their link, a
       seventh footer entry carried into `index.html`, and one stray file dropped. Verified on the
@@ -200,8 +205,14 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       too, and on the wrong tree.
 
 - [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
-      machines at `/hardware/`. **Repaired against green `main` at 11:47 on 2026-09-18 and ready
-      to merge**, and repaired again at 12:51 against the tier-label push (`0d16555`): 10 union hunks in four files, the build's own count line kept from
+      machines at `/hardware/`. **Repaired again at 14:52 on 2026-09-18 against the marker push and
+      ready to merge** (`3d0b989`): one union hunk in `scripts/build-pages.ts`, the build running
+      the new guard and keeping this branch's own count line, and nothing for the marker rule to do
+      because the one marker this page adds is the word *discontinued*. Verified on the merged tree:
+      264 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`
+      including `build:functions`, and `/hardware/` read rendered at 1,761 words.
+      Repaired against green `main` at 11:47 on 2026-09-18, and repaired again at 12:51 against the
+      tier-label push (`0d16555`): 10 union hunks in four files, the build's own count line kept from
       this branch because `/hardware/` is a page rather than a machine, and `/hardware/` carried
       into `index.html`'s footer, which no conflict marker asked for. Verified on the merged tree:
       255 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`,
@@ -816,6 +827,66 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — a clean merge that was not a working one, twice over
+
+**Why this item.** The last entry left the backlog's biggest item, the monthly-cost question page,
+waiting on PR #8's merge, and the two pull requests as Ryan's. Neither had moved since 12:50. What
+had moved is `main`: the 14:05 marker push edits `scripts/build-pages.ts` and `src/pagekit.ts`, which
+is exactly where both branches live, so **both had stopped merging again** — measured with a test
+merge rather than assumed. A finished page that cannot be merged is worth nothing, so the job was to
+make both mergeable and to build each merged tree, which is the rule this file has been asking for
+since PR #9's red `main`.
+
+**The conflicts themselves were the union they always are.** PR #8: two hunks, the import list
+gaining `holdHyphens()` beside the branch's own helpers, and the build running both
+`checkTokenCost()` and `checkMarkerWords()`. PR #10: one hunk, the same new guard, keeping this
+branch's own count line — `/hardware/` is a page rather than a machine, so the 56 it counts must
+exclude it. Ten minutes of work between them.
+
+**And then the merged tree said something git had not.** `checkMarkerWords()`, which `main` gained at
+14:05, reads every marker beside a figure out of the built HTML and refuses a hyphenated word printed
+bare, because a narrow column breaks it at its own hyphen and *stand-in* split over two lines reads as
+a fault in the data. `/local-llm-vs-api-cost/` was written before that rule existed and prints three
+markers with `esc()`: **two of them broke it**, *stand-in* beside the wattage its electricity rests
+on and *coding-assistant* beside a level of use. Git reported no conflict, and could not: the guard
+arrived in one file and the markers were already in another. All three now use `holdHyphens()`, the
+way every other table on the site does, and the page's own guard expects the held form rather than the
+bare one.
+
+**The third marker is the one worth writing down.** It prints the quantisation, and it passed — not
+because it is safe but because nothing hyphenated fits in 64GB today. `UD-Q4_K_M` is 155 GB, so the
+page's Mac Studio M5 Max never lists it. The next model that arrives at a hyphenated quantisation
+small enough to fit would have failed the build on `main`, after the merge, which is the worst place
+to find out. It is held now too.
+
+**This is the first time the merged-tree rule has caught anything**, and it caught the same shape of
+fault PR #9's merge shipped: two diffs that do not overlap textually and no longer agree. `git
+merge-tree` says CLEAN for both branches now, and that is still not the claim being made here — each
+was merged, built and tested.
+
+**Verified, per branch.** PR #8: 267 tests, typecheck clean, 254 pages with every guard passing,
+504 markers held where `main` reports 502, and the page read rendered at 1,557 words. PR #10: 264
+tests, typecheck clean, 254 pages with every guard passing, the full `npm run build` including
+`build:functions`, and `/hardware/` read rendered at 1,761 words. One thing needed drawing rather
+than assuming: `checkOgCards()` failed on PR #10 naming `/og/hardware.png`, which is this branch's own
+card and had never been drawn in this container. Drawn from `hardwareIndexCard()` and the build then
+passed. The deploy runs `build:og` before `build:pages` every time, so it cannot reach CI.
+
+**Where it is.** `ecec366` on `seo/local-vs-api-cost` (PR #8) and `3d0b989` on `seo/hardware-index`
+(PR #10). **Deploy run 158, on `5fbb320`, finished green at 14:55** and published; it carries this
+entry and nothing else, since the run's work went to the two branches. Nothing was pushed to `main`
+but this entry, and nothing a visitor reads changed on the
+live site. **Merging either still breaks the other**, as both items above say; the repair is the same
+union.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still sits on PR #8's helpers, so it still waits on that merge; opening
+a third branch into the same four files would add a conflict rather than a page. Of the two small
+pull requests left, the calculator's top bar overflowing a 360px screen is **CSS only**, `src/styles.css`
+and nothing else, so it is the one that does not collide with either open branch; the assumptions
+panel printing *stand in* at `src/render.ts:542` is the other, and `index.html` is where both open
+branches also edit, so check before touching it.
 
 ### 2026-09-18 — the card ranking stops hiding the figure it is for
 
