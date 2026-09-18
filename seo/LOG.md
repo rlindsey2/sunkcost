@@ -135,15 +135,33 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       kept. After resolving, `npm test` and `npm run build:pages` catch any miss, because
       `checkLinks()` fails on a page nothing links to and both guards recompute their own figures.
 
-- [ ] Merge (or close) [PR #9](https://github.com/rlindsey2/sunkcost/pull/9), the calculator's own
-      footer. It is a pull request rather than a push because it is markup and CSS a visitor reads
-      on the calculator, which is the standing rule here. Three files: `index.html`, `src/styles.css`
-      and one `describe` block in `tests/pagekit.test.ts`. **It collides with nothing.** Checked with
-      a real test merge against `main`, against PR #7 and against PR #8: clean on all three, because
-      neither of the other two touches `index.html` or `src/styles.css`, and this one touches
-      nothing they do. It should therefore not need the hourly repair those two have needed
-      twenty-odd times between them. Verified before opening on `main` at `3cda750`: 233 tests,
-      typecheck clean, the full `npm run build`, and the page rendered and read at 360px and 1280px.
+- [x] [PR #9](https://github.com/rlindsey2/sunkcost/pull/9), the calculator's own footer.
+      **Merged 2026-09-18 at 10:51**, twenty minutes after PR #7 and a minute after it. The footer
+      it adds is right and nothing in it needs changing. What needs saying is that **this item's
+      own confident claim was wrong, and it is the claim that cost the deploy.**
+
+      It said *it collides with nothing*, and that was measured honestly — `git merge-tree` against
+      `main`, against PR #7 and against PR #8, clean on all three, because no other branch touched
+      `index.html` or `src/styles.css`. Every word of that was true and it was not the question.
+      **A clean git merge is not a working merge.** This branch's whole point was an invariant
+      spanning two files — `FOOTER_LINKS` in `src/pagekit.ts` and the hand-written footer in
+      `index.html` — and PR #7 added `/best-gpu/` to the first while this one was still writing the
+      second from a `main` that had no such page. Git had no conflict to report because the two
+      sides edited different files. The test added by this very branch caught it, at the merge,
+      on `main`, where the repository runs no check on a pull request. Red main and no deploy since
+      10:51; the fix is PR #11 in the item above.
+
+      **The lesson for the next branch that claims this.** `git merge-tree` answers whether two
+      diffs overlap textually. It cannot answer whether they still agree, and the branches this
+      agent opens are exactly the ones that add a page to a shared list. A branch is only really
+      clean when the *merged tree* has been built and tested — `git merge origin/main` into a
+      throwaway branch, then `npm test` — and no run has been doing that. Three merges have now
+      gone in without it (see the item above, which counts the same fault a third time). It is
+      cheap: one merge, one test run, thrown away afterwards.
+
+      Verified before opening on `main` at `3cda750`: 233 tests, typecheck clean, the full
+      `npm run build`, and the page rendered and read at 360px and 1280px. All of that was true
+      too, and on the wrong tree.
 
 - [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
       machines at `/hardware/`. It is a pull request rather than a push because it is a new page
