@@ -10,7 +10,8 @@
 import { esc, fmtDuration, fmtGb, fmtTokens, fmtUsd } from './format';
 import { bestByTier, bestUsageLevels, type Combo } from './best';
 import {
-  bandFit, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS, type BandFit,
+  bandFit, computeView, familyGroup, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS,
+  type BandFit,
 } from './pagekit';
 import { defaultState } from './state';
 import {
@@ -156,6 +157,7 @@ export const LEADERBOARD_CARD = '/og/leaderboard.png';
 export const BEST_CARD = '/og/best.png';
 export const COMPARE_CARD = '/og/compare.png';
 export const MEMORY_CARD = '/og/how-much-memory.png';
+export const HARDWARE_CARD = '/og/hardware.png';
 
 /** How many open models the leaderboard card lists under the best hosted one. */
 const LEADERBOARD_ROWS = 5;
@@ -312,6 +314,51 @@ export function memoryCard(data: Dataset, fontFamily?: string): string {
     metaW: 514,
     valueW: 170,
     note: `The hungriest model in each band, at ${kctx} context, at list price`,
+    dataChecked: data.defaults.data_last_checked,
+    fontFamily,
+  });
+}
+
+/**
+ * The machine index, one row per family: where that family starts, and the most
+ * models any configuration of it holds. The page's own shape — eight families,
+ * fifty-six configurations — rather than a ranking, because the page is a list of
+ * what exists and not an opinion about which is best.
+ */
+export function hardwareIndexCard(data: Dataset, fontFamily?: string): string {
+  const st = defaultState(data);
+  const held = new Map(data.hardware.map((hw) => [hw.id, fitsOf(computeView({ ...st, hw: hw.id }, data)).length] as const));
+  const total = computeView(st, data).rows.length;
+
+  const families = [...new Map(data.hardware.map((hw) => [hw.family, hw.family] as const)).values()].map((family) => {
+    const kit = data.hardware.filter((hw) => hw.family === family);
+    const priced = kit.filter((hw) => hw.price_usd != null).sort((a, b) => a.price_usd! - b.price_usd!);
+    return {
+      family,
+      from: priced[0] ?? null,
+      most: Math.max(...kit.map((hw) => held.get(hw.id) ?? 0)),
+    };
+  });
+  // cheapest family first, which is the order the page puts them in
+  families.sort((a, b) => (a.from?.price_usd ?? Infinity) - (b.from?.price_usd ?? Infinity));
+
+  // Eight rows leave no room under a figure, so the denominator goes in the
+  // column heading rather than on a second line that collides with the row below.
+  const rows: ListRow[] = families.map((f) => ({
+    name: familyGroup(f.family),
+    meta: f.from ? `from ${priceWithScopeText(f.from)}` : 'no published price',
+    value: `${f.most}`,
+  }));
+
+  return listCardSvg({
+    eyebrow: 'Local LLM hardware',
+    headline: 'Every machine, what it holds and what it costs',
+    columns: { name: 'Family', meta: 'Cheapest of them', value: `Models it runs, of ${total}` },
+    rows,
+    metaX: 560,
+    metaW: 340,
+    valueW: 110,
+    note: `${data.hardware.length} configurations across ${families.length} families, at list price`,
     dataChecked: data.defaults.data_last_checked,
     fontFamily,
   });

@@ -1189,6 +1189,7 @@ describe('the way back to the indexes', () => {
     for (const { href } of FOOTER_LINKS) expect(foot.match(new RegExp(`href="${href}"`, 'g'))).toHaveLength(1);
     expect(foot.match(/<a /g)).toHaveLength(FOOTER_LINKS.length);
     expect(FOOTER_LINKS.map((l) => l.href)).toContain('/compare/');
+    expect(FOOTER_LINKS.map((l) => l.href)).toContain('/hardware/');
   });
 
   it('sends the reader to a page rather than to a redirect', () => {

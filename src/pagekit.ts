@@ -319,6 +319,7 @@ export function pageGraph(c: PageChrome, data: Dataset): LdNode[] {
 export const FOOTER_LINKS: { href: string; label: string }[] = [
   { href: '/', label: 'Run the numbers on your own configuration' },
   { href: '/leaderboard/', label: 'All models against the frontier' },
+  { href: '/hardware/', label: 'Every machine, priced' },
   { href: '/best/', label: 'Best buys by usage' },
   { href: '/compare/', label: 'Every head-to-head' },
   { href: '/how-much-memory/', label: 'How much memory you need' },
@@ -502,6 +503,19 @@ export function familyHeading(hw: Hardware): string {
   if (hw.family === 'NVIDIA' || hw.family === 'AMD') return `Other ${hw.family} cards`;
   if (hw.family === 'Strix Halo') return 'Other Strix Halo machines';
   return `The rest of the ${hw.family} range`;
+}
+
+/**
+ * What a group of machines is called where the group is the subject: a family
+ * name on its own reads as a product ("NVIDIA", "AMD") where the row above it is
+ * a heading over six cards. The machine index groups its table with these and the
+ * share card names its rows with them, so the two say the same thing.
+ */
+export function familyGroup(family: string): string {
+  if (family === 'NVIDIA' || family === 'AMD') return `${family} graphics cards`;
+  if (family === 'Strix Halo') return 'Strix Halo boxes';
+  if (family === 'DGX Spark') return 'NVIDIA DGX Spark';
+  return family;
 }
 
 /** The same model at another quantisation: a different download, a different memory bill. */

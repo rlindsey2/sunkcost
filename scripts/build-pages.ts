@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 
 import {
   appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, esc,
-  familyHeading, familyRange, generationNames,
+  familyGroup, familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
@@ -25,7 +25,7 @@ import {
   flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
   modelComparePath, modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
+import { BEST_CARD, COMPARE_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -417,6 +417,77 @@ function checkCompareIndex() {
 }
 
 /**
+ * The machine index is a second place the site states what a machine costs, what
+ * it holds and what that takes to pay back, and a second statement of a figure is
+ * a second chance to be wrong. Every row is recomputed here from the same view the
+ * machine's own page is built from, so the two cannot drift apart, and the index
+ * has to list every machine the build writes a page for.
+ *
+ * It also holds the step above: a machine page's breadcrumb has to pass through
+ * this index, which is the route a reader who lands deep takes back up.
+ */
+function checkHardwareIndex() {
+  const index = meta.find((p) => p.path === '/hardware/');
+  if (!index) throw new Error('no machine index was written');
+  const machinePages = paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/');
+  const problems: string[] = [];
+
+  const body = index.html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+  const rows = body.split('<tr').slice(1).map((r) => `<tr${r}`);
+
+  for (const hw of data.hardware) {
+    const page = `/hardware/${hw.id}/`;
+    if (!machinePages.includes(page)) continue;
+    const row = rows.find((r) => r.includes(`href="${page}"`));
+    if (!row) {
+      problems.push(`the machine index has no row for ${esc(hardwareLabel(hw))}`);
+      continue;
+    }
+    const view = hwViews.get(hw.id)!;
+    const fits = fitsOf(view).length;
+    if (!row.includes(`data-label="Models">${fits}</td>`))
+      problems.push(`the machine index does not say the ${shortHardwareLabel(hw)} holds ${fits} of the models`);
+    const model = view.model;
+    if (model) {
+      if (!row.includes(`/models/${model.id}/`))
+        problems.push(`the machine index does not name ${model.display_name}, the strongest model the ${shortHardwareLabel(hw)} holds`);
+      const speed = speedWithBasis(rowFor(view, model));
+      if (!row.includes(speed))
+        problems.push(`the machine index gives the ${shortHardwareLabel(hw)} a speed on ${model.display_name} that is not the ${speed.replace(/<[^>]*>/g, '')} its own page prints`);
+      const link = esc(calcLink({ hw: hw.id, model: model.id }, data));
+      if (!row.includes(link))
+        problems.push(`the ${shortHardwareLabel(hw)}'s price on the machine index does not open the calculator on it running ${model.display_name}`);
+    }
+    const days = view.calc ? view.calc.breakevenDays : undefined;
+    const want =
+      days === undefined
+        ? '<span class="dim">needs a price</span>'
+        : days === null
+          ? '<span class="dim">never</span>'
+          : `<b>${esc(fmtDuration(days))}</b>`;
+    if (!row.includes(`<td class="k-fig">${want}</td>`))
+      problems.push(`the machine index prices the ${shortHardwareLabel(hw)} at something other than "${want.replace(/<[^>]*>/g, '')}"`);
+  }
+
+  for (const p of machinePages)
+    if (!index.links.includes(p)) problems.push(`the machine index does not list ${p}`);
+
+  const orphanCrumb = meta.filter(
+    (p) => machinePages.includes(p.path) && !p.html.includes('<a href="/hardware/">Hardware</a>'),
+  );
+  for (const p of orphanCrumb.slice(0, 3))
+    problems.push(`${p.path} does not put the machine index above it in its breadcrumbs`);
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} problem${problems.length === 1 ? '' : 's'} with the machine index`);
+  }
+  console.log(
+    `  the machine index lists all ${machinePages.length} machines, each with the count, the strongest model, the speed and the pay-back its own page prints, and sits above every one of them in its breadcrumbs`,
+  );
+}
+
+/**
  * Every head-to-head answers pay-back at one usage above the fold, and the section
  * below it answers the same question across the five levels the calculator names.
  * Two things can go quietly wrong there: a page can lose the section, and a figure a
@@ -429,6 +500,7 @@ function checkCompareIndex() {
  * shorter context where one machine does hold both, and checkMeetingPoint below is
  * what holds them to saying so.
  */
+
 function checkPayback() {
   const levels = bestUsageLevels(data);
   const problems: string[] = [];
@@ -1073,7 +1145,8 @@ function checkArticles() {
   // English picks the article from the sound, so a page opening "Can a NVIDIA…"
   // reads as a typo on its own first line. indefiniteArticle() knows which
   // names are spelt out letter by letter; this is what holds the pages to it.
-  const machines = meta.filter((p) => p.path.startsWith('/hardware/'));
+  // the index at /hardware/ is a list rather than a machine, so it is not one of these
+  const machines = meta.filter((p) => p.path.startsWith('/hardware/') && p.path !== '/hardware/');
   const opened = machines.map((p) => ({
     path: p.path,
     h1: p.html.match(/<h1>Can (an?) ([^<]+?) run local LLMs\?<\/h1>/),
@@ -1988,7 +2061,7 @@ ${headToHeadNote(hw)}
       ]),
       canonical: `/hardware/${hw.id}/`,
       ogImage: cardFor(hw.id, view.model?.id),
-      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: `/hardware/${hw.id}/`, label: label }],
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/hardware/', label: 'Hardware' }, { href: `/hardware/${hw.id}/`, label: label }],
       about: hardwareProduct(hw, `${site}/hardware/${hw.id}/`),
     },
     body,
@@ -3185,12 +3258,169 @@ ${stack(`<table class="board">
   );
 }
 
+/* --------------------------- the machine index --------------------------- */
+
+/**
+ * The index of machines. `/leaderboard/` is the index of models, `/best/` ranks
+ * by level of use and `/compare/` lists the match-ups; the 56 machines had no
+ * list of their own, and nothing was served at `/hardware/` at all, so a reader
+ * who cut a machine's address back to it got nothing.
+ *
+ * It answers "what hardware runs local models" as a list rather than as an
+ * opinion: every configuration, what it costs, what it holds and what that pair
+ * takes to pay back. Every figure is the one the machine's own page prints, taken
+ * from the same view, so the index and the page behind it cannot disagree.
+ */
+function hardwareIndex(): string {
+  const st = defaultState(data);
+  const total = hwViews.values().next().value!.rows.length;
+
+  const entries = data.hardware.map((hw) => {
+    const view = hwViews.get(hw.id)!;
+    return {
+      hw,
+      view,
+      fits: fitsOf(view).length,
+      model: view.model,
+      days: view.calc ? view.calc.breakevenDays : undefined,
+      previous: (hw.generation ?? 'current') === 'previous',
+    };
+  });
+  const by = new Map(entries.map((e) => [e.hw.id, e] as const));
+
+  // Families in the order of what the cheapest of them costs, and inside a
+  // family the machines you can still buy first, cheapest first. That is the
+  // order someone shopping reads in, and it is the order `familyRange` already
+  // puts a machine's own range in on its page.
+  const families = [...new Map(data.hardware.map((hw) => [hw.family, hw.family] as const)).values()]
+    .map((family) => {
+      const kit = data.hardware
+        .filter((hw) => hw.family === family)
+        .sort(
+          (a, b) =>
+            ((a.generation ?? 'current') === 'current' ? 0 : 1) - ((b.generation ?? 'current') === 'current' ? 0 : 1) ||
+            (a.price_usd ?? Infinity) - (b.price_usd ?? Infinity),
+        );
+      const priced = kit.filter((hw) => hw.price_usd != null).sort((a, b) => a.price_usd! - b.price_usd!);
+      return { family, kit, from: priced[0] ?? null };
+    })
+    .sort((a, b) => (a.from?.price_usd ?? Infinity) - (b.from?.price_usd ?? Infinity));
+
+  const priceCell = (e: (typeof entries)[number]) => {
+    const link = (label: string, cls: string) =>
+      `<a class="${cls}" href="${esc(calcLink(e.model ? { hw: e.hw.id, model: e.model.id } : { hw: e.hw.id }, data))}">${label}</a>`;
+    if (e.hw.price_usd == null) return `<span class="dim">not published</span> ${link('price it yourself', 'dim')}`;
+    return `${link(fmtUsd(e.hw.price_usd), 'dim')}${e.hw.price_scope === 'card_only' ? '<span class="dim">, card only</span>' : ''}`;
+  };
+
+  const paybackCell = (e: (typeof entries)[number]) => {
+    if (e.days === undefined) return '<span class="dim">needs a price</span>';
+    if (e.days === null) return '<span class="dim">never</span>';
+    return `<b>${esc(fmtDuration(e.days))}</b>`;
+  };
+
+  const rows = families
+    .map(({ family, kit, from }) => {
+      const fromText = !from ? '' : from.price_scope === 'card_only' ? `, from ${fmtUsd(from.price_usd)} for the card alone` : `, from ${fmtUsd(from.price_usd)}`;
+      const heading = `<tr class="is-frontier"><th colspan="6">${esc(familyGroup(family))} <span class="dim">· ${kit.length === 1 ? 'one configuration' : `${kit.length} configurations`}${fromText}</span></th></tr>`;
+      return (
+        heading +
+        kit
+          .map((hw) => {
+            const e = by.get(hw.id)!;
+            return `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(hw.id)}/">${esc(hardwareLabel(hw))}</a>${e.previous ? '<span class="c-quant">discontinued</span>' : ''}</td>
+  <td>${priceCell(e)}</td>
+  <td>${hw.usable_memory_gb ?? '?'} GB <span class="dim">of ${hw.unified_memory_gb}</span></td>
+  <td>${e.fits}</td>
+  <td class="c-model">${e.model ? `<a href="/models/${esc(e.model.id)}/">${esc(e.model.display_name)}</a>, ${speedWithBasis(rowFor(e.view, e.model))}` : '<span class="dim">nothing on the list</span>'}</td>
+  <td>${paybackCell(e)}</td>
+</tr>`;
+          })
+          .join('')
+      );
+    })
+    .join('');
+
+  // The page's own answer, before it starts listing. The obvious claim — more
+  // money, bigger model — is not what the data says: 39 of the 56 machines top
+  // out at the same model, from a $999 mini to an $18,000 card. So the answer is
+  // the ladder, which is the strongest model each machine holds and the cheapest
+  // machine that reaches each step of it.
+  const priced = entries.filter((e) => e.hw.price_usd != null).sort((a, b) => a.hw.price_usd! - b.hw.price_usd!);
+  const holdAll = entries.filter((e) => e.fits === total);
+  const paying = entries.filter((e) => typeof e.days === 'number').sort((a, b) => (a.days as number) - (b.days as number));
+  const quickest = paying[0];
+  const slowest = paying[paying.length - 1];
+
+  const steps = [...new Map(entries.filter((e) => e.model).map((e) => [e.model!.id, e.model!] as const)).values()]
+    .map((model) => {
+      const on = entries.filter((e) => e.model?.id === model.id);
+      const pricedOn = on.filter((e) => e.hw.price_usd != null).sort((a, b) => a.hw.price_usd! - b.hw.price_usd!);
+      return { model, on, cheapest: pricedOn[0] ?? null, dearest: pricedOn[pricedOn.length - 1] ?? null };
+    })
+    .sort((a, b) => (a.model.frontier_equivalent?.score ?? 0) - (b.model.frontier_equivalent?.score ?? 0));
+  // the step most machines are stuck on, which is the sentence's own subject
+  const plateau = [...steps].sort((a, b) => b.on.length - a.on.length)[0];
+  const above = steps.filter((x) => (x.model.frontier_equivalent?.score ?? 0) > (plateau?.model.frontier_equivalent?.score ?? 0));
+  const cheapestAbove = above
+    .map((x) => x.cheapest)
+    .filter((e): e is (typeof entries)[number] => !!e)
+    .sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0] ?? null;
+  const aboveCount = above.reduce((n, x) => n + x.on.length, 0);
+
+  // A price in this data is the launch price where the machine has been
+  // discontinued, and several of the machines these paragraphs name are.
+  // Naming one without saying so points a reader at a price nobody sells at.
+  const launchSaid = new Set<string>();
+  const launchLine = (xs: ((typeof entries)[number] | null)[]) => {
+    const older = [...new Map(
+      xs.filter((e): e is (typeof entries)[number] => !!e && e.previous && !launchSaid.has(e.hw.id)).map((e) => [e.hw.id, e] as const),
+    ).values()];
+    if (!older.length) return '';
+    for (const e of older) launchSaid.add(e.hw.id);
+    const names = older.map((e) => `the ${esc(shortHardwareLabel(e.hw))}`);
+    const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+    return older.length === 1
+      ? ` ${sentenceCase(list)} is discontinued, so its price is the one it launched at.`
+      : ` ${sentenceCase(list)} are discontinued, so their prices are the ones they launched at.`;
+  };
+
+  const body = `<article class="prose">
+<h1>Every machine that runs local models, priced</h1>
+<p class="lede">All ${data.hardware.length} configurations this site prices, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
+${plateau && quickest && slowest ? `<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<p>Pay-back runs the other way, because the strongest model a machine holds is also the slowest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. Nothing here pays for itself inside a decade at that usage. What changes the answer is using the machine much harder, or running a smaller model on it, and <a href="/best/">best buys by usage</a> ranks both.${launchLine([quickest])}</p>` : ''}
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>`, { fig: 5, labels: { 2: 'Usable', 3: 'Models', 4: 'Strongest model' } })}
+<p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf(['Local LLM hardware: every machine, priced and measured', 'Local LLM hardware: every machine, priced']),
+      description: descOf([
+        `All ${data.hardware.length} machines in one table: price, usable memory, how many open models each one holds, and how long it takes to pay for itself.`,
+        `All ${data.hardware.length} machines in one table: price, memory, models each one holds and how long it takes to pay for itself.`,
+      ]),
+      canonical: '/hardware/',
+      ogImage: HARDWARE_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/hardware/', label: 'Hardware' }],
+    },
+    body,
+    data,
+  );
+}
+
 /* --------------------------------- build --------------------------------- */
 
 write('/leaderboard/', leaderboard());
 write('/best/', bestBuys());
 write('/how-much-memory/', memoryPage());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
+write('/hardware/', hardwareIndex());
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
 // comparisons: the flagship current config of each family against every other,
@@ -3397,6 +3627,7 @@ checkCardScope();
 checkTables();
 checkArticles();
 checkCompareIndex();
+checkHardwareIndex();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();
@@ -3410,4 +3641,4 @@ checkShorterFits();
 checkShorterMachines();
 checkHiddenModels();
 checkLeaderboardLinks();
-console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
+console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/').length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
