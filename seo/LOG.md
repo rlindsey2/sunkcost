@@ -580,13 +580,15 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       site went from 525 words to 570, and all 7 gained. The run entry below has the figures and
       `checkHeadroom()`, which holds both sides to it.
 
-- [ ] The other 21 machine head-to-heads answer the memory difference with the models one holds
-      and the other does not, and stop there. The same context question applies to the models they
-      *share*: a 128GB machine against a 32GB one runs Qwen3.8 27B on both, and not to the same
-      length. `contextHeadroom()` already gives the answer and the section is written. It was left
-      alone because those pages are not thin — they run 611 to 795 words, median 720, and already
-      have a table about memory — so a second one risks length without an extra answer. Worth a look only
-      after the question pages, and only if it can replace something rather than sit beside it.
+- [x] The machine head-to-heads that answer the memory difference with the models one holds and
+      the other does not, and stop there. Done 2026-09-18, and the item undercounted them the way
+      the card-caveat item did: **53 pages, not 21**, because the site has grown from 28 machine
+      match-ups to 86 since the item was written. The condition it set was met rather than waived.
+      It asked for something that replaces rather than sits beside, so the answer is **one
+      paragraph under the heading that already promised it**, not the second table the item feared:
+      no new heading, no new table, about 85 words. Every one of the 53 has something to say, 2 to
+      12 shared models reaching different lengths, median 7. The run entry below has the figures and
+      the five breaks that proved the guard.
 
 - [ ] The call to action under a model page's machines table is now a duplicate. It reads "Run
       Llama 3.1 8B at 128k on the Strix Halo Framework Desktop, 32GB" and opens exactly what the
@@ -601,6 +603,90 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the models two machines share are not held to the same length
+
+**Why this item.** The top backlog item is still the question pages, and its one live candidate sits
+on helpers that only exist on PR #8's branch. Both pull requests were still open at the start of this
+run, so a new page would have been a third one colliding with both. The last entry named the
+push-shaped item to take in that case, and this run took it.
+
+**What the 53 pages were missing.** Where one machine holds models the other cannot, the page names
+those models under *What the extra memory buys* and stops. That is half an answer. Fit turns on
+usable memory, the weights are a fixed size and the KV cache is not, so the roomier machine has more
+left over once the weights are in and takes the **models both machines hold** further as well. The
+7 pages where the two machines hold exactly the same models have said this since 2026-09-17, in a
+table under their own heading. The 53 where one holds more said nothing about it.
+
+**What it says now**, worked out from the two machines on each page. On the RTX PRO 6000 against the
+Radeon AI PRO R9700: *The extra memory buys context as well. Of the 27 models both machines hold at
+32k, 9 run to a longer window on the NVIDIA RTX PRO 6000 Blackwell, 96GB: the weights are a fixed
+size and the KV cache is not, so what the weights leave spare is what a longer context grows into.
+Gemma 4 31B it reaches 256k there against 32k on the AMD Radeon AI PRO R9700, 32GB, each the longest
+window the calculator offers that the machine still holds it at.*
+
+- **53 pages**, every one of them with something to say: the count of shared models that go further
+  runs **2 to 12, median 7**. None came out empty, and the guard holds a page that does to silence.
+- **39 are ordinary match-ups and 14 are two memory tiers of one machine.** The tier pages are the
+  ones where it lands hardest, because the two names differ only by the size: *Of the 10 models both
+  machines hold at 32k, 7 run to a longer window on the Mac mini M6, 32GB.*
+- **The model named is the widest gap, measured as a ratio rather than a number of tokens**, so 32k
+  to 256k leads over 128k to 256k. On the RTX PRO 6000 page that picks Gemma 4 31B it at 8× over
+  Qwen3.8 27B at 2×, and Qwen3.8 27B is the stronger model, which is why the rule had to be written
+  down rather than left to the page's own order.
+- **The roomier machine's window is a prefilled link** into the calculator on that machine, that
+  model and that context. 53 new links, one a page.
+- **No new heading and no second table**, which is the condition the backlog item set. The pages
+  gained about 85 words each.
+
+**What was deliberately not claimed.** The sentence stops at "each the longest window the calculator
+offers that the machine still holds it at" rather than calling the gap a memory gap. `longestContext()`
+is capped by whichever runs out first, the machine or the model's own context limit, so on some rows
+the shorter figure is the model's ceiling rather than the machine's. The wording says what each
+figure is and lets it stand.
+
+**The guard.** `checkSharedHeadroom()` is the mirror of `checkHeadroom()`, for the 53 pages that one
+skips. It recomputes every figure from the data rather than reading it back off the page and holds
+six claims: the machine named as the roomier one has the more usable memory, the shared-model count
+is the data's, so is the count that goes further, the model named is the widest gap with both its
+windows printed, the link opens that machine and model at that window, and a page where no shared
+model differs says nothing while no other page says it at all. Proved by five breaks, each caught
+with the page and the figure named: naming the tighter machine as the roomier one (212 problems),
+taking the first shared model instead of the widest gap (50), dropping the paragraph (53), a
+shared-model count off by one (53), and linking at the tighter machine's window instead of the
+roomier one's (53).
+
+**Where the code went.** `sharedHeadroom()` and `widestHeadroom()` are in `src/pagekit.ts` beside
+`contextHeadroom()`, which they build on; `sharedLengthLine()` in `scripts/build-pages.ts` is the
+wording, next to `sameListSection()` which answers the same question for the other 7 pages. Neither
+`src/calc.ts`, `src/compute.ts`, `src/fit.ts` nor `data/*.json` was touched, and no figure moved.
+
+**Verified**: 226 tests (222 before, four new in `tests/pagekit.test.ts`), typecheck clean, 248 pages
+with every guard passing, and the full `npm run build` including `build:og`, `build:share` and
+`build:functions`. Pages were read as rendered text, not as markup: the RTX PRO 6000 head-to-head and
+the Mac mini M6 16GB-against-32GB page end to end, and the paragraph on six more.
+
+**The deploy.** `dccdd93`, run 126, green at **04:52**.
+
+**Both pull requests stopped merging, and both were repaired in this run.** The same pattern the log
+has now recorded sixteen times: a branch touching `scripts/build-pages.ts` stops merging as soon as
+main does. Both conflicts were import lists and nothing else, in `scripts/build-pages.ts` and
+`tests/pagekit.test.ts`, every hunk a union. Resolved by keeping each branch's side and adding
+`sharedHeadroom` and `widestHeadroom` to it, then verified on each branch rather than assumed: **234
+tests, typecheck clean, 249 pages with every guard passing and the full build**, on both. PR #7 is
+now `21a6bc8` and PR #8 is `7623325`, and each merges clean against `main` at `dccdd93`, checked with
+a real merge. Their collision **with each other** is unchanged and its resolution is still in the
+Ryan's-side item above; nothing in this run touched the `/best/` paragraph that is the one hunk in it
+that can quietly lose a link.
+
+**Continue next: the machine index at `/hardware/`**, still the biggest gap the log has found — no
+page lists all 56 machines and the build writes nothing there. It is a new page, so it wants the PR
+queue to clear. If #7 and #8 are still open at the next run, the push-shaped work left on the list is
+thin: the leaderboard's 8,134px table on a phone, and the model page's call to action that now
+duplicates a link in its own table. Both are judgement calls the backlog says to make only if the
+page reads badly, so a run that reaches them should read the page first and be willing to close the
+item instead of doing it.
+
 
 ### 2026-09-18 — a caveat about graphics cards stops appearing on pages with no graphics card
 
