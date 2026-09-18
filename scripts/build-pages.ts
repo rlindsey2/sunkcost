@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
-  computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, esc,
+  computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
@@ -18,7 +18,7 @@ import {
   otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope,
   priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
-  speedWithBasis, stack,
+  speedWithBasis, splitCapabilityNote, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
@@ -1621,6 +1621,9 @@ function modelPage(m: Model): string {
   const caps = CAPABILITY_KEYS.map(
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
   ).join('');
+  // The description opens the page; the line about the five ratings goes under
+  // the five ratings. See splitCapabilityNote().
+  const note = splitCapabilityNote(m.capability_note);
 
   // Every machine in this table holds the model at the context the page assumes,
   // and that is where the page used to stop. The weights are the same on all of
@@ -1728,7 +1731,7 @@ function modelPage(m: Model): string {
           : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
-<p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}. ${esc(m.capability_note)}</p>
+<p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}</p>
 
 ${cheapest
       ? `<div class="answer">
@@ -1751,7 +1754,8 @@ ${cheapest
       ? `On the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
       : 'It has not been placed on the intelligence index yet.'}
 ${fe?.url ? ` <a href="${esc(fe.url)}" rel="noopener">Score source</a>.` : ''} <a href="/leaderboard/">See the whole table</a>.</p>
-<ul class="caps">${caps}</ul>
+<ul class="caps">${caps}</ul>${note.ratings ? `
+<p class="note">${esc(note.ratings)}</p>` : ''}
 ${versusLine}
 <h2>What it costs either way</h2>
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="/local-llm-vs-api-cost/">What a million tokens costs each way</a> puts the two prices side by side.</p>
@@ -1770,7 +1774,7 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}<h2>
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
   <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
-  <dt>KV cache</dt><dd>${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}. <a href="/how-much-memory/">How weights and cache add up</a>.</dd>
+  <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="/how-much-memory/">How weights and cache add up</a>.</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
   ${m.sources?.length ? `<dt>Sources</dt><dd>${m.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener">source ${i + 1}</a>`).join(', ')}</dd>` : ''}
@@ -4156,6 +4160,57 @@ function checkTokenCost() {
 
 /**
 /**
+ * Two ways a page can print a note out of the data and have it stop reading as
+ * the page's own sentence, both of which shipped for weeks.
+ *
+ * The first: capability_note opens with a line about this site's own ratings on
+ * 36 of the 55 models, and the lede printed the whole field. So 36 model pages
+ * opened "Not yet rated: released after our last ratings pass" — the site's
+ * process, in the paragraph a search result shows — and on 31 of them the next
+ * section printed a score from the intelligence index. Qwen3.8 27B, the best
+ * model on this site that a graphics card runs, said it was unrated and then
+ * scored 34. splitCapabilityNote() puts the description in the lede and the
+ * ratings line under the five ratings it is about.
+ *
+ * The second: the architecture notes end in a full stop, and the KV cache line
+ * added another, so 41 model pages printed "on all 80 layers..". endStop()
+ * settles that one, and the doubled stop is checked across every page rather
+ * than that line, because any note pasted in front of a template's punctuation
+ * can do it.
+ */
+function checkNotes() {
+  const problems: string[] = [];
+  let moved = 0;
+  for (const m of data.models) {
+    const html = meta.find((x) => x.path === `/models/${m.id}/`)?.html;
+    if (html == null) continue;
+    const { ratings, about } = splitCapabilityNote(m.capability_note);
+    const unrated = CAPABILITY_KEYS.every((k) => m.capabilities[k] === 'unknown');
+    // A model with nothing rated has to say so in words the split knows, or the
+    // sentence lands back in the lede without anyone seeing it happen.
+    if (unrated && !ratings) problems.push(`${m.id} has no capability rated and no line the split recognises: "${m.capability_note}"`);
+    if (!unrated && ratings) problems.push(`${m.id} carries a line about missing ratings and has ${CAPABILITY_KEYS.filter((k) => m.capabilities[k] !== 'unknown').length} of them`);
+    const lede = unesc(html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '');
+    if (!lede) problems.push(`/models/${m.id}/ has no lede`);
+    if (ratings && lede.includes(ratings)) problems.push(`/models/${m.id}/ opens with the line about its ratings`);
+    if (about && !lede.includes(about)) problems.push(`/models/${m.id}/ drops what its note says about the model`);
+    if (!ratings) continue;
+    moved++;
+    // under the five ratings, which is the blank it explains, and nowhere else
+    const under = unesc(html.match(/<ul class="caps">[\s\S]*?<\/ul>\s*<p class="note">([\s\S]*?)<\/p>/)?.[1] ?? '');
+    if (under !== ratings) problems.push(`/models/${m.id}/ does not print the line about its ratings under them`);
+    if (unesc(html).split(ratings).length !== 2) problems.push(`/models/${m.id}/ prints the line about its ratings ${unesc(html).split(ratings).length - 1} times`);
+  }
+  const doubled = meta.filter((p) => /\.\.(?!\.)/.test(unesc((p.html.match(/<main[\s\S]*?<\/main>/)?.[0] ?? '').replace(/<[^>]+>/g, ' '))));
+  for (const p of doubled.slice(0, 3)) problems.push(`${p.path} prints a doubled full stop`);
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} print a note from the data where it does not belong`);
+  }
+  console.log(`  ${moved} model pages open with what their note says about the model and put the line about the five ratings under them; no page of the ${meta.length} prints a doubled full stop`);
+}
+
+/**
  * The small label beside a name inside a table — the tier a model sits in, the
  * word that says a machine is discontinued — is a phrase as often as a word, and
  * the two want opposite things on a phone. A phrase held to one line runs past
@@ -4465,6 +4520,7 @@ checkShorterMachines();
 checkHiddenModels();
 checkLeaderboardLinks();
 checkBestGpu();
+checkNotes();
 checkTierLabels();
 checkTokenCost();
 checkMarkerWords();

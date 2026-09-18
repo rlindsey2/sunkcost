@@ -9,7 +9,7 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  holdHyphens, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
+  holdHyphens, splitCapabilityNote, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -1449,5 +1449,60 @@ describe('the calculator\'s own foot', () => {
 
   it('does not spend a link on the page it is already on', () => {
     expect(foot).not.toContain('href="/"');
+  });
+});
+
+describe('a note out of the data, printed as the page\u2019s own sentence', () => {
+  const RATINGS = 'Not yet rated: released after our last ratings pass.';
+
+  it('takes the line about this site\u2019s ratings off the front of the note', () => {
+    const { ratings, about } = splitCapabilityNote(`${RATINGS} Tencent\u2019s Apache-licensed flagship.`);
+    expect(ratings).toBe(RATINGS);
+    expect(about).toBe('Tencent\u2019s Apache-licensed flagship.');
+  });
+
+  it('takes the sentence that goes with it too, and leaves the lede nothing rather than half a thought', () => {
+    const { ratings, about } = splitCapabilityNote(`${RATINGS} Sizes and prices are current.`);
+    expect(ratings).toBe(`${RATINGS} Sizes and prices are current.`);
+    expect(about).toBe('');
+  });
+
+  it('leaves a note that is all about the model alone', () => {
+    const note = 'The sweet spot for a 24 GB machine. Good writer, decent coder.';
+    expect(splitCapabilityNote(note)).toEqual({ ratings: '', about: note });
+  });
+
+  it('only reads the front, so the same words later in a note stay in the lede', () => {
+    const note = `Mistral\u2019s current small model. ${RATINGS}`;
+    expect(splitCapabilityNote(note)).toEqual({ ratings: '', about: note });
+  });
+
+  it('says nothing twice: every model\u2019s two halves put the note back together', () => {
+    for (const m of data.models) {
+      const { ratings, about } = splitCapabilityNote(m.capability_note);
+      expect([m.id, [ratings, about].filter(Boolean).join(' ')]).toEqual([m.id, m.capability_note.trim()]);
+    }
+  });
+
+  it('holds the data to one shape: nothing rated means a line the split knows', () => {
+    for (const m of data.models) {
+      const unrated = Object.values(m.capabilities).every((v) => v === 'unknown');
+      expect([m.id, unrated]).toEqual([m.id, splitCapabilityNote(m.capability_note).ratings !== '']);
+    }
+  });
+
+  it('ends a sentence once, whatever the note it ends in did', () => {
+    expect(endStop('11 GB at 32k context \u2014 Plain grouped-query attention on all 80 layers.')).toBe(
+      '11 GB at 32k context \u2014 Plain grouped-query attention on all 80 layers.',
+    );
+    expect(endStop('11 GB at 32k context')).toBe('11 GB at 32k context.');
+    expect(endStop('Is it worth it?')).toBe('Is it worth it?');
+    expect(endStop('  ')).toBe('');
+  });
+
+  it('is the shape every architecture note in the data comes in', () => {
+    const notes = data.models.map((m) => m.architecture?.note).filter((n): n is string => !!n);
+    expect(notes.length).toBeGreaterThan(0);
+    for (const n of notes) expect([n, endStop(n)]).toEqual([n, n]);
   });
 });
