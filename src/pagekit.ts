@@ -302,6 +302,35 @@ export function pageGraph(c: PageChrome, data: Dataset): LdNode[] {
   return [website, page, breadcrumb, ...(c.about ? [c.about] : [])];
 }
 
+/**
+ * The way back to the hubs, at the foot of every page.
+ *
+ * Four pages on this site are indexes rather than answers — the leaderboard,
+ * the best buys, the head-to-heads and the memory guide — and a reader who has
+ * finished one machine page has no other route to them. The foot of the page is
+ * that route, so it names every one of them. `/compare/` was the one it walked
+ * past: 133 comparisons hang off it and only the 187 pages that happen to
+ * mention a match-up linked it at all.
+ *
+ * It is one list rather than markup in the shell so the build can hold every
+ * page to it, and so adding an index without adding it here fails the build
+ * rather than quietly stranding the page.
+ */
+export const FOOTER_LINKS: { href: string; label: string }[] = [
+  { href: '/', label: 'Run the numbers on your own configuration' },
+  { href: '/leaderboard/', label: 'All models against the frontier' },
+  { href: '/best/', label: 'Best buys by usage' },
+  { href: '/compare/', label: 'Every head-to-head' },
+  { href: '/how-much-memory/', label: 'How much memory you need' },
+  { href: '/best-gpu/', label: 'Which graphics card' },
+];
+
+export function footerHtml(): string {
+  return `<footer class="doc-foot">
+  <p>${FOOTER_LINKS.map((l) => `<a href="${l.href}">${esc(l.label)}</a>`).join(' · ')}</p>
+</footer>`;
+}
+
 export function pageShell(c: PageChrome, body: string, data: Dataset): string {
   const site = data.defaults.site_url.replace(/\/$/, '');
   return `<!doctype html>
@@ -348,9 +377,7 @@ ${jsonLd(pageGraph(c, data))}
 <main class="doc-main">
 ${body}
 </main>
-<footer class="doc-foot">
-  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a> · <a href="/how-much-memory/">How much memory you need</a> · <a href="/best-gpu/">Which graphics card</a></p>
-</footer>
+${footerHtml()}
 </body>
 </html>
 `;
