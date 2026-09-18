@@ -748,9 +748,13 @@ sideways, **no paired half wraps to a second line and no pair falls onto two lin
 390, 430, 641, 768, 1024, 1280 and 1440px over sixteen pages of every kind. `/leaderboard/`,
 `/how-much-memory/` and a machine page were read rendered at 360px before committing.
 
-**Where it is.** Pushed to `main` as `eb3086f`. The four pull requests were re-checked after the push
-and all four still merge clean: the change is one option on six `stack()` calls, two CSS rules and a
-new check, and none of the four branches touches any of them.
+**Where it is.** Pushed to `main` as `eb3086f`, with this entry as `f6ae50d`; both went up in one
+push, so run 137 carries the pair and there is no cancelled run to explain this time. It was still
+running when this was written, and whether the markup actually reached the live site could not be
+checked from here: `sunkcost.ai` is still not on this environment's allow-list, which is the first
+item under Ryan's side above. The four pull requests were re-checked after the push and all four
+still merge clean: the change is one option on six `stack()` calls, two CSS rules and a new check,
+and none of the four branches touches any of them.
 
 **What to continue.** The four pull requests are still open and still unreviewed, and they still
 block the biggest item on the backlog — the monthly-cost question page sits on PR #8's helpers, and
