@@ -16,7 +16,8 @@
     "build:pages": "tsx scripts/build-pages.ts",
     "build:share": "tsx scripts/build-share-pages.ts",
     "build:functions": "tsx scripts/prepare-functions.ts",
-    "submissions": "tsx scripts/submissions-report.ts"
+    "submissions": "tsx scripts/submissions-report.ts",
+    "model-watch": "tsx scripts/model-watch.ts"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
