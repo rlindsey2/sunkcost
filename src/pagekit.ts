@@ -349,7 +349,7 @@ ${jsonLd(pageGraph(c, data))}
 ${body}
 </main>
 <footer class="doc-foot">
-  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a> · <a href="/how-much-memory/">How much memory you need</a></p>
+  <p><a href="/">Run the numbers on your own configuration</a> · <a href="/leaderboard/">All models against the frontier</a> · <a href="/best/">Best buys by usage</a> · <a href="/how-much-memory/">How much memory you need</a> · <a href="/best-gpu/">Which graphics card</a></p>
 </footer>
 </body>
 </html>
@@ -516,6 +516,53 @@ export function cheapestThatHolds(needGb: number | null | undefined, data: Datas
       )
       .sort((a, b) => a.price_usd! - b.price_usd!)[0] ?? null
   );
+}
+
+/**
+ * The graphics cards, ordered the way the question is asked: most usable memory
+ * first, because memory is what decides whether a model runs at all, and the
+ * cheaper card first where two hold the same amount. A card is one priced
+ * without the PC around it, which is the only thing that separates a part from a
+ * computer in this data. The page build and the share card both cut the list
+ * here, so the two cannot disagree about which cards there are or what order
+ * they come in.
+ */
+export function graphicsCards(data: Dataset): Hardware[] {
+  return data.hardware
+    .filter((h) => h.price_scope === 'card_only' && h.price_usd != null && h.usable_memory_gb != null)
+    .sort((a, b) => b.usable_memory_gb! - a.usable_memory_gb! || a.price_usd! - b.price_usd!);
+}
+
+/**
+ * The complete computer nearest in price to a card. A card's price buys the card,
+ * so the question a buyer actually faces is what the same money already holds with
+ * a computer attached — and the honest way to ask it is to let the prices pick the
+ * machine rather than choose one that flatters the answer. Both prices print
+ * wherever this is used, so a near miss is visible rather than smoothed over.
+ */
+export function nearestCompleteComputer(card: Hardware, data: Dataset): Hardware | null {
+  if (card.price_usd == null) return null;
+  return (
+    data.hardware
+      .filter(
+        (h) =>
+          h.price_scope !== 'card_only' &&
+          h.price_usd != null &&
+          (h.generation ?? 'current') === 'current' &&
+          h.usable_memory_gb != null,
+      )
+      .sort(
+        (a, b) =>
+          Math.abs(a.price_usd! - card.price_usd!) - Math.abs(b.price_usd! - card.price_usd!) ||
+          b.usable_memory_gb! - a.usable_memory_gb!,
+      )[0] ?? null
+  );
+}
+
+/** What a machine costs for each gigabyte a model can actually use. */
+export function pricePerUsableGb(hw: Hardware): number | null {
+  if (hw.price_usd == null || !hw.usable_memory_gb) return null;
+  return hw.price_usd / hw.usable_memory_gb;
 }
 
 /** "42.5 GB", or "4.9 GB to 42.5 GB" when the two ends differ. */

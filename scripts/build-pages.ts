@@ -11,10 +11,10 @@ import {
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, esc,
   familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
-  gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
-  machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
-  modelVerdict, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  priceWithScope, priceWithScopeText, rowFor,
+  gpuPart, graphicsCards, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext,
+  lowerFirst, machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
+  modelVerdict, nearestCompleteComputer, otherQuantisations, pageShell, powerSourceLabel, powerWithSource,
+  priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   speedWithBasis, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
@@ -24,7 +24,7 @@ import {
   flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath,
   modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
+import { BEST_CARD, COMPARE_CARD, GPU_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -1260,7 +1260,7 @@ ${stack(`<table class="board">
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
 <p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
-<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, or set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>.</p>
+<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="/best-gpu/">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, or set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>.</p>
 </article>`;
 
   return pageShell(
@@ -1725,7 +1725,7 @@ function hardwarePage(hw: Hardware): string {
   const shorter = fitsShorter(hw, view.rows.map((r) => r.model), data);
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="/best-gpu/">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
@@ -2521,6 +2521,269 @@ ${
   );
 }
 
+/* ---------------------------- graphics cards ---------------------------- */
+
+/**
+ * One card, with everything the page says about it: what it holds, its strongest
+ * model, and the complete computer nearest it in price.
+ */
+function gpuRow(hw: Hardware) {
+  const view = computeView({ ...defaultState(data), hw: hw.id }, data);
+  const fits = fitsOf(view);
+  const strongest = fits.filter((r) => r.model.frontier_equivalent?.score != null)[0] ?? fits[0] ?? null;
+  const rival = nearestCompleteComputer(hw, data);
+  return { hw, fits, strongest, rival, rivalFits: rival ? fitCount(rival, CTX) : 0 };
+}
+
+/**
+ * The model on a card that pays for the card soonest at one level of use, which
+ * is not always its strongest: a big model saves more per token, a small one is
+ * quick enough to get through the day's work at all. Where the card cannot
+ * generate what the level asks for, the figure is for the most it can do, and it
+ * carries the same marker the head-to-heads use.
+ */
+function quickestPayback(hw: Hardware, fits: ModelRow[], usage: number) {
+  let best: { model: Model; days: number; capped: boolean; max: number | null } | null = null;
+  for (const r of fits) {
+    const v = computeView({ ...defaultState(data), hw: hw.id, model: r.model.id, usage }, data);
+    if (!v.calc || v.calc.breakevenDays == null) continue;
+    if (!best || v.calc.breakevenDays < best.days)
+      best = { model: r.model, days: v.calc.breakevenDays, capped: v.capacity.capped, max: v.capacity.maxTokensPerDay ?? null };
+  }
+  return best;
+}
+
+/**
+ * "Best GPU for local LLMs" is asked as a ranking question, and this data answers
+ * it as a memory question first: a model runs on a card or it does not, and what
+ * decides that is whether the weights and the cache fit in the card's memory at
+ * once. Speed comes second and follows the bandwidth. So the page is built from
+ * what each card holds rather than from a verdict, and the two things a card's
+ * price does not include — the computer around it, and whether the money ever
+ * comes back — get a section each rather than a footnote.
+ */
+function gpuPage(): string {
+  const st = defaultState(data);
+  const kctx = ctxLabel(CTX);
+  const cards = graphicsCards(data);
+  const rows = cards.map(gpuRow);
+  const levels = bestUsageLevels(data);
+
+  // the page's own answer: the strongest open model any card here holds, and the
+  // cheapest card that holds it. Both are read out of the data rather than named,
+  // so a new card or a new model moves the sentence rather than dating it.
+  const heldByACard = new Set(rows.flatMap((r) => r.fits.map((f) => f.model.id)));
+  const scored = currentModels
+    .filter((m) => m.frontier_equivalent?.score != null)
+    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!);
+  const ceiling = scored.find((m) => heldByACard.has(m.id)) ?? null;
+  const cheapestForCeiling = ceiling
+    ? [...rows].filter((r) => r.fits.some((f) => f.model.id === ceiling.id)).sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0]
+    : null;
+  const dearest = [...rows].sort((a, b) => b.hw.price_usd! - a.hw.price_usd!)[0];
+  // what the money above that cheapest card actually buys, which is the page's
+  // second answer: more models and more speed, not a better model
+  const ceilingRow = (r: typeof rows[number]) => r.fits.find((f) => f.model.id === ceiling?.id) ?? null;
+
+  // the models no card here holds, which is where the memory answer stops
+  const missed = scored.filter((m) => !heldByACard.has(m.id));
+  const best = scored[0] ?? null;
+  const bestRunner = best
+    ? cheapestPerFamily(runnersFor(best, data)).slice().sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0] ?? null
+    : null;
+
+  const perGb = rows.map((r) => ({ r, gb: pricePerUsableGb(r.hw)! })).sort((a, b) => a.gb - b.gb);
+  const completePerGb = buyable
+    .filter((h) => h.price_scope !== 'card_only')
+    .map((h) => ({ h, gb: pricePerUsableGb(h)! }))
+    .sort((a, b) => a.gb - b.gb)[0];
+
+  const sideBySide = rows
+    .map(({ hw, fits, strongest }) => `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a></td>
+  <td>${strongest ? `<a class="dim" href="${esc(calcLink({ hw: hw.id, model: strongest.model.id }, data))}">${fmtUsd(hw.price_usd)}</a>` : fmtUsd(hw.price_usd)}<span class="c-quant">card only${hw.generation === 'previous' ? ', at launch' : ''}</span></td>
+  <td>${fmtGb1(hw.usable_memory_gb)}</td>
+  <td>${hw.memory_bandwidth_gbs ? `${fmtNum(hw.memory_bandwidth_gbs, 0)} GB/s` : '<span class="dim">unknown</span>'}</td>
+  <td><b>${fits.length}</b> <span class="dim">of ${currentModels.length}</span></td>
+  <td class="c-model">${strongest ? `<a href="/models/${esc(strongest.model.id)}/">${esc(strongest.model.display_name)}</a> <span class="dim">${esc(tierName(strongest.model, data))}</span>` : '<span class="dim">none of them</span>'}</td>
+  <td>${speedWithBasis(strongest)}</td>
+</tr>`)
+    .join('');
+
+  const moneyRows = rows
+    .map(({ hw, fits, rival, rivalFits }) => `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a> <span class="dim">${fmtUsd(hw.price_usd)}, card only</span></td>
+  <td>${fmtGb1(hw.usable_memory_gb)}</td>
+  <td><b>${fits.length}</b></td>
+  <td class="c-hw">${rival ? `<a href="/hardware/${esc(rival.id)}/">${esc(shortHardwareLabel(rival))}</a> <span class="dim">${fmtUsd(rival.price_usd)}</span>` : '<span class="dim">nothing near that price</span>'}</td>
+  <td>${rival ? fmtGb1(rival.usable_memory_gb) : '—'}</td>
+  <td>${rival ? `<b>${rivalFits}</b>` : '—'}</td>
+</tr>`)
+    .join('');
+
+  // pay-back, per card, at the levels of use the calculator names. Each cell is the
+  // model on that card that gets there soonest, which is the buyer's best case.
+  const pay = rows.map(({ hw, fits }) => ({
+    hw,
+    cells: levels.map((l) => ({ level: l, best: quickestPayback(hw, fits, l.usage) })),
+  }));
+  const capped = pay.flatMap((p) => p.cells.filter((c) => c.best?.capped).map((c) => ({ hw: p.hw, ...c })));
+  const payRows = pay
+    .map(({ hw, cells }) => {
+      // the model rarely changes down a row; where it does, the cell says which one
+      const lead = cells[cells.length - 1]?.best?.model ?? cells.find((c) => c.best)?.best?.model ?? null;
+      return `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a></td>
+  <td class="c-model">${lead ? `<a href="/models/${esc(lead.id)}/">${esc(lead.display_name)}</a>` : '<span class="dim">nothing it holds</span>'}</td>
+  ${cells
+    .map(({ level, best: b }) => `<td>${
+      b == null
+        ? '<span class="dim">never</span>'
+        : `${esc(fmtDuration(b.days))}${b.capped ? '<span class="c-quant">its ceiling</span>' : ''}${lead && b.model.id !== lead.id ? `<span class="c-quant">on ${esc(b.model.display_name)}</span>` : ''}`
+    }</td>`)
+    .join('')}
+</tr>`;
+    })
+    .join('');
+
+  const soonest = pay
+    .map((p) => ({ hw: p.hw, cell: p.cells[p.cells.length - 1] }))
+    .filter((x) => x.cell?.best)
+    .sort((a, b) => a.cell.best!.days - b.cell.best!.days)[0];
+  const top = levels[levels.length - 1];
+
+  const body = `<article class="prose">
+<h1>Which graphics card should you buy for local LLMs?</h1>
+<p class="lede">Memory decides what you can run; bandwidth decides how fast it runs. ${sentenceCase(numberWord(cards.length))} cards are priced here, from ${fmtUsd(perGb[0].r.hw.price_usd)} to ${fmtUsd(dearest.hw.price_usd)} for the card alone, and they are closer together than that gap suggests.${
+    ceiling && cheapestForCeiling
+      ? ` The strongest open model any of them holds is ${esc(ceiling.display_name)}, and the cheapest card that holds it is the ${esc(shortHardwareLabel(cheapestForCeiling.hw))} at ${fmtUsd(cheapestForCeiling.hw.price_usd)}, card only. The ${esc(shortHardwareLabel(dearest.hw))} at ${fmtUsd(dearest.hw.price_usd)} runs more models and runs them faster. It does not run a better one.`
+      : ''
+  }</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">What decides it</span><span class="answer-v">Memory first: the weights and the cache for your context window have to fit in the card at the same time. Bandwidth second: it sets the speed.</span></div>
+  ${ceiling && cheapestForCeiling ? `<div class="answer-row"><span class="answer-k">Best model a card runs</span><span class="answer-v"><a href="/models/${esc(ceiling.id)}/">${esc(ceiling.display_name)}</a>, ${esc(tierName(ceiling, data))}. ${sentenceCase(numberWord(rows.filter((r) => r.fits.some((f) => f.model.id === ceiling.id)).length))} of the ${numberWord(cards.length)} cards hold it at ${kctx} context, the cheapest being the <a href="/hardware/${esc(cheapestForCeiling.hw.id)}/">${esc(shortHardwareLabel(cheapestForCeiling.hw))}</a> at ${fmtUsd(cheapestForCeiling.hw.price_usd)}, card only.</span></div>` : ''}
+  ${best && bestRunner ? `<div class="answer-row"><span class="answer-k">Best open model there is</span><span class="answer-v"><a href="/models/${esc(best.id)}/">${esc(best.display_name)}</a>, ${fmtGb(best.weights_gb)} of weights. No card here holds it. The cheapest machine that does is the <a href="/hardware/${esc(bestRunner.hw.id)}/">${esc(hardwareLabel(bestRunner.hw))}</a> at ${fmtUsd(bestRunner.hw.price_usd)}.</span></div>` : ''}
+  ${soonest ? `<div class="answer-row"><span class="answer-k">Does one pay for itself</span><span class="answer-v">Not at ordinary use. At ${fmtTokens(top.usage)} tokens a day — ${esc(top.label)} — the quickest here is the ${esc(shortHardwareLabel(soonest.hw))}, in ${esc(fmtDuration(soonest.cell.best!.days))} on ${esc(soonest.cell.best!.model.display_name)}${
+    soonest.cell.best!.model.id !== ceiling?.id ? ' — the cheapest card working a small model, not the best card working a good one' : ''
+  }.</span></div>` : ''}
+</div>
+
+${ceiling && cheapestForCeiling ? `<p><a class="cta" href="${esc(calcLink({ hw: cheapestForCeiling.hw.id, model: ceiling.id }, data))}">Run the numbers on the ${esc(shortHardwareLabel(cheapestForCeiling.hw))} with ${esc(ceiling.display_name)}</a></p>` : ''}
+
+<h2>Every card here, side by side</h2>
+<p>What each one holds at ${kctx} context, counted against the ${currentModels.length} current models, with the strongest of them and how fast it runs. Each price opens the calculator on that card and that model.</p>
+${stack(`<table class="board">
+<thead><tr><th>Card</th><th>Price</th><th>Usable memory</th><th>Bandwidth</th><th>Models it runs</th><th>Strongest of them</th><th>Speed on it</th></tr></thead>
+<tbody>${sideBySide}</tbody>
+</table>`, { fig: 4, labels: { 2: 'Usable', 5: 'Strongest', 6: 'Speed' } })}
+<p class="note">Prices are the card on its own: none of them includes the computer you put it in. ${
+    sentenceCase(numberWord(rows.filter((r) => r.hw.generation === 'previous').length))
+  } of the ${numberWord(cards.length)} are previous-generation cards priced at what they launched at, which is not what you would pay for one today — each card's own page says what to enter instead. Usable memory is what a model gets after the card's own overhead, and speed is on the strongest model in the row, so the column is not a race between equals.</p>
+
+<h2>Memory is the gate</h2>
+<p>A card runs a model or it does not, and nothing about the card changes that except how much memory it has. ${
+    ceiling ? `${esc(ceiling.display_name)} is ${fmtGb(ceiling.weights_gb)} of weights before a single token of context, and the cache on top grows with every token you keep.` : ''
+  } That sum, and not the price, is what puts a model on a card. <a href="/how-much-memory/">How the two add up</a> is a page of its own.</p>
+${
+    missed.length && best && bestRunner
+      ? `<p>It is also where these cards stop. ${sentenceCase(numberWord(missed.length))} of the ${scored.length} current models with an index score fit none of the ${numberWord(cards.length)} cards, and ${(() => {
+        let n = 0;
+        while (n < scored.length && !heldByACard.has(scored[n].id)) n++;
+        const names = scored.slice(0, Math.max(n, 1)).map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`);
+        const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+        return n > 1
+          ? `the ${numberWord(n)} strongest open models on the site are among them: ${list}`
+          : `the strongest open model on the site is one of them: ${list}`;
+      })()}. The dearest card on the list, ${fmtGb1(dearest.hw.usable_memory_gb)} of memory for ${fmtUsd(dearest.hw.price_usd)}, holds none of them either. For a model that size you are buying unified memory instead: ${esc(best.display_name)} runs on the <a href="/hardware/${esc(bestRunner.hw.id)}/">${esc(hardwareLabel(bestRunner.hw))}</a> at ${fmtUsd(bestRunner.hw.price_usd)}, and on nothing cheaper.</p>`
+      : ''
+  }
+
+<h2>Bandwidth is the speed</h2>
+<p>Once a model fits, the card reads every active weight for every token it writes, so tokens a second tracks memory bandwidth more closely than anything else on the spec sheet.${
+    ceiling && cheapestForCeiling
+      ? (() => {
+          const fastest = [...rows].filter((r) => ceilingRow(r)).sort((a, b) => (shownTps(ceilingRow(b)) ?? 0) - (shownTps(ceilingRow(a)) ?? 0))[0];
+          const cheap = ceilingRow(cheapestForCeiling);
+          const fast = ceilingRow(fastest);
+          if (!cheap || !fast || fastest.hw.id === cheapestForCeiling.hw.id) return '';
+          return ` On ${esc(ceiling.display_name)} the ${esc(shortHardwareLabel(fastest.hw))} does ${speedWithBasis(fast)} at ${fmtNum(fastest.hw.memory_bandwidth_gbs!, 0)} GB/s, against ${speedWithBasis(cheap)} for the ${esc(shortHardwareLabel(cheapestForCeiling.hw))} at ${fmtNum(cheapestForCeiling.hw.memory_bandwidth_gbs!, 0)} GB/s. Same model, same context, ${fmtNum((fastest.hw.memory_bandwidth_gbs! / cheapestForCeiling.hw.memory_bandwidth_gbs!), 1)}× the bandwidth.`;
+        })()
+      : ''
+  }</p>
+<p>Every speed on this page is estimated rather than measured, but not out of thin air: each card's estimate is calibrated against that card's own measured llama.cpp runs, which are listed with their sources on its page. Estimates for small models run high, so read them as an upper bound rather than a promise.</p>
+
+<h2>What the same money buys with a computer around it</h2>
+<p>A card's price here buys the card. You still need the machine it goes in, and this site does not guess at what you would build, so every figure above leaves that cost out. What it can show is what the same money already holds when the computer comes with it. Each card is set against the complete machine nearest it in price, with both prices printed, so a near miss is visible rather than smoothed over.</p>
+${stack(`<table class="board">
+<thead><tr><th>Card</th><th>Its memory</th><th>Models</th><th>Nearest complete computer</th><th>Its memory</th><th>Models</th></tr></thead>
+<tbody>${moneyRows}</tbody>
+</table>`, { fig: 2, labels: { 1: 'Card memory', 3: 'Computer', 4: 'Its memory', 5: 'Its models' } })}
+${(() => {
+    // where the money already buys more models with a computer attached, which is
+    // the only reading of this table that changes a decision
+    const beaten = rows.filter((r) => r.rival && r.rivalFits > r.fits.length);
+    if (!beaten.length) return '';
+    const worst = [...beaten].sort((a, b) => b.rivalFits - b.fits.length - (a.rivalFits - a.fits.length))[0];
+    const gap = worst.hw.price_usd! - worst.rival!.price_usd!;
+    return `<p>On ${numberWord(beaten.length)} of the ${numberWord(cards.length)} the complete computer holds more models than the card does: the ${beaten
+      .map((r) => `${esc(shortHardwareLabel(r.rival!))} holds ${r.rivalFits} where the ${esc(shortHardwareLabel(r.hw))} holds ${r.fits.length}`)
+      .join(', and the ')}. The widest gap is the ${esc(shortHardwareLabel(worst.hw))}: ${worst.rivalFits - worst.fits.length} models fewer than the ${esc(shortHardwareLabel(worst.rival!))}, which costs ${
+      gap > 0 ? `${fmtUsd(gap, { cents: false })} less` : gap < 0 ? `${fmtUsd(-gap, { cents: false })} more` : 'the same'
+    } and is a computer rather than a part for one. What the card has instead is bandwidth: ${fmtNum(worst.hw.memory_bandwidth_gbs!, 0)} GB/s against ${fmtNum(worst.rival!.memory_bandwidth_gbs!, 0)} GB/s.</p>`;
+  })()}
+<p>Per gigabyte, most of these cards are the expensive way round. ${
+    perGb.length && completePerGb
+      ? `The ${esc(shortHardwareLabel(perGb[0].r.hw))} is ${fmtUsd(perGb[0].gb, { cents: false })} for each usable gigabyte and the ${esc(shortHardwareLabel(perGb[perGb.length - 1].r.hw))} is ${fmtUsd(perGb[perGb.length - 1].gb, { cents: false })}. The cheapest gigabyte in a complete computer is the <a href="/hardware/${esc(completePerGb.h.id)}/">${esc(hardwareLabel(completePerGb.h))}</a> at ${fmtUsd(completePerGb.gb, { cents: false })}, and it arrives with the computer attached. ${(() => {
+          const under = perGb.filter((x) => x.gb < completePerGb.gb);
+          return under.length
+            ? `${sentenceCase(numberWord(under.length))} card${under.length === 1 ? '' : 's'} beat${under.length === 1 ? 's' : ''} that — ${under.map((x) => `the ${esc(shortHardwareLabel(x.r.hw))} at ${fmtUsd(x.gb, { cents: false })}` ).join(', ')} — and ${under.length === 1 ? 'it is the smallest card here' : 'they are the smallest cards here'}.`
+            : 'No card here beats it.';
+        })()} Divide the price by the usable memory yourself: the two figures are in the tables above.`
+      : ''
+  }${(() => {
+    const fastest = buyable
+      .filter((h) => h.price_scope !== 'card_only' && h.memory_bandwidth_gbs != null)
+      .sort((a, b) => b.memory_bandwidth_gbs! - a.memory_bandwidth_gbs! || a.price_usd! - b.price_usd!)[0];
+    if (!fastest) return '';
+    const over = rows.filter((r) => (r.hw.memory_bandwidth_gbs ?? 0) > fastest.memory_bandwidth_gbs!);
+    if (!over.length)
+      return ` What the cards give back is speed, but not on this list: every one of them reads memory more slowly than the <a href="/hardware/${esc(fastest.id)}/">${esc(hardwareLabel(fastest))}</a> at ${fmtNum(fastest.memory_bandwidth_gbs!, 0)} GB/s.`;
+    return ` What a card gives back is bandwidth, and only at the top of the range: ${numberWord(over.length)} of the ${numberWord(cards.length)} read memory faster than any complete computer here, at ${fmtNum(Math.max(...over.map((r) => r.hw.memory_bandwidth_gbs!)), 0)} GB/s against ${fmtNum(fastest.memory_bandwidth_gbs!, 0)} GB/s for the <a href="/hardware/${esc(fastest.id)}/">${esc(hardwareLabel(fastest))}</a>. The other ${numberWord(cards.length - over.length)} are slower than that machine.`;
+  })()}</p>
+
+<h2>How much use it takes for a card to pay for itself</h2>
+<p>Everything above is at ${fmtTokens(st.usage)} tokens a day. Pay-back moves with how hard you work a machine, so here is each card at the ${numberWord(levels.length)} levels of use the calculator names, on whichever model it holds that gets there soonest. The levels run from ${esc(levels[0].label)} to ${esc(top.label)}.</p>
+${stack(`<table class="board">
+<thead><tr><th>Card</th><th>Soonest on</th>${levels.map((l) => `<th>${fmtTokens(l.usage)} a day</th>`).join('')}</tr></thead>
+<tbody>${payRows}</tbody>
+</table>`, { fig: levels.length + 1, labels: { 1: 'Soonest on' } })}
+${
+    capped.length
+      ? `<p class="note">${capped.length === 1 ? 'One figure is' : `${numberWord(capped.length)} figures are`} marked as a ceiling: the card cannot generate what that level asks for, so the figure is for the most it can do rather than for the whole of what was asked. The ${esc(shortHardwareLabel(capped[0].hw))} manages at most ${capped[0].best!.max != null ? fmtTokens(capped[0].best!.max!) : 'less than the row asks for'} tokens a day on that model.</p>`
+      : ''
+  }
+<p class="note">These are the best case for each card and they still run to years at anything short of constant use, because the pay-back is against renting the same model from an API, and the small models a card holds are the cheap ones to rent. The card price is also the whole of the outlay here, so a real build pays back later than the table says. For the same question asked the other way round — which machine pays back soonest at a level of use — see <a href="/best/">best buys by usage</a>.</p>
+
+<p class="note">Every figure is at ${kctx} context and at the quantisation named on each model's page, with ${st.ratio}:1 input to output, $${esc(String(data.defaults.electricity.default_price_per_kwh_usd))} per kWh and today's API prices held flat. Models counted are the ${currentModels.length} current ones, the same set every machine page counts. Card prices are list or launch prices for the card alone, read on ${esc(data.defaults.data_last_checked)}, with the source on each card's page. Set two cards against each other in <a href="/compare/">the head-to-heads</a>, rank the models themselves on <a href="/leaderboard/">the leaderboard</a>, or <a href="${esc(calcLink({}, data))}">open the calculator</a> and enter what you actually paid.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([`Best GPU for local LLMs: what ${numberWord(cards.length)} cards really run`, 'Best GPU for local LLMs']),
+      description: descOf([
+        `What each graphics card here holds at ${kctx} context, the strongest open model it runs, how fast, and how much use it takes before it pays for itself.`,
+        `What each graphics card holds, the strongest model it runs, how fast, and how much use it takes to pay for itself.`,
+      ]),
+      canonical: '/best-gpu/',
+      ogImage: GPU_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/best-gpu/', label: 'Which graphics card' }],
+    },
+    body,
+    data,
+  );
+}
+
 /* ------------------------- model head-to-heads ------------------------- */
 
 function modelComparePage(a: Model, b: Model): string {
@@ -2966,6 +3229,7 @@ ${stack(`<table class="board">
 write('/leaderboard/', leaderboard());
 write('/best/', bestBuys());
 write('/how-much-memory/', memoryPage());
+write('/best-gpu/', gpuPage());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
@@ -3110,6 +3374,83 @@ function checkStandInPower() {
   console.log(`  ${machines} machines carry a borrowed power figure; the ${pages} head-to-heads that print one mark it and say what it prices`);
 }
 
+/**
+ * The graphics-card page answers a buying question with three claims that the data
+ * can move underneath it: which cards there are, how many models each one holds,
+ * and which card is the cheapest that reaches the best model any of them reach.
+ * The last is the page's own answer, and it is the one a new card or a new model
+ * would quietly falsify — the sentence would still read well and would be wrong.
+ *
+ * So this recomputes all three from the data and holds the page to them. It also
+ * holds the page to the rule every table on the site follows: a machine that is not
+ * a graphics card does not belong in a list of graphics cards, however close its
+ * price, and a count printed here has to be the count that machine's own page prints.
+ */
+function checkBestGpu() {
+  const page = meta.find((p) => p.path === '/best-gpu/');
+  if (!page) throw new Error('/best-gpu/ was not written');
+  const html = unesc(page.html);
+  const cards = graphicsCards(data);
+  const problems: string[] = [];
+
+  // the side-by-side table is the page's list of cards: every card in it, nothing else
+  const table = html.split('<h2>Every card here, side by side</h2>')[1]?.split('<h2>')[0] ?? '';
+  const listed = new Set([...table.matchAll(/\/hardware\/([a-z0-9.-]+)\//g)].map((m) => m[1]));
+  for (const c of cards) if (!listed.has(c.id)) problems.push(`the table of cards leaves out the ${shortHardwareLabel(c)}`);
+  for (const id of listed)
+    if (!cards.some((c) => c.id === id))
+      problems.push(`the table of cards lists ${id}, which is not priced as a card`);
+
+  // every count of what a card holds is the count its own page gives
+  for (const c of cards) {
+    const mine = fitsOn(c).length;
+    const row = table.split(`/hardware/${c.id}/`)[1]?.split('</tr>')[0] ?? '';
+    if (!row.includes(`<b>${mine}</b>`))
+      problems.push(`the row for the ${shortHardwareLabel(c)} does not print the ${mine} models its own page counts`);
+  }
+
+  // the answer in the lede: the best model any card holds, and the cheapest card that holds it
+  const held = new Set(cards.flatMap((c) => fitsOn(c).map((r) => r.model.id)));
+  const ceiling = currentModels
+    .filter((m) => m.frontier_equivalent?.score != null)
+    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
+    .find((m) => held.has(m.id));
+  if (ceiling) {
+    const cheapest = cards
+      .filter((c) => fitsOn(c).some((r) => r.model.id === ceiling.id))
+      .sort((a, b) => a.price_usd! - b.price_usd!)[0];
+    const lede = html.split('<p class="lede">')[1]?.split('</p>')[0] ?? '';
+    if (!lede.includes(ceiling.display_name))
+      problems.push(`the lede does not name ${ceiling.display_name}, the best model any card holds`);
+    if (cheapest && !lede.includes(shortHardwareLabel(cheapest)))
+      problems.push(`the lede does not name the ${shortHardwareLabel(cheapest)}, the cheapest card that holds it`);
+    // and it must not be read as the best card: a dearer one holds more
+    const dearer = cards.filter((c) => c.price_usd! > (cheapest?.price_usd ?? 0) && fitsOn(c).length > fitsOn(cheapest!).length);
+    if (dearer.length && !/does not run a better one/.test(lede))
+      problems.push('the lede names the cheapest card without saying what the dearer ones buy');
+  }
+
+  // pay-back is priced at every level the calculator names, or not at all
+  const pay = html.split('<h2>How much use it takes for a card to pay for itself</h2>')[1]?.split('<h2>')[0] ?? '';
+  const levels = bestUsageLevels(data);
+  const payRows = (pay.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>/g) ?? []).length;
+  if (payRows !== cards.length) problems.push(`pay-back is priced for ${payRows} cards, not ${cards.length}`);
+  for (const l of levels)
+    if (!pay.includes(`${fmtTokens(l.usage)} a day`)) problems.push(`pay-back skips ${fmtTokens(l.usage)} tokens a day`);
+  if (/its ceiling/.test(pay) && !/at most/.test(pay))
+    problems.push('pay-back marks a figure as a ceiling without saying what the ceiling is');
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} claim${problems.length === 1 ? '' : 's'} on /best-gpu/ do not match the data`);
+  }
+  console.log(
+    `  /best-gpu/ ranks ${cards.length} graphics cards on what each holds, prices pay-back at ${levels.length} levels, and names ${
+      ceiling ? ceiling.display_name : 'no model'
+    } as the best model any of them runs`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkHeadToHeads();
@@ -3133,4 +3474,5 @@ checkShorterFits();
 checkShorterMachines();
 checkHiddenModels();
 checkLeaderboardLinks();
+checkBestGpu();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

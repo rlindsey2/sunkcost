@@ -5,8 +5,8 @@ import {
   contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
-  otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  priceWithScope, priceWithScopeText, runnersFor,
+  graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell, powerSourceLabel,
+  powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   strongestShared, tierLabel, tierName, type LdNode,
 } from '../src/pagekit';
@@ -1083,5 +1083,45 @@ describe('what memory buys once two machines hold the same models', () => {
       }
     }
     expect(checked).toBeGreaterThan(300);
+  });
+});
+
+describe('the graphics cards, as a list of their own', () => {
+  const cards = graphicsCards(data);
+
+  it('holds every card priced as a card, and nothing with a computer around it', () => {
+    const priced = data.hardware.filter((h) => h.price_scope === 'card_only' && h.price_usd != null);
+    expect(cards.map((c) => c.id).sort()).toEqual(priced.map((c) => c.id).sort());
+    for (const c of cards) expect(c.price_scope).toBe('card_only');
+  });
+
+  it('orders them by the thing that decides what runs, then by price', () => {
+    for (let i = 1; i < cards.length; i++) {
+      const [before, after] = [cards[i - 1], cards[i]];
+      expect(before.usable_memory_gb!).toBeGreaterThanOrEqual(after.usable_memory_gb!);
+      if (before.usable_memory_gb === after.usable_memory_gb)
+        expect(before.price_usd!).toBeLessThanOrEqual(after.price_usd!);
+    }
+  });
+
+  it('sets each card against a complete computer, never against another card', () => {
+    for (const c of cards) {
+      const rival = nearestCompleteComputer(c, data);
+      expect(rival).not.toBeNull();
+      expect(rival!.price_scope).not.toBe('card_only');
+      expect(rival!.generation ?? 'current').toBe('current');
+      // nothing on sale is nearer that card's price than the one chosen
+      const nearest = Math.min(
+        ...data.hardware
+          .filter((h) => h.price_scope !== 'card_only' && h.price_usd != null && (h.generation ?? 'current') === 'current' && h.usable_memory_gb != null)
+          .map((h) => Math.abs(h.price_usd! - c.price_usd!)),
+      );
+      expect(Math.abs(rival!.price_usd! - c.price_usd!)).toBe(nearest);
+    }
+  });
+
+  it('prices each gigabyte from the figures the page prints beside it', () => {
+    for (const c of cards) expect(pricePerUsableGb(c)).toBeCloseTo(c.price_usd! / c.usable_memory_gb!, 6);
+    expect(pricePerUsableGb({ ...cards[0], price_usd: null })).toBeNull();
   });
 });

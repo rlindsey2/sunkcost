@@ -10,7 +10,8 @@
 import { esc, fmtDuration, fmtGb, fmtTokens, fmtUsd } from './format';
 import { bestByTier, bestUsageLevels, type Combo } from './best';
 import {
-  bandFit, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS, type BandFit,
+  bandFit, computeView, fitsOf, fmtGb1, graphicsCards, priceWithScopeText, shortHardwareLabel, SIZE_BANDS,
+  type BandFit,
 } from './pagekit';
 import { defaultState } from './state';
 import {
@@ -156,6 +157,7 @@ export const LEADERBOARD_CARD = '/og/leaderboard.png';
 export const BEST_CARD = '/og/best.png';
 export const COMPARE_CARD = '/og/compare.png';
 export const MEMORY_CARD = '/og/how-much-memory.png';
+export const GPU_CARD = '/og/best-gpu.png';
 
 /** How many open models the leaderboard card lists under the best hosted one. */
 const LEADERBOARD_ROWS = 5;
@@ -312,6 +314,41 @@ export function memoryCard(data: Dataset, fontFamily?: string): string {
     metaW: 514,
     valueW: 170,
     note: `The hungriest model in each band, at ${kctx} context, at list price`,
+    dataChecked: data.defaults.data_last_checked,
+    fontFamily,
+  });
+}
+
+/**
+ * The graphics-card question, one row per card: what it costs on its own, and how
+ * many of the current models fit in it. The page's own answer is the two right-hand
+ * columns read together — what a dearer card buys is more of the list, and the
+ * price climbs a great deal faster than the count does.
+ */
+export function gpuCard(data: Dataset, fontFamily?: string): string {
+  const st = defaultState(data);
+  const kctx = `${Math.round(st.ctx / 1024)}k`;
+  const cards = graphicsCards(data);
+  const current = data.models.filter((m) => m.generation !== 'legacy');
+
+  // seven rows leave no room for a second line under each name, so the strongest
+  // model each one runs is left to the page and the card answers the question the
+  // page's own table is ordered by: how much of the list each card can hold
+  const rows: ListRow[] = cards.map((hw) => ({
+    name: shortHardwareLabel(hw),
+    meta: priceWithScopeText(hw),
+    value: String(fitsOf(computeView({ ...st, hw: hw.id }, data)).length),
+  }));
+
+  return listCardSvg({
+    eyebrow: 'Graphics cards',
+    headline: 'Which graphics card should you buy for local LLMs?',
+    columns: { name: 'Card', meta: 'Price', value: `Models of ${current.length}` },
+    rows,
+    metaX: 560,
+    metaW: 300,
+    valueW: 90,
+    note: `Models held at ${kctx} context, weights and cache together, at list price`,
     dataChecked: data.defaults.data_last_checked,
     fontFamily,
   });
