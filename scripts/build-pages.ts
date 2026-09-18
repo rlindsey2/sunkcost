@@ -12,7 +12,8 @@ import {
   chipStepNames, familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
-  cardScopeNote, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking,
+  cardScopeNote, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct, holdHyphens, indefiniteArticle,
+  kvWorking,
   longestContext, lowerFirst, machinesConsidered, machinesShorter, machineVerdict, median,
   meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, otherQuantisations, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
@@ -1398,7 +1399,7 @@ function leaderboard(): string {
 
   const rows = placed
     .map(({ m, next, score, cheapest, shorter }) => `<tr>
-  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(m.quantisation)}</span></td>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span></td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
@@ -1882,7 +1883,7 @@ function shorterWindowSection(hw: Hardware, rows: ShorterFit[], ctx: number): st
   const body = rows
     .map(
       (r) => `<tr>
-  <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${esc(r.model.quantisation)}</span></td>
+  <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${holdHyphens(r.model.quantisation)}</span></td>
   <td><a href="${esc(calcLink({ hw: hw.id, model: r.model.id, ctx: r.ctx }, data))}">${ctxLabel(r.ctx)}</a></td>
   <td>${fmtGb(r.needGb)}</td>
   <td>${fmtGb(r.needAtDefaultGb)}</td>
@@ -1946,7 +1947,7 @@ function hardwarePage(hw: Hardware): string {
       const holds = reach.get(r.model.id);
       const memory = holds != null && contextCappedBy(r.model, holds, data) === 'memory';
       return `<tr>
-  <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${esc(r.model.quantisation)}</span></td>
+  <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${holdHyphens(r.model.quantisation)}</span></td>
   <td>${r.throughput.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(r.throughput.tokensPerSec, r.throughput.tokensPerSec < 10 ? 1 : 0)} tok/s`}</td>
   <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
   <td>${dotRow(r.model)}</td>
@@ -2357,7 +2358,7 @@ function comparePage(a: Hardware, b: Hardware): string {
   // pairs that is not the same model, so the speed cell names the model it belongs to
   const differ = !!fa[0] && !!fb[0] && fa[0].model.id !== fb[0].model.id;
   const speedCell = (r: ModelRow | undefined) =>
-    !r ? '—' : `${speedWithBasis(r)}${differ ? `<span class="c-quant">${esc(r.model.display_name)}</span>` : ''}`;
+    !r ? '—' : `${speedWithBasis(r)}${differ ? `<span class="c-quant">${holdHyphens(r.model.display_name)}</span>` : ''}`;
 
   const shared = strongestShared(va, vb);
   // the like-for-like race the table above cannot give when the two columns
@@ -2480,7 +2481,7 @@ ${sharedLengthLine(roomierHw, tighterHw, tighterView, roomier, tighter, ctxK)}`
 <thead><tr><th>A day's use</th><th>${esc(la)}</th><th>${esc(lb)}</th></tr></thead>
 <tbody>
 ${cells
-  .map((c) => `<tr><th>${fmtTokens(c.level.usage)}<span class="c-quant">${esc(c.level.label)}</span></th><td>${payCell(c.a)}</td><td>${payCell(c.b)}</td></tr>`)
+  .map((c) => `<tr><th>${fmtTokens(c.level.usage)}<span class="c-quant">${holdHyphens(c.level.label)}</span></th><td>${payCell(c.a)}</td><td>${payCell(c.b)}</td></tr>`)
   .join('\n')}
 </tbody>
 </table>
@@ -2734,7 +2735,7 @@ function memoryRow(m: Model): string {
   const need = footprintGb(m, CTX);
   const hw = cheapestThatHolds(need, data);
   return `<tr>
-  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(m.quantisation)}</span>${m.generation === 'legacy' ? '<span class="c-quant">older</span>' : ''}</td>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span>${m.generation === 'legacy' ? '<span class="c-quant">older</span>' : ''}</td>
   <td>${fmtNum(m.params_b, 1)}B</td>
   <td>${fmtGb1(m.weights_gb)}</td>
   <td>${fmtGb1(kv)}</td>
@@ -3023,7 +3024,7 @@ function gpuPage(): string {
     .map(({ level, best: b }) => `<td>${
       b == null
         ? '<span class="dim">never</span>'
-        : `${esc(fmtDuration(b.days))}${b.capped ? '<span class="c-quant">its ceiling</span>' : ''}${lead && b.model.id !== lead.id ? `<span class="c-quant">on ${esc(b.model.display_name)}</span>` : ''}`
+        : `${esc(fmtDuration(b.days))}${b.capped ? '<span class="c-quant">its ceiling</span>' : ''}${lead && b.model.id !== lead.id ? `<span class="c-quant">on ${holdHyphens(b.model.display_name)}</span>` : ''}`
     }</td>`)
     .join('')}
 </tr>`;
@@ -3229,13 +3230,13 @@ function modelComparePage(a: Model, b: Model): string {
   // and a price standing in for another model has to say whose it is
   const apiPriceCell = (m: Model) => {
     const ce = m.cloud_equivalent;
-    return `$${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out${ce.is_exact_match ? '' : `<span class="c-quant">priced as ${esc(ce.name)}</span>`}`;
+    return `$${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out${ce.is_exact_match ? '' : `<span class="c-quant">priced as ${holdHyphens(ce.name)}</span>`}`;
   };
   const apiCell = (m: Model, view: View | undefined) => {
     const c = view?.calc;
     if (!c) return '<span class="dim">unknown</span>';
     const ce = m.cloud_equivalent;
-    return `${fmtUsd(c.cloudCostPerMonth)}${ce.is_exact_match ? '' : `<span class="c-quant">priced as ${esc(ce.name)}</span>`}`;
+    return `${fmtUsd(c.cloudCostPerMonth)}${ce.is_exact_match ? '' : `<span class="c-quant">priced as ${holdHyphens(ce.name)}</span>`}`;
   };
 
   const sameStart = !!ra[0] && !!rb[0] && ra[0].hw.id === rb[0].hw.id;
@@ -3384,7 +3385,7 @@ ${row('API cost per month', apiCell(a, race.s.a.view), apiCell(b, race.s.b.view)
 <thead><tr><th>A day's use</th><th>${esc(a.display_name)}</th><th>${esc(b.display_name)}</th></tr></thead>
 <tbody>
 ${cells
-  .map((c) => `<tr><th>${fmtTokens(c.level.usage)}<span class="c-quant">${esc(c.level.label)}</span></th><td>${payCell(c.a)}</td><td>${payCell(c.b)}</td></tr>`)
+  .map((c) => `<tr><th>${fmtTokens(c.level.usage)}<span class="c-quant">${holdHyphens(c.level.label)}</span></th><td>${payCell(c.a)}</td><td>${payCell(c.b)}</td></tr>`)
   .join('\n')}
 </tbody>
 </table>
@@ -3796,7 +3797,8 @@ function checkChipStepPairs() {
 function checkStandInPower() {
   const problems: string[] = [];
   const standIn = (h: Hardware) => h.load_watts_status === 'stand_in' && h.load_watts != null;
-  const marker = /<span class="c-quant">stand-in<\/span>/g;
+  // "stand-in" carries its own hyphen, so holdHyphens() holds it to one line inside the marker
+  const marker = /<span class="c-quant"><span class="nobreak">stand-in<\/span><\/span>/g;
   let pages = 0;
   for (const [a, b] of hardwarePairs(data)) {
     const path = hardwareComparePath(a, b);
@@ -3875,6 +3877,69 @@ function checkTierLabels() {
     throw new Error(`${bare.length} tier label${bare.length === 1 ? '' : 's'} beside a name would break the wrong way on a phone`);
   }
   console.log(`  ${held + wrapping} tier labels sit beside a name in a table: ${held} hold their line, ${wrapping} wrap between their words`);
+}
+
+/**
+ * The same rule, for every other marker beside a figure. A marker is prose and
+ * wraps between its words wherever a column is narrow: a phone stacks the row
+ * and a tablet-width window wraps every cell, and both have been squeezing these
+ * since the table stopped scrolling sideways. A word carrying its own hyphen is
+ * the exception — "UD-Q4_K_M" broken after the UD, or a price standing in for
+ * "GLM-4.7-Flash" broken after the 4.7, reads as a mistake in the data rather
+ * than one in the layout, and five of them were doing exactly that on a phone
+ * before holdHyphens() existed.
+ *
+ * So: no marker may print a hyphenated word bare. The name a figure is qualified
+ * by comes out of data/*.json, so a new model or a new engine can bring one in at
+ * any time, which is why this is a build guard rather than a one-off sweep.
+ *
+ * The hold is markup; page.css decides where it applies. It gives way in one
+ * layout, the three columns a head-to-head splits a phone screen into, because a
+ * cell there is about 95px and a name held whole would push the table and the page
+ * past the right edge. A name broken in the wrong place is the lesser fault.
+ */
+/** The contents of every marker beside a figure, nested spans and all. */
+function markerBodies(html: string): string[] {
+  const out: string[] = [];
+  const open = '<span class="c-quant">';
+  for (let i = html.indexOf(open); i !== -1; i = html.indexOf(open, i + 1)) {
+    let depth = 1;
+    let j = i + open.length;
+    const start = j;
+    while (depth > 0 && j < html.length) {
+      const next = html.indexOf('<span', j);
+      const close = html.indexOf('</span>', j);
+      if (close === -1) break;
+      if (next !== -1 && next < close) {
+        depth++;
+        j = next + 5;
+      } else {
+        depth--;
+        if (depth === 0) out.push(html.slice(start, close));
+        j = close + 7;
+      }
+    }
+  }
+  return out;
+}
+
+function checkMarkerWords() {
+  const hyphenated = /[^\s-]-[^\s-]/;
+  const loose: string[] = [];
+  let held = 0;
+  for (const p of meta) {
+    for (const inner of markerBodies(p.html)) {
+      const free = unesc(inner.replace(/<span class="nobreak">[\s\S]*?<\/span>/g, ' ').replace(/<[^>]*>/g, ''));
+      const bad = free.split(/\s+/).filter((w) => hyphenated.test(w));
+      if (bad.length) loose.push(`${p.path} prints ${bad[0]} beside a figure where a narrow column can break it at its own hyphen`);
+      else if (/class="nobreak"/.test(inner)) held++;
+    }
+  }
+  if (loose.length) {
+    console.error([...new Set(loose)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${loose.length} marker${loose.length === 1 ? '' : 's'} beside a figure would break a word at its own hyphen`);
+  }
+  console.log(`  ${held} markers beside a figure keep a hyphenated word whole wherever the layout allows it; the phrase around it wraps`);
 }
 
 /**
@@ -4034,4 +4099,5 @@ checkHiddenModels();
 checkLeaderboardLinks();
 checkBestGpu();
 checkTierLabels();
+checkMarkerWords();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

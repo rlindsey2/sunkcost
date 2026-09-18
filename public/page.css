@@ -225,9 +225,22 @@ a:hover { color: var(--ink); }
    page first gets its whole 980px measure. */
 @media (min-width: 641px) and (max-width: 1023px) {
   .board thead th, .board td, .board tbody th { white-space: normal; padding: 8px 7px; }
-  .board .c-score, .board .c-quant, .board .c-gb { white-space: nowrap; }
+  .board .c-score, .board .c-gb { white-space: nowrap; }
+  /* A marker beside a figure is a phrase, not a figure: "card only, at launch",
+     "priced as GLM-4.7-Flash", the label on a level of use. Held to one line it
+     claims the width of the longest of them, and the column it sits in takes it
+     from the columns around it — on the card ranking that made Price 203px wide,
+     crushed the card names into four lines each and pushed Speed on it off the
+     right edge, 60px past the table's own width at 641px. It wraps between its
+     words here, and a word carrying its own hyphen still holds its line. */
+  .board .c-quant { white-space: normal; }
   .c-model { min-width: 118px; }
-  .board .c-score .bar { width: 56px; margin-right: 6px; }
+  /* The score bar is the one thing in a leaderboard row that carries no number,
+     and at the narrowest window here there is no room for it: seven columns
+     wanted 600px in the 597px the page gives them, so "Next down" lost its last
+     three pixels off the right edge. It takes the width it already has on a
+     phone, which is the same reasoning one screen size down. */
+  .board .c-score .bar { width: 46px; margin-right: 6px; }
 }
 
 @media (max-width: 640px) {
@@ -250,6 +263,13 @@ a:hover { color: var(--ink); }
   .board.compare { display: table; table-layout: fixed; overflow-x: visible; white-space: normal; }
   .board.compare thead th, .board.compare tbody th { white-space: normal; }
   .board.compare thead th, .board.compare td { overflow-wrap: anywhere; }
+  /* Three columns on a phone screen give a cell about 95px, which is narrower
+     than some of the names that land in one. A name normally holds its line
+     rather than break at its own hyphen, and here that would push the table,
+     and the page with it, past the right edge: "GLM-5.3-Flash" alone is 96px.
+     A name broken in the wrong place is the lesser fault, so the hold gives
+     way in this layout and nowhere else. */
+  .board.compare .nobreak { white-space: normal; }
   .board.compare tbody th { padding-left: 0; }
   .board.compare thead th:first-child { width: 34%; }
   .board.compare .c-quant { display: block; margin-left: 0; white-space: normal; }
