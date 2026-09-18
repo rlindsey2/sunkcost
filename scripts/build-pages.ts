@@ -16,9 +16,9 @@ import {
   meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, otherQuantisations, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
   rowFor,
-  runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
+  runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   speedWithBasis, stack,
-  strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
+  strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -493,7 +493,8 @@ function checkHeadroom() {
     const st = defaultState(data);
     const va = computeView({ ...st, hw: a.id }, data);
     const vb = computeView({ ...st, hw: b.id }, data);
-    // the other 21 pages answer with the models one machine holds and the other does not
+    // the other 53 pages answer with the models one machine holds and the other does not,
+    // and checkSharedHeadroom() holds the second half of their answer
     if (runsOnlyOn(va, vb).length || runsOnlyOn(vb, va).length) continue;
     const path = hardwareComparePath(a, b);
     const html = meta.find((m) => m.path === path)?.html ?? '';
@@ -530,6 +531,71 @@ function checkHeadroom() {
     throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} do not say what the memory they do not share buys`);
   }
   console.log(`  ${named + flat} head-to-heads between machines holding the same models: ${named} name what the spare memory buys in context, ${flat} that it buys nothing`);
+}
+
+/**
+ * The mirror of checkHeadroom(), for the 53 pages it skips. Where one machine holds models
+ * the other cannot, the page names those models and then says what the same memory buys on
+ * the models the two machines share, which is length. The figures in that sentence are easy
+ * to get subtly wrong — the wrong machine named as the roomier one, a count that drifts from
+ * the data, a window that is not the longest the calculator offers — so every one of them is
+ * worked out again here from the data rather than read back off the page. The rule: a page
+ * with an extra-models section says it when at least one shared model reaches different
+ * lengths, says nothing when none does, and no other page says it at all.
+ */
+function checkSharedHeadroom() {
+  const problems: string[] = [];
+  let said = 0;
+  let silent = 0;
+  const MARK = '<p>The extra memory buys context as well.';
+  for (const [a, b] of hardwarePairs(data)) {
+    const st = defaultState(data);
+    const va = computeView({ ...st, hw: a.id }, data);
+    const vb = computeView({ ...st, hw: b.id }, data);
+    const extraA = runsOnlyOn(va, vb);
+    const extraB = runsOnlyOn(vb, va);
+    const path = hardwareComparePath(a, b);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    const para = html.split(MARK)[1]?.split('</p>')[0] ?? '';
+    if (!extraA.length && !extraB.length) {
+      // these say it under their own heading, in the words checkHeadroom() holds them to
+      if (para) problems.push(`${path} holds the same models on both machines and still claims the extra memory buys context`);
+      continue;
+    }
+    const [roomier, tighter, tighterView] = extraA.length >= extraB.length ? [a, b, vb] : [b, a, va];
+    if ((roomier.usable_memory_gb ?? 0) < (tighter.usable_memory_gb ?? 0))
+      problems.push(`${path} names the ${shortHardwareLabel(roomier)} as the roomier machine, and it has the less usable memory of the two`);
+    const rows = sharedHeadroom(roomier, tighter, tighterView, data);
+    const widest = widestHeadroom(rows);
+    if (!rows.length || !widest) {
+      silent++;
+      if (para) problems.push(`${path} takes every shared model to the same length on both machines and still claims the extra memory buys context`);
+      continue;
+    }
+    said++;
+    if (!para) {
+      problems.push(`${path} takes ${rows.length} shared model${rows.length === 1 ? '' : 's'} further on the ${shortHardwareLabel(roomier)} and does not say so`);
+      continue;
+    }
+    const shared = fitsOf(tighterView).length;
+    if (!para.includes(`Of the ${shared} models both machines hold`))
+      problems.push(`${path} does not say the two machines share ${shared} models at ${Math.round(st.ctx / 1024)}k`);
+    const counted = rows.length === 1 ? 'one runs' : `${rows.length} run`;
+    if (!para.includes(`${counted} to a longer window on the ${esc(hardwareLabel(roomier))}`))
+      problems.push(`${path} does not say that ${rows.length} of those reach a longer window on the ${shortHardwareLabel(roomier)}`);
+    // the model named has to be the one whose two windows are furthest apart, and both of
+    // its figures have to be the ones the data gives, not the pair of some other model
+    if (!para.includes(`${esc(widest.model.display_name)} reaches ${ctxLabel(widest.a!)}</a> there against ${ctxLabel(widest.b!)} on the ${esc(hardwareLabel(tighter))}`))
+      problems.push(`${path} does not name ${widest.model.display_name} at ${ctxLabel(widest.a!)} against ${ctxLabel(widest.b!)}, the widest gap between the two machines`);
+    const link = esc(calcLink({ hw: roomier.id, model: widest.model.id, ctx: widest.a! }, data));
+    if (!para.includes(`href="${link}"`))
+      problems.push(`${path} does not open the calculator on ${widest.model.display_name} on the ${shortHardwareLabel(roomier)} at ${ctxLabel(widest.a!)}`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} do not say what the extra memory buys on the models both machines hold`);
+  }
+  console.log(`  ${said + silent} head-to-heads where one machine holds models the other cannot: ${said} also say how much further the shared models go, ${silent} that they go no further`);
 }
 
 /**
@@ -1900,6 +1966,27 @@ ${top.a !== null && top.b !== null ? `<p><a class="cta" href="${esc(calcLink({ h
 }
 
 /**
+ * The 53 head-to-heads where one machine holds models the other cannot answer the memory
+ * gap with that list and stop. It is half an answer: the models the two machines *share*
+ * are not held to the same length either, because fit turns on usable memory and the
+ * cache grows into whatever the weights leave spare. This is the other half, in one
+ * paragraph under the heading that promised it rather than a second table beside it:
+ * these pages already run 611 to 795 words and already carry a table about memory. The
+ * longest window the roomier machine reaches is the link into the calculator.
+ */
+function sharedLengthLine(roomier: Hardware, tighter: Hardware, tighterView: View, la: string, lb: string, ctxK: number): string {
+  const rows = sharedHeadroom(roomier, tighter, tighterView, data);
+  const widest = widestHeadroom(rows);
+  if (!rows.length || !widest) return '';
+  const shared = fitsOf(tighterView).length;
+  const count = shared === 1
+    ? `The one model both machines hold at ${ctxK}k runs to a longer window on the ${esc(la)}`
+    : `Of the ${shared} models both machines hold at ${ctxK}k, ${rows.length === 1 ? 'one runs' : `${rows.length} run`} to a longer window on the ${esc(la)}`;
+  const link = calcLink({ hw: roomier.id, model: widest.model.id, ctx: widest.a! }, data);
+  return `<p>The extra memory buys context as well. ${count}: the weights are a fixed size and the KV cache is not, so what the weights leave spare is what a longer context grows into. <a href="${esc(link)}">${esc(widest.model.display_name)} reaches ${ctxLabel(widest.a!)}</a> there against ${ctxLabel(widest.b!)} on the ${esc(lb)}, each the longest window the calculator offers that the machine still holds it at.</p>`;
+}
+
+/**
  * Two boxes built on the same hardware. Everything the rest of the page compares is equal
  * by construction, so this says what is the same and why, and hands the reader the one
  * thing that is not: the price. It replaces the memory section rather than joining it,
@@ -2100,6 +2187,7 @@ ${row('Pay-back', esc(verdictLine(sa)), esc(verdictLine(sb)))}
     ? [la, lb, extraA, va]
     : [lb, la, extraB, vb];
   const shown = extra.slice(0, 6);
+  const [roomierHw, tighterHw, tighterView] = extraA.length >= extraB.length ? [a, b, vb] : [b, a, va];
   const extraSection = extra.length
     ? `<h2>What the extra memory buys</h2>
 <p>The ${esc(roomier)} holds ${extra.length} model${extra.length === 1 ? '' : 's'} the ${esc(tighter)} cannot at ${ctxK}k of context. ${extra.length === 1 ? 'That is' : 'The strongest of them are'} what the difference in memory actually buys.</p>
@@ -2114,7 +2202,8 @@ ${shown
   .join('\n')}
 </tbody>
 </table>`, { fig: 3, labels: { 2: 'Needs' } })}
-${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}`
+${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}
+${sharedLengthLine(roomierHw, tighterHw, tighterView, roomier, tighter, ctxK)}`
     : twins
       ? ''
       : sameListSection(a, b, va, la, lb, ctxK, headroom);
@@ -3574,6 +3663,7 @@ checkCompareIndex();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();
+checkSharedHeadroom();
 checkSameSilicon();
 checkGenerationPairs();
 checkStandInPower();

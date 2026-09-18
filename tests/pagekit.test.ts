@@ -7,8 +7,8 @@ import {
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
   graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell, powerSourceLabel,
   powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
-  runsOnlyOn, runsOnlyThere, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  strongestShared, tierLabel, tierName, type LdNode,
+  runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
+  strongestShared, tierLabel, tierName, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -841,6 +841,58 @@ describe('what memory buys once two machines hold the same models', () => {
     for (const m of counted.filter((x) => !named.has(x.id))) {
       expect(longestContext(m, a, data)).toBe(longestContext(m, b, data));
     }
+  });
+
+  it('counts the shared models as the ones the tighter machine holds, in the page\'s own order', () => {
+    const roomier = hw('rtx-pro-6000-blackwell-96');
+    const tighter = hw('radeon-ai-pro-r9700-32');
+    const tighterView = computeView({ ...st, hw: tighter.id }, data);
+    const rows = sharedHeadroom(roomier, tighter, tighterView, data);
+    const shared = fitsOf(tighterView).map((r) => r.model.id);
+    expect(rows.length).toBeGreaterThan(0);
+    // nothing the tighter machine cannot hold at the context the page prices
+    for (const r of rows) expect(shared).toContain(r.model.id);
+    // the roomier machine is the one that goes further, on every row
+    for (const r of rows) expect(r.a ?? 0).toBeGreaterThan(r.b ?? 0);
+    // and the order is the view's, strongest model first
+    expect(rows.map((r) => shared.indexOf(r.model.id))).toEqual([...rows.map((r) => shared.indexOf(r.model.id))].sort((x, y) => x - y));
+  });
+
+  it('leaves out every shared model the two machines take to the same length', () => {
+    const roomier = hw('rtx-pro-6000-blackwell-96');
+    const tighter = hw('radeon-ai-pro-r9700-32');
+    const tighterView = computeView({ ...st, hw: tighter.id }, data);
+    const named = new Set(sharedHeadroom(roomier, tighter, tighterView, data).map((r) => r.model.id));
+    for (const r of fitsOf(tighterView)) {
+      if (named.has(r.model.id)) continue;
+      expect(longestContext(r.model, roomier, data)).toBe(longestContext(r.model, tighter, data));
+    }
+  });
+
+  it('names the model whose two windows are furthest apart, as a ratio rather than a gap', () => {
+    const roomier = hw('rtx-pro-6000-blackwell-96');
+    const tighter = hw('radeon-ai-pro-r9700-32');
+    const tighterView = computeView({ ...st, hw: tighter.id }, data);
+    const rows = sharedHeadroom(roomier, tighter, tighterView, data);
+    const widest = widestHeadroom(rows)!;
+    expect(widest).not.toBeNull();
+    const ratio = (r: { a: number | null; b: number | null }) => (r.a ?? 0) / (r.b ?? 1);
+    for (const r of rows) expect(ratio(r)).toBeLessThanOrEqual(ratio(widest));
+    // 32k to 256k beats 128k to 256k, though the second is the larger number of tokens
+    expect(ratio(widest)).toBe(8);
+    expect(widest.a).toBe(262144);
+    expect(widest.b).toBe(32768);
+  });
+
+  it('keeps the page\'s order on a tie, and has nothing to name when nothing differs', () => {
+    expect(widestHeadroom([])).toBeNull();
+    const m = (id: string) => data.models.find((x) => x.id === id)!;
+    const first = { model: m('gemma-4-12b-q4'), a: 262144, b: 32768 };
+    const second = { model: m('gemma-4-31b-q4'), a: 131072, b: 16384 };
+    expect(widestHeadroom([first, second])).toBe(first);
+    expect(widestHeadroom([second, first])).toBe(second);
+    // a row the tighter machine cannot hold at any length is not a gap that can be measured
+    expect(widestHeadroom([{ model: m('gemma-4-12b-q4'), a: 262144, b: null }])).toBeNull();
   });
 
   it('finds nothing to say where the two machines are the same size', () => {
