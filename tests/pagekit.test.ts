@@ -8,7 +8,7 @@ import {
   footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
+  holdHyphens, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -452,8 +452,10 @@ describe('machine head-to-heads', () => {
     const own = data.hardware.filter((h) => h.load_watts_status !== 'stand_in' && h.load_watts != null);
     expect(borrowed.length).toBeGreaterThan(0);
     expect(own.length).toBeGreaterThan(0);
-    // the marker sits on the figure, where the reader meets it, and carries the watts with it
-    for (const h of borrowed) expect(powerWithSource(h)).toBe(`${h.load_watts} W<span class="c-quant">stand-in</span>`);
+    // the marker sits on the figure, where the reader meets it, and carries the watts
+    // with it; "stand-in" carries its own hyphen, so it holds its line inside the marker
+    for (const h of borrowed)
+      expect(powerWithSource(h)).toBe(`${h.load_watts} W<span class="c-quant"><span class="nobreak">stand-in</span></span>`);
     // and a figure the data did get for the machine itself never wears one
     for (const h of own) expect(powerWithSource(h)).toBe(`${h.load_watts} W`);
     expect(powerWithSource({ ...own[0], load_watts: null })).toBe('<span class="dim">not published</span>');
@@ -663,7 +665,21 @@ describe('tables between a phone and a full page', () => {
   });
 
   it('keeps a figure on one line, because half a number is worse than half a name', () => {
-    expect(band).toMatch(/\.board \.c-score, \.board \.c-quant, \.board \.c-gb \{ white-space: nowrap; \}/);
+    expect(band).toMatch(/\.board \.c-score, \.board \.c-gb \{ white-space: nowrap; \}/);
+  });
+
+  it('lets a marker beside a figure wrap, so it cannot claim a column of its own', () => {
+    // "card only, at launch" held to one line made Price 203px wide on the card
+    // ranking, crushed every card name into four lines and pushed Speed on it
+    // 60px past the table's own width at 641px. A marker is a phrase, not a figure.
+    expect(band).toContain('.board .c-quant { white-space: normal; }');
+    expect(band).not.toMatch(/\.c-quant[^{]*\{[^}]*nowrap/);
+  });
+
+  it('gives the score bar the width it has on a phone, so seven columns fit', () => {
+    // the leaderboard's seven columns wanted 600px in the 597px a page gives them
+    // at 641px, and the bar is the only thing in the row that carries no number
+    expect(band).toContain('.board .c-score .bar { width: 46px; margin-right: 6px; }');
   });
 
   it('never holds a machine name, a class or a rival to one line at any width', () => {
@@ -816,6 +832,22 @@ describe('tables on a phone', () => {
     // sits on the span tierLabel() puts around it rather than on the label
     expect(css).toContain('.nobreak { white-space: nowrap; }');
     expect(phone).not.toMatch(/\.board\.stack \.c-quant \{[^}]*nowrap/);
+  });
+
+  it('holds a hyphenated word inside a marker together, except where that would push the page out', () => {
+    // "UD-Q4_K_M" broken after the UD, or a price standing in for "GLM-4.7-Flash"
+    // broken after the 4.7, reads as a mistake in the data rather than one in the
+    // layout. Five markers were doing exactly that on a phone.
+    expect(holdHyphens('UD-Q4_K_M')).toBe('<span class="nobreak">UD-Q4_K_M</span>');
+    expect(holdHyphens('priced as GLM-4.7-Flash')).toBe('priced as <span class="nobreak">GLM-4.7-Flash</span>');
+    expect(holdHyphens('a moderate coding-assistant day')).toBe('a moderate <span class="nobreak">coding-assistant</span> day');
+    expect(holdHyphens('card only, at launch')).toBe('card only, at launch');
+    const css = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8');
+    const phone = css.match(/@media \(max-width: 640px\) \{([\s\S]*)\n\}/)?.[1] ?? '';
+    // three columns on a phone give a cell about 95px, and "GLM-5.3-Flash" alone
+    // is 96px of it, so in that one layout the hold gives way rather than push
+    // the table and the page past the right edge
+    expect(phone).toContain('.board.compare .nobreak { white-space: normal; }');
   });
 
   it('refuses a table it cannot mark up rather than shipping one that swipes', () => {

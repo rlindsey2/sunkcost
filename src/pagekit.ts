@@ -464,6 +464,21 @@ export function tierLabel(m: Model, data: Dataset): string {
   return name.includes(' ') ? esc(name) : `<span class="nobreak">${esc(name)}</span>`;
 }
 
+/**
+ * The same rule for the markers beside a figure that are not tier labels: a
+ * quantisation, the model a price stands in for, the label on a level of use.
+ * The phrase wraps between its words wherever a column is narrow, but a word
+ * carrying its own hyphen holds its line — "UD-Q4_K_M" or "GLM-4.7-Flash"
+ * broken at the hyphen reads as a mistake in the data rather than one in the
+ * layout, which is the same thing "Haiku-class" would do above.
+ */
+export function holdHyphens(text: string): string {
+  return text
+    .split(' ')
+    .map((w) => (/[^\s-]-[^\s-]/.test(w) ? `<span class="nobreak">${esc(w)}</span>` : esc(w)))
+    .join(' ');
+}
+
 /** The cheapest machine each family can run this model on, with the verdict at default usage. */
 export interface Runner {
   hw: Hardware;
@@ -990,7 +1005,7 @@ export function cardScopeNote(machines: Hardware[]): string {
  */
 export function powerWithSource(hw: Hardware): string {
   if (hw.load_watts == null) return '<span class="dim">not published</span>';
-  return `${hw.load_watts} W${hw.load_watts_status === 'stand_in' ? '<span class="c-quant">stand-in</span>' : ''}`;
+  return `${hw.load_watts} W${hw.load_watts_status === 'stand_in' ? `<span class="c-quant">${holdHyphens('stand-in')}</span>` : ''}`;
 }
 
 /** Where a power figure came from, in words rather than in the data's own key. */

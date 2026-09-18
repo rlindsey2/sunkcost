@@ -3,7 +3,31 @@
 Read this before doing anything. One entry per run, newest first. Pick up the top open item in
 the backlog, or the open item the previous run said to continue. Never redo a done item.
 
+**One thing comes before the backlog, once a day.** Run `npm run model-watch`. If it prints a last
+checked date that is not today, do the model watch in `seo/MODEL-WATCH.md` before anything else —
+new models are what this site is about, and a site that lists last month's is worth less than one
+that is a day late on a page. It is ten minutes on a quiet day. If the date is today, another run
+has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
+
 ## Ryan's side (needs the site owner)
+
+- [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
+      2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
+      site ranks top of what a graphics card runs — at a stated **5.9 GB** against the 16.46 GB the
+      Q4_K_M row carries, so it would drop into machines that cannot hold the model today. The
+      candidate, its sources and everything still missing are in `seo/MODEL-WATCH.md`.
+      Two things are needed and neither is the agent's to decide. **The figures**: weights at the
+      precision actually entered, the architecture the KV-cache figure is checked against, whether
+      anybody rents it, and an Artificial Analysis score, which the index does not appear to carry
+      for this build. **The judgement**: a ternary build retaining 98.2% of its base model is either
+      its own row with its own score, or a second quantisation of Qwen3.8 27B inheriting that
+      model's score with a note — the first needs a number nobody has published, the second prints
+      a score this build did not earn.
+      **And one standing decision that would change how much the watch is worth.** As it stands the
+      agent records a candidate and stops, because `data/*.json` is on its never-touch list. If you
+      would rather it opened a pull request against `models.json` once every field has a source it
+      can name — never inventing one, and stopping where a figure is missing — say so and the rule
+      can be lifted for this the way it was lifted for the usage slider in PR #6.
 
 - [ ] **Two agent sessions keep running this hourly task at the same time, and they duplicate each
       other's work.** It has now happened at least twice: once around 03:38 on 2026-09-17 (see the run
@@ -119,7 +143,8 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
-      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge** (`8789b62`):
+      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge**, and repaired
+      again at 12:50 against the tier-label push (`b7c44e9`, one hunk, two guards on one list):
       16 union hunks in six files, the `/best/` note merged so both pages keep their link, a
       seventh footer entry carried into `index.html`, and one stray file dropped. Verified on the
       merged tree: 258 tests, typecheck clean, 254 pages with every guard passing, the full
@@ -176,7 +201,7 @@ the backlog, or the open item the previous run said to continue. Never redo a do
 
 - [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
       machines at `/hardware/`. **Repaired against green `main` at 11:47 on 2026-09-18 and ready
-      to merge** (`81cd7d1`): 10 union hunks in four files, the build's own count line kept from
+      to merge**, and repaired again at 12:51 against the tier-label push (`0d16555`): 10 union hunks in four files, the build's own count line kept from
       this branch because `/hardware/` is a page rather than a machine, and `/hardware/` carried
       into `index.html`'s footer, which no conflict marker asked for. Verified on the merged tree:
       255 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`,
@@ -334,6 +359,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 `search.google.com` would not make it usable by the agent. That check stays on Ryan's side.
 
 ## Backlog (ordered; the agent keeps this list current)
+
+- [ ] **Standing, daily: the model watch.** `seo/MODEL-WATCH.md` holds the procedure, the last
+      date it ran and the ledger of candidates. This never gets ticked; it comes round again
+      tomorrow. Set up 2026-09-18 at Ryan's request, with `npm run model-watch`, five guards in
+      `tests/model-watch.test.ts` and one candidate already in it.
+      **The open question it raises is Ryan's**, and it is on his side of this file: the watch can
+      record a model and everything it still needs, but it cannot write `data/*.json`, which is the
+      rule that keeps every figure on this site sourced. So a found model waits on him.
 
 - [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
       appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
@@ -686,8 +719,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       rather than stopping at 320. The run entry below has the figures and the two breaks that
       proved the guard.
 
-- [ ] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Found
-      2026-09-18. **It reproduces after all, and there is a worse page than the leaderboard.**
+- [x] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Done
+      2026-09-18, and the item was right that the leaderboard was not the worst of it. The cause was
+      one string held to one line: `.c-quant`, the marker beside a figure, was in the band's "keep a
+      figure on one line" list, and *card only, at launch* held whole made Price 203px wide on
+      `/best-gpu/`, crushed every card name into four lines and pushed **Speed on it** off the right
+      edge. A marker is a phrase, so it wraps here now; the leaderboard's own 3px went with the
+      score bar taking the 46px it already has on a phone. **0 of the 253 pages scroll a table or
+      overflow their window at any of sixteen widths from 320 to 1440px**, where three tables did.
+      The scrollbar theory the item leaned on is wrong and worth not repeating: a media query reads
+      the viewport, not the window, so a 641px window with a 15px classic scrollbar is a 626px
+      viewport and gets the phone layout. The fault was at viewport 641 to 700px, exactly where it
+      measured. The run entry below has the figures, the five hyphen breaks the fix turned up and the
+      four breaks that proved the guards. The original wording follows, kept for its measurements.
+      **It reproduces after all, and there is a worse page than the leaderboard.**
       Measured again on 2026-09-18 while sweeping for the label fix, this time reading each table's
       own `scrollWidth` against its `clientWidth` rather than asking whether the page scrolls: at
       641px **`/best-gpu/`'s table wants 657px in the 597px it is given** — 60px, ten times the
@@ -769,7 +814,142 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
+
 ## Runs
+
+### 2026-09-18 — the card ranking stops hiding the figure it is for
+
+**Why this item.** The last entry named the 641px band as what to continue, with a page worth more
+than the leaderboard in it: `/best-gpu/`, 60px over at the first width above the phone layout. The
+model watch says *done for today*, so the backlog was the job.
+
+**The cause was one string, and it was not the one the item expected.** Measured before touching
+anything, by reading each column's width rather than the table's: at 641px the card ranking's Price
+column is **203px** against 72px for Card and 78px for Speed on it. Nothing about the price wants
+that width — *card only, at launch* does, held to one line by the band's rule that a figure keeps
+its line. So the widest caveat on the page claimed a fifth of the table, the card names were crushed
+into four lines each (*RTX PRO / 6000 / Blackwell, / 96GB*), and **Speed on it**, the figure a page
+about graphics cards is for, sat off the right edge.
+
+`.c-quant` is that marker, and it is a phrase far more often than a figure: *card only, at launch*,
+*priced as GLM-4.7-Flash*, *a moderate coding-assistant day*, *hosted*, *its ceiling*. The phone
+layout worked that out on 2026-09-17 and lets it wrap; the band between a phone and a full page
+still held it. It wraps in the band now, and the card ranking's table went from 657px in 597 to
+**597 in 597**.
+
+**The leaderboard's own 3px, which the same item raised.** Seven columns wanted 600px in the 597px
+the page gives them, so *Next down* lost its last three pixels. The score bar is the only thing in
+that row carrying no number, and it takes the 46px it already has on a phone: 597 in 597, header
+intact, read rendered rather than inferred.
+
+**What the fix turned up, and it predates the fix.** A marker that wraps can break a name at its own
+hyphen, which is the fault `tierLabel()` has existed for since 2026-09-17 — *Haiku-class* split
+across two lines reads as a mistake in the data. Sweeping every `.c-quant` on all 253 pages for a
+line break at a hyphen found **five already doing it on a phone**, before any change here:
+*UD-Q4_K_M*, *priced as GLM-4.7-Flash*, *priced as DeepSeek-R1-Distill-Llama-70B*, *GLM-5.3-Flash*
+and *a moderate coding-assistant day*. `holdHyphens()` generalises the tier-label rule to every
+marker: the phrase wraps between its words, the hyphenated word inside it holds its line. At 641px
+and above **no marker on the site breaks a name at a hyphen**, where four comparison pages would
+have started to.
+
+**The exception, because holding a name whole can be worse than breaking it.** Held everywhere, the
+29 characters of *DeepSeek-R1-Distill-Llama-70B* pushed a head-to-head's table **102px past a 360px
+phone screen, and the page with it** — a page that scrolls sideways is a worse fault than a name
+broken in the wrong place. A head-to-head splits a phone screen three ways and a cell there is 95px,
+81px of it inside the padding, which *GLM-5.3-Flash* alone exceeds at 91px. So the hold gives way in
+that one layout, which already breaks a long word anywhere rather than overflow, and holds everywhere
+else.
+
+**Measured, not assumed.** Every table on all 253 pages at sixteen widths from 320 to 1440px:
+**0 tables scroll and 0 pages overflow their window**, where `/best-gpu/` did at 641, 660, 680 and
+700px and `/leaderboard/` at 641px. Diffing the geometry of every row and table against the site as
+it was: 134 pages move at 641px (**154 rows taller, 250 shorter**), 60 at 700px, 33 at 768px, 5 at
+900px, and **nothing at all at 320, 360, 390, 1023 or 1280px**.
+
+**The guards, and the four breaks that proved them.** `checkMarkerWords()` reads every marker out of
+the built HTML and refuses a hyphenated word printed bare: dropping the hold from one call site fails
+with *prints UD-Q4_K_M beside a figure where a narrow column can break it at its own hyphen*. The
+build prints what it found — *502 markers beside a figure keep a hyphenated word whole wherever the
+layout allows it*. The three CSS halves cannot be seen from the HTML, so a test holds each, and each
+was proved by putting the old rule back: the band's marker rule, the 46px bar and the head-to-head
+exception all fail their own test when removed.
+
+**Verified.** 259 tests (254 on this change, then 259 after rebasing onto a sibling's push),
+typecheck clean, 253 pages with every guard passing, the full `npm run build` including
+`build:functions`, and `/best-gpu/` and `/leaderboard/` read rendered at 641px before and after.
+
+**Where it is.** `9a38194`, pushed to `main` at 14:05: `public/page.css`, `src/pagekit.ts`,
+`scripts/build-pages.ts` and the tests. Nothing a visitor reads changed in words.
+
+**A sibling session pushed while this run was working**, which is the duplicate-schedule item near
+the top of this file. `711cb4d`, at 13:52, is the daily model watch Ryan asked for, from
+`session_01Lptt4wXYyb2KtWrpnFpsH1`. It does not overlap this run's files. This push was rejected,
+fetched and rebased rather than forced, and the merged tree was tested rather than assumed: 259 tests
+green, 253 pages built.
+
+**It is deployed.** Three pushes went to `main` in three minutes, so runs 154 and 155 were each
+cancelled by the one after them and only the last counts: **deploy run 156 on `b40eef8` finished
+green at 14:11** and published. That head carries the CSS, the helper, both guards, the tests and
+this entry. Whether the live site serves it cannot be read from here, since `sunkcost.ai` is off this
+environment's allow-list, which is the first item under Ryan's side above.
+
+**What to continue.** The monthly-cost question page — *how much does it cost to run a local LLM per
+month* — is the biggest item on the backlog and still sits on PR #8's helpers, so it waits on that
+merge. PR #8 and PR #10 are both repaired and ready and are Ryan's. If neither has moved, the
+assumptions-panel wording (`src/render.ts:542` prints *stand in* where a generated page says
+*stand-in*) is the small pull request that has been waiting for a reason to touch that file.
+
+### 2026-09-18 — the site starts watching for models instead of waiting to be told
+
+**Why this item.** Ryan asked for it directly: check every day for new models, of the kind
+announced on X the night before. Nothing in this repository did that, and a site whose subject is
+which machine runs which model is worth less every week it lists last month's.
+
+**What it is.** Three pieces, because an hourly agent with no memory needs the job written down
+rather than remembered.
+
+- **`npm run model-watch`** prints today's date against the date the watch last ran, all 55 models
+  grouped by family with size, quantisation and generation, the quantisations already entered, and
+  the fields a `models.json` entry carries — read off an entry rather than hard-coded, so it cannot
+  drift from the schema. It prints; it never writes.
+- **`seo/MODEL-WATCH.md`** is the ledger: the procedure, the search terms, the three questions that
+  decide whether a release matters here, what a new model needs before it can be a row, and a
+  candidate list. It also carries the date the check last ran, which is the thing the script reads.
+- **The wiring**, which is the part that makes it happen: the head of this file now says to run the
+  watch before the backlog when the date is not today, and the backlog carries it as a standing item
+  that never gets ticked.
+
+**The rule it is built around.** The watch records; it does not edit `data/*.json`. Every figure on
+this site has a source, and a model entered from a press release's rounding would cost more than a
+late page. So a candidate carries what a source states, the URL that states it, and a list of what
+is still missing — and the ledger says plainly that direct fetches are refused here, so every source
+in it is secondhand until someone opens it. Whether that should change is the one question this
+leaves for Ryan, and it is on his side of this file.
+
+**The first candidate, and it is a real one.** Ternary Bonsai 2 27B, announced 2026-09-17: Qwen3.8
+27B — the model this site ranks top of what a graphics card runs — at a stated 5.9 GB against the
+16.46 GB the Q4_K_M row carries. The interesting part is not that it is a new model, because it is
+not one. It is the same model dropping into machines that cannot hold it today, and this site
+already runs two quantisations of one model side by side. What stops it being a row now is written
+down: the weights at the precision actually entered, the architecture the KV-cache figure is checked
+against, whether anybody rents it, and an Artificial Analysis score, which the index does not appear
+to carry for this build. The 98.2% retention figure is PrismML's own suite and is not the index the
+Score column uses, and the ledger says so rather than borrowing it.
+
+**Guards, five of them**, in `tests/model-watch.test.ts`: the ledger states a date the script can
+read and not one in the future; the command it tells you to run is the command that exists; every
+field its table names exists on every model in the data; its claim that a model can be added without
+a measured speed is recomputed from `throughput.json` rather than asserted; and the script contains
+no write. The field guard was proved by breaking it — renaming `license` to `licence_terms` in the
+ledger fails it, which is the point, because the ledger is documentation and documentation rots.
+
+**Verified**: 256 tests where there were 251, typecheck clean, `validate` clean, 253 pages with every
+guard passing, and the script run and read. No page changed: this is tooling and `seo/`, so it is a
+push rather than a pull request.
+
+**What to continue.** The watch itself, tomorrow, and every day. Beyond it the backlog is unchanged:
+the two pull requests are Ryan's to merge, and the 641px leaderboard band is the push-shaped work
+left.
 
 ### 2026-09-18 — a four-word label stops reading under the column beside it
 
@@ -827,8 +1007,33 @@ figures.
 pages with every guard passing, the full `npm run build`, and the comparison table read rendered at
 320px before and after.
 
-**Where it is.** One push to `main`: `public/page.css`, `scripts/build-pages.ts`, the test and this
-entry. Nothing a visitor reads changed in words, only where the words sit.
+**Where it is.** `858e28c`, pushed to `main` at 12:46: `public/page.css`,
+`scripts/build-pages.ts`, the test and this entry. Nothing a visitor reads changed in words, only
+where the words sit.
+
+**A correction, because the paragraph that used to sit here was wrong.** It said the deploy had
+stalled: run 148 green through `npm ci` and `npm test` in seventeen seconds, then half an hour in
+`npm run build` without returning, against 2m42s for that step on the commit before. The seventeen
+seconds and the 2m42s are right and the half hour is not. **Run 148 was four and a half minutes old
+when that was written**, and it was cancelled at 12:51:50 by the next push to `main`, which is the
+repository's own `cancel-in-progress` rule working rather than anything being stuck. What went wrong
+is that the elapsed time was taken from a running guess rather than from the clock, and the guess
+was five times the truth. `date -u` is one call and settles it; a figure in this log that nothing
+was measured against does not belong here.
+
+**A sibling session pushed five minutes after this run did**, which is the duplicate-schedule
+problem at the top of this file. It is the same session that repaired the two pull requests an hour
+ago; it read `858e28c` and repaired both against it, and its work is sound and does not overlap this
+run's. This entry's own push was rejected, fetched and rebased rather than forced, which is what
+that item asks for. It also means the deploy of the layout fix is carried by whichever run finishes
+last rather than by run 148 — the CSS, the build change and the guard are identical in all of them.
+
+**It is deployed.** Four pushes went to `main` within seven minutes, three of them this run's and
+one a sibling's, each cancelling the run before it, so only the last one counts: **deploy run 151
+on `5ab8d66` finished green at 12:57** and published. That head carries the CSS rule, the build
+change, the guard, the test and this entry, so the layout fix is live. Whether the live site serves
+it cannot be read from here, since `sunkcost.ai` is off this environment's allow-list, which is the
+first item under Ryan's side above.
 
 **What to continue.** The 641px band, which now has figures and a named page worth more than the
 leaderboard: `/best-gpu/`, 60px over at the first width above the phone layout. Then the
@@ -891,7 +1096,19 @@ own footer entry in `FOOTER_LINKS`'s order. That is a repair of a few minutes, n
 either back.
 
 **Where it is.** Two pushes, no change to `main` but this entry: `8789b62` on
-`seo/local-vs-api-cost` and `81cd7d1` on `seo/hardware-index`. Whether the live site is serving the
+`seo/local-vs-api-cost` and `81cd7d1` on `seo/hardware-index`.
+
+**Both needed a second repair fifty minutes later, and that is the item's own lesson arriving on
+time.** `858e28c` landed on `main` at about 12:40 — the `.c-quant` tier label, which is the work
+this entry recommends next — and it appends `checkTierLabels()` to the guard list at the foot of
+`scripts/build-pages.ts`, which is the same list both branches append their own guard to. So both
+stopped merging again within the hour, in one file and one hunk each. Both are unions: main's guard
+and the branch's, side by side. PR #10's carries the same count-line decision as before, because
+main's commit also rewords that line. Repaired and pushed as `b7c44e9` and `0d16555`, each verified
+on its own merged tree — 259 and 256 tests, typecheck clean, 254 pages with every guard passing, and
+`checkTierLabels()` reporting its 311 labels on both trees. Both merge clean against `main` again.
+**A branch that touches the foot of `build-pages.ts` has a shelf life of about an hour here**, which
+is an argument for merging these two rather than for repairing them a third time. Whether the live site is serving the
 11:06 deploy could not be checked from here; `sunkcost.ai` is still off this environment's
 allow-list, which is the first item under Ryan's side above.
 
