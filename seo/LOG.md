@@ -665,6 +665,15 @@ both sides is the whole job. The exception is the closing note on `/best/`, wher
 different edits to the same paragraph: taking one side whole drops the other page's link. The
 Ryan's-side item above has the detail, and both the log and the PR body are corrected.
 
+**The deploys, and one thing to know about pushing twice in a run.** This run pushed the log twice,
+the second time to correct the overlap figure above. `deploy.yml` sets `cancel-in-progress: true` on
+the `deploy-production` group, so the second push **cancelled run 119 mid-flight**; run 120 on
+`509e01d` carried the same site tree plus the correction and finished **green**. Harmless here,
+because a cancelled deploy leaves the previous one published and the superseding run publishes the
+same pages. Worth knowing anyway: a run that pushes to main more than once will see the earlier
+deploy cancelled rather than completed, and a `cancelled` conclusion on the earlier run is that, not
+a failure.
+
 **Continue next: read the two remaining question-page candidates honestly before writing either.**
 "RTX 3090 for local LLM worth it" and "is a Mac mini good for local LLMs" may both be answered by
 the machine pages already, and the item above now says to close them rather than write a duplicate
