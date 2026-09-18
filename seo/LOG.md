@@ -887,6 +887,12 @@ the top of this file. `711cb4d`, at 13:52, is the daily model watch Ryan asked f
 fetched and rebased rather than forced, and the merged tree was tested rather than assumed: 259 tests
 green, 253 pages built.
 
+**It is deployed.** Three pushes went to `main` in three minutes, so runs 154 and 155 were each
+cancelled by the one after them and only the last counts: **deploy run 156 on `b40eef8` finished
+green at 14:11** and published. That head carries the CSS, the helper, both guards, the tests and
+this entry. Whether the live site serves it cannot be read from here, since `sunkcost.ai` is off this
+environment's allow-list, which is the first item under Ryan's side above.
+
 **What to continue.** The monthly-cost question page — *how much does it cost to run a local LLM per
 month* — is the biggest item on the backlog and still sits on PR #8's helpers, so it waits on that
 merge. PR #8 and PR #10 are both repaired and ready and are Ryan's. If neither has moved, the
