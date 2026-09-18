@@ -9,7 +9,7 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  holdHyphens, splitCapabilityNote, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
+  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -1572,9 +1572,133 @@ describe('a note out of the data, printed as the page\u2019s own sentence', () =
     expect(endStop('  ')).toBe('');
   });
 
+  it('sends each sentence of a machine\u2019s note to the figure it is about', () => {
+    const note = 'Bandwidth: 22.4 Gbps \u00d7 256-bit bus \u00f7 8 = 716.8 GB/s (TechPowerUp). '
+      + 'Usable memory is the VRAM less 1 GB. '
+      + 'The 4080 SUPER has a different price, so it is not this entry.';
+    expect(splitHardwareNote(note)).toEqual({
+      bandwidth: '22.4 Gbps \u00d7 256-bit bus \u00f7 8 = 716.8 GB/s (TechPowerUp).',
+      memory: 'Usable memory is the VRAM less 1 GB.',
+      availability: 'The 4080 SUPER has a different price, so it is not this entry.',
+      speed: '',
+    });
+  });
+
+  it('drops the label the sentence carried, because the row it lands in is the label', () => {
+    expect(splitHardwareNote('Bandwidth: 15 Gbps \u00d7 192-bit bus \u00f7 8 = 360 GB/s.').bandwidth)
+      .toBe('15 Gbps \u00d7 192-bit bus \u00f7 8 = 360 GB/s.');
+  });
+
+  it('keeps a caveat about speed out of the memory figure', () => {
+    const laptop = 'macOS lets the GPU wire roughly 75% of unified memory by default. '
+      + 'On a laptop, sustained speed drops once the fans cap out, so a desktop holds a higher tokens/sec.';
+    const split = splitHardwareNote(laptop);
+    expect(split.memory).toBe('macOS lets the GPU wire roughly 75% of unified memory by default.');
+    expect(split.speed).toContain('tokens/sec');
+  });
+
+  it('leaves a note that is all about memory where it was', () => {
+    const note = 'Memory is treated as GB throughout, which is slightly conservative.';
+    expect(splitHardwareNote(note)).toEqual({ memory: note, bandwidth: '', availability: '', speed: '' });
+  });
+
+  it('says nothing twice: every machine\u2019s sentences put its note back together', () => {
+    for (const h of data.hardware) {
+      expect([h.id, noteSentences(h.notes).join(' ')]).toEqual([h.id, (h.notes ?? '').trim()]);
+    }
+  });
+
+  it('holds the data to one shape: a note about bandwidth needs a bandwidth figure to sit under', () => {
+    let explained = 0;
+    for (const h of data.hardware) {
+      if (!splitHardwareNote(h.notes).bandwidth) continue;
+      explained++;
+      expect([h.id, h.memory_bandwidth_gbs != null]).toEqual([h.id, true]);
+    }
+    expect(explained).toBeGreaterThan(0);
+  });
+
+  it('leaves no machine explaining its bandwidth under its memory', () => {
+    for (const h of data.hardware) {
+      expect([h.id, /\bGbps\b|\btokens\/sec\b/.test(splitHardwareNote(h.notes).memory)]).toEqual([h.id, false]);
+    }
+  });
+
   it('is the shape every architecture note in the data comes in', () => {
     const notes = data.models.map((m) => m.architecture?.note).filter((n): n is string => !!n);
     expect(notes.length).toBeGreaterThan(0);
     for (const n of notes) expect([n, endStop(n)]).toEqual([n, n]);
+  });
+});
+
+describe('a source link says who is on the other end', () => {
+  it('names the publisher behind the host', () => {
+    expect(sourceName('https://www.apple.com/mac-mini/specs/')).toBe('Apple');
+    expect(sourceName('https://support.apple.com/en-us/121555')).toBe('Apple Support');
+    expect(sourceName('https://www.techpowerup.com/gpu-specs/geforce-rtx-5090.c4216')).toBe('TechPowerUp');
+  });
+
+  it('names the repository where the repository is the thing, not the host', () => {
+    expect(sourceName('https://huggingface.co/bartowski/Qwen_Qwen3-8B-GGUF')).toBe('bartowski/Qwen_Qwen3-8B-GGUF');
+    expect(sourceName('https://huggingface.co/Qwen/Qwen3-8B/raw/main/config.json')).toBe('Qwen/Qwen3-8B');
+    expect(sourceName('https://github.com/ggml-org/llama.cpp/blob/master/common/common.h')).toBe('ggml-org/llama.cpp');
+  });
+
+  it('falls back to the domain rather than inventing a name for a host nobody has entered yet', () => {
+    expect(sourceName('https://www.example-labs.com/review/thing')).toBe('example-labs.com');
+  });
+
+  it('tells two links to one publisher apart in that publisher’s own words', () => {
+    const html = sourceLinks([
+      'https://www.apple.com/mac-mini/specs/',
+      'https://www.apple.com/newsroom/2026/08/apple-unveils-a-more-powerful-mac-mini',
+      'https://daringfireball.net/2026/08/configurations_and_pricing',
+    ]);
+    expect(html).toContain('>Apple (specs)<');
+    expect(html).toContain('>Apple (newsroom)<');
+    expect(html).toContain('>Daring Fireball<');
+  });
+
+  it('leaves a lone link bare, however much its URL would have to say', () => {
+    expect(sourceLinks(['https://www.apple.com/mac-mini/specs/'])).toContain('>Apple<');
+  });
+
+  it('names a file in a repository by the file, where a second link goes to the same one', () => {
+    const html = sourceLinks([
+      'https://github.com/ggml-org/llama.cpp/discussions/15396',
+      'https://github.com/ggml-org/llama.cpp/blob/master/common/common.h',
+    ]);
+    expect(html).toContain('>ggml-org/llama.cpp (discussion)<');
+    expect(html).toContain('>ggml-org/llama.cpp (common.h)<');
+  });
+
+  it('escapes what it prints and leaves the link openable', () => {
+    const html = sourceLinks(['https://www.tomshardware.com/pc-components/gpus/corsair-ai-workstation-300-review']);
+    expect(html).toContain('Tom&#39;s Hardware');
+    expect(html).toContain('rel="noopener"');
+  });
+
+  it('gives each host a name of its own, so no two publishers read as one', () => {
+    const urls = [...data.hardware.flatMap((h) => h.sources ?? []), ...data.models.flatMap((m) => m.sources ?? [])];
+    const byName = new Map<string, Set<string>>();
+    for (const u of urls) {
+      const host = new URL(u).hostname;
+      if (host === 'huggingface.co' || host === 'github.com') continue;
+      const name = sourceName(u);
+      byName.set(name, (byName.get(name) ?? new Set()).add(host));
+    }
+    expect(byName.size).toBeGreaterThan(20);
+    for (const [name, hosts] of byName) expect([name, [...hosts]]).toEqual([name, [...hosts].slice(0, 1)]);
+  });
+
+  it('names every source in the data, and never with a number', () => {
+    const urls = [...data.hardware.flatMap((h) => h.sources ?? []), ...data.models.flatMap((m) => m.sources ?? [])];
+    expect(urls.length).toBeGreaterThan(200);
+    for (const u of urls) {
+      const name = sourceName(u);
+      expect([u, name]).toEqual([u, name.trim()]);
+      expect([u, /^source( \d+)?$/i.test(name)]).toEqual([u, false]);
+      expect([u, name.length > 0 && !name.includes('/'.repeat(2))]).toEqual([u, true]);
+    }
   });
 });

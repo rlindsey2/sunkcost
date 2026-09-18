@@ -152,8 +152,17 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       is what a first visit and a crawler both get. 274 tests, typecheck clean, the full build, and
       0 elements past the window at 26 widths where three were.
 
-- [ ] **Merging PR #10 puts 23 KB of build output into `main`, and PR #8 will not clean it up.**
-      Found 2026-09-18. PR #10's branch tracks `public/local-llm-vs-api-cost/index.html`, a generated
+- [x] **Merging PR #10 puts 23 KB of build output into `main`, and PR #8 will not clean it up.**
+      Done 2026-09-18 at 19:11 and 19:25, on both sides, and the item was one step behind what had
+      already happened: **the file was on `main` too**, added by `4c8d826` — a log commit from another
+      session that swept it up the same way PR #10's repair merge did. `main` has no builder for it,
+      so nothing regenerated it, nothing linked to it and the sitemap never listed it; but vite copies
+      `public/` into `dist/`, so **every deploy since 18:14 published a two-day-old copy of an unmerged
+      branch's page**. Untracked on `main` with the path ignored beside the other generated
+      directories (`885cc38`, deploy run 168 green at 19:16), and untracked on PR #10's branch
+      (`e7be231`), which is the `git rm --cached` this item asked for. Merging PR #10 no longer puts it
+      back. The page itself is fine and returns, generated fresh, when PR #8 merges.
+      What was written when only half of it was known: PR #10's branch tracks `public/local-llm-vs-api-cost/index.html`, a generated
       page, and it is **PR #8's page rather than its own**. It arrived in `f87b28e`, a repair merge
       that swept up an untracked file; it was untracked but not ignored because the `.gitignore` line
       for that directory is part of PR #8's diff and lives on PR #8's branch, not on `main`. An ignore
@@ -409,8 +418,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       a second commit undoes a blank line that had dated 14 unchanged pages in the sitemap. The run
       entry below has the figures and the five breaks that proved the guard.
 
-- [ ] **The 7 thinnest pages on the site are all model pages, and all seven are models almost
-      nothing runs.** Measured 2026-09-18 across the 253 generated pages: median 787 words, and
+- [x] **The 7 thinnest pages on the site are all model pages, and all seven are models almost
+      nothing runs.** Done 2026-09-18, and the item's own reading of why they are thin was right for
+      six of the seven and wrong about the fix. Only Tencent Hy3 has no machine at 32k; the other six
+      have a "Machines that run it" table with **one row in it**, the same $10,799 Mac Studio on all
+      six. So the memory ladder this item proposed answers nothing: shortening the window does not
+      bring a single machine into reach, because on every one of them the weights alone are larger
+      than the memory before a token of cache. What the pages were missing is the reader who owns
+      something else — how close theirs comes, and what it runs instead. Both are in the data, and
+      the second turned out to be the find: **on four of the seven the machines that cannot hold the
+      page's model run one that scores higher on the same index.** 769 to 834 words now, from 489 to
+      559. The run entry below has the figures and the five breaks that proved the guard.
+      The original item, kept for the reasoning: Measured 2026-09-18 across the 253 generated pages: median 787 words, and
       `/models/hunyuan-hy3-q4/` is 394, `/models/qwen3-235b-a22b-2507-q4/` 417, then minimax-m2.7,
       inkling-small, qwen3.8-flash-next, glm-5.3-flash and deepseek-v4-flash, none over 462. They
       are thin for one reason: no machine here holds them at 32k, so the "Machines that run it"
@@ -424,14 +443,33 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       written; a page that repeats the answer box in longer words is the thin page this item is
       trying to fix.
 
-- [ ] **The prose inside `<main>` has never been swept the way the titles and descriptions have.**
-      Three audits have held the metadata to unique, short and answering; nothing has read the
-      sentences. One grep for a doubled full stop on 2026-09-18 found 41 pages, and one read of a
-      lede found 36 opening with the site's own process. Both are now checked by `checkNotes()`, and
-      both were in the same place: a note out of `data/*.json` pasted into a template's sentence.
-      The other places that do it are `hw.notes` under "Usable by the GPU" on the machine pages and
-      the key-value cache note on `/how-much-memory/`. Neither prints a doubled stop today, which is
-      why the check is a sweep rather than a line, but neither has been read out loud either.
+- [x] **The prose inside `<main>` has never been swept the way the titles and descriptions have.**
+      Done 2026-09-18, and the sweep's own result is the part worth keeping: **the punctuation is
+      clean.** Fifteen mechanical faults read out of the rendered body of all 253 pages — doubled
+      stops, doubled words, a space before a comma, a stop with no space after it, maintainer words,
+      an unclosed bracket — and every hit was an artefact of flattening a table into a line. What
+      was wrong was not how a sentence was written but where it sat, which is the third time a note
+      out of `data/*.json` has been in the wrong template. `hw.notes` is split now, by subject, the
+      way `capability_note` was; the run entry below has the figures and the five breaks that
+      proved the guard. `/how-much-memory/`'s key-value cache note was read out loud at the same
+      time and is sound.
+
+- [ ] **The calculator prints `hw.notes` whole, the way the machine pages did until today.**
+      `src/render.ts:543` puts the field under "Usable memory" in the assumptions panel, so the
+      laptops explain there that speed falls once the fans cap out and the cards derive their
+      bandwidth figure under their memory. `splitHardwareNote()` is exported from `src/pagekit.ts`,
+      which `render.ts` does not import and should not — the same seam the *stand in* label hit at
+      `src/render.ts:542`, one line above. So both want the same shared home, `src/format.ts`, and
+      both should ride the same pull request: it is one paragraph of one file, and two faults.
+
+- [ ] **The links under Sources name nothing.** Every machine page ends "source 1, source 2,
+      source 3, source 4" — 56 pages, 4 to 5 links each — and `/how-much-memory/` has a bare
+      "(source)" in the middle of a paragraph. Anchor text is one of the few things on a page that
+      says what is on the other end of a link, to a reader deciding whether to click and to a
+      crawler deciding what the link is worth, and a number says neither. The host would: *NVIDIA*,
+      *TechPowerUp*, *llama.cpp*. It is one line of `scripts/build-pages.ts` and the domain is in
+      the URL already, so nothing has to be invented; the question to settle first is what to print
+      when two sources share a host, which several machines have.
 
 - [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
       appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
@@ -919,6 +957,174 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — every machine note moves to the figure it is about
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job, and the
+run before this one closed its top item. What is under it is the prose sweep: three audits have held
+every title and description to unique, short and answering, and **nothing had ever read the
+sentences inside `<main>`.**
+
+**The sweep found no punctuation to fix, and that is worth writing down.** Fifteen mechanical faults
+were read out of the rendered body of all 253 pages — a doubled full stop, a doubled word, a space
+before a comma, a stop with no space after it, `TODO` and its relatives, an unclosed bracket, an
+empty pair of them. Every hit was an artefact of flattening a table row into a line of text. Read
+properly, with block boundaries kept and inline tags closed up, the body of this site is clean.
+
+**What was wrong was placement, and it is the same fault as the last two runs' one page type
+along.** `hw.notes` is the field a machine records everything in, and the machine page printed it
+whole under **Usable by the GPU**. So the memory note on all seven graphics cards opened with the
+arithmetic behind the bandwidth figure in the row above — *"23 GB — Bandwidth: 19.5 Gbps × 384-bit
+bus ÷ 8 = 936 GB/s"* — while the **Memory bandwidth** row printed 936 GB/s and nothing else. Ten
+laptops explained under their memory figure that sustained speed drops once the chassis warms up.
+The twelve Strix Halo boxes said under their memory that measured bandwidth is ~212-215 GB/s of
+the 256 GB/s their bandwidth row prints, which is the most useful caveat on the page and was in the
+wrong row. The RTX 4080 said under its memory that the 4080 SUPER is a different card; the DGX
+Spark, that partner boxes exist and none was cheaper.
+
+**`splitHardwareNote()` sends each sentence to the figure it is about.** Bandwidth to the bandwidth
+row, the caveat about speed to a note under the speed column where the tokens/sec figures are, which
+entry this is and where you buy it to **Availability**, and everything else stays where it was.
+**19 machine pages explain their bandwidth under it, 11 put the speed caveat beside the speed
+column, 2 say under Availability which machine this is**, and 30 of the 56 pages changed. The
+markers are the subject a sentence names rather than the sentence itself, so a machine added
+tomorrow is read by what its note talks about.
+
+**One sentence is edited and it is a label, not a claim.** *"Bandwidth: 22.4 Gbps × 256-bit bus ÷ 8
+= 716.8 GB/s"* carried its own label because it used to sit under the memory figure. Under the
+bandwidth row the label is the row's name, so it goes. Nothing else about any note is rewritten,
+and the guard holds that literally: the sentences joined back up have to be the note.
+
+**Five breaks, each bringing back its own fault and no other.** The note printed whole under the
+memory figure again, 49 faults: the moved sentences print twice, and the sweep from the other end —
+markers the router itself does not use — catches the bandwidth working back under the memory figure.
+The speed caveat not rendered, 22: 11 pages print it 0 times and 11 have nothing under the speed
+column. The splitter cutting at every full stop rather than at the end of a sentence, 58: the notes
+stop coming back whole when their sentences are joined, which is the guard that matters, because
+that is how a sentence would quietly lose half of itself. Availability sent to the Chip row, 2. The
+bandwidth working printed in both rows, 26.
+
+**The blank line that dated 14 pages last night tried it again, at 26.** The new speed note sat on
+a line of its own, so the 45 machines with no speed caveat printed an empty line in its place and
+hashed differently — and 26 of those had changed nothing else, so **56 pages would have gone out
+stamped *changed today* when 30 had changed a word.** Same fault, same fix: the conditional carries
+its own newline. It was caught before the commit this time, by diffing a Mac page that should not
+have moved against the build from before the change. **30 records are dated today and every one of
+those pages says something different than it did an hour ago.**
+
+**Verified.** 294 tests (7 new), `tsc --noEmit` clean, and the full `npm run build` end to end
+including `build:functions`. All 30 changed pages read rendered in Chromium at nine widths from 320
+to 1440px, served over HTTP rather than `file://`: **0 elements past the window and 0 tables
+scrolling at any of them.** The specifics list read as a picture at 900px before committing, and
+five pages read as text — a card, a laptop, a Strix Halo box, the Spark and a Mac that should not
+have changed and did not. Commit `9d21e1b`, pushed to main. **Its own deploy, run 170, was
+cancelled by this entry's push three minutes later; run 171 carried both and finished green at
+20:02**, so all 30 pages are live. Worth knowing rather than worrying about: a log push within a
+few minutes of a code push cancels the code push's run, and the later run deploys both.
+
+**All three open pull requests were merged, tested and built against this push rather than trusted.**
+`git merge-tree` says clean for PR #8, PR #10 and PR #12, and this file's standing lesson is that a
+clean merge is not a working merge, so each was really merged into `main` in a throwaway worktree:
+302, 299 and 294 tests green, typecheck clean on all three, and the two that add a page built 254
+pages with the new guard passing. **No repair was needed on any branch**, which is the first push in
+days that has moved `src/pagekit.ts` without costing two.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8. The small pull request left has grown a second
+reason to exist: `src/render.ts` prints `hw.notes` whole in the assumptions panel at line 543, one
+line below the `stand in` label, so the same file wants the same shared home in `src/format.ts` for
+both. And the new item this run turned up while reading: **56 machine pages end in "source 1,
+source 2, source 3, source 4"**, which tells a reader and a crawler nothing about what is on the
+other end.
+
+### 2026-09-18 — the seven pages one machine runs stop being dead ends
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job, and its
+top open item is the seven thinnest pages on the site. They are the seven models a single machine
+runs, and they were 489 to 559 words against a median of 706 across the 55 model pages.
+
+**The item said they were thin because the machines table was missing, and that is true of one of
+them.** Tencent Hy3 has no machine at 32k. The other six have the table, with **one row in it**, and
+it is the same row on all six: the Mac Studio M5 Ultra, 256GB at $10,799. So the page answers the
+question for whoever owns that machine and answers nothing for everyone else, which is most people
+who search "GLM-5.3-Flash hardware requirements".
+
+**The memory ladder the item proposed cannot work here, and the data says why.** Shortening the
+window moves the key-value cache, not the weights, and on every machine in the list the weights
+alone are larger than the memory: Qwen3.8 Flash Next is 119.6 GB against the DGX Spark's 119.5 GB
+usable. Asking for 4k instead of 32k does not bring one machine into reach on any of the seven.
+
+**So the section is the other three questions a reader actually has.** How close does mine come, is
+it a window problem, and what do I run instead. `missedMachines()` takes the machines that hold the
+model at no window the calculator offers, keeps the roomiest in each family and measures the gap at
+4k, the shortest window on the list, so no machine is judged at a context its owner never asked for.
+Eight families a page, nearest first, with price, usable memory, the gap and the strongest model
+that machine does hold. The DGX Spark leads every one of the seven, **0.2 GB short** on Qwen3.8
+Flash Next and 69.6 GB short on GLM-5.3-Flash.
+
+**The last column is the part worth having written this for.** Seven of the eight machines top out
+at the same model, Qwen3.8 27B, which is the finding `/hardware/` turned up read from the other
+side. It scores 34, and on **four of the seven pages that is higher than the model the page is
+about** — Qwen3 235B-A22B scores 13, MiniMax M2.7 23, Inkling Small and Tencent Hy3 26 apiece. So
+every page now prints the comparison off the site's own index, in both directions: 34 against 40 on
+Qwen3.8 Flash Next, 34 against 13 on Qwen3 235B.
+
+**The flat conclusion that follows from it is written on one page, not four, and the eighth row is
+why.** *So every machine that cannot hold this model runs one that scores higher than it* is only
+true where every row clears the model, and the MacBook Air M5, 16GB tops out at Gemma 4 12B, which
+scores 14. That clears Qwen3 235B-A22B's 13 and nothing else, so the sentence appears on that page
+alone. Three pages where the headline figure would have carried it — MiniMax, Inkling Small and Hy3
+— do not print it, which is the guard doing its job on a claim that reads true and is not.
+
+**Read as a picture before committing, and the phone layout changed because of it.** The gap was
+the table's headline figure, which on a phone prints unlabelled — "0.2 GB" sitting under a
+"Usable memory 119.5 GB" that is labelled, which is two memory figures and one of them anonymous.
+The strongest model leads the narrow layout instead, so every number on the phone carries its name
+and the answer to "what can I run" is the thing in bold.
+
+**Five breaks, each bringing back its own fault and no other.** Section never rendered: seven pages
+say nothing about the families that miss them. Section on every model page: 31 pages list machines
+that miss them and are not models one machine runs. Gap column printing what it needs instead of
+what it is short by: 142.9 GB where the Spark is 23.4 GB short. Ordered by price rather than by how
+close: the rows come back out of order, and the test that holds a family to its roomiest machine
+fails with them.
+A machine that does hold it kept in the list: the Mac Studio M5 Ultra appears in a table of
+machines that miss it, and the way out of the section points at the wrong pair.
+
+**Verified.** 287 tests (5 new), `tsc --noEmit` clean, and the full `npm run build` end to end
+including `build:functions`. Read rendered in Chromium at 11 widths from 320 to 1440px on all seven
+pages and one control: **0 elements past the window at any of them.** Every one read as text
+before committing, and one of the seven out of `dist/` end to end. 769 to 834 words now, above that
+median. **Deploy run 167 green at 19:05**, so all seven are live.
+
+**Then the merge check found something live on the site that should not have been.**
+`public/local-llm-vs-api-cost/index.html` has been tracked on `main` since `4c8d826`, a log commit
+from another session that swept up an untracked file — the same fault the backlog item had already
+recorded on PR #10's branch, one step further along. `main` has no builder for it, so nothing
+regenerates it, nothing links to it and `checkLinks()` cannot see it; but **vite copies `public/`
+into `dist/`, so every deploy since 18:14 has published a two-day-old copy of an unmerged branch's
+page.** Untracked and the path ignored (`885cc38`, deploy run 168 green at 19:16), and untracked on
+PR #10's branch too (`e7be231`), which is the `git rm --cached` that item asked for. The page is
+fine and comes back, generated fresh, when PR #8 merges. **The lesson is `git add` in a repository
+whose build writes into a tracked directory**: `public/` is half ignored and half not, and a commit
+that means to add one file to `seo/` can carry 353 lines of another branch's output with it.
+
+**Two branch repairs, because this push moved the files both open PRs are built on.** **PR #8**
+conflicted in two import lists, `scripts/build-pages.ts` and `tests/pagekit.test.ts`, both unions,
+plus one duplicated `.gitignore` line after `main` gained the rule that branch already had: 295
+tests, typecheck clean, 254 pages with every guard passing, and the page read out of the build.
+**PR #10** merged clean and took the untracking above: 292 tests, typecheck clean, 254 pages. **PR
+#12** conflicts with nothing, and rather than trust that — which is this file's standing lesson —
+it was merged into a throwaway branch and built: 287 tests and 0 elements past the window at 11
+widths on the new pages, so its three lines of CSS and this run's new table do not meet. All three
+branches merge clean against `main`.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month*
+— is still the biggest item and still waits on PR #8. The thinnest pages on the site are now
+`/models/gpt-oss-120b-mxfp4/` at 594 words and six more between 609 and 644, and every one of the
+seven is a model five families run, so the answer there is not this run's: their machines table
+already carries five rows, and what is short is what the page has to say about the model. The small pull request left is still the
+assumptions panel printing *stand in* at `src/render.ts:542`.
 
 ### 2026-09-18 — 36 model pages stop opening with this site's own paperwork
 

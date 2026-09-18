@@ -566,455 +566,455 @@
       "changed": null
     },
     "/hardware/beelink-gtr9-pro-128/": {
-      "hash": "9330aefdafa98284",
-      "changed": null
+      "hash": "1c35260b4c796345",
+      "changed": "2026-09-18"
     },
     "/hardware/corsair-ai-workstation-300-128/": {
-      "hash": "92a7029c3b89b8d9",
-      "changed": null
+      "hash": "c9d36a118287fb4b",
+      "changed": "2026-09-18"
     },
     "/hardware/corsair-ai-workstation-300-64/": {
-      "hash": "72f0a267af17042b",
-      "changed": null
+      "hash": "99e96c24c1f73246",
+      "changed": "2026-09-18"
     },
     "/hardware/framework-desktop-385-32/": {
-      "hash": "5d26e04318991e83",
-      "changed": null
+      "hash": "b7a99979a0892439",
+      "changed": "2026-09-18"
     },
     "/hardware/framework-desktop-395-128/": {
-      "hash": "67cb5651ddc5880d",
-      "changed": null
+      "hash": "3d6189ded0d796a7",
+      "changed": "2026-09-18"
     },
     "/hardware/framework-desktop-395-64/": {
-      "hash": "5d2aa13eb2fd9899",
-      "changed": null
+      "hash": "a9f4f0335fb71faf",
+      "changed": "2026-09-18"
     },
     "/hardware/framework-desktop-495-192/": {
-      "hash": "c8954b19fbe66fd4",
-      "changed": null
+      "hash": "949009487c2df968",
+      "changed": "2026-09-18"
     },
     "/hardware/geforce-rtx-3060-12/": {
-      "hash": "01af53b0ba4e280d",
-      "changed": null
+      "hash": "9b32da277fff5825",
+      "changed": "2026-09-18"
     },
     "/hardware/geforce-rtx-3090-24/": {
-      "hash": "d8b3892c6756b063",
-      "changed": null
+      "hash": "e8d96b491427d906",
+      "changed": "2026-09-18"
     },
     "/hardware/geforce-rtx-4080-16/": {
-      "hash": "59a99192498cea5a",
-      "changed": null
+      "hash": "7ea29ec5317422d3",
+      "changed": "2026-09-18"
     },
     "/hardware/geforce-rtx-4090-24/": {
-      "hash": "ba6d189476fa99fb",
-      "changed": null
+      "hash": "abf94105ce30c716",
+      "changed": "2026-09-18"
     },
     "/hardware/geforce-rtx-5090-32/": {
-      "hash": "2e73298eb0e5d032",
-      "changed": null
+      "hash": "aa3a7dc3f9385695",
+      "changed": "2026-09-18"
     },
     "/hardware/gmktec-evo-x2-128/": {
-      "hash": "fea506799ba69a1d",
-      "changed": null
+      "hash": "52729cbf8b681fba",
+      "changed": "2026-09-18"
     },
     "/hardware/gmktec-evo-x2-64/": {
-      "hash": "705cb8c6e211c30a",
-      "changed": null
+      "hash": "366b273104fec5eb",
+      "changed": "2026-09-18"
     },
     "/hardware/gmktec-evo-x3-128/": {
-      "hash": "db8bd4d2043d7467",
-      "changed": null
+      "hash": "0d987ae22971825b",
+      "changed": "2026-09-18"
     },
     "/hardware/hp-z2-mini-g1a-128/": {
-      "hash": "d3120d0c4f3f6346",
-      "changed": null
+      "hash": "25f085ae70ae71d4",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m4-16/": {
-      "hash": "5e1017b0bdf93e3b",
-      "changed": null
+      "hash": "ba0cb17f7691a607",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m4-24/": {
-      "hash": "10ca4cb244a412e5",
-      "changed": null
+      "hash": "eff7e4133807d356",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m4-32/": {
-      "hash": "69d0cae562b37953",
-      "changed": null
+      "hash": "289dae671ce473e1",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m4-pro-24/": {
-      "hash": "06d3f82a9b0d39ff",
-      "changed": null
+      "hash": "02620114d1b9a067",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m4-pro-48/": {
-      "hash": "826fd862a50b779d",
-      "changed": null
+      "hash": "7f34e9a9a93ec4b9",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m4-pro-64/": {
-      "hash": "94bdc29ff6b66d40",
-      "changed": null
+      "hash": "a28581fbadf1bc44",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m5-pro-24/": {
-      "hash": "198ae23766e68799",
-      "changed": null
+      "hash": "20df102a56b79b91",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m5-pro-48/": {
-      "hash": "c67edc28114d4843",
-      "changed": null
+      "hash": "49e802fcec2773c7",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m5-pro-64/": {
-      "hash": "50b63beea3d630e8",
-      "changed": null
+      "hash": "a4f512a663e9818d",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m6-16/": {
-      "hash": "8bc4687ad1a10f54",
-      "changed": null
+      "hash": "9c3ff62570f71644",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m6-24/": {
-      "hash": "81496e9e7f2a93bd",
-      "changed": null
+      "hash": "5925ecd60eca54f9",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-mini-m6-32/": {
-      "hash": "ddcb954168175045",
-      "changed": null
+      "hash": "ac4a61577219f2d3",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m3-ultra-256/": {
-      "hash": "d7f42962ae24e985",
-      "changed": null
+      "hash": "9f827f14a0f3f75b",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m3-ultra-512/": {
-      "hash": "a8ad6cef7f5201e9",
-      "changed": null
+      "hash": "a06be96277f34a0d",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m3-ultra-96/": {
-      "hash": "0ed309f78278258d",
-      "changed": null
+      "hash": "1e42e4eb21189930",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m4-max-128/": {
-      "hash": "cc78cc07a1aa86e4",
-      "changed": null
+      "hash": "d6c9a8b1983833c2",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m4-max-36/": {
-      "hash": "02fd03e74fa92467",
-      "changed": null
+      "hash": "33c5fd6acf2914da",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m4-max-48/": {
-      "hash": "19d14a50ca5e9dea",
-      "changed": null
+      "hash": "bfa9c50a17040497",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m4-max-64/": {
-      "hash": "2edef55c27aee937",
-      "changed": null
+      "hash": "ea6defe1daf07c24",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-max-128/": {
-      "hash": "c78667ed521fd281",
-      "changed": null
+      "hash": "f5634d1b21f53afc",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-max-36/": {
-      "hash": "25ee3861ffaec94e",
-      "changed": null
+      "hash": "73035779c5f61014",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-max-48/": {
-      "hash": "9c0ae9d8205cfe69",
-      "changed": null
+      "hash": "d6d3f9ef9b4510c9",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-max-64/": {
-      "hash": "94d756a433a1c489",
-      "changed": null
+      "hash": "a75aee27549c37ef",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-ultra-256/": {
-      "hash": "3676ba5833e305f4",
-      "changed": null
+      "hash": "654a35a60313c9b1",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-ultra-512/": {
-      "hash": "3732442b24c1a755",
-      "changed": null
+      "hash": "0066443f76472653",
+      "changed": "2026-09-18"
     },
     "/hardware/mac-studio-m5-ultra-96/": {
-      "hash": "dd49fc6fcd9f567a",
-      "changed": null
+      "hash": "3844401cb77f825e",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-air-m5-15-16/": {
-      "hash": "ab4b11e81c240d09",
-      "changed": null
+      "hash": "ca9e6abbc52086b0",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-air-m5-16/": {
-      "hash": "92c00d9a40d344f8",
-      "changed": null
+      "hash": "4179bcf11c5cfe24",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-14-m5-16/": {
-      "hash": "e6dd58aeba3eba00",
-      "changed": null
+      "hash": "1d53cd740aa09c4a",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-14-m5-32/": {
-      "hash": "210efad41572c9c2",
-      "changed": null
+      "hash": "2fc9b533819db7e7",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-16-m5-max-128/": {
-      "hash": "f94d11b6c53d52c3",
-      "changed": null
+      "hash": "b8a6473c095de862",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-16-m5-max-48/": {
-      "hash": "88329af3aaa23028",
-      "changed": null
+      "hash": "b330770c19e3f073",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-16-m5-max-64/": {
-      "hash": "b0e3b0c0417a6875",
-      "changed": null
+      "hash": "29680728e5af30d6",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-16-m5-pro-24/": {
-      "hash": "64ab82459743eb3b",
-      "changed": null
+      "hash": "4eedddfd280df1d7",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-16-m5-pro-48/": {
-      "hash": "ac7831bd952e5aa2",
-      "changed": null
+      "hash": "e91e6df1705a9e8a",
+      "changed": "2026-09-18"
     },
     "/hardware/macbook-pro-16-m5-pro-64/": {
-      "hash": "b679d5f16bcf2d6b",
-      "changed": null
+      "hash": "3296b9e756c6e2e1",
+      "changed": "2026-09-18"
     },
     "/hardware/minisforum-ms-s1-max-128/": {
-      "hash": "27ae237211019a69",
-      "changed": null
+      "hash": "ca17764717ab5260",
+      "changed": "2026-09-18"
     },
     "/hardware/nvidia-dgx-spark-128/": {
-      "hash": "9c7ca88f2b6ed662",
-      "changed": null
+      "hash": "f868664345f1c118",
+      "changed": "2026-09-18"
     },
     "/hardware/radeon-ai-pro-r9700-32/": {
-      "hash": "b4d43de0ab747063",
-      "changed": null
+      "hash": "1d42b54b138f0f47",
+      "changed": "2026-09-18"
     },
     "/hardware/rtx-pro-6000-blackwell-96/": {
-      "hash": "2724ee4ff7f324be",
-      "changed": null
+      "hash": "19acd4e6993f0cec",
+      "changed": "2026-09-18"
     },
     "/how-much-memory/": {
-      "hash": "51f720c0b382e0cd",
-      "changed": null
+      "hash": "65a826c017a1d11b",
+      "changed": "2026-09-18"
     },
     "/leaderboard/": {
-      "hash": "907c50888ff81242",
-      "changed": null
+      "hash": "728b46ffa3f3007d",
+      "changed": "2026-09-18"
     },
     "/models/deepseek-r1-distill-llama-70b-q4/": {
-      "hash": "4a4ff7173d776586",
-      "changed": null
+      "hash": "bb13703709aa91d3",
+      "changed": "2026-09-18"
     },
     "/models/deepseek-r1-distill-qwen-32b-q4/": {
-      "hash": "16a118be3f3a81aa",
-      "changed": null
+      "hash": "23a03be005bd1af3",
+      "changed": "2026-09-18"
     },
     "/models/deepseek-v4-flash-ud-q4/": {
-      "hash": "a78067ed59309418",
+      "hash": "7df400e0d35bb9a9",
       "changed": "2026-09-18"
     },
     "/models/devstral-2-123b-q4/": {
-      "hash": "c850329be5a617e8",
+      "hash": "44827082f7beab4a",
       "changed": "2026-09-18"
     },
     "/models/devstral-small-2-24b-q4/": {
-      "hash": "f73ccfe83087a97d",
+      "hash": "1a3a3bea7c3be5e6",
       "changed": "2026-09-18"
     },
     "/models/gemma-3-12b-q4/": {
-      "hash": "7d3a6f459271be86",
+      "hash": "441af9f82365f98a",
       "changed": "2026-09-18"
     },
     "/models/gemma-3-27b-q4/": {
-      "hash": "e1591fb75fff8c0f",
+      "hash": "2d0cb0c20afc9490",
       "changed": "2026-09-18"
     },
     "/models/gemma-4-12b-q4/": {
-      "hash": "17272af0e05b0d79",
+      "hash": "b269f203e40763e1",
       "changed": "2026-09-18"
     },
     "/models/gemma-4-26b-a4b-q4/": {
-      "hash": "6d29018151d6d286",
+      "hash": "f143d9331d3102dd",
       "changed": "2026-09-18"
     },
     "/models/gemma-4-31b-q4/": {
-      "hash": "c76d81366cd5308d",
+      "hash": "b5f4d90b44f88a27",
       "changed": "2026-09-18"
     },
     "/models/gemma-4-e4b-q4/": {
-      "hash": "9deb17482ab69233",
+      "hash": "0ace37bfd95ef4d3",
       "changed": "2026-09-18"
     },
     "/models/glm-4.5-air-q4/": {
-      "hash": "01b1341f1944dce2",
-      "changed": null
+      "hash": "e4fe7e6ace91f462",
+      "changed": "2026-09-18"
     },
     "/models/glm-4.7-flash-q4/": {
-      "hash": "86eba1408890004b",
+      "hash": "329c7e90be40945d",
       "changed": "2026-09-18"
     },
     "/models/glm-5.3-flash-ud-q4/": {
-      "hash": "17ffded22672e7d2",
+      "hash": "59b5e17a38d9b8ec",
       "changed": "2026-09-18"
     },
     "/models/gpt-oss-120b-mxfp4/": {
-      "hash": "cdb0fe6923a05e98",
+      "hash": "c5b69fcadb413b4b",
       "changed": "2026-09-18"
     },
     "/models/gpt-oss-20b-mxfp4/": {
-      "hash": "0480a39691b20c5d",
+      "hash": "759d87941ae5533f",
       "changed": "2026-09-18"
     },
     "/models/granite-4.2-30b-q4/": {
-      "hash": "9048045d1b1fdf48",
+      "hash": "26e9f95fbd49bfc8",
       "changed": "2026-09-18"
     },
     "/models/granite-4.2-8b-q4/": {
-      "hash": "30c7611a2a67b1f7",
+      "hash": "718c6a736d81d31f",
       "changed": "2026-09-18"
     },
     "/models/hunyuan-hy3-q4/": {
-      "hash": "b57224cca43f6a6c",
+      "hash": "bd8ee6b4668fbb2f",
       "changed": "2026-09-18"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "196583fcabca37a9",
+      "hash": "73e6bc727f086031",
       "changed": "2026-09-18"
     },
     "/models/kat-coder-v2.5-q4/": {
-      "hash": "b77f19ce6e1a4acb",
+      "hash": "5fad2919d3cff8d8",
       "changed": "2026-09-18"
     },
     "/models/laguna-xs-2.1-q4/": {
-      "hash": "53f7eb50f4e9f0f1",
+      "hash": "b163c2b4bcfea854",
       "changed": "2026-09-18"
     },
     "/models/lfm2.5-2.6b-q4/": {
-      "hash": "70272e2152684852",
+      "hash": "2d9679aff8f14943",
       "changed": "2026-09-18"
     },
     "/models/ling-3.0-flash-q4/": {
-      "hash": "5ced5b2ad06fb8ea",
+      "hash": "67eb51dd72c6baa8",
       "changed": "2026-09-18"
     },
     "/models/ling-3.0-tiny-q4/": {
-      "hash": "15cd2bfbf1c5f053",
+      "hash": "b8a773fc84a836ed",
       "changed": "2026-09-18"
     },
     "/models/llama-3.1-8b-q4/": {
-      "hash": "bd352287a2449ddc",
-      "changed": null
+      "hash": "6a8da683a907ef5d",
+      "changed": "2026-09-18"
     },
     "/models/llama-3.1-8b-q8/": {
-      "hash": "170845a040766fdf",
-      "changed": null
+      "hash": "71be2850e456592a",
+      "changed": "2026-09-18"
     },
     "/models/llama-3.3-70b-q4/": {
-      "hash": "e73f602496c3d9fa",
-      "changed": null
+      "hash": "7b6c37d39a73d2c1",
+      "changed": "2026-09-18"
     },
     "/models/llama-4-scout-q4/": {
-      "hash": "3ea675c06ff9d1dd",
+      "hash": "cb747bf9140f5bf7",
       "changed": "2026-09-18"
     },
     "/models/minicpm5-2b-q4/": {
-      "hash": "da53ea6b84641dbb",
+      "hash": "c78e684ecdf74b1e",
       "changed": "2026-09-18"
     },
     "/models/minimax-m2.7-q4/": {
-      "hash": "84e21b09648e71f3",
+      "hash": "4a7eaee1e4419bee",
       "changed": "2026-09-18"
     },
     "/models/ministral-3-14b-q4/": {
-      "hash": "29de474f9f373c3a",
+      "hash": "dae2322c066d553c",
       "changed": "2026-09-18"
     },
     "/models/ministral-3-8b-q4/": {
-      "hash": "f38d7ebb5d822864",
+      "hash": "fb9e75185386618f",
       "changed": "2026-09-18"
     },
     "/models/mistral-small-3.2-24b-q4/": {
-      "hash": "630b9762c28a606a",
-      "changed": null
+      "hash": "fd45f28f52388cc4",
+      "changed": "2026-09-18"
     },
     "/models/mistral-small-4-119b-q4/": {
-      "hash": "1211f798e5bcc831",
+      "hash": "44a04fd8b9d0e86d",
       "changed": "2026-09-18"
     },
     "/models/muse-glimmer-30b-q4/": {
-      "hash": "9a03333cfd268e56",
+      "hash": "f3c764de5da31f3d",
       "changed": "2026-09-18"
     },
     "/models/nemotron-3.5-lightning-30b-q4/": {
-      "hash": "ae55159fe02bbccb",
+      "hash": "e86f7f00ca77fc8c",
       "changed": "2026-09-18"
     },
     "/models/ornith-1.5-35b-a3b-q4/": {
-      "hash": "7331cb8a6fb69fbe",
+      "hash": "c3ee6ffceeb2ce68",
       "changed": "2026-09-18"
     },
     "/models/ornith-1.5-9b-q4/": {
-      "hash": "e15ea58273c50367",
+      "hash": "8335630064253562",
       "changed": "2026-09-18"
     },
     "/models/qwen3-14b-q4/": {
-      "hash": "c0919bbab04ac052",
-      "changed": null
+      "hash": "d43f6f287fd7506f",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "0b2051d962558ce0",
+      "hash": "6b1267506eec1f61",
       "changed": "2026-09-18"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
-      "hash": "187f28f38df12991",
-      "changed": null
+      "hash": "9fe0ab81fddf5c9b",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-32b-q4/": {
-      "hash": "992cadfdcd414cf2",
-      "changed": null
+      "hash": "9aacbdfb90645610",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-32b-q8/": {
-      "hash": "8b152b1948068cf6",
-      "changed": null
+      "hash": "5acbeef2f14128d1",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-8b-q4/": {
-      "hash": "e66de78560b6df0a",
-      "changed": null
+      "hash": "a17fd506d0926dae",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-coder-30b-a3b-q4/": {
-      "hash": "23ab115f635526d7",
-      "changed": null
+      "hash": "5e815025ae85f171",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-coder-next-q4/": {
-      "hash": "2fa0504a3012e8b7",
+      "hash": "4d4baa0e30eb2ee1",
       "changed": "2026-09-18"
     },
     "/models/qwen3.5-122b-a10b-ud-q4/": {
-      "hash": "99edb338a25ce34d",
+      "hash": "fc58c5132d3530b3",
       "changed": "2026-09-18"
     },
     "/models/qwen3.5-4b-q4/": {
-      "hash": "5d78ee02c1a7c938",
+      "hash": "e8e5116ee0545526",
       "changed": "2026-09-18"
     },
     "/models/qwen3.5-9b-q4/": {
-      "hash": "e2456c4128481f4b",
+      "hash": "9a969dd96305bc60",
       "changed": "2026-09-18"
     },
     "/models/qwen3.6-27b-q4/": {
-      "hash": "85c8757a486094bf",
+      "hash": "d9572679e0b0a124",
       "changed": "2026-09-18"
     },
     "/models/qwen3.6-35b-a3b-q4/": {
-      "hash": "083ce4ae72d54b67",
+      "hash": "363607157108847b",
       "changed": "2026-09-18"
     },
     "/models/qwen3.8-27b-q4/": {
-      "hash": "a6a2343f7a1f3328",
+      "hash": "29bf696069492195",
       "changed": "2026-09-18"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "cc682c4095a38e0c",
+      "hash": "b4a9b424ac4d2f17",
       "changed": "2026-09-18"
     },
     "/models/spark-x2.5-4b-q4/": {
-      "hash": "74a52fd99eecdcf0",
+      "hash": "96a2fabc0e0db20f",
       "changed": "2026-09-18"
     },
     "/local-llm-vs-api-cost/": {
