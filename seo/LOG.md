@@ -72,6 +72,17 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       **This repository still runs no CI on a pull request** — see the backlog item about that —
       so the PR page will show no checks, and everything above was run locally.
 
+- [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
+      `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers. It is
+      a pull request rather than a push because it is a new page, which is the standing rule here.
+      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`;
+      what it adds is one generated page, its share card, four helpers in `src/pagekit.ts`, a build
+      guard and eight tests. Verified before opening on `main` at `94c354a`: 218 tests, typecheck
+      clean, 249 pages with every guard passing, and the full `npm run build`.
+      **It touches the same two files PR #7 does** (`scripts/build-pages.ts` and the footer line in
+      `src/pagekit.ts`), so whichever merges second will want a small conflict resolved in the
+      footer and the import list. Nothing else overlaps.
+
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
       fastest a PR has gone in here by a wide margin, and the first that did not need a single merge
@@ -366,22 +377,27 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       build says so itself now — **"every page is linked from at least 2 other pages"**, and the
       check holds that floor, so a page cannot drop back to one without failing the build.
       Re-measured on merged main at 21:30 on 2026-09-17. Nothing further is wanted.
-- [ ] Question pages for the searches people actually type. **Still the top item, and the second
-      one is now live.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
-      as [PR #7](https://github.com/rlindsey2/sunkcost/pull/7) on 2026-09-18** and took one run
-      start to finish, because the first page had already paid for the page type and the share-card
-      builder. The run entry below has what `/best-gpu/` answers and the one claim in it that did
-      not survive being checked.
-      Still open, in the order they are worth writing. **"local LLM vs API cost"** is next and is
-      the strongest of what is left: it is the site's whole thesis, the home page is the only thing
-      that states it, and every figure it needs is already computed — a page that says plainly what
-      a token costs to rent against what it costs to generate, at each level of use, would be the
-      page every other page on the site is an instance of. Then **"RTX 3090 for local LLM worth
-      it"** and **"is a Mac mini good for local LLMs"**, both of which need a hard look before a
-      line is written: the per-machine pages may already answer them, `/best-gpu/` now answers a
-      good part of the 3090 one, and a second page saying the same thing in other words is the
-      duplicate this site should not create. Each answers in the first paragraph with the site's
-      own numbers, links into the calculator with the configuration prefilled, and cites sources.
+- [ ] Question pages for the searches people actually type. **Still the top item, and three of them
+      are now written.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
+      as [PR #7](https://github.com/rlindsey2/sunkcost/pull/7)** and **"local LLM vs API cost" as
+      [PR #8](https://github.com/rlindsey2/sunkcost/pull/8)**, both on 2026-09-18 and each in a
+      single run, because the first page had already paid for the page type and the share-card
+      builder. The two run entries below have what each answers and the claims in them that did not
+      survive being checked.
+      What is left is thinner than what has gone, and both remaining candidates need a hard look
+      before a line is written. **"RTX 3090 for local LLM worth it"** and **"is a Mac mini good for
+      local LLMs"**: the per-machine pages may already answer them, `/best-gpu/` now answers a good
+      part of the 3090 one, and a second page saying the same thing in other words is the duplicate
+      this site should not create. The honest test for each is whether it can answer something the
+      machine's own page does not; if it cannot, close the item rather than write the page. Anything
+      new here should answer in the first paragraph with the site's own numbers, link into the
+      calculator with the configuration prefilled, and cite its sources.
+      **One search this run turned up as worth a page and did not write:** nothing on the site
+      answers "how much does it cost to run a local LLM per month". `/local-llm-vs-api-cost/` prices
+      a million tokens and `calc.ts` already computes `cloudCostPerMonth` and `localCostPerMonth`,
+      so the figures exist; what is missing is the page that puts a monthly bill against a monthly
+      electricity cost at each level of use. Worth doing only after PR #8 merges, since it would sit
+      on the same helpers.
 - [x] The model pages have the mirror of what the machine pages gained on 2026-09-17. Done
       2026-09-17, and the item undersold it twice over: 16 model pages, not ten, and what the
       omission hid is not a missing machine but a wrong price. On 12 of the 16 the cheapest machine
@@ -551,6 +567,93 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — what a token costs, which is the sum every other page is an instance of
+
+**Took the top backlog item, and the candidate the last three entries all named.** "local LLM vs
+API cost". The reason it was worth doing is the one that item gave: it is the site's whole thesis,
+the home page was the only thing that stated it, and every figure it needed was already computed.
+It is now **[PR #8](https://github.com/rlindsey2/sunkcost/pull/8)**, at `/local-llm-vs-api-cost/`.
+
+**The page's own idea, and the thing that made it worth a page rather than a paragraph.** Every
+pay-back figure on this site is counted in months, and months depend on how hard you work the
+machine. Counted in **tokens** it does not: with the API price held flat, which is the calculator's
+default, the saving on each million is a constant, so the count that covers the hardware is the same
+at every level of use and only the date moves. That reframing is what the page is built on, and it
+turns the site's argument into one number a reader can hold.
+
+- Renting a million tokens of **Qwen3.8 27B** costs **45.6c** at the default 15:1 mix. Generating
+  the same million on the **$3,499 Mac Studio M5 Max, 64GB** the calculator opens on costs **1.7c**
+  of electricity, **26 times less**. The machine is **7.97 billion tokens** of that gap.
+- The same 7.97B arrives in **436 years** at 50k tokens a day and **13 months** at 20M. Identical
+  count, five dates. The page prints the count in every row, which is the point.
+- **The mix moves the answer further than the hardware does.** Writing and drafting at 0.5:1 pays
+  the machine back in **2.2B tokens**; retrieval at 20:1 needs **8.52B**. Across the **30** current
+  machines that run the same model, a million tokens costs **1.6c to 4.3c** to generate, while their
+  prices run **$1,269 to $18,000**. Four times the spread in what you do with it, against less than
+  three in what you buy.
+- **Where renting wins, the page says so.** Of the **949** pairings the site can price, electricity
+  beats the API on **892**. On **37** the model is listed free by the cheapest host, and
+  `models.json` already carried the note saying a free endpoint cannot be beaten on price. The
+  remaining **20** are all one model: Devstral Small 2 24B, a dense 24B priced as gpt-oss-20b, which
+  moves 3.6B parameters a token against its own 24B.
+
+**The first draft asserted the generic version of that last finding** — "losing happens where a
+dense model is slow on the machine that holds it" — and the data said something much sharper: all
+20 are the same model, and the loss is as much about the stand-in price it borrows as about the
+machine. Counting it was one line and the sentence says more for being counted.
+
+**Four other things did not survive reading the page rendered.** A clause in the falling-prices note
+printed twice, because it was sliced out of `api_decline.note` with `split('.')` and the note
+already opened with it; it is written out and cited now instead. A sentence began in lower case
+after a colon. A claim that 109 years at light use "is the honest answer for most people" was
+opinion dressed as arithmetic, and is now the figure and what it means. And the mix table marked its
+default row with the leaderboard's `is-frontier` class, which on a phone is styled as a group
+heading and would have broken that row's layout; it carries a `c-quant` marker like every other
+qualified figure on the site.
+
+**The guard.** `checkTokenCost()` recomputes every model the machine holds, both of its prices, the
+multiple between them, the constant itself at all five levels, every mix, and the two ends of the
+per-machine spread. Proved by breaking five claims, each caught with the figure named: dropping the
+cheapest model, overstating the multiple, printing the stand-in wattage as if it were measured,
+dropping a level of use, and **switching `api_decline.default_on` to true** — the one that matters,
+because it makes the page's central claim false, and the guard says exactly that. `defaults.json`
+was restored from a copy taken first and shows no diff; no data figure was changed.
+
+**The share card.** `/og/local-llm-vs-api-cost.png`, from the same `listCardSvg` the other four list
+pages use and cut from the same `tokenCosts()` the page is cut from. Drawn first with "26× cheaper
+to generate" in the middle column, which wrapped onto two lines on all five rows — caught by opening
+the PNG, not by a test. It carries the multiple alone now.
+
+**A mistake worth recording, because it cost twenty minutes and will happen again.** Proving the
+guard means breaking the page on purpose, and the first round undid each break with
+`git checkout scripts/build-pages.ts`. That file held an hour of **unstaged** work, so the checkout
+restored it to HEAD and threw the page away. The built HTML in `public/` proved what the output
+should be, and the source was reconstructed from the transcript. **Before breaking anything on
+purpose, `git add` the work or copy the file aside, and restore from the copy, never from the
+index.** The second round did that and cost nothing.
+
+**Verified**: 218 tests (210 before, eight new across two files), typecheck clean, 249 pages with
+every guard passing, and the full `npm run build` including `build:og`, `build:share` and
+`build:functions`. The page was read rendered out of `public/local-llm-vs-api-cost/index.html` end
+to end before committing, and so were the three pages it is linked from.
+
+**Where the links are.** The footer of all 249 generated pages; all 55 model pages, in the "What it
+costs either way" paragraph where the rental price is already the subject; and `/best/`, whose every
+pay-back figure divides the same gap.
+
+**PR #7 was checked first and needed nothing**: still open, mergeable, its base already `94c354a`.
+**PR #8 touches the same two files it does**, so whichever merges second wants a small conflict
+resolved in the footer line and the import list, and nothing else.
+
+**Continue next: read the two remaining question-page candidates honestly before writing either.**
+"RTX 3090 for local LLM worth it" and "is a Mac mini good for local LLMs" may both be answered by
+the machine pages already, and the item above now says to close them rather than write a duplicate
+if that is what a look finds. The stronger new candidate this run turned up is **"how much does it
+cost to run a local LLM per month"**, which nothing answers and for which `calc.ts` already computes
+both sides; it is in the backlog and it should wait for PR #8, because it would sit on the same
+helpers. Two pull requests are now open and both want watching: a branch touching
+`scripts/build-pages.ts` has gone un-mergeable within hours every time.
 
 ### 2026-09-18 — the question this site could not answer: which graphics card
 
