@@ -272,16 +272,22 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       priced, plus three current Studios that had no pair either. The run entry below has the
       figures, the power-figure find and the guard.
 
-- [ ] **5 machines are still in no head-to-head**, and none of the five is reachable by any of the
-      five rules without inventing something. Two have no price at all (the Mac Studio M5 Ultra,
-      512GB and the Framework Desktop 495), so there is no pay-back to compare. The Mac Studio
-      M3 Ultra, 512GB has a price but its successor does not, which is the same problem one step
-      along. That leaves the Framework Desktop 385, 32GB and the Corsair AI Workstation 300, 64GB:
-      both are Ryzen AI Max 385 parts, and they are the only two, so the same-silicon rule cannot
-      pair them (different memory) and the memory-tier rule cannot either (different makers). The
-      honest pair for those two is probably the 385 against the 395 in the same case, which is a
-      GPU-count question rather than a memory one and would want its own wording. Worth doing only
-      after the question pages; three of the five need a price that does not exist yet.
+- [x] **5 machines were in no head-to-head, and no rule could reach them without inventing
+      something.** Done 2026-09-18, and the item's own reading of the two Ryzen AI Max 385 boxes
+      was the half it got wrong: it looked for a rule pairing the 385 with the 395 *across* makers,
+      which cannot work, when the pair each maker already sells is inside its own range. The rule
+      written is **the cheapest configuration of a box against the cheapest one with the better
+      chip in it**, and it reaches four pairs rather than two: the Framework Desktop 385 against
+      its 395, the Corsair AI Workstation 300's 385 against its 395, and — the two the item did not
+      see — the base Mac Studio M5 Max and M5 Ultra, whose entry configurations carry a cut-down
+      GPU that no page on the site mentioned. **53 of the 56 machines are in a head-to-head where
+      51 were.** The run entry below has the figures and the five breaks that proved the guard.
+
+- [ ] **3 machines are still in no head-to-head, and all three are waiting on a price rather than
+      on a rule.** The Mac Studio M5 Ultra, 512GB and the Framework Desktop 495 have no price at
+      all, so there is no pay-back to compare; the Mac Studio M3 Ultra, 512GB has one but its
+      successor does not, which is the same problem one step along. Nothing to do here until
+      data/*.json carries those prices, and that is Ryan's side rather than the agent's.
 
 - [x] **A stand-in power figure prints bare on every comparison page but the 12 new ones.** Done
       2026-09-17, and the item undersold it: the bare figure was 43 of the 55 head-to-heads that
@@ -578,6 +584,15 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       **The bigger one is elsewhere**: `/compare/` is 20,986px on a phone, its machine table alone
       13,002px over 86 rows, and `/how-much-memory/` is 16,294px. If a pairing rule is written it
       should be written for `stack()` and applied wherever it fits, not for the leaderboard alone.
+      **Measured properly on 2026-09-18, and `/compare/` is the wrong page to write it for.** At
+      320px a stacked row is 288px wide, and `/compare/`'s own sub-lines do not fit two to a line:
+      Price runs to 244px, so only 53 of the 86 rows could pair, and a table where some rows pair
+      and some do not reads worse than one where none do. The page that wants it is
+      `/how-much-memory/`, where Parameters, Weights and Cache measure 39, 53 and 44px and each
+      takes a whole line: two of the three on one line saves about 1,265px of 16,294, and all three
+      saves about 2,530px but needs three columns in a grid built for two. `/best/` can pair its
+      Speed and its calculator link at 113 and 130px. So the rule is worth writing, for `stack()`
+      and chosen per table, with the column pair fixed for the whole table rather than per row.
       The leaderboard is 4,208px on a desktop, which is not worth chasing.
 
 - [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
@@ -638,6 +653,99 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the cheap box in the range finally has something to compare against
+
+**Why this item.** The first job the last entry set was to check all four pull requests against
+`main` before anything else. All four still merged clean at the start of this run, so there was
+nothing to repair and no reason to spend the hour on one. That left the two things the entry named:
+the pairing rule for `stack()` on the long tables, and the monthly-cost question page, which is
+still waiting on PR #8. The `stack()` work was measured rather than assumed, and the measurement
+sent the run elsewhere — see the end of this entry. The backlog item taken instead was the machines
+in no head-to-head, which had been sitting open behind the question pages.
+
+**What was missing.** Four machines on this list are sold as one name with two different chips
+behind it, and every pairing rule on the site refused them, because every rule holds something
+equal: the memory tier holds the silicon so the memory is the whole of the difference, the
+same-silicon pair holds the memory so the price is, the generation pair holds both. What a maker
+cuts to reach a headline price is the chip **and** the memory at once, so the entry-level
+configuration of a box fell through all three. The Framework Desktop, 32GB and the Corsair AI
+Workstation 300, 64GB — both Ryzen AI Max 385 parts, both the cheapest way into their own range —
+appeared in **no head-to-head at all**. The backlog had those two and thought the honest pair was
+385 against 395 across makers; it is not, it is each maker's own two chips, and reading it that way
+turned up two more the item had not seen: the **base Mac Studio M5 Max, 36GB and M5 Ultra, 96GB**,
+whose entry configurations carry a cut-down GPU — 32 cores against 40, 64 against 80 — that no page
+on the site mentioned.
+
+**What the rule is.** `chipStepPairs()` takes the cheapest machine on each chip a box is sold on
+and walks the steps in price order, cheapest first. Four new comparisons, **90 machine match-ups
+where there were 86**, and **53 of the 56 machines in a head-to-head where 51 were**. The three
+left are all waiting on a price that does not exist in the data, not on a rule.
+
+**What the pages say, and the answer they did not start with.** The section was drafted to say what
+the bigger chip buys. On three of the four pairs the honest answer is **not speed**: both chips read
+memory at the same rate — 256 GB/s on the two Strix boxes, 1,200 GB/s on the Ultras — and a token is
+written by reading the whole model out of memory, so the figures follow the memory and not the chip.
+The pages say that outright, and say what the extra cores do instead: read a long prompt before the
+first token comes back, which is not something this site measures or prices. The fourth pair is the
+M5 Max, where the data does give the dearer chip the wider path, **614 GB/s against 460**, and there
+the page says so instead and calls it the part of the step you can see in the speeds. Each page
+names both chips in the data's own words, counts the graphics part the way its own maker counts it
+(Apple's GPU cores, AMD's compute units, never one translated into the other), and hands the reader
+a prefilled link that prices the cheaper box on its own before they pay for the step.
+
+**Titles and descriptions.** The heading says the box once and spends the rest on the two sizes, the
+way the memory-tier pages do, with a title that says the chip changes too so the pair does not read
+as another memory question: *Framework Desktop, 32GB vs 64GB: the chip changes too*, 53 characters.
+All four titles are 53 to 56, all four descriptions 107 to 155, and each description leads with what
+that pair actually buys — bandwidth on the M5 Max, models held on the other three.
+
+**The guard.** `checkChipStepPairs()` recomputes every claim from the data: that the pair is one box
+sold on two chips, both on sale and priced, cheaper side first and each side the cheapest of its own
+chip; that both chips are named as the data writes them; that the core counts and the step between
+them are printed where the data counts them; that the page says the dearer chip reads memory faster
+only where the data says it does, and says they read it at the same rate where they do; and that the
+section carries the link pricing the cheaper box alone. Proved by five breaks: dropping the core
+counts (caught, all four named), forcing the wider-path sentence onto the three equal-bandwidth
+pairs (caught twice over, the missing claim and the false one), dropping the section's calculator
+link (**not** caught at first, because the page's own top links the same address — the check now
+asks for the whole sentence, and the break is caught), stopping the chip names being printed
+(caught), and pairing the dearest configuration on each chip instead of the cheapest (caught by the
+new test, which recomputes the cheapest on each chip from the data).
+
+**Verified**: 232 tests where there were 230, typecheck clean, the full `npm run build` at exit 0
+including `build:og`, `build:share` and `build:functions`, 252 pages with every guard passing.
+Measured in Chromium at 320, 360, 390, 430, 768, 1024, 1280 and 1440px: nothing overflows the window
+at any width and no table scrolls sideways. The four pages run 894 to 992 words against a median of
+753 for the comparisons. The Framework page was read rendered at 1280px and its share card at full
+size before committing.
+
+**Where it is.** Pushed to `main` as `5d9710a`; deploy run 135 finished green at 09:10, so the four
+pages are live. The push **conflicted all three code pull requests** — #7, #8 and #10 all add names
+to the same import list in `scripts/build-pages.ts` that `gpuCores` and `chipStepNames` went into.
+All three were repaired in this run by merging `main` into each branch and taking the union of the
+lists, which is the same repair earlier runs made by hand; each was checked after with typecheck and
+the full test suite, and PR #10 with a full `build:og` and `build:pages` as well, because its
+`/hardware/` index counts machines and had to be shown still holding. All four branches merge clean
+into `main` again. PR #9 never conflicted; it touches the calculator only.
+
+**Why not the `stack()` pairing rule.** It was measured first, at 320px in Chromium, and the
+measurement argues against writing it. On `/compare/`, the page the last entry called the worst at
+20,986px, the machine table's own sub-lines are **Price at up to 244px of a 288px row** — too wide to
+sit beside anything — so only 53 of 86 rows could pair at all, and a table where some rows pair and
+some do not reads worse than one where none do. The page with the real opportunity is
+`/how-much-memory/`, where Parameters, Weights and Cache run 39, 53 and 44px and each takes a full
+line; pairing two of the three saves about 1,265px of 16,294, and all three on one line would save
+about 2,530px, which needs three columns in a grid built for two. It is worth doing, for `stack()`
+rather than for one page, but as a deliberate change to the narrow layout with its own run, not as
+a by-product.
+
+**What to continue.** The four pull requests are still open and still unreviewed, and they are now
+the thing blocking the biggest item on the backlog: the monthly-cost question page sits on PR #8's
+helpers, and a fifth branch is not worth opening while four wait. If they are still open next run,
+the push-shaped work left is the `stack()` pairing rule as measured above, and after that the
+`/hardware/` and `/leaderboard/` cross-link question, which needs PR #10 merged before it can be
+looked at properly.
 
 ### 2026-09-18 — the 56 machines finally have a list of their own
 
