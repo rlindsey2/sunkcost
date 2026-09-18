@@ -262,7 +262,12 @@ a:hover { color: var(--ink); }
      the rest underneath, each with its column heading in front of it. */
   .board.stack { display: table; width: 100%; overflow-x: visible; white-space: normal; }
   .board.stack thead { display: none; }
-  .board.stack tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 3px; padding: 10px 1px 11px; border-bottom: 1px solid var(--line); }
+  /* The right-hand track is sized to what its cell wants, and the left one gives
+     up everything, so a row whose figure is a sentence rather than a number left
+     the name a single character wide. The floor is 115px because that is the
+     widest one that changes nothing else: the narrowest name that fits today is
+     117.7px, measured at 320px across every stacked table on the site. */
+  .board.stack tbody tr { display: grid; grid-template-columns: minmax(115px, 1fr) auto; column-gap: 12px; row-gap: 3px; padding: 10px 1px 11px; border-bottom: 1px solid var(--line); }
   .board.stack tbody tr:last-child { border-bottom: 0; }
   .board.stack td, .board.stack tbody th { padding: 0; border: 0; white-space: normal; }
   .board.stack .k-name { grid-column: 1; grid-row: 1; }

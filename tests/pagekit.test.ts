@@ -8,7 +8,7 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   footerHtml, FOOTER_LINKS, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  strongestShared, tierLabel, tierName, widestHeadroom, type LdNode,
+  strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -785,6 +785,21 @@ describe('tables on a phone', () => {
     expect(phone).toContain('.board.stack .k-pair-end { text-align: right; }');
     // the pair rule has to come after the one it overrides, or it never takes
     expect(phone.indexOf('.k-pair {')).toBeGreaterThan(phone.indexOf('.k-sub { grid-column'));
+  });
+
+  it('keeps a floor under the name, so a figure that is a sentence cannot crush it', () => {
+    // Two machines on the site have no published price, so their row answers a
+    // sentence where every other row answers a number. The right-hand track is
+    // sized to what its cell wants and the left one gives up everything, so
+    // without a floor the name beside that sentence was a character wide.
+    const unpriced = data.hardware.filter((h) => h.price_usd == null);
+    expect(unpriced.length).toBeGreaterThan(0);
+    for (const h of unpriced)
+      expect(verdictLine(computeView({ ...defaultState(data), hw: h.id }, data))).toBe('Not enough data to compute a pay-back.');
+    const phone = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8').match(
+      /@media \(max-width: 640px\) \{([\s\S]*)\n\}/,
+    )?.[1] ?? '';
+    expect(phone).toContain('.board.stack tbody tr { display: grid; grid-template-columns: minmax(115px, 1fr) auto;');
   });
 
   it('refuses a table it cannot mark up rather than shipping one that swipes', () => {
