@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
+  chipStepPairs, clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
   generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
   modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
 import {
-  appleChip, discontinuedOn, generationNames, gpuPart, machineVerdict, runnersFor, sameSilicon,
-  shortHardwareLabel,
+  appleChip, chipStepNames, discontinuedOn, generationNames, gpuCores, gpuPart, machineVerdict, runnersFor,
+  sameSilicon, shortHardwareLabel,
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
@@ -138,7 +138,7 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, once each', () => {
+  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, every entry-level chip with the one above it, once each', () => {
     const pairs = hardwarePairs(data);
     const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
     const keys = pairs.map(([a, b]) => key(a, b));
@@ -150,10 +150,11 @@ describe('the pairs the cards and the pages cut', () => {
     const tiers = memoryTierPairs(data);
     const twins = sameSiliconPairs(data);
     const gens = generationPairs(data);
+    const steps = chipStepPairs(data);
     const want = new Set<string>();
     for (const xs of [flagships, cards])
       for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
-    for (const [a, b] of [...tiers, ...twins, ...gens]) want.add(key(a, b));
+    for (const [a, b] of [...tiers, ...twins, ...gens, ...steps]) want.add(key(a, b));
     expect(new Set(keys)).toEqual(want);
 
     // a card is priced as the part, not as a computer, and the flagship grid on its own
@@ -169,9 +170,9 @@ describe('the pairs the cards and the pages cut', () => {
     // two of the flagships are themselves cards, so one pair is in both grids and is
     // written once: the union is the page set, not the sum
     expect(pairs.length).toBe(want.size);
-    // and the three later rules are appended after both grids, in the order they run, for
+    // and the four later rules are appended after both grids, in the order they run, for
     // the same reason: a pair keeps the address it has always had
-    const later = [...tiers, ...twins, ...gens];
+    const later = [...tiers, ...twins, ...gens, ...steps];
     const tail = pairs.slice(-later.length).map(([a, b]) => key(a, b));
     expect(tail).toEqual(later.map(([a, b]) => key(a, b)));
   });
@@ -360,6 +361,84 @@ describe('the pairs the cards and the pages cut', () => {
     }
   });
 
+  it("puts each box's entry-level chip against the one above it, and nothing else", () => {
+    const steps = chipStepPairs(data);
+    expect(steps.length).toBeGreaterThan(0);
+
+    for (const [lo, hi] of steps) {
+      // one box, sold on two chips: everything the name says is equal, and the silicon is not
+      expect(lo.family).toBe(hi.family);
+      expect(lo.chip).toBe(hi.chip);
+      expect(lo.chip_variant).not.toBe(hi.chip_variant);
+      // this is a choice at a checkout, so both sides have to be on sale and priced
+      for (const h of [lo, hi]) {
+        expect(h.price_usd).not.toBeNull();
+        expect(h.generation ?? 'current').toBe('current');
+      }
+      // cheaper side first: the page asks what the step up charges on top
+      expect(lo.price_usd!).toBeLessThan(hi.price_usd!);
+      // and each side is the cheapest machine on its own chip, because the step is the
+      // question and a grid of every configuration against every other is not
+      for (const h of [lo, hi]) {
+        const onThatChip = data.hardware.filter(
+          (x) => x.family === h.family && x.chip === h.chip && x.chip_variant === h.chip_variant
+            && x.price_usd != null && (x.generation ?? 'current') === 'current',
+        );
+        expect(Math.min(...onThatChip.map((x) => x.price_usd!))).toBe(h.price_usd);
+      }
+      // the names split the way a title needs them: the box once, then the two sizes
+      const n = chipStepNames(lo, hi)!;
+      expect(n).not.toBeNull();
+      expect(n.machine).not.toMatch(/GB/);
+      expect(shortHardwareLabel(lo)).toBe(`${n.machine}, ${n.a}`);
+      expect(shortHardwareLabel(hi)).toBe(`${n.machine}, ${n.b}`);
+      expect(`${n.machine}, ${n.a} vs ${n.b} for local LLMs`.length).toBeLessThanOrEqual(60);
+      // and it only reads one way round, so a machine page can say which side it is on
+      expect(chipStepNames(hi, lo)).toBeNull();
+    }
+
+    // the rule is the step, not a grid: one pair for each gap between the chips a box
+    // is sold on, and every machine left in no head-to-head by the other rules that this
+    // one can reach honestly is reached
+    const boxes = new Map<string, Set<string>>();
+    for (const h of data.hardware) {
+      if (h.price_usd == null || (h.generation ?? 'current') !== 'current' || !h.chip_variant) continue;
+      const k = `${h.family}|${h.chip}`;
+      boxes.set(k, new Set([...(boxes.get(k) ?? []), h.chip_variant]));
+    }
+    const want = [...boxes.values()].reduce((n, v) => n + Math.max(0, v.size - 1), 0);
+    expect(steps.length).toBe(want);
+
+    // two configurations of one box are never a memory-tier pair, because the tier rule
+    // holds the silicon equal and this one is the case where the maker did not
+    for (const [lo, hi] of steps) expect(memoryTierNames(lo, hi) ?? memoryTierNames(hi, lo)).toBeNull();
+    // and no other pair on the site is a chip step
+    const stepKeys = new Set(steps.map(([a, b]) => [a.id, b.id].sort().join('|')));
+    for (const [a, b] of hardwarePairs(data)) {
+      if (stepKeys.has([a.id, b.id].sort().join('|'))) continue;
+      expect(chipStepNames(a, b) ?? chipStepNames(b, a)).toBeNull();
+    }
+  });
+
+  it('counts the graphics part the way the machine\'s own data writes it', () => {
+    // Apple writes "40-core GPU" and AMD writes "40 CU"; both are read, neither is invented
+    for (const h of data.hardware) {
+      const cores = gpuCores(h);
+      if (cores == null) {
+        expect(h.chip_variant ?? '').not.toMatch(/\d+-core GPU|\d+\s*CU\b/);
+        continue;
+      }
+      expect(h.chip_variant).toContain(String(cores));
+      expect(cores).toBeGreaterThan(0);
+    }
+    // and on every pair this rule makes, the dearer side is the one with more of them
+    for (const [lo, hi] of chipStepPairs(data)) {
+      const [cl, ch] = [gpuCores(lo), gpuCores(hi)];
+      if (cl == null || ch == null) continue;
+      expect(ch).toBeGreaterThan(cl);
+    }
+  });
+
   it('pairs each scored model with the next one down the leaderboard', () => {
     const ranked = rankedModels(data);
     expect(modelPairs(data).length).toBe(ranked.length - 1);
@@ -408,8 +487,9 @@ describe('the head-to-heads at the foot of a machine page', () => {
     for (const hw of data.hardware) {
       for (const { href, other } of pairsFor(hw)) {
         const tier = memoryTierNames(hw, other) ?? memoryTierNames(other, hw);
+        const step = chipStepNames(hw, other) ?? chipStepNames(other, hw);
         const link = headToHeadGroups(hw, pairsFor(hw)).flatMap((g) => g.links).find((l) => l.href === href)!;
-        if (tier) {
+        if (tier || step) {
           expect(link.label).toBe(`${other.unified_memory_gb}GB`);
           sizes++;
         } else {
@@ -419,8 +499,8 @@ describe('the head-to-heads at the foot of a machine page', () => {
       for (const g of headToHeadGroups(hw, pairsFor(hw)))
         for (const l of g.links) expect(l.label).not.toContain(shortHardwareLabel(hw));
     }
-    // both sides of all 18 memory-tier pairs
-    expect(sizes).toBe(memoryTierPairs(data).length * 2);
+    // both sides of every memory-tier pair and every chip-step pair
+    expect(sizes).toBe((memoryTierPairs(data).length + chipStepPairs(data).length) * 2);
   });
 
   it('puts the reader’s own kind of machine first', () => {

@@ -407,23 +407,17 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       which is the other half and the more valuable one, is PR #9. The run entry below has the
       figures and the four breaks that proved the guard.
 
-- [ ] **No page on the site lists all 56 machines, and nothing is served at `/hardware/` or
-      `/models/` at all.** Found 2026-09-18 while grouping the head-to-heads. `/leaderboard/` is the
-      index of models, `/best/` is by level of use and `/compare/` is the index of match-ups, but the
-      two biggest page families — 56 machines and 55 models, 111 of the 249 pages — have no hub of
-      their own, and the build writes no `index.html` in either directory. Nothing on the site links
-      the bare addresses, so no internal link is broken, and what a Pages deploy serves at
-      `https://sunkcost.ai/hardware/` could not be checked from here: the egress policy refuses the
-      site. A reader who truncates a URL, and a crawler that tries the same, most likely gets a 404.
-      The page worth writing is the machine index: all 56 with price, usable memory, models that fit,
-      the best one each runs and pay-back, each price a prefilled calculator link the way
-      `/leaderboard/` already does it. It answers "local LLM hardware" as a list rather than as an
-      opinion, and it is the natural middle step in every machine page's breadcrumb, which is two
-      levels where three are available. `/models/` is the weaker half: `/leaderboard/` already lists
-      every model, so a second index of the same 55 would be the duplicate this site does not write —
-      better to leave it or to decide it is `/leaderboard/`'s address. **It is a new page, so it is a
-      pull request**, and PR #7 and PR #8 are both open and already collide with each other in six
-      files; a third would collide with both. Worth doing as soon as that queue clears.
+- [x] **No page on the site listed all 56 machines, and nothing was served at `/hardware/` or
+      `/models/` at all.** Done 2026-09-18 as [PR #10](https://github.com/rlindsey2/sunkcost/pull/10),
+      and the item's own reading of the value was right for the wrong reason: the page is worth having
+      as a hub, but what it turned up is that **39 of the 56 machines top out at the same model**,
+      from a $999 Mac mini to an $18,000 card. All 56 in one table, grouped by family, each row with
+      price, usable memory, models held, the strongest of them with that machine's speed on it, and
+      pay-back; `/hardware/` is in the footer of all 249 pages and is the new middle step in every
+      machine page's breadcrumb. The run entry below has the figures, the two faults reading it
+      turned up and the five breaks that proved the guard. The `/models/` half of this item stays
+      closed for the reason the item gave: `/leaderboard/` already lists every model, so a second
+      index of the same 55 would be a duplicate.
 
 - [ ] Question pages for the searches people actually type. **Still the top item, and three of them
       are now written.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
@@ -450,6 +444,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       so the figures exist; what is missing is the page that puts a monthly bill against a monthly
       electricity cost at each level of use. Worth doing only after PR #8 merges, since it would sit
       on the same helpers.
+- [ ] `/hardware/` answers "which machine" and `/leaderboard/` answers "which model", and neither
+      names the other in its own table. Found 2026-09-18 while writing the machine index. The
+      leaderboard's last column is the next model down; the machine index's last column is pay-back.
+      Each links the other in its lede and both sit in the footer, so this is not an orphan problem —
+      it is that a reader on the leaderboard who has picked a model has to go to that model's page to
+      find the machines, and a reader on `/hardware/` who has picked a machine has to go to that
+      machine's page to find the models. Whether that second click is a fault or a feature is the
+      question to settle before writing anything; the pages are indexes and an index that answers
+      both questions at once is the table nobody can read. Probably leave, but worth one look.
+
 - [x] The model pages have the mirror of what the machine pages gained on 2026-09-17. Done
       2026-09-17, and the item undersold it twice over: 16 model pages, not ten, and what the
       omission hid is not a missing machine but a wrong price. On 12 of the 16 the cheapest machine
@@ -634,6 +638,83 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the 56 machines finally have a list of their own
+
+**Why this item.** The backlog put the machine index behind the pull-request queue, and the queue
+has not cleared: PR #7, #8 and #9 were all still open at the start of this run, a day after the last
+of them was written. All three were checked against `main` first and all three still merge clean, so
+there was nothing to repair and no reason to spend the run on one. The item said "worth doing as
+soon as that queue clears"; three more push-shaped polish runs while the biggest structural gap on
+the site sits unwritten is the worse trade, so this run wrote the page.
+
+**What was missing.** Nothing was served at `/hardware/` at all. The build wrote 56 machine
+directories under it and no `index.html`, so a reader who cut a machine's address back — and a
+crawler that tried the same — got a 404. `/leaderboard/` is the index of models, `/best/` ranks by
+level of use and `/compare/` lists the 133 match-ups; the 56 machines, the largest page family on the
+site, had no list in front of them and their breadcrumbs had two levels where three were available.
+
+**What the page says.** All 56 configurations in one table, grouped by family, families in the order
+of what the cheapest of them costs, and inside a family the machines you can still buy first. Six
+columns: the machine, its price, the memory its GPU can address against the memory fitted, how many
+of the 39 open models it holds at 32k, the strongest of those with that machine's speed on it, and
+how long that pair takes to pay back. Every figure is read from the same view the machine's own page
+is built from, so the index and the page behind it cannot drift apart, and every price opens the
+calculator on that machine running the model beside it. The two machines with no published price say
+so and offer the calculator's own price box instead of a figure nobody published.
+
+**The page's own answer is not the one it was drafted with.** The first version of the opening
+paragraph said more money buys a bigger model. The table says otherwise: **39 of the 56 machines top
+out at the same model**, Qwen3.8 27B, and that run goes from a $999 Mac mini M4, 32GB to an $18,000
+RTX PRO 6000 Blackwell. The strongest model a machine holds changes in **four steps** across the whole
+range; five machines hold something stronger than the plateau, the cheapest of them the $7,099 Mac
+Studio M3 Ultra, 256GB, and two hold all 39. So the paragraph says what the data says: more money
+buys memory, memory buys a stronger model in only four steps, and between the steps it buys speed,
+spare memory and a longer window. Pay-back runs the other way, because the strongest model a machine
+holds is the slowest thing it can run: at 500k tokens a day the quickest figure in the table is 13
+years and the slowest is 1,044.
+
+**Two faults found by reading it rather than diffing it.** The share card at eight family rows put
+"of 39" under each figure and that second line ran into the row beneath it, which is the same fault
+the best-gpu card had at seven rows; the denominator is in the column heading now and the rows are
+one line each. And the strongest-model column printed the same name 39 times, which on a phone is
+the leaderboard's own hosted-row fault in another place — so the cell carries that machine's speed on
+that model as well, which is different on every row and is a figure people shop on.
+
+**What else moved.** `/hardware/` joins the footer every page carries, which `checkFooter()` forces
+rather than permits: a page written at the top level of the site fails the build unless the footer
+names it. The 56 machine pages gain it as the step above them, so their breadcrumbs and their
+BreadcrumbList now read Sunk Cost / Hardware / the machine. `familyGroup()` moved into
+`src/pagekit.ts` so the table's group headings and the card's rows name a family the same way.
+
+**The guard.** `checkHardwareIndex()` recomputes every row from the data: the count, the strongest
+model, the speed, the pay-back and the calculator link, on all 56; that the index lists every machine
+the build writes a page for; and that every machine page passes through it. Proved by five breaks,
+each caught with the row named: dropping the Mac mini M6, 32GB from the table (*has no row for*,
+and *does not list /hardware/mac-mini-m6-32/*), printing one model more than each machine holds,
+naming the second-strongest model instead of the strongest, moving every pay-back figure a year, and
+taking the new step out of the machine pages' breadcrumbs.
+
+**Verified**: 235 tests where there were 230, typecheck clean, the full `npm run build` at exit 0
+including `build:og`, `build:share` and `build:functions`, 249 pages with every guard passing.
+Measured in Chromium at 320, 360, 390, 430, 768, 1024, 1280 and 1440px: nothing overflows the window
+at any width and the table never scrolls sideways; it is 8,040px on a phone over 64 rows, in line
+with the leaderboard's 8,410. The page and its card were read rendered at 360 and 1280px before
+committing.
+
+**Where it is.** [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), branch
+`seo/hardware-index`. It merges clean into `main` and against PR #9. It **conflicts with PR #7 and
+PR #8**, which also add a list-page card: the import lists in `scripts/build-og.ts`,
+`src/list-card.ts` and `tests/list-card.test.ts`, and the card registry in `build-og.ts`. Whichever
+merges first, the repair on the others is the union of those lists, the same repair two earlier runs
+made by hand.
+
+**What to continue.** Four pull requests are now open and none has been reviewed. The next run
+should check all four against `main` before anything else and repair whichever has gone stale; a
+fifth branch is not worth opening while four wait. If they all still merge clean, the push-shaped
+work left is the pairing rule for `stack()` on the long tables — `/compare/` at 20,986px on a phone
+is the worst, not the leaderboard — and after that the monthly-cost question page, which is still
+waiting on PR #8.
 
 ### 2026-09-18 — the leaderboard said the same thing eight times before it said anything
 

@@ -114,6 +114,51 @@ export function appleChip(h: Hardware): { gen: number; tier: string } | null {
 }
 
 /**
+ * The GPU cores a machine's `chip_variant` states, where it states them. Apple writes
+ * "40-core GPU" and AMD writes "40 CU" into the same field, and on two configurations
+ * of one box that count is the part of the chip that changed. Null where the data does
+ * not say, which is every graphics card on the list: a card's variant names the board,
+ * not its cores.
+ */
+export function gpuCores(h: Hardware): number | null {
+  const v = h.chip_variant ?? '';
+  const m = /(\d+)-core GPU/.exec(v) ?? /(\d+)\s*CU\b/.exec(v);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * Two configurations of one box where the step up changes the chip as well as the
+ * memory. A maker who sells a Framework Desktop with a Ryzen AI Max 385 and with a
+ * Max+ 395, or a Mac Studio with a 32-core GPU and with a 40-core one, is selling two
+ * machines under one name, and the cheaper one is the one in the headline price. The
+ * memory-tier rule refuses these on purpose — it holds the silicon equal so the memory
+ * is what the money bought — so without this rule the entry-level configuration of a
+ * box appears in no head-to-head at all.
+ *
+ * The names come back split, cheaper side first, so a title can say the box once and
+ * spend its characters on the two sizes, which is what the configurator asks. Both
+ * sides need a price and both have to be on sale, because pay-back is what the page is
+ * for and this is a choice you make at the checkout. Null for every other pair.
+ */
+export function chipStepNames(
+  a: Hardware,
+  b: Hardware,
+): { machine: string; a: string; b: string } | null {
+  if (a.id === b.id || a.family !== b.family || a.chip !== b.chip) return null;
+  if ((a.chip_variant ?? '') === (b.chip_variant ?? '') || !a.chip_variant || !b.chip_variant) return null;
+  if (a.price_usd == null || b.price_usd == null || a.price_usd >= b.price_usd) return null;
+  if ((a.generation ?? 'current') !== 'current' || (b.generation ?? 'current') !== 'current') return null;
+  const label = shortHardwareLabel(a);
+  const suffix = `, ${a.unified_memory_gb}GB`;
+  if (!label.endsWith(suffix)) return null;
+  return {
+    machine: label.slice(0, -suffix.length),
+    a: `${a.unified_memory_gb}GB`,
+    b: `${b.unified_memory_gb}GB`,
+  };
+}
+
+/**
  * The same machine one generation on: the same case, the same class of chip and the
  * same memory size, with the older one discontinued and the newer one still sold.
  * Somebody with an M4 Mac mini asks what the M6 would change, and somebody looking at

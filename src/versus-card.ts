@@ -11,7 +11,8 @@ import { clampText, EM, EM_BOLD, fitLines, fitsIn, fitOneLine, wrapText } from '
 import { computeView, hardwareLabel } from './compute';
 import { defaultState } from './state';
 import {
-  appleChip, generationNames, gpuPart, priceWithScopeText, runnersFor, sameSilicon, shortHardwareLabel, slug,
+  appleChip, chipStepNames, generationNames, gpuPart, priceWithScopeText, runnersFor, sameSilicon,
+  shortHardwareLabel, slug,
 } from './pagekit';
 import type { Dataset, Hardware, Model } from './types';
 
@@ -229,6 +230,40 @@ export function sameSiliconPairs(data: Dataset): [Hardware, Hardware][] {
 }
 
 /**
+ * The cheapest configuration of a box against the cheapest one with the better chip in
+ * it, cheaper side first. Every other rule here holds something equal: a memory tier
+ * holds the silicon, a same-silicon pair holds the memory, a generation pair holds
+ * both. The entry-level machine falls through all three, because what a maker cuts to
+ * reach a headline price is the chip *and* the memory at once — a Framework Desktop at
+ * $1,269 is a 385 with 32 GB where the $1,959 one is a 395 with 64 — and that is the
+ * one comparison the buyer of a cheap box actually makes.
+ *
+ * One pair per step, between the cheapest machine on each chip: where a box is sold on
+ * three chips this walks the steps in price order rather than writing a grid, because
+ * the question is always about the next one up. Discontinued and unpriced machines are
+ * left out, because this is a choice at a checkout and the price is the whole of it.
+ */
+export function chipStepPairs(data: Dataset): [Hardware, Hardware][] {
+  const boxes = new Map<string, Hardware[]>();
+  for (const h of data.hardware) {
+    if (h.price_usd == null || (h.generation ?? 'current') !== 'current' || !h.chip_variant) continue;
+    const key = `${h.family}|${h.chip}`;
+    boxes.set(key, [...(boxes.get(key) ?? []), h]);
+  }
+  const out: [Hardware, Hardware][] = [];
+  for (const box of boxes.values()) {
+    const cheapest = new Map<string, Hardware>();
+    for (const h of box) {
+      const seen = cheapest.get(h.chip_variant!);
+      if (!seen || h.price_usd! < seen.price_usd! || (h.price_usd === seen.price_usd && h.id < seen.id)) cheapest.set(h.chip_variant!, h);
+    }
+    const steps = [...cheapest.values()].sort((x, y) => x.price_usd! - y.price_usd! || x.id.localeCompare(y.id));
+    for (let i = 0; i + 1 < steps.length; i++) if (chipStepNames(steps[i], steps[i + 1])) out.push([steps[i], steps[i + 1]]);
+  }
+  return out;
+}
+
+/**
  * Each discontinued machine against the one that replaced it, older side first. Thirteen
  * Macs on this list are no longer sold and appeared in no head-to-head at all, because
  * every other rule here takes current machines only: a flagship is the middle of a
@@ -254,7 +289,8 @@ export function generationPairs(data: Dataset): [Hardware, Hardware][] {
  * Every machine pair that has a page, in the order the build writes them: the grid of
  * family flagships first, then the card grid, then the memory tiers of one machine, then
  * each box against the cheapest box of the same hardware, then each discontinued machine
- * against the one that replaced it. Each
+ * against the one that replaced it, then each box's entry-level chip against the one
+ * above it. Each
  * rule is appended after the ones before it, so a pair keeps the address it has always
  * had, and a pair is only ever written once, whichever way round the rules reach it.
  */
@@ -274,6 +310,7 @@ export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   for (const [a, b] of memoryTierPairs(data)) add(a, b);
   for (const [a, b] of sameSiliconPairs(data)) add(a, b);
   for (const [a, b] of generationPairs(data)) add(a, b);
+  for (const [a, b] of chipStepPairs(data)) add(a, b);
   return out;
 }
 
@@ -303,10 +340,23 @@ export function headToHeadGroups(
   const tiers: { link: HeadToHeadGroup['links'][number]; gb: number }[] = [];
   const replaced: HeadToHeadGroup['links'] = [];
   const replacedBy: HeadToHeadGroup['links'] = [];
+  const stepUp: HeadToHeadGroup['links'] = [];
+  const stepDown: HeadToHeadGroup['links'] = [];
   for (const { href, other } of pairs) {
     const tier = memoryTierNames(self, other) ?? memoryTierNames(other, self);
     if (tier) {
       tiers.push({ link: { href, label: `${other.unified_memory_gb}GB` }, gb: other.unified_memory_gb });
+      continue;
+    }
+    // the same box with a different chip in it says only the size too: the name at the
+    // top of the page is the other side's name as well, and what a reader picks between
+    // on the maker's own page is two sizes with two chips behind them
+    if (chipStepNames(self, other)) {
+      stepUp.push({ href, label: `${other.unified_memory_gb}GB` });
+      continue;
+    }
+    if (chipStepNames(other, self)) {
+      stepDown.push({ href, label: `${other.unified_memory_gb}GB` });
       continue;
     }
     const link = { href, label: shortHardwareLabel(other) };
@@ -320,6 +370,8 @@ export function headToHeadGroups(
   return [
     ...(selfIsCard ? [cardGroup, computerGroup] : [computerGroup, cardGroup]),
     { lead: 'the same machine at another memory size', links: tiers.sort((a, b) => a.gb - b.gb).map((t) => t.link) },
+    { lead: 'the same box and the bigger chip', links: stepUp },
+    { lead: 'the same box and the smaller chip', links: stepDown },
     { lead: 'the machine it replaced', links: replaced },
     { lead: 'the machine that replaced it', links: replacedBy },
   ].filter((g) => g.links.length > 0);
