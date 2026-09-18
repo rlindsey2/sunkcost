@@ -8,7 +8,7 @@ import {
   footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  holdHyphens, splitCapabilityNote, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
+  holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -1502,6 +1502,58 @@ describe('a note out of the data, printed as the page\u2019s own sentence', () =
     expect(endStop('11 GB at 32k context')).toBe('11 GB at 32k context.');
     expect(endStop('Is it worth it?')).toBe('Is it worth it?');
     expect(endStop('  ')).toBe('');
+  });
+
+  it('sends each sentence of a machine\u2019s note to the figure it is about', () => {
+    const note = 'Bandwidth: 22.4 Gbps \u00d7 256-bit bus \u00f7 8 = 716.8 GB/s (TechPowerUp). '
+      + 'Usable memory is the VRAM less 1 GB. '
+      + 'The 4080 SUPER has a different price, so it is not this entry.';
+    expect(splitHardwareNote(note)).toEqual({
+      bandwidth: '22.4 Gbps \u00d7 256-bit bus \u00f7 8 = 716.8 GB/s (TechPowerUp).',
+      memory: 'Usable memory is the VRAM less 1 GB.',
+      availability: 'The 4080 SUPER has a different price, so it is not this entry.',
+      speed: '',
+    });
+  });
+
+  it('drops the label the sentence carried, because the row it lands in is the label', () => {
+    expect(splitHardwareNote('Bandwidth: 15 Gbps \u00d7 192-bit bus \u00f7 8 = 360 GB/s.').bandwidth)
+      .toBe('15 Gbps \u00d7 192-bit bus \u00f7 8 = 360 GB/s.');
+  });
+
+  it('keeps a caveat about speed out of the memory figure', () => {
+    const laptop = 'macOS lets the GPU wire roughly 75% of unified memory by default. '
+      + 'On a laptop, sustained speed drops once the fans cap out, so a desktop holds a higher tokens/sec.';
+    const split = splitHardwareNote(laptop);
+    expect(split.memory).toBe('macOS lets the GPU wire roughly 75% of unified memory by default.');
+    expect(split.speed).toContain('tokens/sec');
+  });
+
+  it('leaves a note that is all about memory where it was', () => {
+    const note = 'Memory is treated as GB throughout, which is slightly conservative.';
+    expect(splitHardwareNote(note)).toEqual({ memory: note, bandwidth: '', availability: '', speed: '' });
+  });
+
+  it('says nothing twice: every machine\u2019s sentences put its note back together', () => {
+    for (const h of data.hardware) {
+      expect([h.id, noteSentences(h.notes).join(' ')]).toEqual([h.id, (h.notes ?? '').trim()]);
+    }
+  });
+
+  it('holds the data to one shape: a note about bandwidth needs a bandwidth figure to sit under', () => {
+    let explained = 0;
+    for (const h of data.hardware) {
+      if (!splitHardwareNote(h.notes).bandwidth) continue;
+      explained++;
+      expect([h.id, h.memory_bandwidth_gbs != null]).toEqual([h.id, true]);
+    }
+    expect(explained).toBeGreaterThan(0);
+  });
+
+  it('leaves no machine explaining its bandwidth under its memory', () => {
+    for (const h of data.hardware) {
+      expect([h.id, /\bGbps\b|\btokens\/sec\b/.test(splitHardwareNote(h.notes).memory)]).toEqual([h.id, false]);
+    }
   });
 
   it('is the shape every architecture note in the data comes in', () => {

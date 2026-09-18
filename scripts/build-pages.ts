@@ -19,7 +19,7 @@ import {
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
   rowFor,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
-  speedWithBasis, splitCapabilityNote, stack,
+  speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
@@ -2155,6 +2155,9 @@ function hardwarePage(hw: Hardware): string {
   // What the table leaves out: the models this machine misses at the context every
   // figure above is taken at, and holds at a shorter window.
   const shorter = fitsShorter(hw, view.rows.map((r) => r.model), data);
+  // Each sentence of the machine's note under the figure it is about, rather than
+  // all of them under the memory figure. See splitHardwareNote().
+  const note = splitHardwareNote(hw.notes);
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
 <p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="/best-gpu/">set against the others here</a>.` : ''}</p>
@@ -2174,7 +2177,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
@@ -2191,10 +2194,10 @@ ${headToHeadNote(hw)}
 <h2>The specifics</h2>
 <dl class="specs">
   <dt>Chip</dt><dd>${esc(hw.chip)}${hw.chip_variant ? ` — ${esc(hw.chip_variant)}` : ''}</dd>
-  <dt>Memory bandwidth</dt><dd>${hw.memory_bandwidth_gbs ? `${hw.memory_bandwidth_gbs} GB/s` : 'unknown'}</dd>
-  <dt>Usable by the GPU</dt><dd>${hw.usable_memory_gb ?? 'unknown'} GB${hw.notes ? ` — ${esc(hw.notes)}` : ''}</dd>
+  <dt>Memory bandwidth</dt><dd>${hw.memory_bandwidth_gbs ? `${hw.memory_bandwidth_gbs} GB/s` : 'unknown'}${note.bandwidth ? ` — ${esc(note.bandwidth)}` : ''}</dd>
+  <dt>Usable by the GPU</dt><dd>${hw.usable_memory_gb ?? 'unknown'} GB${note.memory ? ` — ${esc(note.memory)}` : ''}</dd>
   <dt>Power under load</dt><dd>${hw.load_watts ?? 'unknown'} W (${esc(powerSourceLabel(hw))})${hw.load_watts_note ? ` — ${esc(hw.load_watts_note)}` : ''}</dd>
-  ${hw.status ? `<dt>Availability</dt><dd>${esc(hw.status)}</dd>` : ''}
+  ${hw.status || note.availability ? `<dt>Availability</dt><dd>${[hw.status, note.availability].filter(Boolean).map((t) => esc(t!)).join(' ')}</dd>` : ''}
   ${hw.sources?.length ? `<dt>Sources</dt><dd>${hw.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener">source ${i + 1}</a>`).join(', ')}</dd>` : ''}
 </dl>
 </article>`;
@@ -4076,6 +4079,70 @@ function checkNotes() {
 }
 
 /**
+ * The machine pages' half of the same fault. hw.notes is the field a machine
+ * records everything in, and all of it printed under "Usable by the GPU": the
+ * seven graphics cards opened their memory note with the working behind the
+ * bandwidth figure in the row above, which printed bare, and ten laptops
+ * explained there that sustained speed falls once the fans cap out.
+ *
+ * splitHardwareNote() sends each sentence to the figure it is about. This holds
+ * the result to four things, because a router that drops a sentence, prints it
+ * twice, or parks it under a row the page does not print is the kind of fault
+ * that reads as finished on every page but the one it ruins.
+ */
+function checkHardwareNotes() {
+  const problems: string[] = [];
+  const moved = { bandwidth: 0, speed: 0, availability: 0 };
+  for (const hw of data.hardware) {
+    const html = meta.find((x) => x.path === `/hardware/${hw.id}/`)?.html;
+    if (html == null || !hw.notes) continue;
+    const page = unesc(html);
+    const sentences = noteSentences(hw.notes);
+    // Splitting is a seam, not an edit: the sentences joined back up are the note.
+    if (sentences.join(' ') !== hw.notes.trim()) problems.push(`${hw.id}'s note does not come back whole when its sentences are joined`);
+    const note = splitHardwareNote(hw.notes);
+    const rows: [keyof typeof note, string, string | null][] = [
+      ['memory', 'Usable by the GPU', dd(page, 'Usable by the GPU')],
+      ['bandwidth', 'Memory bandwidth', dd(page, 'Memory bandwidth')],
+      ['availability', 'Availability', dd(page, 'Availability')],
+      ['speed', 'the note under the speed column', speedNotes(page)],
+    ];
+    for (const [key, where, holder] of rows) {
+      const text = note[key];
+      if (!text) continue;
+      if (key !== 'memory') moved[key as 'bandwidth' | 'speed' | 'availability']++;
+      // Somewhere on the page, exactly once.
+      const seen = page.split(text).length - 1;
+      if (seen !== 1) problems.push(`/hardware/${hw.id}/ prints "${text.slice(0, 40)}…" ${seen} times`);
+      // And that somewhere is the figure it is about.
+      if (holder == null) problems.push(`/hardware/${hw.id}/ has a note about ${where} and no ${where} to print it under`);
+      else if (!holder.includes(text)) problems.push(`/hardware/${hw.id}/ does not print its ${key} note under ${where}`);
+    }
+    // Read from the other end, with markers the router does not use: whatever is
+    // left under the memory figure is about memory.
+    const under = dd(page, 'Usable by the GPU') ?? '';
+    for (const [subject, marker] of [['bandwidth', /\bGbps\b|\bbus ÷\b/], ['speed', /\btokens\/sec\b|\bfans cap out\b/]] as const)
+      if (marker.test(under)) problems.push(`/hardware/${hw.id}/ still explains ${subject} under the memory figure`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} machine note${problems.length === 1 ? '' : 's'} print under the wrong figure`);
+  }
+  console.log(`  ${moved.bandwidth} machine pages explain their bandwidth figure under it, ${moved.speed} put the caveat about speed beside the speed column and ${moved.availability} say under Availability which machine this is`);
+}
+
+/** The text of one row of a machine page's specifics list. */
+function dd(page: string, label: string): string | null {
+  return page.match(new RegExp(`<dt>${label}</dt><dd>([\\s\\S]*?)</dd>`))?.[1] ?? null;
+}
+
+/** The notes under the machine's own "What it runs" table, where the speed column is. */
+function speedNotes(page: string): string | null {
+  const after = page.split('<h2>What it runs</h2>')[1]?.split('<h2>')[0];
+  return after == null ? null : [...after.matchAll(/<p class="note">([\s\S]*?)<\/p>/g)].map((m) => m[1]).join(' ');
+}
+
+/**
  * The small label beside a name inside a table — the tier a model sits in, the
  * word that says a machine is discontinued — is a phrase as often as a word, and
  * the two want opposite things on a phone. A phrase held to one line runs past
@@ -4387,6 +4454,7 @@ checkHiddenModels();
 checkLeaderboardLinks();
 checkBestGpu();
 checkNotes();
+checkHardwareNotes();
 checkTierLabels();
 checkMarkerWords();
 checkPageDates();

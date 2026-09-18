@@ -470,6 +470,51 @@ export function splitCapabilityNote(note: string | null | undefined): { ratings:
 }
 
 /**
+ * The same fault as splitCapabilityNote(), one page type along. hw.notes is the
+ * one field a machine records everything in, and the machine page printed it
+ * whole under "Usable by the GPU". So the memory note on all seven graphics
+ * cards opened with the arithmetic behind the bandwidth figure in the row
+ * above — which printed bare — and on ten laptops it explained that sustained
+ * speed drops once the fans cap out, which is not a fact about memory either.
+ *
+ * Nothing in the field is wrong. Each sentence is about a different number, and
+ * this puts it under the number it is about: bandwidth to the bandwidth row,
+ * speed to the note under the speed column, which product this entry is and
+ * where you buy it to Availability, memory where it already was.
+ *
+ * The markers are the subject each sentence names rather than the sentences
+ * themselves, so a machine added tomorrow is read by what its note talks about.
+ * checkHardwareNotes() holds the result: every sentence lands somewhere, lands
+ * once, and lands under a row the page actually prints.
+ */
+const NOTE_SUBJECTS: { key: 'bandwidth' | 'availability' | 'speed'; marker: RegExp }[] = [
+  { key: 'bandwidth', marker: /\bbandwidth\b/i },
+  { key: 'availability', marker: /\bnot this entry\b|\bin stock\b/i },
+  { key: 'speed', marker: /\btokens\/sec\b|\bon decode\b/i },
+];
+
+export type HardwareNote = { memory: string; bandwidth: string; availability: string; speed: string };
+
+/** The sentences of a note, kept whole and in order, so joining them gives the note back. */
+export function noteSentences(note: string | null | undefined): string[] {
+  const text = (note ?? '').trim();
+  return text ? text.split(/(?<=\.)\s+(?=[A-Z0-9(`~])/).map((s) => s.trim()).filter(Boolean) : [];
+}
+
+export function splitHardwareNote(note: string | null | undefined): HardwareNote {
+  const out: HardwareNote = { memory: '', bandwidth: '', availability: '', speed: '' };
+  for (const sentence of noteSentences(note)) {
+    const subject = NOTE_SUBJECTS.find((s) => s.marker.test(sentence))?.key ?? 'memory';
+    // "Bandwidth: 22.4 Gbps × 256-bit bus ÷ 8 = 716.8 GB/s" carried its own label
+    // because it used to sit under the memory figure. Under the bandwidth row the
+    // label is the row's name, so it goes.
+    const text = subject === 'bandwidth' ? sentence.replace(/^Bandwidth:\s*/, '') : sentence;
+    out[subject] = out[subject] ? `${out[subject]} ${text}` : text;
+  }
+  return out;
+}
+
+/**
  * A sentence that ends in a note out of the data ends where the note does. The
  * architecture notes all carry their own full stop, so a template adding one
  * printed "on all 80 layers.." on 41 model pages — a typo the data never had
