@@ -62,7 +62,11 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
-- [ ] **`main` is red and the site has not deployed since 10:51. One link fixes it:
+- [x] **`main` was red and nothing had deployed since 10:51. Settled: Ryan merged PR #11 at 11:01
+      and deploy run 146 went green at 11:06** on `be11535`, so the machine-name floor,
+      `/best-gpu/` and the calculator's new footer are all published. Kept below because the
+      fault is worth not repeating. The old item:
+      **One link fixes it:
       [PR #11](https://github.com/rlindsey2/sunkcost/pull/11), and it wants merging rather than
       reviewing at leisure.** Deploy run 142 failed at the test step on `adf6b52`, so nothing
       merged this morning has published, `/best-gpu/` included.
@@ -114,8 +118,15 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       is precisely what the red `main` above shows the cost of skipping.
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
-      `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers. It is
-      a pull request rather than a push because it is a new page, which is the standing rule here.
+      `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
+      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge** (`8789b62`):
+      16 union hunks in six files, the `/best/` note merged so both pages keep their link, a
+      seventh footer entry carried into `index.html`, and one stray file dropped. Verified on the
+      merged tree: 258 tests, typecheck clean, 254 pages with every guard passing, the full
+      `npm run build`, and `/best/` read rendered with all three links in its closing note.
+      **Merging this breaks PR #10 and the other way round** — they conflict in five files,
+      `index.html` among them now, and the repair is the same union plus a footer line.
+      It is a pull request rather than a push because it is a new page, which is the standing rule here.
       No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`;
       what it adds is one generated page, its share card, four helpers in `src/pagekit.ts`, a build
       guard and eight tests. Verified before opening on `main` at `94c354a`: 218 tests, typecheck
@@ -164,7 +175,13 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       too, and on the wrong tree.
 
 - [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
-      machines at `/hardware/`. It is a pull request rather than a push because it is a new page
+      machines at `/hardware/`. **Repaired against green `main` at 11:47 on 2026-09-18 and ready
+      to merge** (`81cd7d1`): 10 union hunks in four files, the build's own count line kept from
+      this branch because `/hardware/` is a page rather than a machine, and `/hardware/` carried
+      into `index.html`'s footer, which no conflict marker asked for. Verified on the merged tree:
+      255 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`,
+      and `/hardware/` read rendered at 1,811 words. **Merging this breaks PR #8 and the other way
+      round**, as the item above says. It is a pull request rather than a push because it is a new page
       type, which is the standing rule here. No data figure is touched and neither are `src/calc.ts`,
       `src/compute.ts` or `src/fit.ts`. Checked again on 2026-09-18 against `main` at `c17b1ec`:
       **it merges clean**, as do #7, #8 and #9, each tested by merging rather than assumed. This
@@ -670,8 +687,17 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       proved the guard.
 
 - [ ] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Found
-      2026-09-18. **Re-measured 2026-09-18 and it did not reproduce**, which is worth knowing before
-      a run spends an hour on it: at every integer width from 615 to 700px the leaderboard's table
+      2026-09-18. **It reproduces after all, and there is a worse page than the leaderboard.**
+      Measured again on 2026-09-18 while sweeping for the label fix, this time reading each table's
+      own `scrollWidth` against its `clientWidth` rather than asking whether the page scrolls: at
+      641px **`/best-gpu/`'s table wants 657px in the 597px it is given** — 60px, ten times the
+      leaderboard's — and `/leaderboard/`'s wants 600px in 597px. `/best-gpu/` is still 1px over at
+      700px and clean at 900px; the leaderboard is clean at 700px and above. Nothing else on the
+      site scrolls at any of the twelve widths swept, and no page's document overflows its window at
+      any of them, which is why the earlier sweep found nothing: the table scrolls inside a page
+      that does not. The card ranking has seven columns of its own and post-dates every note below.
+      The earlier reading, kept because its arithmetic is still the likeliest explanation of the
+      original 14px: at every integer width from 615 to 700px the leaderboard's table
       is 597px inside a 641px window and nothing scrolls, and the 252-page sweep at 641px found no
       page wider than its window and no table scrolling. The arithmetic in the original measurement
       says why: 596px wanted in 582px is a 641px window **minus a 15px classic scrollbar**, which
@@ -687,17 +713,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       one look at the 641-to-1023px band, and worth re-measuring the other 306 stacked tables at
       641px at the same time, since only sixteen pages were swept at that width.
 
-- [ ] **A label on the name reads under the figure's column on 29 comparison pages.** Found
-      2026-09-18 while sweeping for the crushed-name fix, and it predates it: the floor changes
-      none of these rows. `.c-quant` is set `white-space: nowrap` at line 173 of `public/page.css`,
-      so on a phone the tier label beside a model's name — *Below every hosted tier*, 145px of it —
-      cannot wrap and runs past the name cell it sits in. **84 labels on 29 pages at 320px**,
-      overhanging by up to 36px, and 79 of them cross into the track the figure is drawn in. It is
-      untidy rather than broken: the figure is right-aligned and a line higher, so nothing is
-      clipped and nothing overlaps, and it was read rendered before being written down. It is
-      clean at 360px and above. The nowrap is there for a reason — the band rule at line 228 keeps
-      a figure whole between 641 and 1023px — so the fix is to let it wrap inside `.board.stack`
-      only, the way `.board.compare` already does at line 255, and then sweep 320 to 1440px again.
+- [x] **A label on the name reads under the figure's column on 29 comparison pages.** Done
+      2026-09-18, and the fix was the one this item proposed plus one it did not see. Both of the
+      item's own figures had moved: **97 labels on 42 pages at 320px**, not 84 on 29, 84 of them
+      crossing into the figure's track, worst overhang 51px rather than 36. And it is **not clean at
+      360px**, as the item said: 26 more labels on 20 pages overhang there, though none of those
+      reach the figure. The wrap alone would have got the other half wrong — a one-word tier label
+      breaks at its own hyphen, and `tierLabel()` has existed for that since 2026-09-17, so the one
+      table still printing the bare name now uses it. 0 labels reach the figure's track at any width
+      now, and nothing on the site moves above 360px. The run entry below has the figures and the
+      two breaks that proved the guard.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -745,6 +770,137 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — a four-word label stops reading under the column beside it
+
+**Why this item.** The last entry named it as the push-shaped work left: the tier label that runs
+past the name it sits beside on a phone. Everything else open is either Ryan's to merge (PR #8 and
+PR #10, both repaired and ready) or sits behind one of those merges.
+
+**Both of the backlog item's figures had moved, and one of its claims was wrong.** Measured again
+before touching anything, across all 253 built pages at twelve widths from 320 to 1440px:
+**97 labels on 42 pages overhang their own cell at 320px**, not the 84 on 29 the item recorded,
+**84 of them cross into the track the figure is drawn in**, and the worst is 51px over rather than
+36. The item also said it is clean at 360px and above. It is not: **26 more labels on 20 pages**
+overhang at 360px, none of them far enough to reach the figure. 390px and above is clean, then and
+now. Two labels do it, and only two: *Below every hosted tier*, 84 times on 29 comparison pages,
+and *discontinued*, 13 times on 13 machine pages.
+
+**The fix is the one the item proposed, and on its own it would have got the other half wrong.**
+`.c-quant` is `white-space: nowrap` site-wide, which is right for a figure and wrong for a phrase,
+so the label now wraps inside `.board.stack` only. But a tier label that is one word carries its own
+hyphen, and wrapping it breaks *Haiku-class* across two lines, which reads as a typo in the data
+rather than a fault in the layout. The site already had the answer: `tierLabel()` has put a one-word
+label in `.nobreak` and left a phrase bare since 2026-09-17, and the rule for `.nobreak` sits on the
+span itself, so it survives the label around it being told to wrap. One table on the site was still
+printing the bare tier name instead — the "What the extra memory buys" table on the comparison
+pages, which is exactly where the 84 labels are. It uses the helper now.
+
+**What changed and what did not.** 0 labels reach the figure's track at any width. The 13
+*discontinued* labels still end 2px past their cell at 320px, inside the 12px gap between the two
+tracks and clear of the figure; the word cannot wrap and 2px is not worth a rule. Read rendered at
+320px before and after rather than inferred from the diff. Diffing the geometry of every stacked row
+and every table on all 253 pages at twelve widths: **33 rows on 17 pages get taller at 320px, 18
+rows on 18 pages at 360px, and nothing else on the site moves** — no table width, no page width,
+nothing at all at 390px and above. Names read better as well, which was not the point: with the
+label able to wrap, the name track can take the width it needs, so *Ling 3.0 flash* and
+*gpt-oss-120b* hold one line where they used to break.
+
+**The guard.** `checkTierLabels()` holds both halves from the generated HTML: a one-word tier label
+printed beside a name has to be held together, a tier label that is a phrase has to be free to wrap.
+The build prints what it found — *311 tier labels sit beside a name in a table: 227 hold their line,
+84 wrap between their words*. Proved by breaking it both ways rather than trusting it. Printing the
+bare name fails with *prints Sonnet-class beside a name where a narrow column can break it at its own
+hyphen*; wrapping the phrase in `.nobreak` fails with *holds Below every hosted tier to one line,
+which on a phone runs it under the figure beside it*. The CSS half cannot be seen from the HTML, so
+a test holds that: take the rule back out of `public/page.css` and *lets the label beside a name
+wrap, so a phrase cannot run under the figure* fails.
+
+**Found while sweeping, and it settles an open item.** The 641px leaderboard fault is real and the
+leaderboard is not the worst of it. Reading each table's own width rather than asking whether the
+page scrolls: at 641px **`/best-gpu/`'s table wants 657px in 597px** and `/leaderboard/`'s wants
+600px in 597px; at 700px `/best-gpu/` is still 1px over. Nothing else scrolls at any of the twelve
+widths, and no page overflows its window at any of them. The backlog item above now carries those
+figures.
+
+**Verified.** 251 tests (250 before, and the new one fails without its rule), typecheck clean, 253
+pages with every guard passing, the full `npm run build`, and the comparison table read rendered at
+320px before and after.
+
+**Where it is.** One push to `main`: `public/page.css`, `scripts/build-pages.ts`, the test and this
+entry. Nothing a visitor reads changed in words, only where the words sit.
+
+**What to continue.** The 641px band, which now has figures and a named page worth more than the
+leaderboard: `/best-gpu/`, 60px over at the first width above the phone layout. Then the
+monthly-cost question page, which is still the biggest item on the backlog and still sits on PR #8's
+helpers, so it waits on that merge. PR #8 and PR #10 are both repaired and ready and are Ryan's.
+
+### 2026-09-18 — the two pages waiting on a merge stop waiting on a conflict
+
+**Why this item.** The last entry set two jobs in order. The first is answered: Ryan merged PR #11
+at 11:01, deploy run 146 went green at 11:06 on `be11535`, and the three things stuck behind red
+`main` — the machine-name floor, `/best-gpu/` and the calculator's own footer — are published. The
+second was the two pull requests that stopped merging when PR #7 went in, which the last entry
+called the cheapest useful hour on the list. Both are repaired and pushed.
+
+**The conflicts were the union the backlog predicted.** PR #8 had 16 hunks across six files, PR #10
+had 10 across four, and all but two are two pages appending their own card constant, card builder,
+import, `write()` call, build guard, test block and footer entry to the same lists. Both sides kept,
+every time.
+
+**The two that are not unions.**
+
+- **The closing note on `/best/`**, which the PR #8 item warned about and which is the one place a
+  page could have lost its only link in that paragraph. Main's sentence links the card ranking;
+  the branch's last sentence links the token-cost page. The resolution keeps main's line and takes
+  the branch's last sentence, so the rendered note now carries `/best-gpu/`, `/compare/` and
+  `/local-llm-vs-api-cost/`. Read out of the build rather than inferred from the diff.
+- **The build's own count line on PR #10.** Main counts machines as every path starting `/hardware`;
+  the branch counts every path starting `/hardware/` that is not `/hardware/` itself, because
+  `/hardware/` is now an index page and not a machine. The branch's line is the right one, and the
+  build prints 56 machines with it.
+
+**What no conflict marker asked for, and what it cost this morning.** `FOOTER_LINKS` in
+`src/pagekit.ts` and the hand-written footer in `index.html` have to hold the same links in the same
+words and the same order. PR #8 adds a seventh entry to the first; on PR #10 both entries merged
+silently with no conflict at all. Either branch would therefore have merged clean and failed on
+`main`, which is exactly what happened at 10:51 and is the fault the last two entries counted three
+times. Both branches now carry the `index.html` line. The guard is real and was proved rather than
+trusted: taking the line back out of `index.html` fails *the calculator's own foot offers the same
+indexes, in the same words and the same order, as a generated page*, on the merged tree.
+
+**One thing found by sweeping, and it was this repository's own rule catching a slip.** PR #8's
+branch was carrying `public/best-gpu/index.html`, 226 lines of build output committed by the
+previous merge repair on that branch (`40a3cbd`). It is not on `main`, and `main`'s own ignore rules
+name `public/best-gpu/`, but ignore rules do not apply to a file already tracked, so it would have
+merged into the repository and gone stale on the next data change. Dropped. Worth running on any
+branch before pushing it, since it takes a second:
+`git ls-files | git check-ignore --no-index --stdin -v`. It is clean on PR #10 and on `main`.
+
+**Verified, on the merged trees rather than on the branches, which is the standing lesson here.**
+PR #8: 258 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`
+through `build:functions`, `/best/` read rendered, and the built `dist/index.html` footer read with
+all six indexes in it. PR #10: 255 tests, typecheck clean, 254 pages with every guard passing, the
+full build, and `/hardware/` read rendered at 1,811 words with its lede, title and footer intact.
+Both were then re-checked against `main` with `git merge-tree`: **both merge clean.**
+
+**They still conflict with each other**, in `scripts/build-og.ts`, `scripts/build-pages.ts`,
+`src/list-card.ts`, `tests/list-card.test.ts` and — new since this run — `index.html`, because both
+now add a footer line to it. Whichever merges first, the second wants the same union again plus its
+own footer entry in `FOOTER_LINKS`'s order. That is a repair of a few minutes, not a reason to hold
+either back.
+
+**Where it is.** Two pushes, no change to `main` but this entry: `8789b62` on
+`seo/local-vs-api-cost` and `81cd7d1` on `seo/hardware-index`. Whether the live site is serving the
+11:06 deploy could not be checked from here; `sunkcost.ai` is still off this environment's
+allow-list, which is the first item under Ryan's side above.
+
+**What to continue.** Both pull requests are Ryan's to merge and nothing else on them needs an
+agent. The push-shaped work left is the `.c-quant` tier label that runs under the figure's column on
+84 rows across 29 comparison pages at 320px, which is one rule inside `.board.stack` and wants the
+320-to-1440px sweep the 10:31 run did; then the 641px leaderboard band with a scrollbar forced,
+which did not reproduce headless. The biggest item on the backlog is still the monthly-cost question
+page, and it sits on PR #8's helpers, so it stays behind that merge.
 
 ### 2026-09-18 — the name beside a sentence stops being one character wide
 
