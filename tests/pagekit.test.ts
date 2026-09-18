@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  brandOf, calcLink, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
@@ -1083,5 +1083,50 @@ describe('what memory buys once two machines hold the same models', () => {
       }
     }
     expect(checked).toBeGreaterThan(300);
+  });
+});
+
+describe('what a price on the page buys', () => {
+  const cards = data.hardware.filter((h) => h.price_scope === 'card_only');
+  const computers = data.hardware.filter((h) => h.price_scope !== 'card_only');
+
+  it('says nothing about graphics cards where none of the machines is one', () => {
+    expect(cardScopeNote([computers[0], computers[1]])).toBe('');
+    expect(cardScopeNote(computers)).toBe('');
+    expect(cardScopeNote([])).toBe('');
+  });
+
+  it('names the card where exactly one of them is a card', () => {
+    const note = cardScopeNote([computers[0], cards[0]]);
+    expect(note).toContain(shortHardwareLabel(cards[0]));
+    expect(note).toContain('priced as the card alone');
+    expect(note).not.toContain(shortHardwareLabel(computers[0]));
+  });
+
+  it('names it in a list of machines too, not only in a pair', () => {
+    expect(cardScopeNote([...computers.slice(0, 5), cards[0]])).toContain(shortHardwareLabel(cards[0]));
+  });
+
+  it('does not send the reader looking for which one it means where both are cards', () => {
+    const note = cardScopeNote([cards[0], cards[1]]);
+    expect(note).toBe('Both are priced as the card alone, so neither figure includes the PC to put it in.');
+    expect(note).not.toContain(shortHardwareLabel(cards[0]));
+  });
+
+  it('falls back to the general sentence where a list holds several cards', () => {
+    const note = cardScopeNote([computers[0], cards[0], cards[1]]);
+    expect(note).toBe('Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.');
+  });
+
+  it('counts a machine listed twice once', () => {
+    expect(cardScopeNote([cards[0], cards[0], computers[0]])).toContain(shortHardwareLabel(cards[0]));
+    expect(cardScopeNote([cards[0], cards[0]])).toBe(cardScopeNote([cards[0]]));
+  });
+
+  it('escapes the name it prints, because the note goes into the page as markup', () => {
+    const odd = { ...cards[0], chip: 'Card <b>&</b>', price_scope: 'card_only' } as Hardware;
+    const note = cardScopeNote([odd, computers[0]]);
+    expect(note).not.toContain('<b>');
+    expect(note).toContain('&amp;');
   });
 });

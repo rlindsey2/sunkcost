@@ -14,7 +14,7 @@ import {
   gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
   machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
   modelVerdict, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  priceWithScope, priceWithScopeText, rowFor,
+  cardScopeNote, priceWithScope, priceWithScopeText, rowFor,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   speedWithBasis, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
@@ -1810,7 +1810,7 @@ ${range.length ? `<tr class="is-frontier"><th colspan="5">${esc(familyHeading(hw
 ${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price elsewhere on the list</th></tr>${rivals.map(relatedRow).join('')}` : ''}
 </tbody>
 </table>`, { fig: 4 })}
-<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.</p>` : ''}
+<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models.${(() => { const n = cardScopeNote([...range, ...rivals]); return n ? ` ${n}` : ''; })()}</p>` : ''}
 ${headToHeadNote(hw)}
 
 <h2>The specifics</h2>
@@ -2221,7 +2221,7 @@ ${likeForLike}
 ${usageSection}
 ${extraSection}
 <h2>The assumptions behind both columns</h2>
-<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. Change any of it in the calculator.</p>
+<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b]); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
 <p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/compare/">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
 </article>`;
   return pageShell(
@@ -3167,6 +3167,56 @@ function checkStandInPower() {
   console.log(`  ${machines} machines carry a borrowed power figure; the ${pages} head-to-heads that print one mark it and say what it prices`);
 }
 
+/**
+ * A graphics card's price buys the card and nothing to put it in, so the pages
+ * that print one have always said so. What they also said, until now, was that
+ * sentence on pages where nothing on them is a card: 53 of the 86 machine
+ * head-to-heads set one complete computer against another and still closed by
+ * telling the reader to add a PC around a graphics card. It is a true sentence
+ * answering a question the page does not raise, and a note that answers
+ * questions nobody asked is how a reader learns to skip the notes.
+ *
+ * So the caveat is now worked out from the machines each page actually prints,
+ * and this holds it to them: the sentence appears only where one of them is a
+ * card, it names the card where there is one to name, and where the page has
+ * none it does not mention cards at all.
+ */
+function checkCardScope() {
+  const problems: string[] = [];
+  const raises = /card alone|card only|Graphics cards/;
+  const check = (path: string, opener: string, machines: Hardware[]) => {
+    const html = meta.find((m) => m.path === path)?.html;
+    if (html == null) return 0;
+    const note = html.match(new RegExp(`<p class="note">${opener}[\\s\\S]*?</p>`))?.[0];
+    if (note == null) {
+      problems.push(`${path} does not carry the assumptions note this check reads`);
+      return 0;
+    }
+    const want = cardScopeNote(machines);
+    if (want && !note.includes(want)) problems.push(`${path} should say "${want}" in its assumptions and does not`);
+    if (!want && raises.test(note)) problems.push(`${path} raises the price of a graphics card where neither machine on it is one`);
+    return want ? 1 : 0;
+  };
+  let said = 0;
+  let pairs = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    pairs++;
+    said += check(hardwareComparePath(a, b), 'Both columns use the same usage:', [a, b]);
+  }
+  let machines = 0;
+  for (const h of data.hardware) {
+    const rows = [...familyRange(h, data), ...priceRivals(h, data)];
+    if (!rows.length) continue;
+    machines++;
+    said += check(`/hardware/${h.id}/`, 'Every row uses the same defaults as the figures above:', rows);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} assumptions note${problems.length === 1 ? '' : 's'} get the card-price caveat wrong`);
+  }
+  console.log(`  ${said} of the ${pairs + machines} machine head-to-heads and machine pages price a graphics card, and only those say what a card price leaves out`);
+}
+
 checkMeta();
 checkLinks();
 checkHeadToHeads();
@@ -3175,6 +3225,7 @@ checkOgCards();
 checkFonts();
 checkCounts();
 checkCardPrices();
+checkCardScope();
 checkTables();
 checkArticles();
 checkCompareIndex();
