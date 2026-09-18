@@ -1182,15 +1182,46 @@ function checkLeaderboardLinks() {
     if (row.includes(want)) linked++;
     else problems.push(`/leaderboard/ does not open ${m.display_name} on the ${shortHardwareLabel(cheapest.hw)} at ${fmtUsd(cheapest.hw.price_usd)}`);
   }
-  for (const r of html.split('<tr class="is-frontier">').slice(1)) {
+  // The hosted rows are the table's yardstick, and four claims hold them to the data.
+  // The fourth is the one a phone turns into a fault: what marks the block as hosted is
+  // said once above it, because a row is a block on a narrow screen and eight rows each
+  // saying it is eight blocks of the same sentence before the first real answer.
+  const hostedRows = html.split('<tr class="is-hosted">').slice(1).map((r) => r.split('</tr>')[0]);
+  const hosted = [...(data.defaults.frontier_reference ?? [])];
+  if (hostedRows.length !== hosted.length)
+    problems.push(`/leaderboard/ prints ${hostedRows.length} hosted rows against the ${hosted.length} hosted models in the data`);
+  for (const r of hostedRows) {
     const name = r.match(/<td class="[^"]*c-model">([^<]+)/)?.[1] ?? 'a hosted model';
-    if (r.split('</tr>')[0].includes('/?hw=')) problems.push(`/leaderboard/ offers to run ${name} on hardware you can buy`);
+    if (r.includes('/?hw=')) problems.push(`/leaderboard/ offers to run ${name} on hardware you can buy`);
+    const ref = hosted.find((h) => esc(h.name) === name);
+    if (!ref) {
+      problems.push(`/leaderboard/ prints a hosted row for ${name}, which is not in the data`);
+      continue;
+    }
+    if (ref.score_alt != null && !r.includes(`or ${ref.score_alt} with reasoning turned down`))
+      problems.push(`/leaderboard/ does not give ${name} the ${ref.score_alt} the index scores it at with reasoning turned down`);
+    if (/download/i.test(r))
+      problems.push(`/leaderboard/ tells the reader inside ${name}'s own row that a hosted model is not a download, which a phone repeats once a row`);
   }
+  const marker = 'You cannot download any of these';
+  const said = html.split(marker).length - 1;
+  if (said !== 1)
+    problems.push(`/leaderboard/ says a hosted model is not a download ${said} times, and it belongs once, in the heading above the hosted rows`);
+  else if (hostedRows.length && html.indexOf(marker) > html.indexOf('<tr class="is-hosted">'))
+    problems.push('/leaderboard/ says what the hosted rows are after the first of them rather than above the block');
   if (problems.length) {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
-    throw new Error(`${problems.length} row${problems.length === 1 ? '' : 's'} on /leaderboard/ do not open the machine and model they print`);
+    throw new Error(
+      problems.length === 1
+        ? '1 claim on /leaderboard/ does not match the data behind it'
+        : `${problems.length} claims on /leaderboard/ do not match the data behind them`,
+    );
   }
   console.log(`  /leaderboard/ opens the calculator on ${linked + shortened} model-and-machine pairs, one a row${shortened ? `, ${shortened} of them at the shorter window that machine holds the model at` : ''}`);
+  const withAlt = hosted.filter((h) => h.score_alt != null).length;
+  console.log(
+    `  /leaderboard/ ranks ${hostedRows.length} hosted models alongside the open ones, ${withAlt} of them also at the score the index gives them with reasoning turned down, and says once above the block that none of them is a download`,
+  );
 }
 
 function checkFonts() {
@@ -1318,12 +1349,21 @@ function leaderboard(): string {
 
   const shortened = placed.filter((p) => p.shorter);
 
+  // The hosted models sit at the top of the table for scale, and each of them used to
+  // carry the sentence that said so. On a wide screen that is one line inside a row;
+  // on a phone, where a row is a block, it was the same sentence eight times before
+  // the reader reached the first model they can actually download. It is said once
+  // now, in a heading above the block, and the row keeps the one thing only it knows:
+  // the figure the index gives that model with its reasoning turned down, which is in
+  // the data and was printed nowhere on the site.
+  const hostedHeading = `<tr class="is-frontier"><th colspan="7">Hosted models, here for scale. You cannot download any of these; they run in someone else’s data centre.</th></tr>`;
+
   const frontierRows = refs
     .map(
-      (r) => `<tr class="is-frontier">
+      (r) => `<tr class="is-hosted">
   <td class="c-model">${esc(r.name)}<span class="c-quant">hosted</span></td>
   <td class="c-score"><span class="bar"><span style="width:${((r.score / max) * 100).toFixed(1)}%"></span></span><b>${r.score}</b></td>
-  <td class="c-tier" colspan="3"><span class="dim">Runs in someone else’s data centre. You cannot download it.</span></td>
+  <td class="c-tier" colspan="3">${r.score_alt == null ? '' : `<span class="dim">or ${r.score_alt} with reasoning turned down</span>`}</td>
   <td class="c-hw"><span class="dim">—</span></td>
   <td class="c-vs"></td>
 </tr>`,
@@ -1344,11 +1384,11 @@ function leaderboard(): string {
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
-<tbody>${frontierRows}${rows}</tbody>
+<tbody>${hostedHeading}${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' } })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
   return pageShell(
