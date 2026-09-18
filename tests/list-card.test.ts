@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, LEADERBOARD_CARD, leaderboardCard, listCardSvg,
-  MEMORY_CARD, memoryCard, quickestAt,
+  MEMORY_CARD, memoryCard, quickestAt, TOKEN_COST_CARD, tokenCostCard,
 } from '../src/list-card';
 import { bestUsageLevels } from '../src/best';
 import {
-  bandFit, cheapestThatHolds, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS,
+  bandFit, cheapestThatHolds, computeView, costMachine, fitsOf, fmtGb1, fmtPerMtok, priceWithScopeText,
+  shortHardwareLabel, SIZE_BANDS, tokenCosts,
 } from '../src/pagekit';
 import { footprintGb } from '../src/fit';
 import { defaultState } from '../src/state';
@@ -23,7 +24,8 @@ const leaderboard = leaderboardCard(data);
 const best = bestBuysCard(data);
 const compare = compareIndexCard(data);
 const memory = memoryCard(data);
-const cards = [leaderboard, best, compare, memory];
+const tokens = tokenCostCard(data);
+const cards = [leaderboard, best, compare, memory, tokens];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
 /** The same text with the spaces taken out, so a name that wrapped onto two lines still matches. */
@@ -260,5 +262,38 @@ describe('the memory card', () => {
 
   it('is drawn where the page asks for it', () => {
     expect(MEMORY_CARD).toBe('/og/how-much-memory.png');
+  });
+});
+
+describe('the token cost card', () => {
+  const machine = costMachine(data);
+  const rows = tokenCosts(machine, data).filter((c) => c.cost.breakevenTokens != null).slice(0, 5);
+
+  it('shows the five models that pay the machine back soonest, in the page’s own order', () => {
+    expect(rows.length).toBe(5);
+    let at = -1;
+    for (const { row } of rows) {
+      const next = flat(tokens).indexOf(noSpace(row.model.display_name));
+      expect(next).toBeGreaterThan(at);
+      at = next;
+    }
+  });
+
+  it('carries both prices and the count between them on every row', () => {
+    for (const { cost } of rows) {
+      expect(flat(tokens)).toContain(noSpace(`${fmtPerMtok(cost.rented)} rented`));
+      expect(flat(tokens)).toContain(noSpace(`${fmtPerMtok(cost.generated)} in electricity`));
+      expect(text(tokens)).toContain(fmtTokens(cost.breakevenTokens));
+    }
+  });
+
+  it('names the machine the prices are quoted against, and what it costs', () => {
+    expect(flat(tokens)).toContain(noSpace(shortHardwareLabel(machine)));
+    expect(flat(tokens)).toContain(noSpace(fmtUsd(machine.price_usd)));
+    expect(text(tokens)).toContain(`${data.defaults.usage.default_input_to_output_ratio}:1 input to output`);
+  });
+
+  it('is written where the page asks for it', () => {
+    expect(TOKEN_COST_CARD).toBe('/og/local-llm-vs-api-cost.png');
   });
 });

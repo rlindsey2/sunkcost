@@ -12,9 +12,9 @@ import {
   familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, gbRange,
   gpuPart, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking, longestContext, lowerFirst,
-  machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext, modelLabel,
-  modelVerdict, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  priceWithScope, priceWithScopeText, rowFor,
+  costMachine, fmtPerMtok, machinesConsidered, machinesShorter, machineVerdict, median, meetAtShorterContext,
+  modelLabel, modelVerdict, MTOK, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
+  priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   speedWithBasis, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, type Runner,
@@ -24,7 +24,7 @@ import {
   flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath,
   modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
-import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
+import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, TOKEN_COST_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -1260,7 +1260,7 @@ ${stack(`<table class="board">
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
 <p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
-<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, or set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>.</p>
+<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="/local-llm-vs-api-cost/">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
 </article>`;
 
   return pageShell(
@@ -1491,7 +1491,7 @@ ${fe?.url ? ` <a href="${esc(fe.url)}" rel="noopener">Score source</a>.` : ''} <
 <ul class="caps">${caps}</ul>
 ${versusLine}
 <h2>What it costs either way</h2>
-<p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill.</p>
+<p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="/local-llm-vs-api-cost/">What a million tokens costs each way</a> puts the two prices side by side.</p>
 
 ${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>Machines that run it</h2>
 ${lengthLine}
@@ -2961,11 +2961,221 @@ ${stack(`<table class="board">
   );
 }
 
+/* --------------------- what a token costs either way --------------------- */
+
+/**
+ * The page the rest of the site is an instance of: what a token costs to rent
+ * against what it costs to generate, and how many of them it takes before the
+ * machine has paid for itself.
+ *
+ * Break-even here is counted in tokens rather than in months, because at today's
+ * prices held flat the saving on each million is a constant: the count that covers
+ * a machine is the same whether it arrives in a year or in a lifetime. That is the
+ * one claim the page is built on, and `checkTokenCost()` recomputes it at the five
+ * levels of use the calculator names.
+ */
+function tokenCostPage(): string {
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const view = computeView({ ...st, hw: hw.id }, data);
+  const dm = view.model!;
+  const drow = rowFor(view, dm)!;
+  const tps = drow.throughput.tokensPerSec!;
+  const base = tokenCost(dm, hw, tps, data)!;
+  const ce = dm.cloud_equivalent;
+  const label = hardwareLabel(hw);
+  const kctx = Math.round(st.ctx / 1024);
+  const costs = tokenCosts(hw, data);
+  const priced = costs.filter((c) => c.cost.breakevenTokens != null);
+  const n = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+  // the working behind the two figures in the answer box, in the page's own numbers
+  const outTokens = MTOK / (st.ratio + 1);
+  const inTokens = MTOK - outTokens;
+  const inBill = (inTokens / MTOK) * ce.input_price_per_mtok!;
+  const outBill = (outTokens / MTOK) * ce.output_price_per_mtok!;
+  const seconds = outTokens / tps;
+  const kwh = (seconds / 3600) * (hw.load_watts! / 1000);
+  const times = base.generated > 0 ? base.rented / base.generated : null;
+  const standInPower = hw.load_watts_status === 'stand_in';
+
+  const costRow = (c: ModelCost) => {
+    const m = c.row.model;
+    const e = m.cloud_equivalent;
+    const x = c.cost.generated > 0 ? c.cost.rented / c.cost.generated : null;
+    return `<tr>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(m.quantisation)}</span>${e.stand_in ? `<br><span class="dim">nobody rents it; priced as ${esc(e.name)}</span>` : ''}</td>
+  <td>${esc(fmtPerMtok(c.cost.rented))}</td>
+  <td>${esc(fmtPerMtok(c.cost.generated))}</td>
+  <td>${x == null || x < 1 ? '<span class="dim">renting is cheaper</span>' : `${fmtNum(x, x < 10 ? 1 : 0)}×`}</td>
+  <td>${c.cost.breakevenTokens == null ? '<span class="dim">never</span>' : `${esc(fmtTokens(c.cost.breakevenTokens))} tokens`}</td>
+</tr>`;
+  };
+
+  // the same count of tokens, arriving on very different dates
+  const levels = bestUsageLevels(data).map((l) => {
+    const v = computeView({ ...st, hw: hw.id, model: dm.id, usage: l.usage }, data);
+    return { ...l, view: v, days: v.calc!.breakevenDays, tokens: v.calc!.breakevenTokens };
+  });
+  const levelRows = levels
+    .map(
+      (l) => `<tr>
+  <th>${esc(fmtTokens(l.usage))}<span class="c-quant">${esc(l.label)}</span></th>
+  <td>${esc(fmtTokens(l.tokens))} tokens</td>
+  <td>${esc(fmtDuration(l.days))}${l.view.capacity.capped ? '<span class="c-quant">its ceiling</span>' : ''}</td>
+</tr>`,
+    )
+    .join('\n');
+
+  // the mix of input to output moves the answer further than the machine does
+  const mixes = data.defaults.use_cases
+    .map((u) => ({ use: u, cost: tokenCost(dm, hw, tps, data, u.ratio)! }))
+    .sort((a, b) => (a.cost.breakevenTokens ?? Infinity) - (b.cost.breakevenTokens ?? Infinity));
+  const mixRows = mixes
+    .map(
+      (x) => `<tr>
+  <td class="c-model">${esc(x.use.label)}${x.use.note ? `<br><span class="dim">${esc(x.use.note)}</span>` : ''}</td>
+  <td>${esc(String(x.use.ratio))}:1${x.use.ratio === st.ratio ? '<span class="c-quant">default</span>' : ''}</td>
+  <td>${esc(fmtPerMtok(x.cost.rented))}</td>
+  <td>${esc(fmtPerMtok(x.cost.generated))}</td>
+  <td>${x.cost.breakevenTokens == null ? '<span class="dim">never</span>' : `${esc(fmtTokens(x.cost.breakevenTokens))} tokens`}</td>
+</tr>`,
+    )
+    .join('\n');
+  const cheapestMix = mixes[0];
+  const dearestMix = mixes[mixes.length - 1];
+
+  // every current machine that runs the same model, so the spread in the electricity
+  // can be set against the spread in the price
+  const runners = data.hardware
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .map((h) => {
+      const v = computeView({ ...st, hw: h.id, model: dm.id }, data);
+      const r = rowFor(v, dm);
+      return v.model?.id === dm.id && r?.throughput.tokensPerSec != null
+        ? { hw: h, cost: tokenCost(dm, h, r.throughput.tokensPerSec, data) }
+        : null;
+    })
+    .filter((x): x is { hw: Hardware; cost: TokenCost } => !!x && !!x.cost)
+    .sort((a, b) => a.cost.generated - b.cost.generated);
+  const cheapestGen = runners[0];
+  const dearestGen = runners[runners.length - 1];
+  const prices = runners.map((r) => r.hw.price_usd!);
+
+  // where renting wins outright, counted over every machine and model that can be priced
+  let beaten = 0;
+  let free = 0;
+  let wins = 0;
+  const lostOn = new Map<string, Model>();
+  for (const h of data.hardware) {
+    if (h.price_usd == null || (h.generation ?? 'current') === 'previous') continue;
+    for (const m of data.models) {
+      if ((m.generation ?? 'current') === 'legacy') continue;
+      const v = computeView({ ...st, hw: h.id, model: m.id }, data);
+      if (v.model?.id !== m.id || !v.calc) continue;
+      const c = tokenCost(m, h, rowFor(v, m)!.throughput.tokensPerSec!, data);
+      if (!c) continue;
+      if (c.rented === 0) free++;
+      else if (c.rented > c.generated) wins++;
+      else {
+        beaten++;
+        lostOn.set(m.id, m);
+      }
+    }
+  }
+  const pairs = wins + beaten + free;
+  // where the API wins on price it is worth saying which models, because so far it
+  // has been one: a dense model priced as the much lighter one nobody rents it beside
+  const losers = [...lostOn.values()];
+  const loser = losers.length === 1 ? losers[0] : null;
+  const loserCe = loser?.cloud_equivalent;
+  const loserStandIn = loser && loserCe?.stand_in ? data.models.find((m) => m.display_name === loserCe.name) ?? null : null;
+  const freeModels = [...new Set(costs.filter((c) => c.cost.rented === 0).map((c) => c.row.model))];
+
+  const body = `<article class="prose">
+<h1>Is a local LLM cheaper than an API?</h1>
+<p class="lede">Per token, easily. Renting a million tokens of ${esc(dm.display_name)} costs ${esc(fmtPerMtok(base.rented))}. Generating the same million on a ${esc(label)} costs ${esc(fmtPerMtok(base.generated))} of electricity${times ? `, ${fmtNum(times, 0)} times less` : ''}. The machine costs ${fmtUsd(hw.price_usd)}, which is ${esc(fmtTokens(base.breakevenTokens))} tokens of that gap, and that number is the whole argument.</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">Rent a million tokens</span><span class="answer-v">${esc(fmtPerMtok(base.rented))}, at ${esc(String(st.ratio))} input tokens for every one generated${ce.stand_in ? `, priced as ${esc(ce.name)} because nobody rents ${esc(dm.display_name)}` : ''}${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}</span></div>
+  <div class="answer-row"><span class="answer-k">Generate the same million</span><span class="answer-v">${esc(fmtPerMtok(base.generated))} of electricity, on a <a href="/hardware/${esc(hw.id)}/">${esc(label)}</a> running it at ${fmtNum(tps, 1)} tok/s and ${hw.load_watts} W${standInPower ? '<span class="c-quant">stand-in</span>' : ''}</span></div>
+  <div class="answer-row"><span class="answer-k">What you pay up front</span><span class="answer-v">${fmtUsd(hw.price_usd)} for the machine. Renting starts at nothing.</span></div>
+  <div class="answer-row"><span class="answer-k">Where they cross</span><span class="answer-v"><b>${esc(fmtTokens(base.breakevenTokens))} tokens</b> through the machine. The same count whether that takes you a year or a lifetime.</span></div>
+</div>
+
+<p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">Run the numbers on that pairing</a></p>
+
+<h2>Where those two figures come from</h2>
+<p>A million tokens at ${esc(String(st.ratio))}:1 is ${n(inTokens)} you send and ${n(outTokens)} the model writes back. The API bills both. At ${fmtUsd(ce.input_price_per_mtok, { cents: true })} per million in and ${fmtUsd(ce.output_price_per_mtok, { cents: true })} per million out, that is ${esc(fmtPerMtok(inBill))} for the input and ${esc(fmtPerMtok(outBill))} for the output: ${esc(fmtPerMtok(base.rented))} the million.${inBill > outBill ? ` Most of the bill is the context you send, not the answer you get.` : ''}</p>
+<p>At home you pay for the electricity the machine draws while it writes those ${n(outTokens)} tokens. At ${fmtNum(tps, 1)} tok/s that is ${n(seconds)} seconds, about ${n(seconds / 60)} minutes of generation; at ${hw.load_watts} W it draws ${fmtNum(kwh, 3)} kWh; at ${fmtUsd(st.kwh, { cents: true })} per kWh that is ${esc(fmtPerMtok(base.generated))}.</p>
+<p class="note">The input is counted in the million but costs no generation time here, because prompt processing runs far faster than generation. It is not free, so read the electricity figure as a floor rather than a final number.${standInPower ? ` The ${hw.load_watts} W is a stand-in: nobody has put a meter on this machine, and <a href="/hardware/${esc(hw.id)}/">its own page</a> says what the figure borrows. Double it and a million tokens still costs ${esc(fmtPerMtok(base.generated * 2))} to generate against ${esc(fmtPerMtok(base.rented))} to rent.` : ''} Electricity is at ${esc(data.defaults.electricity.country)} prices${data.defaults.electricity.source_url ? ` (<a href="${esc(data.defaults.electricity.source_url)}" rel="noopener">source</a>)` : ''}.</p>
+
+<h2>A million tokens, model by model</h2>
+<p>Every model a ${esc(label)} holds at ${kctx}k context, priced both ways. The last column is what matters: how many tokens have to go through the machine before the gap has covered the ${fmtUsd(hw.price_usd)}.</p>
+${stack(`<table class="board">
+<thead><tr><th>Model</th><th>Rented</th><th>Generated</th><th>Cheaper by</th><th>Pays the machine back at</th></tr></thead>
+<tbody>${costs.map(costRow).join('\n')}</tbody>
+</table>`, { fig: 4 })}
+<p class="note">${priced.length} of the ${costs.length} models here pay the machine back at some point${freeModels.length ? `. ${freeModels.map((m) => esc(m.display_name)).join(' and ')} ${freeModels.length === 1 ? 'does not, because it is' : 'do not, because they are'} listed free by the cheapest host on the date checked, and a free endpoint cannot be beaten on price` : ''}. A model nobody rents is priced as its closest hosted match and the row says so.</p>
+
+<h2>The token count holds still. The date moves.</h2>
+<p>Break-even on this site is usually a number of months, and months depend on how hard you work the machine. Counted in tokens it does not: the saving on each million is the same at any level of use, so the count that covers ${fmtUsd(hw.price_usd)} is the same too. Here is ${esc(dm.display_name)} on a ${esc(label)} at the five levels the calculator names.</p>
+<table class="board compare">
+<thead><tr><th>A day's use</th><th>Tokens to break even</th><th>How long that takes</th></tr></thead>
+<tbody>${levelRows}</tbody>
+</table>
+<p>That is the case for buying, and the case against it, in one table. The machine is cheap per token and expensive to own, so the only thing that makes it pay is volume you actually have.</p>
+
+<h2>What you use it for moves the line further than what you buy</h2>
+<p>The mix matters because the two sides bill it differently. The API charges for every token you send; the machine spends its time and its watts on the tokens it writes. So work that sends a lot and writes a little is the cheapest to rent, and the slowest to justify a machine.</p>
+${stack(`<table class="board">
+<thead><tr><th>What you do with it</th><th>Mix</th><th>Rented</th><th>Generated</th><th>Pays the machine back at</th></tr></thead>
+<tbody>${mixRows}</tbody>
+</table>`, { fig: 4 })}
+<p>${esc(sentenceCase(cheapestMix.use.label))} pays the machine back in ${esc(fmtTokens(cheapestMix.cost.breakevenTokens))} tokens; ${esc(lowerFirst(dearestMix.use.label))} needs ${esc(fmtTokens(dearestMix.cost.breakevenTokens))}. Buying the hardware changes less than that. Across the ${runners.length} current machines that run ${esc(dm.display_name)} at ${kctx}k, a million tokens costs between ${esc(fmtPerMtok(cheapestGen.cost.generated))} and ${esc(fmtPerMtok(dearestGen.cost.generated))} to generate. Their prices run from ${fmtUsd(Math.min(...prices))} to ${fmtUsd(Math.max(...prices))}.</p>
+<p class="note">Each row is a mix the calculator offers, and the one marked default is what every other figure on this site is priced at: ${esc(data.defaults.use_cases.find((u) => u.ratio === st.ratio)?.note ?? '')}, which is why it sends the most.</p>
+
+<h2>Where renting still wins</h2>
+<p>Of the ${n(pairs)} machine-and-model pairings this site can price, electricity beats the API on ${n(wins)}. On ${n(free)} the model is listed free by the cheapest host, so there is nothing to beat. ${
+    loser
+      ? `The remaining ${n(beaten)} are all one model, ${esc(loser.display_name)}${
+          loserCe?.stand_in
+            ? `. Nobody rents it, so it is priced as ${esc(loserCe.name)}${loserStandIn?.active_params_b ? `, which moves ${fmtNum(loserStandIn.active_params_b, 1)}B parameters for every token against this one's ${fmtNum(loser.active_params_b ?? loser.params_b, 1)}B` : ''}`
+            : ''
+        }. It is dense, so it is slow on every machine that holds it, and the price it borrows is one a far lighter model sets.`
+      : `It loses on ${n(beaten)}, across ${losers.length} models: a model that is slow on the machine holding it burns watts for longer per token, and a cheap hosted price is not far to fall.`
+  }</p>
+<p>Renting also wins any time you would not have used the machine. A pay-back counted in billions of tokens is not a prediction that you will reach them: at ${esc(fmtTokens(levels[1].usage))} tokens a day, ${esc(lowerFirst(levels[1].label))}, the count arrives in ${esc(fmtDuration(levels[1].days!))}, which is a long way of saying never. The reasons to buy that survive that table are the ones this arithmetic does not price: your data staying on your desk, no rate limit, no outage, and a model that still runs when the endpoint is retired.</p>
+
+<p class="note">Every figure is ${esc(dm.display_name)} at ${esc(dm.quantisation)} unless the row names another model, at ${kctx}k context, ${esc(String(st.ratio))}:1 input to output, ${fmtUsd(st.kwh, { cents: true })} per kWh, and today's API prices held flat. Rental prices have not held flat: they have fallen steeply and repeatedly for a given level of capability${data.defaults.api_decline.source_url ? ` (<a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">Epoch AI</a>)` : ''}. The calculator can decay them ${Math.round(data.defaults.api_decline.default_rate_per_year * 100)}% a year, and switching that on pushes every count on this page out. The speed above is ${esc(drow.throughput.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth rather than measured')}, and each machine page says which of the two it has. To change any of this, <a href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">open the calculator</a>, or see <a href="/best/">what pays back soonest at each level of use</a>.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([
+        'Local LLM vs API cost: what a million tokens costs',
+        'Local LLM vs API cost, per million tokens',
+        'Local LLM vs API cost',
+      ]),
+      description: descOf([
+        `Renting a million tokens of ${dm.display_name} costs ${fmtPerMtok(base.rented)}; generating them costs ${fmtPerMtok(base.generated)} of electricity. The machine is ${fmtTokens(base.breakevenTokens)} tokens of that gap.`,
+        `What a million tokens costs to rent against what it costs to generate at home, on ${costs.length} open models, and how many it takes to pay a machine back.`,
+      ]),
+      canonical: '/local-llm-vs-api-cost/',
+      ogImage: TOKEN_COST_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/local-llm-vs-api-cost/', label: 'Local vs API cost' }],
+    },
+    body,
+    data,
+  );
+}
+
 /* --------------------------------- build --------------------------------- */
 
 write('/leaderboard/', leaderboard());
 write('/best/', bestBuys());
 write('/how-much-memory/', memoryPage());
+write('/local-llm-vs-api-cost/', tokenCostPage());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 
@@ -3110,6 +3320,95 @@ function checkStandInPower() {
   console.log(`  ${machines} machines carry a borrowed power figure; the ${pages} head-to-heads that print one mark it and say what it prices`);
 }
 
+
+/**
+ * The local-vs-API page prices a million tokens both ways and then rests everything
+ * on one claim: that break-even counted in tokens is a constant, the same number at
+ * every level of use. That is only true while the API price is held flat, which is
+ * the calculator's default and could stop being it, and the figures either side of
+ * it move whenever a rental price, a wattage or a measured speed changes.
+ *
+ * So this recomputes the lot: every model the machine holds, both of its prices, the
+ * multiple between them, the constant itself, and the spread across the machines that
+ * run the same model. A figure that has drifted out of the page stops the build.
+ */
+function checkTokenCost() {
+  const path = '/local-llm-vs-api-cost/';
+  const page = meta.find((p) => p.path === path);
+  if (!page) throw new Error('no local-vs-API page was written');
+  const html = unesc(page.html);
+  const problems: string[] = [];
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const costs = tokenCosts(hw, data);
+  if (!costs.length) throw new Error(`${path}: the ${hardwareLabel(hw)} holds no model that can be priced`);
+
+  // every model the machine holds, with both of the prices the page quotes for it
+  for (const c of costs) {
+    if (!html.includes(`/models/${c.row.model.id}/`))
+      problems.push(`${path} leaves out ${c.row.model.id}, which the ${hardwareLabel(hw)} holds`);
+    for (const [side, v] of [['rented', c.cost.rented], ['generated', c.cost.generated]] as const)
+      if (!html.includes(`>${fmtPerMtok(v)}<`))
+        problems.push(`${path} does not print ${fmtPerMtok(v)}, what a million tokens of ${c.row.model.display_name} costs ${side}`);
+  }
+
+  // the claim the page is built on: the same count of tokens at every level of use
+  const view = computeView({ ...st, hw: hw.id }, data);
+  const dm = view.model!;
+  const levels = bestUsageLevels(data);
+  const counts = levels.map((l) => computeView({ ...st, hw: hw.id, model: dm.id, usage: l.usage }, data).calc?.breakevenTokens ?? null);
+  const distinct = new Set(counts.map((c) => (c == null ? 'never' : Math.round(c))));
+  if (distinct.size !== 1)
+    problems.push(`${path} says the break-even token count is the same at every level of use, and it is not: ${[...distinct].join(', ')}`);
+  const constant = fmtTokens(counts[0]);
+  const printed = (html.match(new RegExp(`${constant.replace(/\./g, '\\.')} tokens`, 'g')) ?? []).length;
+  if (printed < levels.length + 1)
+    problems.push(`${path} prints ${constant} tokens ${printed} times; it is the answer and every one of the ${levels.length} levels of use`);
+  for (const l of levels) {
+    const v = computeView({ ...st, hw: hw.id, model: dm.id, usage: l.usage }, data);
+    if (!html.includes(fmtDuration(v.calc!.breakevenDays)))
+      problems.push(`${path} does not print ${fmtDuration(v.calc!.breakevenDays)}, how long ${constant} tokens takes at ${fmtTokens(l.usage)} a day`);
+  }
+
+  // the headline pairing, its multiple, and the wattage the electricity rests on
+  const base = tokenCost(dm, hw, rowFor(view, dm)!.throughput.tokensPerSec!, data)!;
+  if (base.generated > 0 && !html.includes(`${fmtNum(base.rented / base.generated, 0)} times less`))
+    problems.push(`${path} does not say renting ${dm.display_name} costs ${fmtNum(base.rented / base.generated, 0)} times what generating it does`);
+  if (hw.load_watts_status === 'stand_in' && !page.html.includes(`${hw.load_watts} W<span class="c-quant">stand-in</span>`))
+    problems.push(`${path} prices the electricity on ${hw.load_watts} W without saying that figure is a stand-in`);
+
+  // every mix the calculator offers, priced on the same pairing
+  for (const u of data.defaults.use_cases) {
+    const c = tokenCost(dm, hw, rowFor(view, dm)!.throughput.tokensPerSec!, data, u.ratio)!;
+    if (!html.includes(u.label)) problems.push(`${path} leaves out the ${u.label} mix`);
+    if (c.breakevenTokens != null && !html.includes(`${fmtTokens(c.breakevenTokens)} tokens`))
+      problems.push(`${path} does not print ${fmtTokens(c.breakevenTokens)} tokens, what ${u.label} takes to pay the machine back`);
+  }
+
+  // the spread across the machines that run the same model, which the page sets
+  // against the spread in their prices
+  const runners = data.hardware
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .map((h) => {
+      const v = computeView({ ...st, hw: h.id, model: dm.id }, data);
+      const r = rowFor(v, dm);
+      return v.model?.id === dm.id && r?.throughput.tokensPerSec != null ? tokenCost(dm, h, r.throughput.tokensPerSec, data) : null;
+    })
+    .filter((c): c is TokenCost => !!c);
+  const gen = runners.map((c) => c.generated);
+  for (const v of [Math.min(...gen), Math.max(...gen)])
+    if (!html.includes(fmtPerMtok(v)))
+      problems.push(`${path} does not print ${fmtPerMtok(v)}, an end of what a million tokens costs to generate across the ${runners.length} machines that run ${dm.display_name}`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} figure${problems.length === 1 ? '' : 's'} on ${path} no longer match the data`);
+  }
+  console.log(
+    `  ${path} prices ${costs.length} models both ways on the ${hardwareLabel(hw)}, and ${constant} tokens pays it back at all ${levels.length} levels of use`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkHeadToHeads();
@@ -3133,4 +3432,5 @@ checkShorterFits();
 checkShorterMachines();
 checkHiddenModels();
 checkLeaderboardLinks();
+checkTokenCost();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
