@@ -168,7 +168,11 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       the page when a reader picks one of those machines. It is a pull request rather than a push
       only because it changes what the calculator draws — 520 of the 2,970 charts it can draw, all
       at horizons over 600 years. `src/waterline.ts` alone, 310 tests, three guards each proved by
-      a break.
+      a break. **Really merged into `main` at `ca87234` in a worktree and built there**, rather than
+      trusted to a clean `git merge-tree`: 310 tests, typecheck clean, 253 pages, validate clean but
+      for the two null prices that are already on your side of this file. It collides with nothing —
+      `src/waterline.ts` is in no other open branch. Note that no workflow runs on `pull_request`
+      here, so GitHub shows no checks on it at all; the figures above are from this environment.
 
 - [ ] Merge (or close) **[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, the calculator's
       assumptions panel. Opened 2026-09-18. It fixes three things the generated pages fixed weeks
