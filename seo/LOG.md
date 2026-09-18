@@ -299,15 +299,13 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       not a maintainer note, but it answers a question the page does not raise. One conditional, and
       it would touch pages this run just proved byte-identical, so it wants its own run.
 
-- [ ] The RTX PRO 6000's page now lists 12 head-to-heads in one line of note text, because it is
-      both a family flagship and a card. It is a legitimate list of links and nothing is hidden, but
-      it reads as a wall on a phone. Worth a look only if it reads as one: the fix would be two
-      groups, against a complete computer and against another card, which is one more line of copy
-      on seven pages. **The tier pages of 2026-09-17 gave this item a second half**: the Mac Studio
-      M5 Max, 128GB page now lists nine, and two of them read "vs Mac Studio M5 Max, 48GB" on a page
-      whose own name is Mac Studio M5 Max, 128GB. Grouping that line — against another machine,
-      against another card, against the same machine with different memory — would fix both at once,
-      and the third group could drop the repeated name and read "vs 48GB · vs 64GB".
+- [x] The RTX PRO 6000's page listed 12 head-to-heads in one line of note text, and the Mac Studio
+      M5 Max, 128GB page listed two of its own name back at it. Done 2026-09-18, and the fix was
+      the one this item proposed, with a fourth group the item did not ask for: the links are
+      grouped by the question each comparison answers, and the pair of generations says which way
+      round it is instead of printing a bare name. 51 machine pages, up to four groups, no link
+      added or dropped. The run entry below has the figures and the four breaks that proved the
+      guard.
 
 - [x] Four of the seven cards are last generation in the data (RTX 4090, 3090, 4080, 3060) and no
       comparison page says so. Done 2026-09-17, as a by-product of the generation head-to-heads,
@@ -388,6 +386,24 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       build says so itself now — **"every page is linked from at least 2 other pages"**, and the
       check holds that floor, so a page cannot drop back to one without failing the build.
       Re-measured on merged main at 21:30 on 2026-09-17. Nothing further is wanted.
+- [ ] **No page on the site lists all 56 machines, and nothing is served at `/hardware/` or
+      `/models/` at all.** Found 2026-09-18 while grouping the head-to-heads. `/leaderboard/` is the
+      index of models, `/best/` is by level of use and `/compare/` is the index of match-ups, but the
+      two biggest page families — 56 machines and 55 models, 111 of the 249 pages — have no hub of
+      their own, and the build writes no `index.html` in either directory. Nothing on the site links
+      the bare addresses, so no internal link is broken, and what a Pages deploy serves at
+      `https://sunkcost.ai/hardware/` could not be checked from here: the egress policy refuses the
+      site. A reader who truncates a URL, and a crawler that tries the same, most likely gets a 404.
+      The page worth writing is the machine index: all 56 with price, usable memory, models that fit,
+      the best one each runs and pay-back, each price a prefilled calculator link the way
+      `/leaderboard/` already does it. It answers "local LLM hardware" as a list rather than as an
+      opinion, and it is the natural middle step in every machine page's breadcrumb, which is two
+      levels where three are available. `/models/` is the weaker half: `/leaderboard/` already lists
+      every model, so a second index of the same 55 would be the duplicate this site does not write —
+      better to leave it or to decide it is `/leaderboard/`'s address. **It is a new page, so it is a
+      pull request**, and PR #7 and PR #8 are both open and already collide with each other in six
+      files; a third would collide with both. Worth doing as soon as that queue clears.
+
 - [ ] Question pages for the searches people actually type. **Still the top item, and three of them
       are now written.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
       as [PR #7](https://github.com/rlindsey2/sunkcost/pull/7)** and **"local LLM vs API cost" as
@@ -395,14 +411,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       single run, because the first page had already paid for the page type and the share-card
       builder. The two run entries below have what each answers and the claims in them that did not
       survive being checked.
-      What is left is thinner than what has gone, and both remaining candidates need a hard look
-      before a line is written. **"RTX 3090 for local LLM worth it"** and **"is a Mac mini good for
-      local LLMs"**: the per-machine pages may already answer them, `/best-gpu/` now answers a good
-      part of the 3090 one, and a second page saying the same thing in other words is the duplicate
-      this site should not create. The honest test for each is whether it can answer something the
-      machine's own page does not; if it cannot, close the item rather than write the page. Anything
-      new here should answer in the first paragraph with the site's own numbers, link into the
-      calculator with the configuration prefilled, and cite its sources.
+      **Both remaining candidates were read on 2026-09-18 and both are closed.** The test this item
+      set was whether either could answer something the machine's own page does not, and neither
+      can. **"RTX 3090 for local LLM worth it"**: the card's own page opens "Yes — 24 of the 39 open
+      models on this site fit in its 23 GB", says in the same breath that whether it saves money is
+      a different question and the answer is usually no, prices it at 19 years, marks the $1,499 as
+      a launch price for a discontinued card and as the card alone, and sets it against all six
+      other cards in a table. `/best-gpu/` ranks the seven. A page on the 3090 would restate that in
+      other words. **"is a Mac mini good for local LLMs"**: every mini page carries the whole mini
+      range under "Other machines to weigh against it" — 11 rows on the M6, 24GB page, each with
+      price, memory, models that fit and pay-back — plus the nearest machines in price that are not
+      minis. Which mini, and whether a mini at all, are both already answered. Writing either page
+      would be the duplicate this item warns against, so neither is written.
       **One search this run turned up as worth a page and did not write:** nothing on the site
       answers "how much does it cost to run a local LLM per month". `/local-llm-vs-api-cost/` prices
       a million tokens and `calc.ts` already computes `cloudCostPerMonth` and `localCostPerMonth`,
@@ -578,6 +598,85 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — twelve links in one line become four short answers
+
+**Why this run pushed to main instead of opening a third pull request.** The top backlog item is
+still the question pages. What is left of it is one candidate that has to wait — "how much does it
+cost to run a local LLM per month" would sit on the helpers PR #8 adds — and two that the last
+entry said to read honestly before writing a line. Reading them closed both; the backlog item above
+has the reasoning and neither page is written. A new page is a pull request, PR #7 and PR #8 are
+both open and already collide with each other in six files, and a third would collide with both. So
+this run took the next item that lands live: the wall of head-to-head links at the foot of every
+machine page.
+
+**What changed.** Those links are grouped now, by the question each comparison answers, and each
+group opens by saying what it is. The Mac Studio M5 Max, 128GB page used to print one line of ten:
+`vs Mac mini M5 Pro, 24GB · vs DGX Spark, 128GB · … · vs Mac Studio M5 Max, 48GB · vs Mac Studio
+M5 Max, 64GB · vs Mac Studio M4 Max, 128GB · all of them`. It now reads: *Head to head with another
+computer: Mac mini M5 Pro, 24GB · DGX Spark, 128GB · GMKtec EVO-X2, 128GB · MacBook Air M5
+(15-inch), 16GB · MacBook Pro M5 Pro (16-inch), 64GB. With a graphics card: RTX PRO 6000 Blackwell,
+96GB · Radeon AI PRO R9700, 32GB. With the same machine at another memory size: 48GB · 64GB. With
+the machine it replaced: Mac Studio M4 Max, 128GB.*
+
+- **51 of the 56 machines carry the note**, in up to **four groups**. The other five are in no
+  head-to-head at all, which is its own backlog item and unchanged by this.
+- **23 machines are in one head-to-head, 14 in six or more**, and the two dearest cards in 12 each.
+  The RTX PRO 6000's line was the item's own example; it is two labelled sentences now, cards first
+  because that is the page the reader is on.
+- **The memory group drops the repeated name**, which was the half of the item that was a fault
+  rather than a length: 18 memory-tier pairs, both sides, so **36 links** that used to print the
+  page's own machine name back at it now print the size alone.
+- **13 previous-generation Macs are in exactly one head-to-head**, and it now says what it is:
+  *Head to head with the machine that replaced it: Mac mini M6, 16GB*, where it read `vs Mac mini
+  M6, 16GB`. The current machine's page says *the machine it replaced*, from the same data.
+- **No link changed target, and none was added or dropped.** Every count the build prints about
+  inbound links is unchanged: 133 head-to-heads, each linked from both sides and from at least 3
+  pages in all.
+
+**One trade-off, taken deliberately.** The links lost their `vs ` prefix, so a link now reads
+"DGX Spark, 128GB" rather than "vs DGX Spark, 128GB". That is a weaker piece of anchor text on its
+own, and it is what buys the grouping: with the sentence already saying "Head to head with another
+computer", the prefix repeated the lead on every link and made the memory group unreadable. The
+sentence carries the sense instead of each link carrying it eleven times.
+
+**The guard.** `checkHeadToHeads()` already held every comparison to being linked from both of the
+pages it compares. It now also reads each machine page's own note back and holds four more claims:
+every pair named exactly once, the text of each link worked out **from the data rather than from the
+grouping** (the memory size where the two sides are one machine, the short name otherwise), the link
+to `/compare/` present, and the page's own name never printed. Proved by four breaks, each caught
+with the page and the figure named: labelling a memory pair with the full machine name, labelling a
+rival with its memory alone, listing one pair in two groups, and dropping the `/compare/` link. A
+fifth — dropping a whole group — failed earlier still, in the older half of the same guard, with
+"36 head-to-head links missing".
+
+**Where the code went.** `headToHeadGroups()` is in `src/versus-card.ts`, beside the five rules that
+cut the pairs, because it reads `memoryTierNames()` and `generationNames()` and a page cannot be
+allowed to group a pair the build did not make. `headToHeadNote()` in `scripts/build-pages.ts` is
+the wording. Neither file is `src/calc.ts`, `src/compute.ts`, `src/fit.ts` or `data/*.json`, and no
+figure moved. It also keeps this run clear of PR #7 and PR #8: they touch
+`scripts/build-pages.ts` too, but their hunks are appended constants, guards and `write()` calls at
+the end of the file, and this one is the machine-page template and the head-to-head guard.
+
+**Verified**: 215 tests (210 before, five new in `tests/versus-card.test.ts`), typecheck clean, 248
+pages with every guard passing, and the full `npm run build` including `build:og`, `build:share` and
+`build:functions`. All 51 notes were read as rendered text, and two machine pages end to end. The
+shortest note is now one sentence of eleven words; the longest is 418 characters in two sentences,
+where it was one line of twelve links.
+
+**The state of the two open pull requests, checked rather than assumed.** Both are still open, both
+still merge clean against `main` at `68f8011` — tested with a real merge, not guessed — and `main`
+has moved only in `seo/LOG.md` since they were opened. Their collision with each other is unchanged
+and the Ryan's-side item above has the resolution.
+
+**Continue next: the machine index.** The new backlog item above is the biggest thing this run
+found: no page on the site lists all 56 machines, and the build writes nothing at `/hardware/` or
+`/models/`, so both addresses most likely 404 (unverifiable from here — the egress policy refuses
+`sunkcost.ai`). It is a new page and therefore a pull request, so it wants the queue to clear first.
+If PR #7 and PR #8 are still open at the next run, the useful work is push-shaped again: the
+assumptions note that mentions graphics cards on the ~30 comparison pages where neither side is a
+card is the next one down the list.
+
 
 ### 2026-09-18 — what a token costs, which is the sum every other page is an instance of
 

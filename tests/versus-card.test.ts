@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
-  generationPairs, memoryTierNames, memoryTierPairs, sameSiliconPairs,
+  generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
   modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
 } from '../src/versus-card';
@@ -373,5 +373,90 @@ describe('the pairs the cards and the pages cut', () => {
     const [a, b] = hardwarePairs(data)[0];
     expect(hardwareComparePath(a, b)).toMatch(/^\/compare\/.+-vs-.+\/$/);
     expect(versusCardPath(hardwareComparePath(a, b))).toBe(`/og/${hardwareComparePath(a, b).replace(/^\/|\/$/g, '').replace(/\//g, '-')}.png`);
+  });
+});
+
+describe('the head-to-heads at the foot of a machine page', () => {
+  const pairsFor = (hw: Hardware) =>
+    hardwarePairs(data)
+      .filter(([a, b]) => a.id === hw.id || b.id === hw.id)
+      .map(([a, b]) => ({ href: hardwareComparePath(a, b), other: a.id === hw.id ? b : a }));
+
+  it('names every pair the machine is in, once, and adds none', () => {
+    let listed = 0;
+    for (const hw of data.hardware) {
+      const pairs = pairsFor(hw);
+      const links = headToHeadGroups(hw, pairs).flatMap((g) => g.links);
+      expect(links.map((l) => l.href).sort()).toEqual(pairs.map((p) => p.href).sort());
+      expect(new Set(links.map((l) => l.href)).size).toBe(pairs.length);
+      listed += links.length;
+    }
+    // the same pair reaches this from both of its sides, so every one is listed twice
+    expect(listed).toBe(hardwarePairs(data).length * 2);
+  });
+
+  it('leaves out a group the machine has no pair for, and returns none at all where it has no pair', () => {
+    for (const hw of data.hardware) {
+      const groups = headToHeadGroups(hw, pairsFor(hw));
+      expect(groups.every((g) => g.links.length > 0)).toBe(true);
+      expect(groups.length > 0).toBe(pairsFor(hw).length > 0);
+    }
+  });
+
+  it('says only the size where both sides are the same machine, and never the name the page already carries', () => {
+    let sizes = 0;
+    for (const hw of data.hardware) {
+      for (const { href, other } of pairsFor(hw)) {
+        const tier = memoryTierNames(hw, other) ?? memoryTierNames(other, hw);
+        const link = headToHeadGroups(hw, pairsFor(hw)).flatMap((g) => g.links).find((l) => l.href === href)!;
+        if (tier) {
+          expect(link.label).toBe(`${other.unified_memory_gb}GB`);
+          sizes++;
+        } else {
+          expect(link.label).toBe(shortHardwareLabel(other));
+        }
+      }
+      for (const g of headToHeadGroups(hw, pairsFor(hw)))
+        for (const l of g.links) expect(l.label).not.toContain(shortHardwareLabel(hw));
+    }
+    // both sides of all 18 memory-tier pairs
+    expect(sizes).toBe(memoryTierPairs(data).length * 2);
+  });
+
+  it('puts the reader’s own kind of machine first', () => {
+    for (const hw of data.hardware) {
+      const groups = headToHeadGroups(hw, pairsFor(hw));
+      if (!groups.length) continue;
+      const kinds = groups.map((g) => g.lead);
+      if (hw.price_scope === 'card_only') {
+        expect(kinds.indexOf('another card')).toBe(kinds.some((k) => k === 'another card') ? 0 : -1);
+        expect(kinds).not.toContain('another computer');
+      } else {
+        expect(kinds.indexOf('another computer')).toBe(kinds.some((k) => k === 'another computer') ? 0 : -1);
+        expect(kinds).not.toContain('another card');
+      }
+    }
+  });
+
+  it('says which way round a pair of generations is', () => {
+    let older = 0;
+    let newer = 0;
+    for (const hw of data.hardware) {
+      for (const g of headToHeadGroups(hw, pairsFor(hw))) {
+        if (g.lead !== 'the machine it replaced' && g.lead !== 'the machine that replaced it') continue;
+        for (const l of g.links) {
+          const other = data.hardware.find((h) => shortHardwareLabel(h) === l.label)!;
+          if (g.lead === 'the machine it replaced') {
+            expect(generationNames(other, hw)).not.toBeNull();
+            older++;
+          } else {
+            expect(generationNames(hw, other)).not.toBeNull();
+            newer++;
+          }
+        }
+      }
+    }
+    expect(older).toBe(generationPairs(data).length);
+    expect(newer).toBe(generationPairs(data).length);
   });
 });

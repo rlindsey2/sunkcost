@@ -21,8 +21,8 @@ import {
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
-  flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, memoryTierNames, modelComparePath,
-  modelPairs, sameSiliconPairs, versusCardPath,
+  flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
+  modelComparePath, modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
@@ -150,8 +150,46 @@ function checkHeadToHeads() {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
     throw new Error(`${problems.length} head-to-head link${problems.length === 1 ? '' : 's'} missing, of the two every comparison needs`);
   }
+  // The grouped note at the foot of each machine page. The links themselves are held by
+  // the loop above, from the other end; what is checked here is that the page names every
+  // pair it is in once, adds none, and never spends the line repeating the name of the
+  // machine the reader is already on, which is what the ungrouped line did on a memory pair.
+  let grouped = 0;
+  let widest = 0;
+  for (const hw of data.hardware) {
+    const pairs = headToHeads.get(hw.id) ?? [];
+    if (!pairs.length) continue;
+    const page = meta.find((p) => p.path === `/hardware/${hw.id}/`);
+    const note = page?.html.match(/<p class="note">Head to head with[\s\S]*?<\/p>/)?.[0];
+    if (!note) {
+      problems.push(`/hardware/${hw.id}/ is in ${pairs.length} head-to-heads and its page does not list them`);
+      continue;
+    }
+    for (const { href, other } of pairs) {
+      // what the link should say, worked out from the data rather than from the grouping:
+      // a pair of memory tiers is the same machine twice, so the size is the whole of the
+      // difference and the name is already the page's own headline.
+      const tier = memoryTierNames(hw, other) ?? memoryTierNames(other, hw);
+      const want = tier ? `${other.unified_memory_gb}GB` : shortHardwareLabel(other);
+      const said = [...note.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].filter((m) => m[1] === href);
+      if (said.length !== 1) problems.push(`/hardware/${hw.id}/ names ${href} ${said.length} times at the foot of the page, where it should name it once`);
+      else if (said[0][2] !== esc(want)) problems.push(`/hardware/${hw.id}/ calls ${href} "${said[0][2]}" at the foot of the page, where it should say "${want}"`);
+    }
+    const links = note.match(/<a /g)?.length ?? 0;
+    if (links !== pairs.length + 1)
+      problems.push(`/hardware/${hw.id}/ lists ${links} links where it is in ${pairs.length} head-to-heads and links /compare/ once`);
+    if (note.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`/hardware/${hw.id}/ repeats its own name in the head-to-heads at the foot of the page`);
+    grouped++;
+    widest = Math.max(widest, headToHeadGroups(hw, pairs).length);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} machine page${problems.length === 1 ? '' : 's'} do not list the head-to-heads they are in`);
+  }
   const fewest = Math.min(...[...sides.keys()].map((p) => inbound.get(p)!.size));
   console.log(`  ${sides.size} head-to-heads, each linked from both sides and from at least ${fewest} pages in all`);
+  console.log(`  ${grouped} machine pages list theirs by the question each one answers, in up to ${widest} groups`);
 }
 
 /**
@@ -1099,6 +1137,25 @@ for (const [a, b] of hardwarePairs(data)) {
     headToHeads.set(self.id, [...(headToHeads.get(self.id) ?? []), { href, other }]);
 }
 
+// The line of links a machine page ends its comparisons on. Grouped by the question each
+// pair answers, so the twelve the RTX PRO 6000 is in read as two short answers rather than
+// one wall, and a memory pair names only the size instead of repeating the machine the
+// reader is already on. The grouping and its wording live in src/versus-card.ts, beside the
+// rules that cut the pairs, so the page cannot group a pair the build did not make.
+const machineMatchUps = hardwarePairs(data).length;
+
+function headToHeadNote(hw: Hardware): string {
+  const groups = headToHeadGroups(hw, headToHeads.get(hw.id) ?? []);
+  if (!groups.length) return '';
+  const sentences = groups.map(
+    (g, i) =>
+      `${i === 0 ? 'Head to head with' : 'With'} ${g.lead}: ${g.links
+        .map((l) => `<a href="${esc(l.href)}">${esc(l.label)}</a>`)
+        .join(' \u00b7 ')}.`,
+  );
+  return `<p class="note">${sentences.join(' ')} There are <a href="/compare/">${machineMatchUps} machine match-ups on the site</a>.</p>`;
+}
+
 // The same thing for models. A pair is always [higher, lower] on the index, so
 // each model knows whether the one it is set against is the rung above it or
 // the rung below, and its page can say which.
@@ -1754,7 +1811,7 @@ ${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price else
 </tbody>
 </table>`, { fig: 4 })}
 <p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.</p>` : ''}
-${headToHeads.get(hw.id)?.length ? `<p class="note">Head to head: ${headToHeads.get(hw.id)!.map((h) => `<a href="${esc(h.href)}">vs ${esc(shortHardwareLabel(h.other))}</a>`).join(' · ')} · <a href="/compare/">all of them</a></p>` : ''}
+${headToHeadNote(hw)}
 
 <h2>The specifics</h2>
 <dl class="specs">
