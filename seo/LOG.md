@@ -411,6 +411,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       GPU that no page on the site mentioned. **53 of the 56 machines are in a head-to-head where
       51 were.** The run entry below has the figures and the five breaks that proved the guard.
 
+- [x] **Every URL in the sitemap carried the same lastmod, and it was the wrong date.** Done
+      2026-09-18. All 254 carried `data_last_checked`, the day the prices were verified, which was
+      2026-09-03 and is not a page changing — so a comparison written that morning announced itself
+      as a fortnight old. Each entry is now dated by the day that page's own words last changed,
+      fingerprinted from its title, its description and the body between `<main>` and `</main>`, and
+      kept in `seo/page-dates.json`. The run entry below has the design, the four breaks that proved
+      the guard, and the one thing to know about it: the first record dates nothing, so the sitemap
+      ships with no dates at all and fills in as pages change.
+
+- [ ] **The home page's date is read from `index.html` alone**, so a change made in `src/render.ts`
+      or `src/main.ts` — the calculator's own words — does not date `/`. That is deliberate and it
+      is the safe direction to be wrong in: it under-states freshness rather than claiming it. It
+      would want revisiting only if the home page starts losing crawls, and there is no way to see
+      that from here. Written down 2026-09-18 so the next run does not read it as a bug.
+
 - [ ] **3 machines are still in no head-to-head, and all three are waiting on a price rather than
       on a rule.** The Mac Studio M5 Ultra, 512GB and the Framework Desktop 495 have no price at
       all, so there is no pay-back to compare; the Mac Studio M3 Ultra, 512GB has one but its
@@ -827,6 +842,91 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — the sitemap stops telling crawlers the same wrong date 254 times
+
+**Why this item.** `npm run model-watch` said *done for today*, so the backlog was the job. Its top
+item — the monthly-cost question page — still waits on PR #8, because a third branch into the same
+four files adds a conflict rather than a page, and what is left below it is three items this file
+already marks *probably leave*. So the run went looking at what the build actually ships, and the
+sitemap was the first thing read.
+
+**Every one of the 254 URLs carried `<lastmod>2026-09-03</lastmod>`.** That is
+`data.defaults.data_last_checked`, the day the prices and scores were last verified. It is a real
+date about the data and it says nothing about a page: `/best-gpu/` was written on the 18th and
+announced itself as a fortnight old, and so did every comparison added since the 16th. A crawler
+uses lastmod to decide what to fetch again and how soon, and one date across a whole site is either
+ignored or believed, and believed is worse — it puts the newest pages at the wrong end of the queue.
+
+**What it says now.** The build fingerprints what a searcher actually reads on each page: the title,
+the description and the body between `<main>` and `</main>`. The header and the footer are left out
+on purpose, because a site-wide link changing is not 253 pages changing — this site has added a
+footer entry three times this week and each one would otherwise have claimed the whole site was new.
+The answers live in `seo/page-dates.json`, committed with the change they record. A page that still
+hashes to what is recorded keeps its date; one that differs, or one the file has not seen, changed,
+and the date is the day the build found it.
+
+**The rule that makes it safe is that the sitemap publishes a date only while the recorded
+fingerprint still matches the page.** The obvious design — date whatever changed in this build — has
+a failure nobody would notice: a record that was not committed alongside its change makes every
+later build see a mismatch and stamp *today* on the same page every day, for ever. Under the rule
+here that costs a few lastmods on one deploy instead, and the next build puts them back. That is the
+whole of the trade: a date is published only once it has been written down and the page still agrees
+with it.
+
+**The first record dates nothing, and that is the one thing worth knowing about this.** With nothing
+to compare against there is no honest per-page date to seed — a build is not evidence that 254 pages
+changed this morning, and the site's own rule is that a figure without a source does not get printed.
+A date is a figure. So the sitemap went out with **0 of 254** entries dated, where before it had 254
+wrong ones, and each page takes its real date the first time its content moves. On a site that
+changed nearly every page twice in the last two days that is days, not weeks, and a page added
+tomorrow is dated correctly from the start — which is the case that was costing something.
+
+**Four breaks proved `checkPageDates()`**, each run against the real build. A date in the future:
+refused. A date recorded for content the page no longer has, forced past `publishedDate()`: refused,
+naming the URL. A record reading *last Tuesday*: refused — it was already being dropped silently, and
+something dropped silently is something nobody fixes. Two `<lastmod>` elements on one URL: refused,
+all 254 of them. The mechanism itself was proved the same way rather than argued: one page's record
+was made to disagree with the page, and the next two builds dated **that page and no other**.
+
+**Verified.** 274 tests where `main` ran 259, the 15 new ones in `tests/page-dates.test.ts`; both of
+the design's two load-bearing rules were mutated in `src/page-dates.ts` and each took a test down
+with it. Typecheck clean. The full `npm run build`, `build:functions` included. 253 pages, every
+guard passing, and `dist/sitemap.xml` parsed as XML at 254 entries. The live file could not be read
+back — the egress policy still refuses `sunkcost.ai` — so the confirmation is deploy run 160, green
+at 15:58 on `874b9c5`.
+
+**Both open branches were repaired against it, because this push edits the file both live in.**
+PR #10 conflicted in one hunk, the guard call list, and the union keeps the branch's own count line —
+`/hardware/` is a page rather than a machine, so the 56 it counts must exclude it. PR #8 merged
+clean, and was built anyway, which is this file's standing lesson and paid again: `build:og` had not
+drawn that branch's own card in this container, the same environment fault as yesterday, and the
+deploy draws it every time so it cannot reach CI. Each merged tree was then built rather than
+trusted — PR #10: 279 tests, typecheck clean, 254 pages; PR #8: 282 tests, typecheck clean, 254
+pages. Both now merge clean into `main`.
+
+**And the merged trees showed the thing working on real changes.** PR #10 dates two pages: its new
+`/hardware/`, and `/` — the home page's own HTML gained a footer link. PR #8 dates 58: the new page,
+`/best/`, `/` and **all 55 model pages**, each of which gained a sentence in its body pointing at
+what a million tokens costs. Both counts were read out of the ledger and the model-page one was
+checked by finding the link inside `<main>` rather than taking the number on trust. One wrinkle
+worth naming: a branch's dates are the day the build found the change, so a page that sits unmerged
+for three days goes live carrying the earlier date. That under-states freshness, which is the safe
+direction, and the alternative is dating a page for a day nothing happened on it.
+
+**Where it is.** `874b9c5` on `main`, deploy run 160 green at 15:58 and published. `ab8dbc4` on
+`seo/hardware-index` and `59ff00c` on `seo/local-vs-api-cost`. Nothing a visitor reads changed:
+`sitemap.xml` and `robots.txt` are not pages, and no page's words were touched.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8. Of the small pull requests left, the calculator's
+top bar overflowing a 360px screen is CSS only and collides with neither branch; the assumptions
+panel printing *stand in* at `src/render.ts:542` is the other. And from the next run on there is a
+new habit to keep rather than a task: **`npm run build:pages` rewrites `seo/page-dates.json`, and it
+belongs in the same commit as the change it records.** Leaving it out costs that deploy's lastmods
+and nothing worse, and the build says so in its own line — look for how many of the sitemap entries
+carry a date.
+
 
 ### 2026-09-18 — a clean merge that was not a working one, twice over
 
