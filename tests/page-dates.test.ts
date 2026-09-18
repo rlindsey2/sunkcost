@@ -120,3 +120,44 @@ describe('the record in the repository', () => {
     expect(recorded.note).toBe(DATES_NOTE);
   });
 });
+
+/**
+ * The ledger is the one thing the build writes that outlives the build. A page a
+ * guard refuses is regenerated from scratch next time, but a fingerprint recorded
+ * for that page stays recorded, and the record means "this is what the page said
+ * on the day it changed". Writing it before the guards ran cost the next build a
+ * lastmod on every page the fault touched — measured at 56 of 254 — and the build
+ * after that dated those pages the day somebody fixed it.
+ *
+ * So the order is the claim: nothing the build publishes is written until every
+ * guard has passed. Reading the source is the only way to hold it, because the
+ * fault it catches is a line moved back up the file rather than a wrong answer.
+ */
+describe('what the build publishes, and when', () => {
+  const build = readFileSync(new URL('../scripts/build-pages.ts', import.meta.url), 'utf8');
+  // the guards are called one per line at the foot of the script
+  const guards = [...build.matchAll(/^check[A-Za-z]*\(\);$/gm)];
+  const published = [...build.matchAll(/^writeFileSync\((.*)$/gm)];
+
+  it('publishes three files, once each, and nothing else at the top level', () => {
+    expect(guards.length).toBeGreaterThan(20);
+    expect(published.map((m) => m[1].split(',')[0]).sort()).toEqual([
+      'datesFile',
+      "new URL('robots.txt'",
+      "new URL('sitemap.xml'",
+    ]);
+  });
+
+  it('writes none of them until the last guard has passed', () => {
+    const lastGuard = Math.max(...guards.map((m) => m.index));
+    for (const write of published)
+      expect(write.index, `${write[1].slice(0, 40)} is written before the guards run`).toBeGreaterThan(lastGuard);
+  });
+
+  it('holds the guards to the sitemap it is about to publish, not to one on disk', () => {
+    // a guard that re-opened sitemap.xml would need it written first, which is
+    // how the write got above the guards in the first place
+    expect(build).not.toMatch(/readFileSync\(new URL\('sitemap\.xml'/);
+    expect(build).toMatch(/const sitemapXml = /);
+  });
+});

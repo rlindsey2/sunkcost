@@ -272,7 +272,7 @@ function checkCanonicals() {
     const pair = p.match(/^\/compare\/(.+)-vs-(.+)\/$/);
     if (pair && own.has(`/compare/${pair[2]}-vs-${pair[1]}/`)) problems.push(`${p} also exists with the two sides swapped`);
   }
-  const announced = [...readFileSync(new URL('sitemap.xml', outRoot), 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const announced = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   const shouldBe = new Set(['/', ...paths].map((p) => site + p));
   if (announced.length !== new Set(announced).size) problems.push('the sitemap lists a URL twice');
   for (const u of announced) if (!shouldBe.has(u)) problems.push(`the sitemap announces ${u}, which is not a page here`);
@@ -3821,9 +3821,15 @@ const urls = fingerprints
     return `  <url><loc>${site}${path}</loc>${changed ? `<lastmod>${changed}</lastmod>` : ''}</url>`;
   })
   .join('\n');
-writeFileSync(new URL('sitemap.xml', outRoot), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
-writeFileSync(new URL('robots.txt', outRoot), `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`);
-writeFileSync(datesFile, `${JSON.stringify(nextDates(recordedDates, fingerprints, today), null, 2)}\n`);
+
+// Built here, published at the foot of this file once every guard below has
+// passed. Nothing reads these back off disk: a guard that re-opened a file the
+// same script had just written would be checking the disk rather than the build,
+// and it is the string about to be published that has to be right.
+const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`;
+const nextLedger = nextDates(recordedDates, fingerprints, today);
+
 /**
  * A generation head-to-head is the one page on the site that prices a machine nobody
  * sells, so it has more ways to mislead than any other. The launch price is the whole
@@ -4432,8 +4438,7 @@ function checkSourceLinks() {
  */
 function checkPageDates() {
   const problems: string[] = [];
-  const xml = readFileSync(new URL('sitemap.xml', outRoot), 'utf8');
-  const entries = [...xml.matchAll(/<url><loc>([^<]+)<\/loc>(.*?)<\/url>/g)];
+  const entries = [...sitemapXml.matchAll(/<url><loc>([^<]+)<\/loc>(.*?)<\/url>/g)];
   const byPath = new Map(fingerprints.map((f) => [site + f.path, f.hash]));
   let dated = 0;
   for (const [, url, rest] of entries) {
@@ -4507,4 +4512,14 @@ checkTierLabels();
 checkMarkerWords();
 checkSourceLinks();
 checkPageDates();
+
+// Every guard has passed, so the three files the build publishes rather than
+// generates go out now. A build that stops at a guard leaves the last sitemap
+// that earned its place, and leaves the ledger alone — it records the day a
+// page's words changed, and a page a guard refused is not a page that changed.
+// Writing it anyway cost the next build a lastmod on every page touched, and
+// the build after that stamped those pages with the day the fault was fixed.
+writeFileSync(new URL('sitemap.xml', outRoot), sitemapXml);
+writeFileSync(new URL('robots.txt', outRoot), robotsTxt);
+writeFileSync(datesFile, `${JSON.stringify(nextLedger, null, 2)}\n`);
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
