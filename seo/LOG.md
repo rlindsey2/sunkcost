@@ -94,6 +94,16 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       kept. After resolving, `npm test` and `npm run build:pages` catch any miss, because
       `checkLinks()` fails on a page nothing links to and both guards recompute their own figures.
 
+- [ ] Merge (or close) [PR #9](https://github.com/rlindsey2/sunkcost/pull/9), the calculator's own
+      footer. It is a pull request rather than a push because it is markup and CSS a visitor reads
+      on the calculator, which is the standing rule here. Three files: `index.html`, `src/styles.css`
+      and one `describe` block in `tests/pagekit.test.ts`. **It collides with nothing.** Checked with
+      a real test merge against `main`, against PR #7 and against PR #8: clean on all three, because
+      neither of the other two touches `index.html` or `src/styles.css`, and this one touches
+      nothing they do. It should therefore not need the hourly repair those two have needed
+      twenty-odd times between them. Verified before opening on `main` at `3cda750`: 233 tests,
+      typecheck clean, the full `npm run build`, and the page rendered and read at 360px and 1280px.
+
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
       fastest a PR has gone in here by a wide margin, and the first that did not need a single merge
@@ -389,6 +399,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       build says so itself now — **"every page is linked from at least 2 other pages"**, and the
       check holds that floor, so a page cannot drop back to one without failing the build.
       Re-measured on merged main at 21:30 on 2026-09-17. Nothing further is wanted.
+- [x] The foot of every page named three of the site's four top-level pages. Done 2026-09-18, and
+      the omission was the one with the most behind it: `/compare/`, the index of all 133
+      head-to-heads, sat at 187 inbound pages where the other three had 248. It is 248 now, and the
+      footer is one list in `src/pagekit.ts` that `checkFooter()` holds every page to, so a page
+      written at the top level of the site cannot be added without it. The calculator's own foot,
+      which is the other half and the more valuable one, is PR #9. The run entry below has the
+      figures and the four breaks that proved the guard.
+
 - [ ] **No page on the site lists all 56 machines, and nothing is served at `/hardware/` or
       `/models/` at all.** Found 2026-09-18 while grouping the head-to-heads. `/leaderboard/` is the
       index of models, `/best/` is by level of use and `/compare/` is the index of match-ups, but the
@@ -542,20 +560,35 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       also missed the worst of it, which was not in the band at all — see the leaderboard note in
       the run entry below. 0 of the 362 tables scroll at any width from 320 to 1440px now.
 
-- [ ] The leaderboard's table is 8,134px tall on a phone, because a 7-column row becomes 6 lines
-      and there are 55 of them. "Good at" is four dots and "Weights" is "17 GB"; either pair of
-      short columns could share a line and save about a line a row. `stack()` would need to be
-      told which columns are short enough to sit together, and the grid rules would place them on
-      the same row. Only worth doing if the length reads as a problem — nothing is hidden. The
-      same page is now 4,208px on a desktop, up from 3,377, which is the price of showing the two
-      columns it used to hide; that one is not worth chasing.
+- [ ] The leaderboard's table on a phone. **Read as rendered on 2026-09-18, which is what this
+      item asked for, and the length is not the problem it looked like.** Re-measured at 360px it is
+      8,746px over 56 rows, not 8,134, and each row reads cleanly: name and score on one line, then
+      Class, Good at, Weights, Cheapest and Then under it. Nothing is cramped and nothing is hidden.
+      The pairing this item proposed does work — "Good at" renders 52px wide and "Weights" 42px, so
+      with their labels the two sit in 326px with room over — but it saves about 1,100px of 8,746,
+      which is not what makes the page long. **What does read badly is the seven frontier rows**:
+      each one prints the whole of "Runs in someone else's data centre. You cannot download it." as
+      a two-line paragraph of its own, so the same sentence appears seven times in a column an inch
+      apart. On a wide screen it is one cell in a row and reads as a group; on a phone it is
+      repetition. That is the half worth fixing, and it is `stack()` plus the frontier rows rather
+      than a pairing rule.
+      **The same measurement found a bigger one the item did not know about**: `/compare/` is
+      20,986px on a phone, its machine table alone 13,002px over 86 rows, and `/how-much-memory/` is
+      16,294px. If a pairing rule is written it should be written for `stack()` and applied
+      wherever it fits, not for the leaderboard alone. The leaderboard is 4,208px on a desktop,
+      which is not worth chasing.
 
-- [ ] The calculator's own page scrolls sideways on a phone. Measured over HTTP at 320, 360 and
-      390px: the page is 398px wide at all three, so the whole thing shifts under a sideways swipe.
-      It is the top bar — `.topbar-end`, holding the "Data checked" stamp and the icon button, is
-      398px wide and does not wrap. At 430px it fits. None of the 188 generated pages does this at
-      any width from 320 to 1440px; this is index.html and src/styles.css only, so the fix is a
-      pull request rather than a push. Turned up while measuring the model pages on 2026-09-17.
+- [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
+      Re-measured in Chromium at 360px on 2026-09-18 while reading PR #9's footer: the document is
+      373px wide, and the two elements that reach past the edge are `.topbar-end` and the icon
+      button inside it, both ending at 373. Nothing else on the page does — the new footer ends at
+      exactly 360. The earlier 398px was measured before the top bar's contents changed; the fault
+      is the same one, which is that `.topbar-end` holds the "Data checked" stamp and the theme
+      button on one line and does not wrap. At 430px it fits. None of the 249 generated pages does
+      this at any width from 320 to 1440px; this is index.html and src/styles.css only, so the fix
+      is a pull request rather than a push. It was deliberately left out of PR #9 rather than folded
+      in: a footer and a top bar are different faults, and a reviewer reading a PR about one should
+      not have to review the other.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -603,6 +636,92 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the page everything links back to linked back to half the site
+
+**Why this item, and it was not on the list.** PR #7 and PR #8 are both still open, so a new page
+would be a third pull request colliding with both, and the two push-shaped items the last entry
+named are judgement calls it said to read the page before doing. Both were read. The leaderboard's
+phone table does not read as the problem the item assumed, and the backlog item now says so and says
+what does read badly there. Reading it turned up something better: **the home page links to two of
+the site's four top-level pages, and the foot of every generated page links to three.**
+
+**What was actually wrong.** Counted on the built site rather than guessed: `/leaderboard/`, `/best/`
+and `/how-much-memory/` each had **248 inbound pages** — every page on the site, because the footer
+in `pageShell()` names them. `/compare/` had **187**, the pages that happen to mention a match-up in
+their own text. It is the index of 133 comparisons and it was the one hub a reader could finish a
+page without meeting. And `index.html`, the page all 248 generated pages link back to and the one
+external links land on, has **no footer at all**: its only route onward is two links in the models
+aside, the leaderboard and the best buys.
+
+**What changed, and where each half went:**
+
+- **On `main` (`3cda750`, and `305728a` for its wording):** the footer is a list, `FOOTER_LINKS` in
+  `src/pagekit.ts`, rather than markup in the shell, and it names `/compare/` as *Every head-to-head*.
+  248 pages, `/compare/` from 187 inbound to 248.
+- **As [PR #9](https://github.com/rlindsey2/sunkcost/pull/9):** `index.html` gains the same footer,
+  in the same order and the same words, less its link back to itself. It is the calculator, so it is
+  a pull request, which is the standing rule here.
+
+**The guard.** `checkFooter()` holds three claims, and the first is the one that matters as the site
+grows: **a page written at the top level of this site stands above the machines and the models, so
+it belongs at the foot of every page**, and adding one without adding it there stops the build. The
+other two are that the footer links nothing the build does not write, and that every page carries
+the same footer, so a page type cannot grow one of its own. Proved by four breaks, each caught with
+the page named: dropping `/compare/` from the list (caught as *`/compare/` sits at the top level of
+the site and the foot of every page walks past it*), pointing the list at `/comparisons/`, taking
+the footer out of the shell (248), and giving `/best/` a footer of its own (1).
+
+**A word the guard printed was wrong before either open PR could merge, and was corrected rather
+than left.** The first version said *is an index of the site*. `/best-gpu/` and
+`/local-llm-vs-api-cost/` are both top-level pages and neither indexes anything — they answer a
+question — so the message would have been false the moment either merged. `305728a` says *sits at
+the top level of the site* instead. Wording only; no page changed.
+
+**PR #9 collides with nothing, which is deliberate.** Checked with real test merges, not guessed:
+clean against `main`, against PR #7 and against PR #8. It touches `index.html`, `src/styles.css` and
+one `describe` block; neither of the other two branches touches either file, and it touches nothing
+they do. That should spare it the hourly repair those two have needed twenty-odd times between them.
+The 84px that kept the last pane clear of the fixed mini bar on a phone moves to the footer, which
+is the last thing on the page now, and the footer was read as rendered at 360px and 1280px rather
+than diffed.
+
+**Verified**: 230 tests on `main` (226 before, four new in `tests/pagekit.test.ts`) and 233 on the
+branch (three more, holding the home page's footer to `FOOTER_LINKS` so the two cannot drift apart
+the way the fonts block could before its own test); typecheck clean on both; 248 pages with every
+guard passing; and the full `npm run build` including `build:og`, `build:share` and `build:functions`
+on both. The footer was read as rendered text on a machine page at 360px and 1200px, where it wraps
+to three lines and one.
+
+**The deploy.** `3cda750`, run 128, green at **05:51**.
+
+**Both pull requests stopped merging, and both were repaired in this run** — the seventeenth time
+the log has recorded it. Both conflicts were the import lists and the footer, every hunk a union, and
+**both branches had already written their own page into that footer**, so the repair was to move
+each one's entry into `FOOTER_LINKS` keeping its own words: *Which graphics card* on PR #7, *What a
+token costs either way* on PR #8. Verified on each branch rather than assumed: **238 tests, typecheck
+clean, 249 pages with every guard passing and the full build**, on both. PR #7 is now `a5c4ece` and
+PR #8 `cd6e83d`, and each merges clean against `main` at `305728a`, checked with a real merge.
+
+**PR #8 was carrying 24 KB of build output, and this run dropped it.** `public/best-gpu/index.html`
+— a page the *other* branch generates — was committed to PR #8 by the 04:53 merge repair, because
+only PR #7's `.gitignore` covers that directory and PR #8's does not. Nothing was lost: it is
+generated by `npm run build:pages`.
+
+**Their collision with each other is unchanged in shape and has one more hunk.** Measured with a real
+test merge: the same six files, and `FOOTER_LINKS` is now a seventh hunk in `src/pagekit.ts` — a
+plain union, one line each, keep both. **The one hunk that can still quietly lose something is
+unchanged**: the closing `<p class="note">` on `/best/`, where PR #7 links `/best-gpu/` and PR #8
+links `/local-llm-vs-api-cost/` in different edits to the same paragraph. Taking either side whole
+drops the other page's link. Both edits have to be kept.
+
+**Continue next: the machine index at `/hardware/`**, still the biggest gap the log has found. It is
+a new page and wants the PR queue to clear, and the queue is now three. If all three are still open
+at the next run, the push-shaped work left is the frontier rows on the leaderboard's phone layout,
+which this run measured and narrowed the backlog item to: seven rows repeating the same sentence
+seven times, an inch apart. That is a real fault rather than a judgement call, and it is `stack()`
+plus the frontier rows in `scripts/build-pages.ts`, so it is a push.
+
 
 ### 2026-09-18 — the models two machines share are not held to the same length
 
