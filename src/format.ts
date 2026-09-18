@@ -106,6 +106,16 @@ export function endStop(text: string): string {
   return !t || /[.!?]$/.test(t) ? t : `${t}.`;
 }
 
+/**
+ * The index version, unless the index's own name already ends in it. The name in
+ * the data is "Artificial Analysis Intelligence Index v4.3" and every model records
+ * v4.3 beside its own score, so printing both read "…Index v4.3 v4.3".
+ */
+export function indexVersion(name: string | null | undefined, version: string | null | undefined): string {
+  const v = (version ?? '').trim();
+  return !v || (name ?? '').trim().endsWith(v) ? '' : v;
+}
+
 /** Where a power figure came from, in words rather than in the data's own key. */
 export function powerSourceLabel(hw: Hardware): string {
   switch (hw.load_watts_status) {

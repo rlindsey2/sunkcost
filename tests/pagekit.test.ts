@@ -11,8 +11,8 @@ import {
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import {
-  powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks, sourceName as fmtSourceName,
-  splitHardwareNote as fmtSplitHardwareNote,
+  indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
+  sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -1669,6 +1669,27 @@ describe('the calculator’s assumptions panel, which prints the same fields the
   it('has a row for every figure those sentences are sent to', () => {
     for (const row of ['Usable memory', 'Memory bandwidth', 'Local speed', 'Hardware price']) {
       expect([row, panel.includes(`<dt>${row}</dt>`) || panel.includes(`>${row}</dt>`)]).toEqual([row, true]);
+    }
+  });
+  it('names no link after nothing, which is the rule every generated page is held to', () => {
+    // the same list checkSourceLinks() refuses: a link called "source" says nothing
+    // about what is on the other end, to a reader or to a crawler.
+    const named = [...panel.matchAll(/>([^<>]{0,40})<\/a>/g)].map((m) => m[1].trim().toLowerCase());
+    expect(named.length).toBeGreaterThan(5);
+    for (const n of named) {
+      expect([n, /^(source|sources|here|this|link|read more|click here)$/.test(n)]).toEqual([n, false]);
+    }
+  });
+
+  it('prints the index version once, not once from each field that carries it', () => {
+    expect(indexVersion('Artificial Analysis Intelligence Index v4.3', 'v4.3')).toBe('');
+    expect(indexVersion('Artificial Analysis Intelligence Index', 'v4.3')).toBe('v4.3');
+    expect(indexVersion('Artificial Analysis Intelligence Index v4.3', null)).toBe('');
+    // the shape the data is in today, on every model that carries a version
+    for (const m of data.models) {
+      const v = m.frontier_equivalent?.index_version;
+      if (!v) continue;
+      expect([m.id, indexVersion(data.defaults.frontier_basis?.name, v)]).toEqual([m.id, '']);
     }
   });
 });

@@ -15,7 +15,8 @@ import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 // and cannot import this module, which is the build's rather than the bundle's.
 // They are re-exported here so the pages that use them keep one import site.
 export {
-  endStop, noteSentences, powerSourceLabel, sourceKind, sourceLinks, sourceName, splitHardwareNote,
+  endStop, indexVersion, noteSentences, powerSourceLabel, sourceKind, sourceLinks, sourceName,
+  splitHardwareNote,
   type HardwareNote,
 } from './format';
 import { fit as memoryFit, kvScaleFor } from './fit';
