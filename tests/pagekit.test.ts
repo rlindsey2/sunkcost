@@ -1316,3 +1316,22 @@ describe('the way back to the indexes', () => {
     expect(html.match(/<footer/g)).toHaveLength(1);
   });
 });
+
+describe('the calculator\'s own foot', () => {
+  const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const foot = home.match(/<footer class="site-foot">[\s\S]*?<\/footer>/)?.[0] ?? '';
+
+  it('is there at all', () => {
+    expect(foot).not.toBe('');
+  });
+
+  it('offers the same indexes, in the same words and the same order, as a generated page', () => {
+    const want = FOOTER_LINKS.filter((l) => l.href !== '/');
+    const said = [...foot.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map((m) => ({ href: m[1], label: m[2] }));
+    expect(said).toEqual(want);
+  });
+
+  it('does not spend a link on the page it is already on', () => {
+    expect(foot).not.toContain('href="/"');
+  });
+});
