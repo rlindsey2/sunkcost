@@ -216,7 +216,7 @@ code { font-family: var(--mono); font-size: 0.92em; }
 .wordmark { font-weight: 700; font-size: 15px; letter-spacing: -0.02em; }
 .domain { font-size: 12px; color: var(--faint); }
 .topbar-line { flex: 1 1 auto; min-width: 0; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.topbar-end { display: flex; align-items: center; gap: 10px; flex: none; }
+.topbar-end { display: flex; align-items: center; gap: 10px; flex: none; margin-left: auto; }
 .stamp { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
 
 .icon-btn {
@@ -225,7 +225,7 @@ code { font-family: var(--mono); font-size: 0.92em; }
 }
 .icon-btn:hover { color: var(--ink); background: var(--panel); border-color: var(--line-2); }
 .icon-btn svg { display: block; }
-.i-moon { display: none; }
+.icon-btn .i-moon { display: none; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .i-sun { display: none; } :root:not([data-theme='light']) .i-moon { display: block; } }
 :root[data-theme='dark'] .i-sun { display: none; }
 :root[data-theme='dark'] .i-moon { display: block; }
@@ -643,6 +643,7 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
   .sentence-line { font-size: 19px; line-height: 1.6; }
 }
 @media (max-width: 420px) {
+  .domain { display: none; }
   .figures { grid-template-columns: 1fr 1fr; gap: 12px; }
   .m-name { font-size: 14px; }
 }
