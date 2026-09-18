@@ -661,8 +661,12 @@ the end of the file, and this one is the machine-page template and the head-to-h
 **Verified**: 215 tests (210 before, five new in `tests/versus-card.test.ts`), typecheck clean, 248
 pages with every guard passing, and the full `npm run build` including `build:og`, `build:share` and
 `build:functions`. All 51 notes were read as rendered text, and two machine pages end to end. The
-shortest note is now one sentence of eleven words; the longest is 418 characters in two sentences,
-where it was one line of twelve links.
+shortest note is nine words plus the line to `/compare/`; the longest is 418 characters in two
+sentences, where it was one line of twelve links.
+
+**The deploy.** Run 122 on `69a128b` finished **green at 02:54**, so the grouped notes are live on
+all 51 machine pages. One push this hour, so nothing was cancelled; the entry two below explains why
+that is worth watching.
 
 **The state of the two open pull requests, checked rather than assumed.** Both are still open, both
 still merge clean against `main` at `68f8011` — tested with a real merge, not guessed — and `main`
