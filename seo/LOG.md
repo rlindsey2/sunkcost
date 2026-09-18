@@ -560,23 +560,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       also missed the worst of it, which was not in the band at all — see the leaderboard note in
       the run entry below. 0 of the 362 tables scroll at any width from 320 to 1440px now.
 
-- [ ] The leaderboard's table on a phone. **Read as rendered on 2026-09-18, which is what this
-      item asked for, and the length is not the problem it looked like.** Re-measured at 360px it is
-      8,746px over 56 rows, not 8,134, and each row reads cleanly: name and score on one line, then
-      Class, Good at, Weights, Cheapest and Then under it. Nothing is cramped and nothing is hidden.
-      The pairing this item proposed does work — "Good at" renders 52px wide and "Weights" 42px, so
-      with their labels the two sit in 326px with room over — but it saves about 1,100px of 8,746,
-      which is not what makes the page long. **What does read badly is the seven frontier rows**:
-      each one prints the whole of "Runs in someone else's data centre. You cannot download it." as
-      a two-line paragraph of its own, so the same sentence appears seven times in a column an inch
-      apart. On a wide screen it is one cell in a row and reads as a group; on a phone it is
-      repetition. That is the half worth fixing, and it is `stack()` plus the frontier rows rather
-      than a pairing rule.
-      **The same measurement found a bigger one the item did not know about**: `/compare/` is
-      20,986px on a phone, its machine table alone 13,002px over 86 rows, and `/how-much-memory/` is
-      16,294px. If a pairing rule is written it should be written for `stack()` and applied
-      wherever it fits, not for the leaderboard alone. The leaderboard is 4,208px on a desktop,
-      which is not worth chasing.
+- [ ] What is left of the leaderboard's table on a phone. **The half that read badly is fixed**, on
+      2026-09-18: the eight hosted rows repeated *Runs in someone else's data centre. You cannot
+      download it.* eight times down the first screenful, and that is said once above the block now,
+      with each row carrying the score the index gives it with reasoning turned down. The run entry
+      below has the figures and the five breaks that proved the guard.
+      **The length is not the problem it looked like and is still open.** Measured at 360px the table
+      is 8,410px over 57 rows, and each row reads cleanly: name and score on one line, then Class,
+      Good at, Weights, Cheapest and Then under it. Nothing is cramped and nothing is hidden. The
+      pairing this item proposed does work — "Good at" renders 52px wide and "Weights" 42px, so with
+      their labels the two sit in 326px with room over — but it saves about 1,100px of 8,410, which
+      is not what makes the page long.
+      **The bigger one is elsewhere**: `/compare/` is 20,986px on a phone, its machine table alone
+      13,002px over 86 rows, and `/how-much-memory/` is 16,294px. If a pairing rule is written it
+      should be written for `stack()` and applied wherever it fits, not for the leaderboard alone.
+      The leaderboard is 4,208px on a desktop, which is not worth chasing.
 
 - [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
       Re-measured in Chromium at 360px on 2026-09-18 while reading PR #9's footer: the document is
@@ -636,6 +634,82 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the leaderboard said the same thing eight times before it said anything
+
+**Why this item.** All three pull requests were still open at the start of this run, so a new page
+would have been a fourth branch colliding with the three, and the machine index at `/hardware/` has
+to wait for that queue. The last entry named the push-shaped work to take instead, and this run took
+it: the hosted rows at the top of `/leaderboard/` on a phone.
+
+**What was wrong.** The leaderboard opens with eight hosted models, from Anthropic and OpenAI, so
+the open models have a scale to be read against. Every one of them carried the same sentence in its
+own row: *Runs in someone else's data centre. You cannot download it.* On a wide screen that is one
+cell inside a row and reads as a group. On a phone, where `stack()` turns a row into a block, it was
+a two-line paragraph repeated **eight times** down the first screenful, before the reader reached
+the first model they can actually download. The last entry called it seven; it is eight, because
+`frontier_reference` has eight entries.
+
+**What it says now.** One heading above the block, which is where a thing true of all eight belongs:
+*Hosted models, here for scale. You cannot download any of these; they run in someone else's data
+centre.* Each row then keeps the one thing only it knows, and it is a figure the site already had
+and printed nowhere: **the score the index gives that model with its reasoning turned down**.
+`score_alt` is in `data/defaults.json` on all eight, and `frontier_reference_note` says what it is:
+the non-reasoning or lowest-effort figure where Artificial Analysis reports both. So GPT-6 Astra
+reads 53, *or 45 with reasoning turned down*; Claude Opus 5 reads 51, *or 40*; GPT-5.6 Luna 38,
+*or 17*. No figure was invented and none was changed. The note under the table already told the
+reader that hybrid models are shown at their highest-effort score with the alternative on each
+model's page, and it now adds that the hosted rows carry theirs beside the score.
+
+**That gap is worth a reader's attention, which is the second reason for showing it.** The page's
+own lede says the best open model scores 42 against the best hosted 53, *the thing no amount of
+hardware closes*. Six of the eight hosted models fall below that 42 with reasoning turned down: only
+GPT-6 Astra at 45 and Claude Fable 5.1 at 47 stay above it. The page
+does not draw that conclusion, because the index's two figures are not measured at the same cost and
+the site does not model effort settings; it prints both and leaves it there.
+
+**A class that meant two things now means one.** `is-frontier` marked both a heading row inside a
+table (three of those, on the machine pages and `/best/`) and a hosted data row on the leaderboard,
+and the phone stylesheet is written for the first: `padding: 14px 1px 4px; border-bottom: 0;
+background: none`. So the eight hosted rows were being styled as eight group headings, which is why
+they lost their rules and ran together. Hosted rows are `is-hosted` now. On a wide screen they look
+exactly as they did, tint and all; on a phone they keep the rule underneath and read as eight rows
+under one heading.
+
+**Measured, at 360px in Chromium, both figures taken in this run with the same tooling so they
+compare:** the table was **8,483px over 56 rows** before and is **8,410px over 57** after, so the
+table is 73px shorter having gained a row. Length was never the fault and this does not fix it. What
+changed is that the first screenful now carries eight different facts instead of the same one eight
+times. Nothing overflows: the widest element on the page ends at exactly 360.
+
+**The guard.** `checkLeaderboardLinks()` holds four claims about the block, and the fourth is the one
+that keeps this from coming back: **the sentence is said once, above the rows, not inside them**.
+The others are one row per hosted model in the data, no hosted row offering hardware you can buy,
+and the second figure equal to the data's own `score_alt`. Proved by five breaks, each caught with
+the row named: dropping the heading (*says a hosted model is not a download 0 times, and it belongs
+once, in the heading above the hosted rows*), putting the sentence back in every row (*tells the
+reader inside GPT-6 Astra's own row … which a phone repeats once a row*), printing `score_alt + 1`
+(*does not give GPT-6 Astra the 45 the index scores it at with reasoning turned down*), moving the
+heading below the block, and giving a hosted row a calculator link. The build now says what it holds:
+*ranks 8 hosted models alongside the open ones, 8 of them also at the score the index gives them with
+reasoning turned down, and says once above the block that none of them is a download*.
+
+**Verified**: 230 tests, typecheck clean, 248 pages with every guard passing, and the full
+`npm run build` including `build:og`, `build:share` and `build:functions`. The page was read as
+rendered at 360, 768 and 1280px rather than diffed, and reads as finished at all three.
+
+**The commit and the deploy.** `cf0ee16` on `main`, run 131, in progress at 06:45.
+
+**All three pull requests still merge clean against this push**, checked with a real test merge of
+each rather than assumed, so none needed the repair the last seventeen entries have recorded. The
+change sits in `leaderboard()` and in two CSS rules, and none of the three branches touches either.
+
+**Continue next: the machine index at `/hardware/`**, still the biggest gap the log has found, and
+still waiting on the pull-request queue, which is three deep and has been since 05:53. If it is
+still three deep at the next run, the push-shaped work left is `stack()`'s pairing rule, which the
+last entry measured and this one leaves open: `Good at` renders 52px and `Weights` 42px at 360px, so
+the two could share a line wherever `stack()` is used, and `/compare/` at 20,986px on a phone would
+gain more from it than the leaderboard did.
 
 ### 2026-09-18 — the page everything links back to linked back to half the site
 
