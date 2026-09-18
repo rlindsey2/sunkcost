@@ -814,6 +814,7 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
+
 ## Runs
 
 ### 2026-09-18 — the card ranking stops hiding the figure it is for
@@ -854,9 +855,10 @@ have started to.
 **The exception, because holding a name whole can be worse than breaking it.** Held everywhere, the
 29 characters of *DeepSeek-R1-Distill-Llama-70B* pushed a head-to-head's table **102px past a 360px
 phone screen, and the page with it** — a page that scrolls sideways is a worse fault than a name
-broken in the wrong place. A head-to-head splits a phone screen three ways and a cell there is about
-95px, which *GLM-5.3-Flash* alone exceeds at 96px. So the hold gives way in that one layout, which
-already breaks a long word anywhere rather than overflow, and holds everywhere else.
+broken in the wrong place. A head-to-head splits a phone screen three ways and a cell there is 95px,
+81px of it inside the padding, which *GLM-5.3-Flash* alone exceeds at 91px. So the hold gives way in
+that one layout, which already breaks a long word anywhere rather than overflow, and holds everywhere
+else.
 
 **Measured, not assumed.** Every table on all 253 pages at sixteen widths from 320 to 1440px:
 **0 tables scroll and 0 pages overflow their window**, where `/best-gpu/` did at 641, 660, 680 and
