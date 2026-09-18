@@ -32,6 +32,12 @@ export interface WaterlineOptions {
   /** dashed marker at this many days, with the depth reached by then */
   markerDays?: number | null;
   id?: string;
+  /**
+   * how far in from each edge the chart's own labels stop. The plot still runs
+   * edge to edge; this only moves the words, so a caller that sets its text in a
+   * column can line the chart up with it.
+   */
+  labelPadX?: number;
   /** skip the sky and water fills so a surrounding panel supplies them */
   transparentBg?: boolean;
   /** sky, surface and water only — for states with nothing to plot */
@@ -108,6 +114,12 @@ export function renderWaterline(o: WaterlineOptions): string {
   const padX = 14 * s;
   const innerH = Math.max(40, plotH - padT - padB);
   const innerW = W - padX * 2;
+  /* Where the labels stop. On the page the chart is the whole panel and they
+     stop where the plot does; on a share card every other line sits in a column
+     inset from the edge, and a figure out in the bleed reads as a slip. */
+  const labelPad = Math.max(padX, o.labelPadX ?? 0);
+  const labelL = labelPad;
+  const labelR = W - labelPad;
 
   const price = o.devicePriceUsd;
   const T = g.horizonDays;
@@ -176,7 +188,7 @@ export function renderWaterline(o: WaterlineOptions): string {
       const yy = y(v);
       if (yy <= surfaceY + 10 * s || yy > plotBottom) continue;
       p.push(`<line x1="0" x2="${W}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--chart-ink, #b6cfe2)" stroke-opacity="0.13" stroke-width="${s}"/>`);
-      p.push(`<text x="${padX}" y="${(yy - 5 * s).toFixed(1)}" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.6" style="font-variant-numeric: tabular-nums">${fmtUsd(v)}</text>`);
+      p.push(`<text x="${labelL}" y="${(yy - 5 * s).toFixed(1)}" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.6" style="font-variant-numeric: tabular-nums">${fmtUsd(v)}</text>`);
     }
   }
 
@@ -188,7 +200,7 @@ export function renderWaterline(o: WaterlineOptions): string {
   p.push(`<rect x="0" y="${(surfaceY - 7 * s).toFixed(1)}" width="${W}" height="${7 * s}" fill="var(--surface, #9cc7ee)" opacity="0.16"/>`);
   p.push(`<line x1="0" x2="${W}" y1="${surfaceY.toFixed(1)}" y2="${surfaceY.toFixed(1)}" stroke="var(--surface, #9cc7ee)" stroke-width="${1.75 * s}"/>`);
   if (showLabels) {
-    p.push(`<text x="${padX}" y="${(surfaceY - 8 * s).toFixed(1)}" font-size="${10 * s}" font-weight="600" letter-spacing="${0.8 * s}" fill="var(--surface-ink, #4d7ea6)" opacity="0.95">BREAK EVEN</text>`);
+    p.push(`<text x="${labelL}" y="${(surfaceY - 8 * s).toFixed(1)}" font-size="${10 * s}" font-weight="600" letter-spacing="${0.8 * s}" fill="var(--surface-ink, #4d7ea6)" opacity="0.95">BREAK EVEN</text>`);
   }
 
   // the curve, with a soft halo so it survives on a busy ground
@@ -206,7 +218,7 @@ export function renderWaterline(o: WaterlineOptions): string {
     p.push(`<circle cx="${beX.toFixed(1)}" cy="${surfaceY.toFixed(1)}" r="${6 * s}" fill="var(--curve-above, #f0a75a)" stroke="#fff" stroke-width="${2 * s}"/>`);
     if (showLabels) {
       const anchor = beX > padX + innerW * 0.6 ? 'end' : 'start';
-      const lx = anchor === 'end' ? beX - 13 * s : beX + 13 * s;
+      const lx = anchor === 'end' ? Math.min(beX - 13 * s, labelR) : Math.max(beX + 13 * s, labelL);
       p.push(`<text x="${lx.toFixed(1)}" y="${(surfaceY - 12 * s).toFixed(1)}" text-anchor="${anchor}" font-size="${12 * s}" font-weight="600" fill="var(--surface-ink, #4d7ea6)">surfaces at ${labelDays(o.breakevenDays!)}</text>`);
     }
   } else {
@@ -214,7 +226,7 @@ export function renderWaterline(o: WaterlineOptions): string {
     if (showLabels) {
       const msg = g.never ? 'never reaches the surface' : `surfaces at ${labelDays(o.breakevenDays!)} — far off this chart`;
       const my = Math.max(y1 - 14 * s, padT + 14 * s);
-      p.push(`<text x="${(padX + innerW).toFixed(1)}" y="${my.toFixed(1)}" text-anchor="end" font-size="${12 * s}" font-weight="600" fill="var(--chart-ink, #b6cfe2)" opacity="0.92">${msg}</text>`);
+      p.push(`<text x="${labelR.toFixed(1)}" y="${my.toFixed(1)}" text-anchor="end" font-size="${12 * s}" font-weight="600" fill="var(--chart-ink, #b6cfe2)" opacity="0.92">${msg}</text>`);
     }
   }
 
@@ -230,7 +242,7 @@ export function renderWaterline(o: WaterlineOptions): string {
     p.push(`<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="${4 * s}" fill="var(--water-deep, #05121e)" stroke="var(--chart-ink, #b6cfe2)" stroke-width="${1.5 * s}"/>`);
     if (showLabels) {
       const anchor = mx > padX + innerW * 0.6 ? 'end' : 'start';
-      const lx = anchor === 'end' ? mx - 9 * s : mx + 9 * s;
+      const lx = anchor === 'end' ? Math.min(mx - 9 * s, labelR) : Math.max(mx + 9 * s, labelL);
       const labelW = (labelDays(o.markerDays).length + fmtUsd(mv).length + 13) * 6 * s;
       markerBox = { x0: anchor === 'end' ? lx - labelW : lx, x1: anchor === 'end' ? lx : lx + labelW, y: my + 15 * s };
       p.push(`<text x="${lx.toFixed(1)}" y="${(my + 15 * s).toFixed(1)}" text-anchor="${anchor}" font-size="${11 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.9" style="font-variant-numeric: tabular-nums">${labelDays(o.markerDays)}: ${mv < 0 ? `${fmtUsd(mv)} underwater` : `${fmtUsd(mv)} clear`}</text>`);
@@ -242,12 +254,12 @@ export function renderWaterline(o: WaterlineOptions): string {
     const ty = plotBottom + 14 * s;
     const markerX = o.markerDays != null && o.markerDays > 0 && o.markerDays < T ? x(o.markerDays) : null;
     // the "bought" label gives way to the year-one marker when they would collide
-    if (markerX == null || markerX - padX > 76 * s) {
-      p.push(`<text x="${padX}" y="${ty.toFixed(1)}" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.55">bought</text>`);
+    if (markerX == null || markerX - labelL > 76 * s) {
+      p.push(`<text x="${labelL}" y="${ty.toFixed(1)}" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.55">bought</text>`);
     }
     for (const t of niceTimeTicks(T)) {
       const tx = x(t.days);
-      if (tx > padX + innerW - 12 * s) continue;
+      if (tx > labelR - 12 * s) continue;
       // a tick label sitting under the year-one label would print on top of it
       if (markerBox && Math.abs(markerBox.y - ty) < 13 * s && tx + 20 * s > markerBox.x0 && tx - 20 * s < markerBox.x1) continue;
       p.push(`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.55" style="font-variant-numeric: tabular-nums">${t.label}</text>`);

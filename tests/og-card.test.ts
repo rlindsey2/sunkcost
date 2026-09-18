@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cardSvg } from '../src/card';
 import { OG_HEIGHT, OG_WIDTH, renderOgCard } from '../src/og';
+import { renderWaterline } from '../src/waterline';
 import { EM } from '../src/text-fit';
 import { computeView } from '../src/compute';
 import { defaultState } from '../src/state';
@@ -125,5 +126,43 @@ describe('no share card the build draws runs its text off the edge', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('the chart on a share card keeps its labels in the card’s column', () => {
+  // Every line the card writes starts at 56 and ends by 1144. The waterline is
+  // drawn edge to edge under them, so without a margin of its own its labels sit
+  // out in the bleed, 35px clear of the words they belong with.
+  const COL_L = 56;
+  const COL_R = OG_WIDTH - 56;
+  /** the chart's own labels: everything above the figures strip, with its anchor */
+  const chartLabels = (svg: string) =>
+    [...svg.matchAll(/<text x="([\d.]+)" y="([\d.]+)"([^>]*)>([^<]*)<\/text>/g)]
+      .map((m) => ({ x: +m[1], y: +m[2], attrs: m[3], text: m[4] }))
+      .filter((l) => l.y < OG_HEIGHT - 158)
+      .map((l) => ({ ...l, anchor: /text-anchor="end"/.test(l.attrs) ? 'end' : /text-anchor="middle"/.test(l.attrs) ? 'middle' : 'start' }));
+
+  it('starts no label left of the column, and ends none right of it', () => {
+    const offenders: string[] = [];
+    for (const hw of data.hardware) {
+      for (const m of data.models) {
+        const svg = cardSvg({ ...defaultState(data), hw: hw.id, model: m.id }, data);
+        if (!svg) continue;
+        for (const l of chartLabels(svg)) {
+          if (l.anchor === 'start' && l.x < COL_L) offenders.push(`${hw.id}|${m.id}: “${l.text}” starts at ${l.x}`);
+          if (l.anchor === 'end' && l.x > COL_R) offenders.push(`${hw.id}|${m.id}: “${l.text}” ends at ${l.x}`);
+        }
+      }
+    }
+    expect(offenders.slice(0, 5)).toEqual([]);
+  });
+
+  it('leaves the chart on the page running to its own edges', () => {
+    // the page is all chart, so nothing is inset there: no margin passed, no margin taken
+    const page = renderWaterline({ devicePriceUsd: 2299, dailySaving: 0.04, breakevenDays: null, maxYears: 10, width: 460, height: 340, plotHeight: 216, markerDays: 365.25 });
+    expect(page).toContain('<text x="14" ');
+    const inset = renderWaterline({ devicePriceUsd: 2299, dailySaving: 0.04, breakevenDays: null, maxYears: 10, width: 460, height: 340, plotHeight: 216, markerDays: 365.25, labelPadX: 56 });
+    expect(inset).not.toContain('<text x="14" ');
+    expect(inset).toContain('<text x="56" ');
   });
 });

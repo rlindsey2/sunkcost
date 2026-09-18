@@ -92,6 +92,7 @@ export function renderOgCard(i: OgCardInput): string {
     scale: 1.5,
     fontFamily: font,
     showLabels: true,
+    labelPadX: MARGIN,
     markerDays: 365.25,
     id: 'og',
   })
