@@ -11,6 +11,7 @@ design/sunk-cost-layout-directions.html
 # generated at build time by scripts/build-pages.ts
 public/leaderboard/
 public/best/
+public/best-gpu/
 public/how-much-memory/
 public/models/
 public/hardware/

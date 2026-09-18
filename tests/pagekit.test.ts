@@ -5,10 +5,10 @@ import {
   contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, modelsInBand, modelVerdict,
-  otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  footerHtml, FOOTER_LINKS, priceWithScope, priceWithScopeText, runnersFor,
+  footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
+  powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  strongestShared, tierLabel, tierName, widestHeadroom, type LdNode,
+  strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
@@ -739,6 +739,69 @@ describe('tables on a phone', () => {
     expect(dashed).toContain('<td class="k-sub" data-label="Speed at 32k"><span class="dot dot-green"></span></td>');
   });
 
+  it('puts two narrow columns on one line, and says which of them closes it', () => {
+    // Price and Speed each took a line of their own; together they take one
+    const two = stack(table, { fig: 3, pair: [1, 2] });
+    expect(two).toContain('<td class="k-sub k-pair" data-label="Price">$899</td>');
+    expect(two).toContain('<td class="k-sub k-pair k-pair-end" data-label="Speed at 32k">12 tok/s');
+    // everything else reads exactly as it did
+    expect(two).toContain('<td class="k-sub"><a href="/?hw=mac-mini-m6-16">Run the numbers</a></td>');
+    expect(two).toContain('<td class="k-fig">Pays back in 842 years</td>');
+  });
+
+  it('counts the figure out of the way, so a pair can skip over it', () => {
+    // the figure is column 3, so columns 2 and 4 are neighbours on the line
+    const over = stack(table, { fig: 3, pair: [2, 4] });
+    expect(over).toContain('<td class="k-sub k-pair" data-label="Speed at 32k">12 tok/s');
+    expect(over).toContain('<td class="k-sub k-pair k-pair-end"><a href="/?hw=mac-mini-m6-16">Run the numbers</a></td>');
+  });
+
+  it('keeps the wide screen exactly as it was when a table pairs', () => {
+    const text = (html: string) => html.replace(/<[^>]*>/g, '|').replace(/\|+/g, '|');
+    expect(text(stack(table, { fig: 3, pair: [1, 2] }))).toBe(text(table));
+  });
+
+  it('refuses a pair the grid cannot put on one line', () => {
+    // columns 1 and 4 have column 2 between them, so the grid would break the line
+    expect(() => stack(table, { fig: 3, pair: [1, 4] })).toThrow(/not next to each other/);
+    expect(() => stack(table, { fig: 3, pair: [2, 1] })).toThrow(/left to right/);
+    expect(() => stack(table, { fig: 3, pair: [0, 1] })).toThrow(/the name or the figure/);
+    expect(() => stack(table, { fig: 3, pair: [2, 3] })).toThrow(/the name or the figure/);
+  });
+
+  it('refuses a pair where one column goes quiet in a row, rather than leaving the other half alone', () => {
+    const quiet = table.replace('<td>$899</td>', '<td>—</td>');
+    expect(() => stack(quiet, { fig: 3, pair: [1, 2] })).toThrow(/says nothing in one row/);
+    const blank = table.replace('<td>$899</td>', '<td></td>');
+    expect(() => stack(blank, { fig: 3, pair: [1, 2] })).toThrow(/says nothing in one row/);
+  });
+
+  it('gives a paired cell its own half of the row, and sets the closing half against the right edge', () => {
+    const phone = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8').match(
+      /@media \(max-width: 640px\) \{([\s\S]*)\n\}/,
+    )?.[1] ?? '';
+    expect(phone).toContain('.board.stack .k-sub { grid-column: 1 / -1;');
+    expect(phone).toContain('.board.stack .k-pair { grid-column: auto; }');
+    expect(phone).toContain('.board.stack .k-pair-end { text-align: right; }');
+    // the pair rule has to come after the one it overrides, or it never takes
+    expect(phone.indexOf('.k-pair {')).toBeGreaterThan(phone.indexOf('.k-sub { grid-column'));
+  });
+
+  it('keeps a floor under the name, so a figure that is a sentence cannot crush it', () => {
+    // Two machines on the site have no published price, so their row answers a
+    // sentence where every other row answers a number. The right-hand track is
+    // sized to what its cell wants and the left one gives up everything, so
+    // without a floor the name beside that sentence was a character wide.
+    const unpriced = data.hardware.filter((h) => h.price_usd == null);
+    expect(unpriced.length).toBeGreaterThan(0);
+    for (const h of unpriced)
+      expect(verdictLine(computeView({ ...defaultState(data), hw: h.id }, data))).toBe('Not enough data to compute a pay-back.');
+    const phone = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8').match(
+      /@media \(max-width: 640px\) \{([\s\S]*)\n\}/,
+    )?.[1] ?? '';
+    expect(phone).toContain('.board.stack tbody tr { display: grid; grid-template-columns: minmax(115px, 1fr) auto;');
+  });
+
   it('refuses a table it cannot mark up rather than shipping one that swipes', () => {
     expect(() => stack('<table class="board compare">x</table>', { fig: 1 })).toThrow(/board/);
     expect(() => stack('<table class="board">\n<tbody><tr><td>x</td></tr></tbody>\n</table>', { fig: 1 })).toThrow(/name its columns/);
@@ -1138,6 +1201,46 @@ describe('what memory buys once two machines hold the same models', () => {
   });
 });
 
+describe('the graphics cards, as a list of their own', () => {
+  const cards = graphicsCards(data);
+
+  it('holds every card priced as a card, and nothing with a computer around it', () => {
+    const priced = data.hardware.filter((h) => h.price_scope === 'card_only' && h.price_usd != null);
+    expect(cards.map((c) => c.id).sort()).toEqual(priced.map((c) => c.id).sort());
+    for (const c of cards) expect(c.price_scope).toBe('card_only');
+  });
+
+  it('orders them by the thing that decides what runs, then by price', () => {
+    for (let i = 1; i < cards.length; i++) {
+      const [before, after] = [cards[i - 1], cards[i]];
+      expect(before.usable_memory_gb!).toBeGreaterThanOrEqual(after.usable_memory_gb!);
+      if (before.usable_memory_gb === after.usable_memory_gb)
+        expect(before.price_usd!).toBeLessThanOrEqual(after.price_usd!);
+    }
+  });
+
+  it('sets each card against a complete computer, never against another card', () => {
+    for (const c of cards) {
+      const rival = nearestCompleteComputer(c, data);
+      expect(rival).not.toBeNull();
+      expect(rival!.price_scope).not.toBe('card_only');
+      expect(rival!.generation ?? 'current').toBe('current');
+      // nothing on sale is nearer that card's price than the one chosen
+      const nearest = Math.min(
+        ...data.hardware
+          .filter((h) => h.price_scope !== 'card_only' && h.price_usd != null && (h.generation ?? 'current') === 'current' && h.usable_memory_gb != null)
+          .map((h) => Math.abs(h.price_usd! - c.price_usd!)),
+      );
+      expect(Math.abs(rival!.price_usd! - c.price_usd!)).toBe(nearest);
+    }
+  });
+
+  it('prices each gigabyte from the figures the page prints beside it', () => {
+    for (const c of cards) expect(pricePerUsableGb(c)).toBeCloseTo(c.price_usd! / c.usable_memory_gb!, 6);
+    expect(pricePerUsableGb({ ...cards[0], price_usd: null })).toBeNull();
+  });
+});
+
 describe('what a price on the page buys', () => {
   const cards = data.hardware.filter((h) => h.price_scope === 'card_only');
   const computers = data.hardware.filter((h) => h.price_scope !== 'card_only');
@@ -1212,5 +1315,24 @@ describe('the way back to the indexes', () => {
     );
     expect(html).toContain(footerHtml());
     expect(html.match(/<footer/g)).toHaveLength(1);
+  });
+});
+
+describe('the calculator\'s own foot', () => {
+  const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const foot = home.match(/<footer class="site-foot">[\s\S]*?<\/footer>/)?.[0] ?? '';
+
+  it('is there at all', () => {
+    expect(foot).not.toBe('');
+  });
+
+  it('offers the same indexes, in the same words and the same order, as a generated page', () => {
+    const want = FOOTER_LINKS.filter((l) => l.href !== '/');
+    const said = [...foot.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map((m) => ({ href: m[1], label: m[2] }));
+    expect(said).toEqual(want);
+  });
+
+  it('does not spend a link on the page it is already on', () => {
+    expect(foot).not.toContain('href="/"');
   });
 });

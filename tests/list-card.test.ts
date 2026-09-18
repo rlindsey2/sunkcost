@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, HARDWARE_CARD, hardwareIndexCard,
+  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, GPU_CARD, gpuCard, HARDWARE_CARD, hardwareIndexCard,
   LEADERBOARD_CARD, leaderboardCard, listCardSvg, MEMORY_CARD, memoryCard, quickestAt,
 } from '../src/list-card';
 import { bestUsageLevels } from '../src/best';
 import {
-  bandFit, cheapestThatHolds, computeView, fitsOf, fmtGb1, priceWithScopeText, shortHardwareLabel, SIZE_BANDS,
+  bandFit, cheapestThatHolds, computeView, fitsOf, fmtGb1, graphicsCards, priceWithScopeText, shortHardwareLabel,
+  SIZE_BANDS,
 } from '../src/pagekit';
 import { footprintGb } from '../src/fit';
 import { defaultState } from '../src/state';
@@ -23,8 +24,9 @@ const leaderboard = leaderboardCard(data);
 const best = bestBuysCard(data);
 const compare = compareIndexCard(data);
 const memory = memoryCard(data);
+const gpu = gpuCard(data);
 const machines = hardwareIndexCard(data);
-const cards = [leaderboard, best, compare, memory, machines];
+const cards = [leaderboard, best, compare, memory, gpu, machines];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
 /** The same text with the spaces taken out, so a name that wrapped onto two lines still matches. */
@@ -261,6 +263,35 @@ describe('the memory card', () => {
 
   it('is drawn where the page asks for it', () => {
     expect(MEMORY_CARD).toBe('/og/how-much-memory.png');
+  });
+});
+
+describe('the graphics-card card', () => {
+  const list = graphicsCards(data);
+  const st = defaultState(data);
+
+  it('gives one row to every card the page ranks, in the page’s own order', () => {
+    const names = [...gpu.matchAll(/font-weight="600" fill="#[0-9a-f]+" letter-spacing="-0.3">([^<]*)</g)].map((m) => m[1]);
+    expect(names.length).toBeGreaterThanOrEqual(list.length);
+    for (const c of list) expect(flat(gpu)).toContain(noSpace(shortHardwareLabel(c)));
+  });
+
+  it('counts what each card holds the way the machine pages count it', () => {
+    for (const c of list) {
+      const fits = fitsOf(computeView({ ...st, hw: c.id }, data)).length;
+      expect(flat(gpu)).toContain(noSpace(String(fits)));
+    }
+    const most = Math.max(...list.map((c) => fitsOf(computeView({ ...st, hw: c.id }, data)).length));
+    expect(flat(gpu)).toContain(noSpace(String(most)));
+  });
+
+  it('says every price buys a card rather than a computer', () => {
+    for (const c of list) expect(flat(gpu)).toContain(noSpace(priceWithScopeText(c)));
+    expect(text(gpu)).toMatch(/card only/);
+  });
+
+  it('is drawn where the page asks for it', () => {
+    expect(GPU_CARD).toBe('/og/best-gpu.png');
   });
 });
 

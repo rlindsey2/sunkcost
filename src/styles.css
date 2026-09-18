@@ -593,6 +593,15 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
 .fineprint li { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
 .fineprint li::marker { color: var(--line-2); }
 
+/* ---------- foot ---------- */
+
+/* The calculator ended at the panes, so the four index pages were reachable
+   from every generated page and from nowhere on the page everything links to.
+   Same list, same order and same words as the foot of a generated page, less
+   its link back here. */
+.site-foot { max-width: 1560px; margin: 0 auto; padding: 24px var(--gutter) 40px; border-top: 1px solid var(--line); }
+.site-foot p { font-size: 13px; color: var(--muted); }
+
 /* ---------- mobile mini bar ---------- */
 
 .minibar {
@@ -622,7 +631,7 @@ input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(
   :root { --gutter: 14px; }
   body { font-size: 14.5px; }
   .topbar-line { display: none; }
-  .app { padding-bottom: 84px; }
+  .site-foot { padding-bottom: 84px; }
   .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sources { grid-template-columns: 1fr; gap: 2px 0; }
   .sources dt { margin-top: 8px; }
