@@ -137,6 +137,50 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       (189 pages, 76 comparisons, 172 tests, typecheck clean) and re-measured over HTTP
       (**1,520 views, 0 overflows, 0 of 3,576 tables scrolling**) before pushing `31d1b91`.
 
+- [ ] **Two issues from an outside reporter, and both land in files this agent is told never to
+      touch** (`data/*.json` figures, `src/calc.ts`, `src/compute.ts`, `src/fit.ts`). Ryan raised
+      them himself on 2026-09-18. Checked against the repo rather than taken at face value; what
+      follows is what is actually true, so whoever picks them up does not start from the titles.
+
+      **[#5](https://github.com/rlindsey2/sunkcost/issues/5), the usage slider stops at 20M tokens
+      a day. The reporter is right, and the site's own maths says so.** Their framing is the one
+      thing to correct: the site *does* consider prefill. `defaults.json`'s `capacity_note` says
+      the daily ceiling counts generation only and that input tokens are "assumed to cost no time,
+      because prompt processing runs roughly 20-100x faster than generation", with the caveat that
+      the real ceiling is therefore 20-30% lower than shown on a heavy input ratio. So the ceiling
+      is already generous about prefill. What is wrong is `usage.max_tokens_per_day: 20000000`,
+      which is below what the site itself says these machines can do: on the **RTX PRO 6000 the
+      computed ceiling is 107.8M tokens a day, 5.4× the slider's maximum**; on the Mac Studio M5
+      Ultra, 256GB it is 44.7M. The reporter's own 60M a day, from vLLM metrics on automated
+      package scanning, sits inside both and cannot be entered. **This truncation runs against the
+      site's whole thesis**: the harder you work a machine the sooner it pays back, so capping the
+      slider hides exactly the workloads where buying wins most clearly, and the pay-back figures
+      at the top of every table are the least favourable ones the site could honestly print.
+      Not a one-line fix. `bestUsageLevels()` maps `usage.labels` clamped to `max_tokens_per_day`,
+      so the five levels on every pay-back table on the site come from it: raising the cap needs a
+      sixth label band and changes the top row of 133 head-to-heads, `/best/` and the leaderboard.
+      Worth doing, and worth doing deliberately. The DGX Spark is the honest counter-example to
+      keep in mind: its ceiling is 15.2M, genuinely below 20M, so its "its ceiling" markers are
+      real and must stay.
+
+      **[#4](https://github.com/rlindsey2/sunkcost/issues/4), Qwen3.8 Flash Next on the GB10.**
+      The reporter says the PLE table can be offloaded to RAM or SSD, making it effectively a 125B
+      model, so it runs on a DGX Spark. That claim needs a source and a decision about whether this
+      site models partial offload at all, and it cannot be checked from this environment. But the
+      **site is already contradicting itself on that model's own page**, which is checkable and is
+      the part to look at first. The page's opening line, from `capability_note` in `models.json`,
+      says it is "the strongest open model that fits in 128 GB". The table below it names exactly
+      one machine that runs it: the Mac Studio M5 Ultra, 256GB at $10,799. The DGX Spark's own page
+      does not mention the model at all. The reason is 0.1 GB: **119.6 GB of weights against the
+      Spark's 119.5 GB usable**, before any KV cache. So the hand-written note and the computed fit
+      disagree, and one of them has to change whatever is decided about offload. Modelling offload
+      would be a larger question — it would apply to every machine and every model, and a model
+      running partly off SSD is not running at the speed the site prints.
+
+      Neither issue has been replied to, and the agent has not touched either file. **The reporter
+      is a careful one**: both reports are specific, both cite their own measurements, and #5 comes
+      with real vLLM figures.
+
 - [x] Search Console verified and the sitemap submitted. Done 2026-09-16 by Ryan. Cloudflare Web
       Analytics is on as of the same day, injected at the edge on each deploy.
 - [ ] Commit the Search Console CSV exports under seo/exports/ once there is data. Verification
