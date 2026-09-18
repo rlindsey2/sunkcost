@@ -687,8 +687,17 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       proved the guard.
 
 - [ ] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Found
-      2026-09-18. **Re-measured 2026-09-18 and it did not reproduce**, which is worth knowing before
-      a run spends an hour on it: at every integer width from 615 to 700px the leaderboard's table
+      2026-09-18. **It reproduces after all, and there is a worse page than the leaderboard.**
+      Measured again on 2026-09-18 while sweeping for the label fix, this time reading each table's
+      own `scrollWidth` against its `clientWidth` rather than asking whether the page scrolls: at
+      641px **`/best-gpu/`'s table wants 657px in the 597px it is given** — 60px, ten times the
+      leaderboard's — and `/leaderboard/`'s wants 600px in 597px. `/best-gpu/` is still 1px over at
+      700px and clean at 900px; the leaderboard is clean at 700px and above. Nothing else on the
+      site scrolls at any of the twelve widths swept, and no page's document overflows its window at
+      any of them, which is why the earlier sweep found nothing: the table scrolls inside a page
+      that does not. The card ranking has seven columns of its own and post-dates every note below.
+      The earlier reading, kept because its arithmetic is still the likeliest explanation of the
+      original 14px: at every integer width from 615 to 700px the leaderboard's table
       is 597px inside a 641px window and nothing scrolls, and the 252-page sweep at 641px found no
       page wider than its window and no table scrolling. The arithmetic in the original measurement
       says why: 596px wanted in 582px is a 641px window **minus a 15px classic scrollbar**, which
@@ -704,17 +713,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       one look at the 641-to-1023px band, and worth re-measuring the other 306 stacked tables at
       641px at the same time, since only sixteen pages were swept at that width.
 
-- [ ] **A label on the name reads under the figure's column on 29 comparison pages.** Found
-      2026-09-18 while sweeping for the crushed-name fix, and it predates it: the floor changes
-      none of these rows. `.c-quant` is set `white-space: nowrap` at line 173 of `public/page.css`,
-      so on a phone the tier label beside a model's name — *Below every hosted tier*, 145px of it —
-      cannot wrap and runs past the name cell it sits in. **84 labels on 29 pages at 320px**,
-      overhanging by up to 36px, and 79 of them cross into the track the figure is drawn in. It is
-      untidy rather than broken: the figure is right-aligned and a line higher, so nothing is
-      clipped and nothing overlaps, and it was read rendered before being written down. It is
-      clean at 360px and above. The nowrap is there for a reason — the band rule at line 228 keeps
-      a figure whole between 641 and 1023px — so the fix is to let it wrap inside `.board.stack`
-      only, the way `.board.compare` already does at line 255, and then sweep 320 to 1440px again.
+- [x] **A label on the name reads under the figure's column on 29 comparison pages.** Done
+      2026-09-18, and the fix was the one this item proposed plus one it did not see. Both of the
+      item's own figures had moved: **97 labels on 42 pages at 320px**, not 84 on 29, 84 of them
+      crossing into the figure's track, worst overhang 51px rather than 36. And it is **not clean at
+      360px**, as the item said: 26 more labels on 20 pages overhang there, though none of those
+      reach the figure. The wrap alone would have got the other half wrong — a one-word tier label
+      breaks at its own hyphen, and `tierLabel()` has existed for that since 2026-09-17, so the one
+      table still printing the bare name now uses it. 0 labels reach the figure's track at any width
+      now, and nothing on the site moves above 360px. The run entry below has the figures and the
+      two breaks that proved the guard.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -762,6 +770,70 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — a four-word label stops reading under the column beside it
+
+**Why this item.** The last entry named it as the push-shaped work left: the tier label that runs
+past the name it sits beside on a phone. Everything else open is either Ryan's to merge (PR #8 and
+PR #10, both repaired and ready) or sits behind one of those merges.
+
+**Both of the backlog item's figures had moved, and one of its claims was wrong.** Measured again
+before touching anything, across all 253 built pages at twelve widths from 320 to 1440px:
+**97 labels on 42 pages overhang their own cell at 320px**, not the 84 on 29 the item recorded,
+**84 of them cross into the track the figure is drawn in**, and the worst is 51px over rather than
+36. The item also said it is clean at 360px and above. It is not: **26 more labels on 20 pages**
+overhang at 360px, none of them far enough to reach the figure. 390px and above is clean, then and
+now. Two labels do it, and only two: *Below every hosted tier*, 84 times on 29 comparison pages,
+and *discontinued*, 13 times on 13 machine pages.
+
+**The fix is the one the item proposed, and on its own it would have got the other half wrong.**
+`.c-quant` is `white-space: nowrap` site-wide, which is right for a figure and wrong for a phrase,
+so the label now wraps inside `.board.stack` only. But a tier label that is one word carries its own
+hyphen, and wrapping it breaks *Haiku-class* across two lines, which reads as a typo in the data
+rather than a fault in the layout. The site already had the answer: `tierLabel()` has put a one-word
+label in `.nobreak` and left a phrase bare since 2026-09-17, and the rule for `.nobreak` sits on the
+span itself, so it survives the label around it being told to wrap. One table on the site was still
+printing the bare tier name instead — the "What the extra memory buys" table on the comparison
+pages, which is exactly where the 84 labels are. It uses the helper now.
+
+**What changed and what did not.** 0 labels reach the figure's track at any width. The 13
+*discontinued* labels still end 2px past their cell at 320px, inside the 12px gap between the two
+tracks and clear of the figure; the word cannot wrap and 2px is not worth a rule. Read rendered at
+320px before and after rather than inferred from the diff. Diffing the geometry of every stacked row
+and every table on all 253 pages at twelve widths: **33 rows on 17 pages get taller at 320px, 18
+rows on 18 pages at 360px, and nothing else on the site moves** — no table width, no page width,
+nothing at all at 390px and above. Names read better as well, which was not the point: with the
+label able to wrap, the name track can take the width it needs, so *Ling 3.0 flash* and
+*gpt-oss-120b* hold one line where they used to break.
+
+**The guard.** `checkTierLabels()` holds both halves from the generated HTML: a one-word tier label
+printed beside a name has to be held together, a tier label that is a phrase has to be free to wrap.
+The build prints what it found — *311 tier labels sit beside a name in a table: 227 hold their line,
+84 wrap between their words*. Proved by breaking it both ways rather than trusting it. Printing the
+bare name fails with *prints Sonnet-class beside a name where a narrow column can break it at its own
+hyphen*; wrapping the phrase in `.nobreak` fails with *holds Below every hosted tier to one line,
+which on a phone runs it under the figure beside it*. The CSS half cannot be seen from the HTML, so
+a test holds that: take the rule back out of `public/page.css` and *lets the label beside a name
+wrap, so a phrase cannot run under the figure* fails.
+
+**Found while sweeping, and it settles an open item.** The 641px leaderboard fault is real and the
+leaderboard is not the worst of it. Reading each table's own width rather than asking whether the
+page scrolls: at 641px **`/best-gpu/`'s table wants 657px in 597px** and `/leaderboard/`'s wants
+600px in 597px; at 700px `/best-gpu/` is still 1px over. Nothing else scrolls at any of the twelve
+widths, and no page overflows its window at any of them. The backlog item above now carries those
+figures.
+
+**Verified.** 251 tests (250 before, and the new one fails without its rule), typecheck clean, 253
+pages with every guard passing, the full `npm run build`, and the comparison table read rendered at
+320px before and after.
+
+**Where it is.** One push to `main`: `public/page.css`, `scripts/build-pages.ts`, the test and this
+entry. Nothing a visitor reads changed in words, only where the words sit.
+
+**What to continue.** The 641px band, which now has figures and a named page worth more than the
+leaderboard: `/best-gpu/`, 60px over at the first width above the phone layout. Then the
+monthly-cost question page, which is still the biggest item on the backlog and still sits on PR #8's
+helpers, so it waits on that merge. PR #8 and PR #10 are both repaired and ready and are Ryan's.
 
 ### 2026-09-18 — the two pages waiting on a merge stop waiting on a conflict
 
