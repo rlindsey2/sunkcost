@@ -47,95 +47,20 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       markup. **Merged 21:11 on 2026-09-17.** Deploy run 100, which carried both this and PR #1,
       finished green at 21:18 and published, so both are live. Nothing is left for Ryan here.
 
-- [ ] Merge (or close) [PR #3](https://github.com/rlindsey2/sunkcost/pull/3), the `/compare/`
-      head-to-head index, opened 2026-09-17. It is ready for review, not a draft. It touches
-      `scripts/build-pages.ts` and `src/pagekit.ts`'s neighbours, so it will go un-mergeable the
-      same way PR #1 kept doing: a future run should check it still merges before starting its own
-      work.
-      **Merge it with "Squash and merge", not an ordinary merge.** The branch was carrying
-      `public/og/og/`: **1,993 PNG share cards, 151.8 MB**, committed into the repository, where
-      main has none. The 21:11 run removed them at the tip (`d73ce66`) and widened the ignore rule,
-      so the merged tree is right either way, but the blobs are still in the branch's history and
-      an ordinary merge commit would make them reachable from main permanently, in every clone. A
-      squash collapses the branch to one commit with the files already gone, and deleting the
-      branch afterwards lets them be collected. The tracked tree is 1.7 MB with them out, against
-      about 153 MB with them in. Ryan was pinged once about this, which is a second ping on this
-      PR and was not about reviewing it: he had merged two PRs minutes earlier and this one was
-      plausibly next, and the difference between the two merge buttons is permanent. **Do not ping
-      about this PR again.**
-      How they got in, because the same trap is still open elsewhere: the cards are build output,
-      `build-og.ts` draws every one of them on each deploy, and the ignore rule was
-      `public/og/*.png`. A single star does not cross a directory boundary, so a stray nested copy
-      was never ignored and a `git add` took it in. Both rules are now `public/og/**/*.png` and
-      `**/*.svg`. Worth knowing that `git status` looked clean the whole time.
-      **It needed its first merge repair at 06:52 on 2026-09-17**, caused by that run's own push:
-      both sides had added a build check in the same place, which is the shape this conflict will
-      keep taking. Both checks were kept and both run; the branch was rebuilt and re-measured
-      after the repair, not just merged.
-      **It needed a second repair at 07:59 on 2026-09-17**, in exactly the same block and for
-      exactly the same reason: this branch adds `checkCompareIndex()` where main has now twice
-      widened `checkPayback()`. Assume any run that edits those build checks will break this
-      branch, and repair it in the same run rather than leaving it for the next one.
-      **It needed a third repair at 10:00 on 2026-09-17**, in two places this time and neither of
-      them a build check: the import block, and the model comparison's assumptions note, where
-      this branch had added the link to `/compare/` and main had added a sentence about a shorter
-      context. Both sides were kept in both. The branch was rebuilt (189 pages, 167 tests,
-      typecheck clean) and re-measured over HTTP before pushing `4d3b385`.
-      **It needed a twelfth repair at 22:00 on 2026-09-17**, caused by this hour's own push to main:
-      one conflict, the import block for the seventh time, this branch's `shownTps` against main's
-      `sameSilicon`. Union asserted by name, 71 in and 71 out. The merge built clean and the page was
-      still wrong again: the index's section copy said "Three kinds of match-up" where main now cuts
-      four. It names all four. Rebuilt and re-read (236 pages, 122 comparisons, 203 tests, typecheck
-      clean, the full build) before pushing `2b37c7c`, and GitHub reports `mergeable_state: clean`.
-      **It needed an eleventh repair at 21:40 on 2026-09-17**, the largest yet, because Ryan's two
-      merges landed while this run was working: four files rather than one, and every conflict was
-      both sides adding their own thing. `src/list-card.ts` was the awkward one — this branch's
-      `compareIndexCard` against main's `memoryCard`, which share a closing tail, so the conflict
-      swallowed the seam between the two functions and both had to be closed by hand. Also
-      `scripts/build-og.ts` (four list cards drawn now), the import block in `scripts/build-pages.ts`
-      for the sixth time (union asserted: 54 names, this branch's `shownTps` and main's seven new
-      ones all kept) and both describe blocks in `tests/list-card.test.ts`, whose closing braces the
-      conflict cut off. Rebuilt (228 pages, 114 comparisons, 201 tests, typecheck clean, the full
-      build with all four list cards drawn) and re-measured over HTTP (**2,052 views, 0 overflows,
-      0 of 5,535 tables scrolling**) before pushing `3cda5bd`.
-      **It needed a tenth repair at 21:05 on 2026-09-17**, in the breadcrumbs: this branch adds
-      `/compare/` as the step above a comparison, main now writes the leaf label from the page's own
-      heading. Both kept. And the lesson below paid for itself again — the merge built clean and the
-      page was still wrong: the index's section copy said "one machine per family, the middle of its
-      range by price" over a table that now also holds card-against-card and tier-against-tier rows.
-      It names all three rules now. Pushed as `ccfe26b`.
-      **It needed a ninth repair at 19:58 on 2026-09-17, and it was not a conflict**: the branch
-      still merged clean, but main's new card head-to-heads made the index's own summary wrong —
-      it counted the 8 family flagships where 13 machines are now compared, and named the wrong
-      cheapest machine. It counts the machines in the pairs it lists now. Rebuilt on the branch
-      (209 pages, 96 comparisons, 182 tests, typecheck clean) and pushed as `c45c31c`. A clean
-      `git merge-tree` is not enough on this branch: build the merge and read the page.
-      **It needed an eighth repair at 18:08 on 2026-09-17**, and for once not the import block:
-      main had made every price on `/leaderboard/` a link into the calculator and said so in the
-      lede, where this branch had already added the way through to `/compare/`. Both sentences kept
-      in one lede. Rebuilt (189 pages, 76 comparisons, 181 tests, typecheck clean, the full build
-      including `build:og` and `build:functions`) and re-measured over HTTP (**1,701 views, 0
-      overflows, 0 of 4,320 tables scrolling**) before pushing `69ade05`. The leaderboard's lede is
-      now a second reliable conflict on this branch alongside the import block: both sides keep
-      writing the same sentence.
-      **It needed a seventh repair at 17:41 on 2026-09-17**, the import block for the fifth time:
-      this branch's `shownTps` against main's `machinesShorter` and `ShorterMachine`. Like PR #1's
-      fourteenth, this one was **done by a second agent session running the same task concurrently**;
-      checked here by union against the merged file (58 names, nothing lost, nothing invented) and by
-      confirming all three branches merge clean against main afterwards. Pushed as `7adcb3b`.
-      **It needed a sixth repair at 16:10 on 2026-09-17**, the import block for the fourth time:
-      this branch's `shownTps` against main's `fitsShorter` and `ShorterFit`. All three kept and the
-      list put back into one order; rebuilt (189 pages, 76 comparisons, 178 tests, typecheck clean)
-      and re-measured over HTTP (**1,701 views, 0 overflows, 0 of 4,176 tables scrolling**) before
-      pushing `2221657`.
-      **It needed a fifth repair at 12:06 on 2026-09-17**, the import block again and for the third
-      time: this branch's `shownTps` against main's `contextCappedBy` and `longestContext`. Both
-      kept; rebuilt (189 pages, 76 comparisons, 174 tests, typecheck clean) and re-measured over
-      HTTP (**1,710 views, 0 overflows, 0 of 4,023 tables scrolling**) before pushing `6c7f068`.
-      **It needed a fourth repair at 10:52 on 2026-09-17**, the import block alone this time:
-      this branch's `shownTps` against main's `contextHeadroom` and `ctxLabel`. Both kept; rebuilt
-      (189 pages, 76 comparisons, 172 tests, typecheck clean) and re-measured over HTTP
-      (**1,520 views, 0 overflows, 0 of 3,576 tables scrolling**) before pushing `31d1b91`.
+- [x] Merge PR #3, the `/compare/` head-to-head index. **Merged 23:57 on 2026-09-17**, after
+      being open since 04:54 that morning and having its merge repaired thirteen times. Deploy
+      run 111, on `0030ccd`, finished green at 00:00 and published, so the page is live. Merged
+      main was checked here afterwards: 210 tests, typecheck clean, 248 pages built with every
+      guard passing, and `/compare/` has grown with the site to 86 machine match-ups and 47 model
+      match-ups against the 28 and 47 it was written with.
+      **It went in as an ordinary merge commit rather than the squash this item asked for**, so
+      the branch's history is now reachable from `main`, and with it the commits that carried
+      `public/og/og/`. Measured on a fresh clone: `.git` is 146 MB, 144.4 MB of it blobs. Nothing
+      is checked out — main's tree holds one file under `public/og/`, `manifest.json` — and the
+      built site, the deploy and CI are all unaffected, since the workflow checks out shallow. So
+      this is untidy rather than urgent, and the only fix is rewriting `main`'s history and
+      force-pushing it, which breaks every existing clone and is not something an agent should do
+      on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
 - [ ] **Two issues from an outside reporter, and both land in files this agent is told never to
       touch** (`data/*.json` figures, `src/calc.ts`, `src/compute.ts`, `src/fit.ts`). Ryan raised
@@ -453,11 +378,12 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       three, and every one now carries the machine bill the two models differ by. The run entry
       below has what the rewrite turned up, including a price gap that printed in cents.
 
-- [~] An index at /compare/. Written and waiting in PR #3: 28 machine match-ups and 47 model
-      match-ups, each row carrying the figures the comparison behind it prints, 45 prefilled
-      calculator links, and a build check that refuses to ship a comparison the index does not
-      list. The 75 comparison pages also carry it as the step above them in their breadcrumbs.
-      Reaches the site when that PR merges.
+- [x] An index at /compare/. **Live since 00:00 on 2026-09-18**, merged as PR #3: every machine
+      and model match-up in one list, each row carrying the figures the comparison behind it
+      prints, a prefilled calculator link on every model pair that has a machine to run it, and
+      `checkCompareIndex()` refusing to ship a comparison the index does not list. Every
+      comparison page carries it as the step above them in their breadcrumbs. It has since grown
+      with the site from 75 match-ups to 133 without a line changing.
 - [x] The home page carries no JSON-LD. Done, live since 2026-09-17: the home page emits the same
       `WebSite` node `pageGraph()` builds, plus a `WebPage` for itself, with a test holding the two
       identical. The /s/ share pages, which take the home page's head, have the graph stripped.
@@ -580,6 +506,29 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — PR #3 merged, and what the merge commit brought with it
+
+Not an hourly run: the session that opened PR #3 at 04:54 on 2026-09-17 was woken by the merge
+event and checked the result.
+
+**The `/compare/` head-to-head index is live.** Merged 23:57, deploy run 111 on `0030ccd` green at
+00:00. Merged main was verified here rather than assumed: `npm ci`, 210 tests passing, typecheck
+clean, 248 pages built with every guard passing, and the index itself read back. It was written
+against 28 machine match-ups and 47 model ones; nineteen hours of other runs have taken it to 86
+and 47, and every figure on it still comes from the comparison page behind it, because the rows
+are built from those pages' own helpers. The one sentence it asserts of its own — none of the 51
+machines compared holds more than 38 of the 39 open models, and two of them do — is still true of
+the data as it stands today.
+
+**One thing to know about how it merged.** The Ryan's-side item asked for a squash, because the
+branch's history carried `public/og/og/` — 1,993 build-output PNGs. It went in as an ordinary
+merge commit, so those blobs are reachable from `main` now: a fresh clone's `.git` is 146 MB,
+144.4 MB of it blobs. Nothing is checked out and nothing built is affected, the deploy workflow
+checks out shallow, and the only remedy rewrites `main` and force-pushes it. That is not an
+agent's call, so it is recorded above and left alone.
+
+**Continue next:** nothing from this session. No PR is open; the hourly runs have the backlog.
 
 ### 2026-09-17 — the watts nobody measured stop reading as measurements
 
