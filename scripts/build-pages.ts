@@ -19,7 +19,7 @@ import {
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
   rowFor,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
-  speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
+  sourceLinks, sourceName, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
@@ -1535,7 +1535,7 @@ ${stack(`<table class="board">
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' }, pair: [3, 4] })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
   return pageShell(
@@ -1916,9 +1916,9 @@ ${cheapest
 
 <h2>How good is it, really?</h2>
 <p>${fe?.score != null
-      ? `On the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
+      ? `On the ${fe.url ? `<a href="${esc(fe.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}</a>` : esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
       : 'It has not been placed on the intelligence index yet.'}
-${fe?.url ? ` <a href="${esc(fe.url)}" rel="noopener">Score source</a>.` : ''} <a href="/leaderboard/">See the whole table</a>.</p>
+ <a href="/leaderboard/">See the whole table</a>.</p>
 <ul class="caps">${caps}</ul>${note.ratings ? `
 <p class="note">${esc(note.ratings)}</p>` : ''}
 ${versusLine}
@@ -1942,7 +1942,7 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${mi
   <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="/how-much-memory/">How weights and cache add up</a>.</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
-  ${m.sources?.length ? `<dt>Sources</dt><dd>${m.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener">source ${i + 1}</a>`).join(', ')}</dd>` : ''}
+  ${m.sources?.length ? `<dt>Sources</dt><dd>${sourceLinks(m.sources)}</dd>` : ''}
 </dl>
 </article>`;
 
@@ -2198,7 +2198,7 @@ ${headToHeadNote(hw)}
   <dt>Usable by the GPU</dt><dd>${hw.usable_memory_gb ?? 'unknown'} GB${note.memory ? ` — ${esc(note.memory)}` : ''}</dd>
   <dt>Power under load</dt><dd>${hw.load_watts ?? 'unknown'} W (${esc(powerSourceLabel(hw))})${hw.load_watts_note ? ` — ${esc(hw.load_watts_note)}` : ''}</dd>
   ${hw.status || note.availability ? `<dt>Availability</dt><dd>${[hw.status, note.availability].filter(Boolean).map((t) => esc(t!)).join(' ')}</dd>` : ''}
-  ${hw.sources?.length ? `<dt>Sources</dt><dd>${hw.sources.map((u, i) => `<a href="${esc(u)}" rel="noopener">source ${i + 1}</a>`).join(', ')}</dd>` : ''}
+  ${hw.sources?.length ? `<dt>Sources</dt><dd>${sourceLinks(hw.sources)}</dd>` : ''}
 </dl>
 </article>`;
 
@@ -3041,7 +3041,7 @@ ${
       ? `<p>Size is a poor guide to the cache. Two models here have the same ${Math.round(spread[0].params_b)} billion parameters: at 128k context <a href="/models/${esc(spread[0].id)}/">${esc(spread[0].display_name)}</a> wants ${fmtGb1(kvCacheGb(spread[0], 131072))} of cache and <a href="/models/${esc(spread[1].id)}/">${esc(spread[1].display_name)}</a> wants ${fmtGb1(kvCacheGb(spread[1], 131072))}. Each model's page carries its own figure.</p>`
       : ''
   }
-<p>You can also make the cache smaller. ${esc(kv?.note ?? '')}${kv?.source_url ? ` (<a href="${esc(kv.source_url)}" rel="noopener">source</a>)` : ''} The calculator has that switch, and every figure on this page is at the 16-bit default.</p>
+<p>You can also make the cache smaller. ${esc(kv?.note ?? '')}${kv?.source_url ? ` (<a href="${esc(kv.source_url)}" rel="noopener">${esc(sourceName(kv.source_url))}</a>)` : ''} The calculator has that switch, and every figure on this page is at the 16-bit default.</p>
 
 <h2>Installed memory is not usable memory</h2>
 <p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level, counted against the ${currentModels.length} current models.</p>
@@ -4375,6 +4375,54 @@ function checkCardScope() {
 }
 
 /**
+ * A link's text is one of the few things on a page that says what is on the other
+ * end, to a reader deciding whether to click and to a crawler deciding what the
+ * link is worth. "source 1" says neither, and 56 machine pages and 55 model pages
+ * ended in a row of them.
+ *
+ * Two claims. No link anywhere on the site is named after nothing — a number, the
+ * word source, here, this. And every link in a Sources line is named after whoever
+ * publishes it, worked out from the URL here rather than read off the page, so a
+ * machine added tomorrow with a host nobody has seen still gets its own domain
+ * rather than a number.
+ *
+ * What it cannot hold is whether a name is the right one: it reads the page with
+ * the same function that wrote it, so a wrong entry in the publisher list would
+ * pass here and be wrong on 56 pages. That claim is one the build cannot make
+ * about itself, so tests/pagekit.test.ts names hosts and expects names.
+ */
+function checkSourceLinks() {
+  const saysNothing = /^(sources?|sources? \d+|here|this|link|read more|click here)\.?$/i;
+  const bad: string[] = [];
+  let named = 0;
+  let disambiguated = 0;
+  for (const p of meta) {
+    const body = p.html.split('<body')[1] ?? '';
+    for (const m of body.matchAll(/<a [^>]*>([\s\S]*?)<\/a>/g)) {
+      const text = unesc(m[1].replace(/<[^>]*>/g, '')).trim();
+      if (saysNothing.test(text)) bad.push(`${p.path} has a link named "${text}"`);
+    }
+    for (const list of body.matchAll(/<dt>Sources<\/dt><dd>([\s\S]*?)<\/dd>/g)) {
+      for (const m of list[1].matchAll(/<a href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)) {
+        const url = unesc(m[1]);
+        const text = unesc(m[2]);
+        const publisher = sourceName(url);
+        if (text === publisher) named++;
+        else if (text.startsWith(`${publisher} (`) && text.endsWith(')')) disambiguated++;
+        else bad.push(`${p.path} names ${url} "${text}" where ${publisher} publishes it`);
+      }
+    }
+  }
+  if (bad.length) {
+    console.error([...new Set(bad)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${bad.length} link${bad.length === 1 ? '' : 's'} do not say what is on the other end`);
+  }
+  console.log(
+    `  ${named + disambiguated} source links name who publishes them, ${disambiguated} of them saying which page of that publisher's it is`,
+  );
+}
+
+/**
  * The sitemap's dates are a claim to a crawler, and a claim it stops reading once it
  * catches one out. So: every date is a real day, none of them is in the future, no URL
  * carries two, and a page only carries a date where seo/page-dates.json still recognises
@@ -4457,5 +4505,6 @@ checkNotes();
 checkHardwareNotes();
 checkTierLabels();
 checkMarkerWords();
+checkSourceLinks();
 checkPageDates();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware')).length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
