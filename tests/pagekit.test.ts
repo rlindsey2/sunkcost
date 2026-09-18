@@ -10,6 +10,10 @@ import {
   runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
+import {
+  powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks, sourceName as fmtSourceName,
+  splitHardwareNote as fmtSplitHardwareNote,
+} from '../src/format';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { defaultState, parseState } from '../src/state';
@@ -1631,6 +1635,40 @@ describe('a source link says who is on the other end', () => {
       expect([u, name]).toEqual([u, name.trim()]);
       expect([u, /^source( \d+)?$/i.test(name)]).toEqual([u, false]);
       expect([u, name.length > 0 && !name.includes('/'.repeat(2))]).toEqual([u, true]);
+    }
+  });
+});
+
+describe('the calculator’s assumptions panel, which prints the same fields the pages do', () => {
+  const panel = readFileSync(new URL('../src/render.ts', import.meta.url), 'utf8');
+
+  it('shares one implementation with the generated pages rather than keeping a second copy', () => {
+    // pagekit is the build’s module and the bundle cannot import it, so the four
+    // helpers both need live in format.ts. These are the same functions, not copies.
+    expect(powerSourceLabel).toBe(fmtPowerSourceLabel);
+    expect(splitHardwareNote).toBe(fmtSplitHardwareNote);
+    expect(sourceLinks).toBe(fmtSourceLinks);
+    expect(sourceName).toBe(fmtSourceName);
+  });
+
+  it('names a source link after whoever publishes it, the way every page does', () => {
+    expect(panel).toContain('sourceLinks(hw.sources)');
+    expect(panel).not.toMatch(/>source\$\{/);
+  });
+
+  it('says where a power figure came from in words, not in the data’s own key', () => {
+    expect(panel).toContain('powerSourceLabel(hw)');
+    expect(panel).not.toMatch(/load_watts_status[^\n]*replace\(\/_\/g/);
+  });
+
+  it('sends each sentence of a machine’s note to the figure it is about', () => {
+    expect(panel).toContain('splitHardwareNote(hw.notes)');
+    expect(panel).not.toMatch(/esc\(hw\.notes/);
+  });
+
+  it('has a row for every figure those sentences are sent to', () => {
+    for (const row of ['Usable memory', 'Memory bandwidth', 'Local speed', 'Hardware price']) {
+      expect([row, panel.includes(`<dt>${row}</dt>`) || panel.includes(`>${row}</dt>`)]).toEqual([row, true]);
     }
   });
 });
