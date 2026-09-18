@@ -290,6 +290,11 @@ a:hover { color: var(--ink); }
      the table it belongs to, and the heading above the block already says what these
      rows are. */
   .board.stack tr.is-hosted { background: none; }
-  .board.stack .c-quant { display: inline; }
+  /* The label beside a name stays beside it here, where a head-to-head puts it on
+     its own line. But it is a phrase rather than a figure — "Below every hosted
+     tier" is 145px of it — and held to one line it ran past the name it belongs to
+     and into the track the figure is drawn in: 97 labels on 42 pages at 320px, up
+     to 51px over, and 26 more at 360px. It wraps under the name instead. */
+  .board.stack .c-quant { display: inline; white-space: normal; }
   .board.stack .c-score .bar { width: 46px; margin-right: 6px; }
 }

@@ -2473,7 +2473,7 @@ ${stack(`<table class="board">
 ${shown
   .map((m) => {
     const r = roomierView.rows.find((x) => x.model.id === m.id)!;
-    return `<tr><td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${esc(tierName(m, data))}</span></td><td>${fmtGb(m.weights_gb)}</td><td>${r.fit.needGb != null ? fmtGb(r.fit.needGb) : '<span class="dim">unknown</span>'}</td><td>${speedWithBasis(r)}</td></tr>`;
+    return `<tr><td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${tierLabel(m, data)}</span></td><td>${fmtGb(m.weights_gb)}</td><td>${r.fit.needGb != null ? fmtGb(r.fit.needGb) : '<span class="dim">unknown</span>'}</td><td>${speedWithBasis(r)}</td></tr>`;
   })
   .join('\n')}
 </tbody>
@@ -4066,6 +4066,48 @@ function checkStandInPower() {
 }
 
 /**
+ * The small label beside a name inside a table — the tier a model sits in, the
+ * word that says a machine is discontinued — is a phrase as often as a word, and
+ * the two want opposite things on a phone. A phrase held to one line runs past
+ * the name it belongs to and under the figure in the track beside it: "Below
+ * every hosted tier" is 145px of it, against a name track with a 115px floor.
+ * A single word broken mid-way reads as a typo, because the tier names carry
+ * their own hyphen — "Haiku-class" split across two lines looks like a mistake
+ * in the data rather than in the layout.
+ *
+ * tierLabel() settles both: a phrase goes in bare and wraps between its words,
+ * a word goes in wrapped in .nobreak and holds its line. A table that prints
+ * the bare tier name instead gets the wrapping right and the hyphen wrong, and
+ * that is a slip nothing else would catch, because the page still reads
+ * correctly on every screen wide enough to hold the label.
+ */
+function checkTierLabels() {
+  const tiers = data.defaults.frontier_tiers.map((t) => t.label);
+  const oneWord = new Set(tiers.filter((t) => !t.includes(' ')));
+  const phrases = new Set(tiers.filter((t) => t.includes(' ')));
+  const bare: string[] = [];
+  let held = 0;
+  let wrapping = 0;
+  for (const p of meta) {
+    for (const m of p.html.matchAll(/<span class="c-quant">([\s\S]*?)<\/span>/g)) {
+      const text = unesc(m[1].replace(/<[^>]*>/g, '')).trim();
+      if (oneWord.has(text)) {
+        if (/class="nobreak"/.test(m[1])) held++;
+        else bare.push(`${p.path} prints ${text} beside a name where a narrow column can break it at its own hyphen`);
+      } else if (phrases.has(text)) {
+        if (/class="nobreak"/.test(m[1])) bare.push(`${p.path} holds ${text} to one line, which on a phone runs it under the figure beside it`);
+        else wrapping++;
+      }
+    }
+  }
+  if (bare.length) {
+    console.error([...new Set(bare)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${bare.length} tier label${bare.length === 1 ? '' : 's'} beside a name would break the wrong way on a phone`);
+  }
+  console.log(`  ${held + wrapping} tier labels sit beside a name in a table: ${held} hold their line, ${wrapping} wrap between their words`);
+}
+
+/**
  * The graphics-card page answers a buying question with three claims that the data
  * can move underneath it: which cards there are, how many models each one holds,
  * and which card is the cheapest that reaches the best model any of them reach.
@@ -4222,4 +4264,5 @@ checkShorterMachines();
 checkHiddenModels();
 checkLeaderboardLinks();
 checkBestGpu();
+checkTierLabels();
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/').length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

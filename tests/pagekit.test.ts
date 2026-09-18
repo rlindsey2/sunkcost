@@ -802,6 +802,22 @@ describe('tables on a phone', () => {
     expect(phone).toContain('.board.stack tbody tr { display: grid; grid-template-columns: minmax(115px, 1fr) auto;');
   });
 
+  it('lets the label beside a name wrap, so a phrase cannot run under the figure', () => {
+    // A label holds one line everywhere else on the site, which is right for a
+    // figure and wrong for a phrase: the longest tier label is four words, and
+    // held to one line it ran past the name it sits beside and into the track
+    // the figure is drawn in — 97 labels on 42 pages at 320px, up to 51px over.
+    const phrases = data.defaults.frontier_tiers.map((t) => t.label).filter((l) => l.includes(' '));
+    expect(phrases.length).toBeGreaterThan(0);
+    const css = readFileSync(new URL('../public/page.css', import.meta.url), 'utf8');
+    const phone = css.match(/@media \(max-width: 640px\) \{([\s\S]*)\n\}/)?.[1] ?? '';
+    expect(phone).toContain('.board.stack .c-quant { display: inline; white-space: normal; }');
+    // and a one-word label still holds its line, because the rule for that one
+    // sits on the span tierLabel() puts around it rather than on the label
+    expect(css).toContain('.nobreak { white-space: nowrap; }');
+    expect(phone).not.toMatch(/\.board\.stack \.c-quant \{[^}]*nowrap/);
+  });
+
   it('refuses a table it cannot mark up rather than shipping one that swipes', () => {
     expect(() => stack('<table class="board compare">x</table>', { fig: 1 })).toThrow(/board/);
     expect(() => stack('<table class="board">\n<tbody><tr><td>x</td></tr></tbody>\n</table>', { fig: 1 })).toThrow(/name its columns/);
