@@ -3,7 +3,31 @@
 Read this before doing anything. One entry per run, newest first. Pick up the top open item in
 the backlog, or the open item the previous run said to continue. Never redo a done item.
 
+**One thing comes before the backlog, once a day.** Run `npm run model-watch`. If it prints a last
+checked date that is not today, do the model watch in `seo/MODEL-WATCH.md` before anything else —
+new models are what this site is about, and a site that lists last month's is worth less than one
+that is a day late on a page. It is ten minutes on a quiet day. If the date is today, another run
+has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
+
 ## Ryan's side (needs the site owner)
+
+- [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
+      2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
+      site ranks top of what a graphics card runs — at a stated **5.9 GB** against the 16.46 GB the
+      Q4_K_M row carries, so it would drop into machines that cannot hold the model today. The
+      candidate, its sources and everything still missing are in `seo/MODEL-WATCH.md`.
+      Two things are needed and neither is the agent's to decide. **The figures**: weights at the
+      precision actually entered, the architecture the KV-cache figure is checked against, whether
+      anybody rents it, and an Artificial Analysis score, which the index does not appear to carry
+      for this build. **The judgement**: a ternary build retaining 98.2% of its base model is either
+      its own row with its own score, or a second quantisation of Qwen3.8 27B inheriting that
+      model's score with a note — the first needs a number nobody has published, the second prints
+      a score this build did not earn.
+      **And one standing decision that would change how much the watch is worth.** As it stands the
+      agent records a candidate and stops, because `data/*.json` is on its never-touch list. If you
+      would rather it opened a pull request against `models.json` once every field has a source it
+      can name — never inventing one, and stopping where a figure is missing — say so and the rule
+      can be lifted for this the way it was lifted for the usage slider in PR #6.
 
 - [ ] **Two agent sessions keep running this hourly task at the same time, and they duplicate each
       other's work.** It has now happened at least twice: once around 03:38 on 2026-09-17 (see the run
@@ -335,6 +359,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 `search.google.com` would not make it usable by the agent. That check stays on Ryan's side.
 
 ## Backlog (ordered; the agent keeps this list current)
+
+- [ ] **Standing, daily: the model watch.** `seo/MODEL-WATCH.md` holds the procedure, the last
+      date it ran and the ledger of candidates. This never gets ticked; it comes round again
+      tomorrow. Set up 2026-09-18 at Ryan's request, with `npm run model-watch`, five guards in
+      `tests/model-watch.test.ts` and one candidate already in it.
+      **The open question it raises is Ryan's**, and it is on his side of this file: the watch can
+      record a model and everything it still needs, but it cannot write `data/*.json`, which is the
+      rule that keeps every figure on this site sourced. So a found model waits on him.
 
 - [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
       appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
@@ -771,6 +803,58 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the site starts watching for models instead of waiting to be told
+
+**Why this item.** Ryan asked for it directly: check every day for new models, of the kind
+announced on X the night before. Nothing in this repository did that, and a site whose subject is
+which machine runs which model is worth less every week it lists last month's.
+
+**What it is.** Three pieces, because an hourly agent with no memory needs the job written down
+rather than remembered.
+
+- **`npm run model-watch`** prints today's date against the date the watch last ran, all 55 models
+  grouped by family with size, quantisation and generation, the quantisations already entered, and
+  the fields a `models.json` entry carries — read off an entry rather than hard-coded, so it cannot
+  drift from the schema. It prints; it never writes.
+- **`seo/MODEL-WATCH.md`** is the ledger: the procedure, the search terms, the three questions that
+  decide whether a release matters here, what a new model needs before it can be a row, and a
+  candidate list. It also carries the date the check last ran, which is the thing the script reads.
+- **The wiring**, which is the part that makes it happen: the head of this file now says to run the
+  watch before the backlog when the date is not today, and the backlog carries it as a standing item
+  that never gets ticked.
+
+**The rule it is built around.** The watch records; it does not edit `data/*.json`. Every figure on
+this site has a source, and a model entered from a press release's rounding would cost more than a
+late page. So a candidate carries what a source states, the URL that states it, and a list of what
+is still missing — and the ledger says plainly that direct fetches are refused here, so every source
+in it is secondhand until someone opens it. Whether that should change is the one question this
+leaves for Ryan, and it is on his side of this file.
+
+**The first candidate, and it is a real one.** Ternary Bonsai 2 27B, announced 2026-09-17: Qwen3.8
+27B — the model this site ranks top of what a graphics card runs — at a stated 5.9 GB against the
+16.46 GB the Q4_K_M row carries. The interesting part is not that it is a new model, because it is
+not one. It is the same model dropping into machines that cannot hold it today, and this site
+already runs two quantisations of one model side by side. What stops it being a row now is written
+down: the weights at the precision actually entered, the architecture the KV-cache figure is checked
+against, whether anybody rents it, and an Artificial Analysis score, which the index does not appear
+to carry for this build. The 98.2% retention figure is PrismML's own suite and is not the index the
+Score column uses, and the ledger says so rather than borrowing it.
+
+**Guards, five of them**, in `tests/model-watch.test.ts`: the ledger states a date the script can
+read and not one in the future; the command it tells you to run is the command that exists; every
+field its table names exists on every model in the data; its claim that a model can be added without
+a measured speed is recomputed from `throughput.json` rather than asserted; and the script contains
+no write. The field guard was proved by breaking it — renaming `license` to `licence_terms` in the
+ledger fails it, which is the point, because the ledger is documentation and documentation rots.
+
+**Verified**: 256 tests where there were 251, typecheck clean, `validate` clean, 253 pages with every
+guard passing, and the script run and read. No page changed: this is tooling and `seo/`, so it is a
+push rather than a pull request.
+
+**What to continue.** The watch itself, tomorrow, and every day. Beyond it the backlog is unchanged:
+the two pull requests are Ryan's to merge, and the 641px leaderboard band is the push-shaped work
+left.
 
 ### 2026-09-18 — a four-word label stops reading under the column beside it
 
