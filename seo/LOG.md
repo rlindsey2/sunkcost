@@ -828,8 +828,26 @@ figures.
 pages with every guard passing, the full `npm run build`, and the comparison table read rendered at
 320px before and after.
 
-**Where it is.** One push to `main`: `public/page.css`, `scripts/build-pages.ts`, the test and this
-entry. Nothing a visitor reads changed in words, only where the words sit.
+**Where it is.** One push to `main` at 12:46, `858e28c`: `public/page.css`,
+`scripts/build-pages.ts`, the test and this entry. Nothing a visitor reads changed in words, only
+where the words sit.
+
+**The deploy stalled, and it is GitHub rather than the change.** Run 148 took `npm ci` and
+`npm test` green in seventeen seconds and then sat in `npm run build` for **half an hour without
+finishing**, where run 147 did that step in 2m42s on the commit before this one. Nothing failed and
+nothing is red; the step never returned. The same tree built here end to end first, exit 0 through
+`build:functions`, so there is nothing in this change to undo. Run 149, pushed by a sibling session
+at 12:51, has been **queued for as long again without starting**, and the concurrency group that
+should have cancelled 148 the moment it queued has not. Two runs stuck in two different ways is the
+runner rather than the repository, so no run should spend an hour on it. **What to check first next
+run: whether the site is serving this change.** If 149 never ran, the live site is still on
+`e1efc1c` and one push will start a fresh run.
+
+**A sibling session pushed four minutes after this run did**, which is the duplicate-schedule
+problem at the top of this file, ninth occurrence. It is the same session that repaired the two pull
+requests an hour ago, it read `858e28c` and repaired them against it, and its work is sound and does
+not overlap this run's. This entry's own push was rejected, fetched and rebased rather than forced,
+which is what that item asks for.
 
 **What to continue.** The 641px band, which now has figures and a named page worth more than the
 leaderboard: `/best-gpu/`, 60px over at the first width above the phone layout. Then the
