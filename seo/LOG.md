@@ -80,6 +80,15 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       typecheck, `validate` and `vite build` clean. It is a pull request rather than a push only
       because `index.html` is on this agent's never-push list, and that rule is worth keeping even
       here — but it is why `main` stays red until Ryan merges.
+      **Ryan was notified at 10:58 on 2026-09-18**, by the session that ran the 10:31 slot rather
+      than the one that opened the pull request, because the entry above did not say a ping had
+      been sent and a red `main` is the one thing on this list worth one. That session checked the
+      fix rather than taking it on trust: PR #11 merges clean into `main` at `ba2e837`, the merged
+      tree runs **250 tests green** where `main` itself runs 249 and 1 failed, and typecheck is
+      clean. `build:pages` then stops on `/og/best-gpu.png`, which is the stale local `public/og/`
+      the item above already explains — `build:og` draws that card from `GPU_CARD` and the deploy
+      runs it first, so it cannot reach CI. Nothing else is needed: **merging PR #11 turns the next
+      deploy green.**
 
 - [x] [PR #7](https://github.com/rlindsey2/sunkcost/pull/7), the `/best-gpu/` page answering
       "best GPU for local LLMs". **Merged 2026-09-18 at 10:50.** The page itself is sound and was
@@ -792,11 +801,21 @@ allow-list, which is the first item under Ryan's side above. All four pull reque
 against the commit and all four still merge clean — the change is one CSS declaration, a comment and
 one test, and no branch touches any of them.
 
-**What to continue.** The four pull requests are still open and still unreviewed, and they still
-block the biggest item on the backlog: the monthly-cost question page sits on PR #8's helpers, and a
-fifth branch is not worth opening while four wait. The push-shaped work left is the `.c-quant` label
-above, which is one rule inside `.board.stack` and wants the same sweep this run did, and then the
-641px band with a scrollbar forced.
+**What happened next, written after the fact.** Everything above is still true and none of it is
+live. Deploy run 140 started on this push at 10:49:58 and was **cancelled sixteen seconds later** by
+PR #7's merge, run 141 was cancelled by PR #9's merge a minute after that, and runs 142 and 143 both
+failed at the test step. **The last deploy that published anything is run 139, at 10:09.** So the
+floor, `/best-gpu/` and the calculator's new footer are all in `main` and none of them has reached
+the site. The cause and the one-link fix are the item on Ryan's side above, which this session
+verified and then pinged him about at 10:58 — the first two runs of the hour are what write that
+item, and this one is what made sure someone outside the repository knows.
+
+**What to continue.** First, whether PR #11 merged and whether the deploy after it went green; if it
+did not, `main` is still red and nothing else matters. Then the three pull requests still open: #8
+and #10 stopped merging when PR #7 went in and each wants a union resolution in four files, and that
+is now the cheapest useful hour on this list, ahead of writing anything new. The push-shaped work
+left is the `.c-quant` label above, which is one rule inside `.board.stack` and wants the same sweep
+this run did, and then the 641px band with a scrollbar forced.
 
 ### 2026-09-18 — two figures on one line, where the measurement says two figures fit
 
