@@ -6,7 +6,7 @@ import { sharePath, cardQuery } from '../src/share';
 import { cardSvg, cardView } from '../src/card';
 import { bestByTier, bestUsageLevels } from '../src/best';
 import { submissionPayload, submissionRow } from '../src/submissions';
-import { waterlineGeometry, renderWaterline } from '../src/waterline';
+import { waterlineGeometry, renderWaterline, labelDays } from '../src/waterline';
 import { computeView } from '../src/compute';
 import type { Dataset, Hardware, Model } from '../src/types';
 import hardware from '../data/hardware.json';
@@ -134,6 +134,33 @@ describe('waterline', () => {
     expect(svg).toContain('underwater');
     expect(svg).toContain('BREAK EVEN');
     expect(svg.endsWith('</svg>')).toBe(true);
+  });
+
+  /** the time labels along the foot of the plot, in the order they are drawn */
+  const ticks = (svg: string) =>
+    [...svg.matchAll(/<text x="[\d.]+" y="[\d.]+" text-anchor="middle"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+  const axis = (breakevenDays: number) =>
+    ticks(renderWaterline({ devicePriceUsd: 1000, dailySaving: 0.01, breakevenDays, maxYears: 10, width: 460, height: 340 }));
+
+  it('labels the time axis six times at most, however long the wait', () => {
+    // a step ladder that stops has to reuse its last rung: at a horizon of
+    // millions of years a label every hundred is tens of thousands of them,
+    // stacked at the origin
+    for (const years of [0.5, 2, 4, 9, 40, 300, 900, 40_000, 8_000_000]) {
+      const labels = axis(years * 365.25);
+      expect(labels.length).toBeLessThanOrEqual(6);
+      expect(labels.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('groups the digits of a year label, the way every other figure is set', () => {
+    expect(axis(8_000_000 * 365.25).every((l) => /^[\d,]+ yr$/.test(l))).toBe(true);
+    expect(axis(8_000_000 * 365.25).some((l) => l.includes(','))).toBe(true);
+    expect(labelDays(8_278_467 * 365.25)).toBe('8,278,467 yrs');
+    // and leaves the short ones as they were
+    expect(labelDays(3.7 * 365.25)).toBe('3.7 yrs');
+    expect(labelDays(365.25)).toBe('1 yr');
+    expect(axis(4 * 365.25)).toContain('1 yr');
   });
 });
 

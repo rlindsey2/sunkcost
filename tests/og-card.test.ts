@@ -151,6 +151,12 @@ describe('the chart on a share card keeps its labels in the card’s column', ()
         for (const l of chartLabels(svg)) {
           if (l.anchor === 'start' && l.x < COL_L) offenders.push(`${hw.id}|${m.id}: “${l.text}” starts at ${l.x}`);
           if (l.anchor === 'end' && l.x > COL_R) offenders.push(`${hw.id}|${m.id}: “${l.text}” ends at ${l.x}`);
+          if (l.anchor === 'middle') {
+            // a time tick is centred on its own year, so what has to be inside
+            // the column is the label either side of it
+            const half = (l.text.length * +(/font-size="([\d.]+)"/.exec(l.attrs)?.[1] ?? 0) * EM) / 2;
+            if (l.x - half < COL_L || l.x + half > COL_R) offenders.push(`${hw.id}|${m.id}: “${l.text}” centred at ${l.x}`);
+          }
         }
       }
     }
