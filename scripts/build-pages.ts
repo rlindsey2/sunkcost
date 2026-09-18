@@ -400,6 +400,65 @@ function checkTables() {
 }
 
 /**
+ * Two narrow columns can share a line on a phone instead of taking one each,
+ * which is what `pair` in stack() is for. The rule only works if it holds for
+ * the whole table: a block where some rows put two figures on a line and others
+ * put one reads as a mistake rather than a layout. So every row of a paired
+ * table that is a row at all — a heading reaching across the block is not —
+ * has to carry both halves, and neither half may be empty.
+ *
+ * Which columns can pair is a measurement, not a guess: at 320px a row has
+ * 271px to give, the two tracks are split by a 12px gap, and the right-hand
+ * track is claimed by whichever is wider, the figure or the second of the pair.
+ * So a pair fits when first + 12 + max(figure, second) is 271 or less. Three
+ * tables that looked like they fit do not once the figure is counted, and they
+ * are left alone.
+ */
+function checkPairedColumns() {
+  const tables = meta.flatMap((p) =>
+    [...p.html.matchAll(/<table class="board stack"[\s\S]*?<\/table>/g)].map((m) => ({ path: p.path, html: m[0] })),
+  );
+  let paired = 0;
+  let lines = 0;
+  let merged = 0;
+  for (const t of tables) {
+    const rows = [...t.html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((m) => m[1]);
+    const body = rows.filter((r) => /class="k-name/.test(r));
+    const withPair = body.filter((r) => /class="[^"]*\bk-pair\b/.test(r));
+    if (!withPair.length) continue;
+    paired++;
+    // a row that merges those columns into one — the leaderboard's hosted rows
+    // run three together — has no pair to make. Every other row has to carry it.
+    const missing = body.filter((r) => !/class="[^"]*\bk-pair\b/.test(r) && !/colspan="/.test(r));
+    if (missing.length) {
+      throw new Error(
+        `${t.path}: ${missing.length} of ${body.length} rows in a paired table keep both columns on lines of their own, and a table that pairs some rows and not others reads worse than one that pairs none`,
+      );
+    }
+    merged += body.length - withPair.length;
+    for (const r of withPair) {
+      const halves = [...r.matchAll(/<(td|th)[^>]*class="([^"]*\bk-pair\b[^"]*)"[^>]*>([\s\S]*?)<\/\1>/g)];
+      const ends = halves.filter((h) => /\bk-pair-end\b/.test(h[2])).length;
+      if (halves.length !== 2 || ends !== 1) {
+        throw new Error(`${t.path}: a paired line has ${halves.length} halves and ${ends} of them closing it, where it wants two and one`);
+      }
+      for (const h of halves) {
+        // a half can be wordless and still carry its answer — the capability
+        // dots are drawn on empty spans — so this turns on an empty cell and on
+        // a lone dash, never on the absence of text
+        if (!h[3].trim() || /^[—-]$/.test(h[3].replace(/<[^>]*>/g, '').trim())) {
+          throw new Error(`${t.path}: half of a paired line says nothing, which leaves the other half alone on the line`);
+        }
+      }
+      lines++;
+    }
+  }
+  console.log(
+    `  ${paired} of the ${tables.length} stacked tables put two columns on one line on a phone, ${lines} lines in all${merged ? `, and ${merged} rows run those columns together instead` : ''}`,
+  );
+}
+
+/**
  * The head-to-head index is the only page that lists every comparison, so a
  * comparison it leaves out is one a reader can reach only by already knowing
  * which two things to start from. Adding a machine family or a model adds
@@ -1386,7 +1445,7 @@ ${gap != null ? `<p>The short version: the best open model here scores <b>${best
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${hostedHeading}${frontierRows}${rows}</tbody>
-</table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' } })}
+</table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' }, pair: [3, 4] })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
@@ -1540,7 +1599,7 @@ function shorterMachinesSection(m: Model, rows: ShorterMachine[], cheapest: Runn
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Longest window it fits</th><th>Needs there</th></tr></thead>
 <tbody>${body}</tbody>
-</table>`, { fig: 2 })}
+</table>`, { fig: 2, pair: [1, 3] })}
 <p class="note">One machine per family, cheapest first, from the same list as the table above. Each window is the longest setting the calculator offers that the machine still holds this model at, and it opens the calculator on that machine at that length. What it needs there is the weights plus the key-value cache at that window, measured against the memory each machine's GPU can address, which that machine's own page gives.</p>
 
 `;
@@ -1834,7 +1893,7 @@ function shorterWindowSection(hw: Hardware, rows: ShorterFit[], ctx: number): st
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Longest window it fits</th><th>Needs there</th><th>Needs at ${ctxLabel(ctx)}</th></tr></thead>
 <tbody>${body}</tbody>
-</table>`, { fig: 1 })}
+</table>`, { fig: 1, pair: [2, 3] })}
 <p class="note">Each window is the longest setting the calculator offers that this machine still holds the model at, and it opens the calculator on that model at that length. The memory figures are the weights plus the key-value cache at that window, against the ${hw.usable_memory_gb} GB this machine's GPU can use.</p>
 
 `;
@@ -1943,7 +2002,7 @@ ${contextLine}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
-</table>`, { fig: 1 })}
+</table>`, { fig: 1, pair: [3, 4] })}
 <p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>
 ${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
 
@@ -2344,7 +2403,7 @@ ${shown
   })
   .join('\n')}
 </tbody>
-</table>`, { fig: 3, labels: { 2: 'Needs' } })}
+</table>`, { fig: 3, labels: { 2: 'Needs' }, pair: [1, 2] })}
 ${extra.length > shown.length ? `<p class="note">${extra.length - shown.length} more, on the <a href="/hardware/${esc(extraA.length >= extraB.length ? a.id : b.id)}/">${esc(roomier)} page</a>.</p>` : ''}
 ${sharedLengthLine(roomierHw, tighterHw, tighterView, roomier, tighter, ctxK)}`
     : twins
@@ -2758,7 +2817,7 @@ function memoryPage(): string {
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Parameters</th><th>Weights</th><th>Cache at ${kctx}</th><th>Needs</th><th>Cheapest machine that runs it</th><th></th></tr></thead>
 <tbody>${ms.map(memoryRow).join('')}</tbody>
-</table>`, { fig: 4, labels: { 5: 'Cheapest' } })}
+</table>`, { fig: 4, labels: { 3: 'Cache', 5: 'Cheapest' }, pair: [2, 3] })}
 </section>`;
   }).join('\n');
 
@@ -3572,6 +3631,7 @@ checkCounts();
 checkCardPrices();
 checkCardScope();
 checkTables();
+checkPairedColumns();
 checkArticles();
 checkCompareIndex();
 checkPayback();

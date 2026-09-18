@@ -270,6 +270,12 @@ a:hover { color: var(--ink); }
   .board.stack .k-sub { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-2); }
   .board.stack .k-sub[data-label]::before { content: attr(data-label); margin-right: 5px; color: var(--faint); }
   .board.stack .k-sub:empty, .board.stack .k-none { display: none; }
+  /* Two narrow columns that would each take a whole line share one instead: the
+     first keeps the left, the second sits against the right edge under the
+     figure. Chosen per table, and only where both fit at 320px, because a table
+     that pairs some rows and not others reads worse than one that pairs none. */
+  .board.stack .k-pair { grid-column: auto; }
+  .board.stack .k-pair-end { text-align: right; }
   .board.stack .k-wide { grid-column: 1 / -1; }
   .board.stack tr.is-frontier { padding: 14px 1px 4px; border-bottom: 0; background: none; }
   .board.stack tr.is-frontier .k-wide { font-size: 11.5px; color: var(--faint); }

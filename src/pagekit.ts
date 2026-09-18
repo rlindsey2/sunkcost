@@ -1283,8 +1283,14 @@ export function modelVerdict(
  *
  * `fig` is the column that earns the right-hand side of the first line. Headings
  * too long to sit inside a row can be shortened per column with `labels`.
+ *
+ * `pair` names two columns narrow enough to sit on one line together instead of
+ * taking one each. It is chosen for the whole table, never per row: a table
+ * where some rows pair and some do not reads worse than one where none do. So
+ * both columns have to say something in every row, and a table where either
+ * comes back blank or as a dash is refused rather than shipped half-paired.
  */
-export function stack(html: string, opts: { fig: number; labels?: Record<number, string> }): string {
+export function stack(html: string, opts: { fig: number; labels?: Record<number, string>; pair?: [number, number] }): string {
   const marked = html.replace('<table class="board">', '<table class="board stack">');
   if (marked === html) throw new Error('stack() expects a <table class="board">');
 
@@ -1296,7 +1302,22 @@ export function stack(html: string, opts: { fig: number; labels?: Record<number,
   if (!width) throw new Error('stack() expects the table to name its columns');
   if (opts.fig < 1 || opts.fig >= width) throw new Error(`stack(): no column ${opts.fig} to lead with`);
 
-  return marked.replace(/<tbody>([\s\S]*?)<\/tbody>/g, (_all, body: string) =>
+  // the two paired columns have to land on the same line of the grid, and the
+  // grid fills them in the order the row writes them, so they have to be
+  // neighbours once the name and the figure are taken out of the count
+  const pair = opts.pair;
+  if (pair) {
+    const rest = Array.from({ length: width }, (_, i) => i).filter((i) => i !== 0 && i !== opts.fig);
+    for (const c of pair) {
+      if (!rest.includes(c)) throw new Error(`stack(): column ${c} cannot be paired, it is the name or the figure`);
+    }
+    if (pair[0] >= pair[1]) throw new Error('stack(): a pair reads left to right, so name the earlier column first');
+    if (rest.indexOf(pair[1]) - rest.indexOf(pair[0]) !== 1) {
+      throw new Error(`stack(): columns ${pair[0]} and ${pair[1]} are not next to each other, so they cannot share a line`);
+    }
+  }
+
+  const stacked = marked.replace(/<tbody>([\s\S]*?)<\/tbody>/g, (_all, body: string) =>
     `<tbody>${body.replace(/<tr([^>]*)>([\s\S]*?)<\/tr>/g, (_row, trAttrs: string, cells: string) => {
       let col = 0;
       const out = cells.replace(/<(td|th)([^>]*)>([\s\S]*?)<\/\1>/g, (_cell, tag: string, attrs: string, inner: string) => {
@@ -1305,13 +1326,26 @@ export function stack(html: string, opts: { fig: number; labels?: Record<number,
         col += span;
         // a cell reaching across the row is a heading or an aside, not a column
         let role = span >= width ? 'k-wide' : at === 0 ? 'k-name' : at === opts.fig ? 'k-fig' : 'k-sub';
+        const sub = role === 'k-sub';
+        const said = sub ? inner.replace(/<[^>]*>/g, '').trim() : '';
         // a column holding nothing but a dash has nothing to say on a line of its
         // own, so the narrow layout leaves it to the wide one. A cell can be
         // wordless and still carry its answer — the capability dots are drawn on
         // empty spans — so this turns on the dash itself, never on the absence
         // of text.
-        if (role === 'k-sub' && /^[—-]$/.test(inner.replace(/<[^>]*>/g, '').trim())) role = 'k-sub k-none';
-        const label = role === 'k-sub' && span === 1 ? (opts.labels?.[at] ?? heads[at] ?? '') : '';
+        const bare = /^[—-]$/.test(said);
+        if (sub && span === 1 && pair?.includes(at)) {
+          // a paired column that goes quiet in one row would leave its partner
+          // alone on a half-width line, which is the ragged table this is for
+          // avoiding, so the build stops instead of shipping it
+          if (!inner.trim() || bare) {
+            throw new Error(`stack(): column ${at} is paired but says nothing in one row, so the pair would break`);
+          }
+          role = at === pair[0] ? 'k-sub k-pair' : 'k-sub k-pair k-pair-end';
+        } else if (sub && bare) {
+          role = 'k-sub k-none';
+        }
+        const label = sub && !bare && span === 1 ? (opts.labels?.[at] ?? heads[at] ?? '') : '';
         const extra = label ? ` data-label="${label.replace(/"/g, '&quot;')}"` : '';
         const withClass = /class="/.test(attrs)
           ? attrs.replace(/class="/, `class="${role} `)
@@ -1321,4 +1355,10 @@ export function stack(html: string, opts: { fig: number; labels?: Record<number,
       return `<tr${trAttrs}>${out}</tr>`;
     })}</tbody>`,
   );
+  // a table asked to pair and given nothing to pair is a rule that has quietly
+  // stopped applying, which no page would show and no reader would report
+  if (pair && !stacked.includes('k-pair')) {
+    throw new Error(`stack(): columns ${pair[0]} and ${pair[1]} were asked to share a line and no row gave them one`);
+  }
+  return stacked;
 }
