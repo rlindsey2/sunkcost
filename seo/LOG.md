@@ -748,11 +748,15 @@ sideways, **no paired half wraps to a second line and no pair falls onto two lin
 390, 430, 641, 768, 1024, 1280 and 1440px over sixteen pages of every kind. `/leaderboard/`,
 `/how-much-memory/` and a machine page were read rendered at 360px before committing.
 
-**Where it is.** Pushed to `main` as `eb3086f`, with this entry as `f6ae50d`; both went up in one
-push, so run 137 carries the pair and there is no cancelled run to explain this time. It was still
-running when this was written, and whether the markup actually reached the live site could not be
-checked from here: `sunkcost.ai` is still not on this environment's allow-list, which is the first
-item under Ryan's side above. The four pull requests were re-checked after the push and all four
+**Where it is.** Pushed to `main` as `eb3086f`, with this entry as `f6ae50d` and a correction to
+this paragraph as the commit after it. The code and the first draft of the entry went up in one
+push, which is what the last entry recommended, and the correction then went up in a second — so
+run 137 reads as cancelled and the run started by the last push is the one that carries everything.
+That is the workflow's concurrency rule doing its job, not a failure, and the lesson the last entry
+drew still holds with one word added: it is not enough to push the work and the log together, the
+entry has to be **right** before the push, because a correction costs another cancelled run. Whether
+the markup reached the live site could not be checked from here either way: `sunkcost.ai` is still
+not on this environment's allow-list, which is the first item under Ryan's side above. The four pull requests were re-checked after the push and all four
 still merge clean: the change is one option on six `stack()` calls, two CSS rules and a new check,
 and none of the four branches touches any of them.
 
