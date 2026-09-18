@@ -546,7 +546,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       the guard, and the one thing to know about it: the first record dates nothing, so the sitemap
       ships with no dates at all and fills in as pages change.
 
-- [ ] **The sitemap and the date ledger are written before any guard runs.** `scripts/build-pages.ts`
+- [x] **The sitemap and the date ledger are written before any guard runs.** Done 2026-09-18, and
+      the item was one thing too kind about it: it does not heal on the build after that. The
+      restored pages no longer match the fingerprints the failed build recorded, so the ledger
+      writes them down as changing **the day somebody fixed the fault**, which is a date the pages
+      did not earn and the exact claim this ledger exists to avoid. Reproduced with a doubled full
+      stop in the machine lede: 56 of 254 entries rewritten by a build that then threw, 113 dated
+      sitemap entries down to 57 on the next one. The question it said to settle answered itself —
+      a guard that re-opens a file the same script just wrote is checking the disk rather than the
+      build, so both guards read the string instead and the three writes moved to the foot of the
+      file. The run entry below has the figures, the checksum that proves the 253 pages did not
+      move, and the three breaks that proved the guard. The original wording follows.
+      `scripts/build-pages.ts`
       writes `sitemap.xml` and `seo/page-dates.json` at line 3824; every `check*()` runs after it. So a
       build that fails a guard still leaves both on disk, fingerprinted from pages the guard refused,
       and the next honest build reads them, finds a mismatch and publishes no lastmod for those pages.
@@ -1005,6 +1016,69 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — nothing the build publishes is written until the guards have passed
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job. Its top
+open item is the monthly-cost page and that still waits on PR #8, which is open along with #10, #12
+and #13; the item under it was the one the last entry named as the next thing that can go straight
+to main. Pushed as **`330242e`**.
+
+**The item undersold the fault, and the difference is the whole reason to fix it.** It said a failed
+build costs the next build's lastmods and then heals. It does not heal. The pages a guard refused
+are regenerated correctly next time, but the ledger has already recorded the *refused* fingerprints,
+so the restored pages no longer match what is written down and `nextDates()` books them as changing
+**the day somebody fixed the fault**. That is a date the pages did not earn, published to a crawler,
+which is precisely what `src/page-dates.ts` was written to prevent.
+
+**Reproduced rather than argued, with a break of the shape that causes it.** A doubled full stop in
+the machine lede — `and the answer is usually no..` — which `checkNotes()` catches:
+
+| | before the fix | after |
+| --- | --- | --- |
+| ledger entries rewritten by the failed build | 56 of 254 | 0 |
+| `sitemap.xml` on disk after the failed build | rebuilt from refused pages | untouched |
+| dated sitemap entries on the next honest build | 57, from 113 | 113 |
+
+The 56 were the machine pages. It was invisible today only because their recorded date was already
+2026-09-18, so the wrong date and the right one were the same day; tomorrow it would have stuck.
+
+**The question the item said to settle answered itself.** `checkCanonicals()` and `checkPageDates()`
+both opened `sitemap.xml` back off disk, which is what forced the write to come first. A guard that
+re-reads what the same script just wrote is checking the disk rather than the build, and what has to
+be right is the string about to be published. So the sitemap, `robots.txt` and the ledger are built
+into constants where they were, both guards read `sitemapXml`, and the three `writeFileSync` calls
+moved to the foot of the file under the last `check*()`.
+
+**The pages themselves are still written as they are generated, and that is right.** A failed build
+leaves broken HTML in `public/`, but every build rewrites all 253 and the directory is gitignored, so
+nothing survives to be believed later. The ledger was the only sticky one, because it is a record
+rather than an output.
+
+**Three breaks proved three claims, one each.** The ledger write moved back above the guards, which
+fires only the ordering claim. A fourth file published at the top level, which fires that claim and
+the ordering one, correctly — a new published file is also a file written too early. And
+`checkCanonicals()` put back to reading `sitemap.xml` off disk, which fires only the claim that no
+guard does. The guard reads the script as text, which is the shape `tests/model-watch.test.ts`
+already uses, because the fault it catches is a line moved up a file rather than a wrong answer.
+
+**Verified.** 306 tests (3 new), `tsc --noEmit` clean, and the full `npm run build` end to end with
+`build:functions` included. **The 253 generated pages are byte-for-byte identical to `main`'s** —
+`main` built in a throwaway worktree at `cb20e78` and both trees checksummed,
+`766cc5b52c1889fd461390f374ef7ede` twice — and `sitemap.xml` and `seo/page-dates.json` come out
+identical too, so nothing a visitor reads moved. 254 URLs, 113 with a lastmod, before and after.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest open item and still waits on PR #8. Four pull requests are open and nothing has
+merged since PR #11 this morning: **#8** and **#10** are the two that unblock page work, **#12** and
+**#13** are the calculator's own head. Under that, the open items were read for one that can go
+straight to main and the honest answer is that there is not an obvious one left. The `--ok-text`
+duplication is `src/styles.css` and its own item says it should ride with PR #12. The model page's
+duplicate call to action is a question to settle before it is a change. The `/hardware/` and
+`/leaderboard/` cross-link the same. The nearest thing to ready is **the waterline label on a share
+card**, which is a margin the card passes in rather than a change to the renderer the calculator
+shares, and after that the three-machines-without-a-price item, which is waiting on data. So if PR #8
+merges, write the monthly-cost page; if it has not, the waterline margin is the job.
 
 ### 2026-09-18 — the calculator's assumptions panel says what every page says
 
