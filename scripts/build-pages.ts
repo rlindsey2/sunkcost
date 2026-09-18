@@ -9,10 +9,10 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 
 import {
   appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, esc,
-  familyHeading, familyRange, generationNames,
+  chipStepNames, familyHeading, familyRange, generationNames,
   fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
-  cardScopeNote, gpuPart, graphicsCards, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking,
+  cardScopeNote, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct, indefiniteArticle, kvWorking,
   longestContext, lowerFirst, machinesConsidered, machinesShorter, machineVerdict, median,
   meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, otherQuantisations, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
@@ -23,7 +23,7 @@ import {
   type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
-  flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
+  chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
   modelComparePath, modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, GPU_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
@@ -209,7 +209,8 @@ function checkHeadToHeads() {
       // a pair of memory tiers is the same machine twice, so the size is the whole of the
       // difference and the name is already the page's own headline.
       const tier = memoryTierNames(hw, other) ?? memoryTierNames(other, hw);
-      const want = tier ? `${other.unified_memory_gb}GB` : shortHardwareLabel(other);
+      const step = chipStepNames(hw, other) ?? chipStepNames(other, hw);
+      const want = tier || step ? `${other.unified_memory_gb}GB` : shortHardwareLabel(other);
       const said = [...note.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].filter((m) => m[1] === href);
       if (said.length !== 1) problems.push(`/hardware/${hw.id}/ names ${href} ${said.length} times at the foot of the page, where it should name it once`);
       else if (said[0][2] !== esc(want)) problems.push(`/hardware/${hw.id}/ calls ${href} "${said[0][2]}" at the foot of the page, where it should say "${want}"`);
@@ -1183,15 +1184,46 @@ function checkLeaderboardLinks() {
     if (row.includes(want)) linked++;
     else problems.push(`/leaderboard/ does not open ${m.display_name} on the ${shortHardwareLabel(cheapest.hw)} at ${fmtUsd(cheapest.hw.price_usd)}`);
   }
-  for (const r of html.split('<tr class="is-frontier">').slice(1)) {
+  // The hosted rows are the table's yardstick, and four claims hold them to the data.
+  // The fourth is the one a phone turns into a fault: what marks the block as hosted is
+  // said once above it, because a row is a block on a narrow screen and eight rows each
+  // saying it is eight blocks of the same sentence before the first real answer.
+  const hostedRows = html.split('<tr class="is-hosted">').slice(1).map((r) => r.split('</tr>')[0]);
+  const hosted = [...(data.defaults.frontier_reference ?? [])];
+  if (hostedRows.length !== hosted.length)
+    problems.push(`/leaderboard/ prints ${hostedRows.length} hosted rows against the ${hosted.length} hosted models in the data`);
+  for (const r of hostedRows) {
     const name = r.match(/<td class="[^"]*c-model">([^<]+)/)?.[1] ?? 'a hosted model';
-    if (r.split('</tr>')[0].includes('/?hw=')) problems.push(`/leaderboard/ offers to run ${name} on hardware you can buy`);
+    if (r.includes('/?hw=')) problems.push(`/leaderboard/ offers to run ${name} on hardware you can buy`);
+    const ref = hosted.find((h) => esc(h.name) === name);
+    if (!ref) {
+      problems.push(`/leaderboard/ prints a hosted row for ${name}, which is not in the data`);
+      continue;
+    }
+    if (ref.score_alt != null && !r.includes(`or ${ref.score_alt} with reasoning turned down`))
+      problems.push(`/leaderboard/ does not give ${name} the ${ref.score_alt} the index scores it at with reasoning turned down`);
+    if (/download/i.test(r))
+      problems.push(`/leaderboard/ tells the reader inside ${name}'s own row that a hosted model is not a download, which a phone repeats once a row`);
   }
+  const marker = 'You cannot download any of these';
+  const said = html.split(marker).length - 1;
+  if (said !== 1)
+    problems.push(`/leaderboard/ says a hosted model is not a download ${said} times, and it belongs once, in the heading above the hosted rows`);
+  else if (hostedRows.length && html.indexOf(marker) > html.indexOf('<tr class="is-hosted">'))
+    problems.push('/leaderboard/ says what the hosted rows are after the first of them rather than above the block');
   if (problems.length) {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
-    throw new Error(`${problems.length} row${problems.length === 1 ? '' : 's'} on /leaderboard/ do not open the machine and model they print`);
+    throw new Error(
+      problems.length === 1
+        ? '1 claim on /leaderboard/ does not match the data behind it'
+        : `${problems.length} claims on /leaderboard/ do not match the data behind them`,
+    );
   }
   console.log(`  /leaderboard/ opens the calculator on ${linked + shortened} model-and-machine pairs, one a row${shortened ? `, ${shortened} of them at the shorter window that machine holds the model at` : ''}`);
+  const withAlt = hosted.filter((h) => h.score_alt != null).length;
+  console.log(
+    `  /leaderboard/ ranks ${hostedRows.length} hosted models alongside the open ones, ${withAlt} of them also at the score the index gives them with reasoning turned down, and says once above the block that none of them is a download`,
+  );
 }
 
 function checkFonts() {
@@ -1319,12 +1351,21 @@ function leaderboard(): string {
 
   const shortened = placed.filter((p) => p.shorter);
 
+  // The hosted models sit at the top of the table for scale, and each of them used to
+  // carry the sentence that said so. On a wide screen that is one line inside a row;
+  // on a phone, where a row is a block, it was the same sentence eight times before
+  // the reader reached the first model they can actually download. It is said once
+  // now, in a heading above the block, and the row keeps the one thing only it knows:
+  // the figure the index gives that model with its reasoning turned down, which is in
+  // the data and was printed nowhere on the site.
+  const hostedHeading = `<tr class="is-frontier"><th colspan="7">Hosted models, here for scale. You cannot download any of these; they run in someone else’s data centre.</th></tr>`;
+
   const frontierRows = refs
     .map(
-      (r) => `<tr class="is-frontier">
+      (r) => `<tr class="is-hosted">
   <td class="c-model">${esc(r.name)}<span class="c-quant">hosted</span></td>
   <td class="c-score"><span class="bar"><span style="width:${((r.score / max) * 100).toFixed(1)}%"></span></span><b>${r.score}</b></td>
-  <td class="c-tier" colspan="3"><span class="dim">Runs in someone else’s data centre. You cannot download it.</span></td>
+  <td class="c-tier" colspan="3">${r.score_alt == null ? '' : `<span class="dim">or ${r.score_alt} with reasoning turned down</span>`}</td>
   <td class="c-hw"><span class="dim">—</span></td>
   <td class="c-vs"></td>
 </tr>`,
@@ -1345,11 +1386,11 @@ function leaderboard(): string {
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
-<tbody>${frontierRows}${rows}</tbody>
+<tbody>${hostedHeading}${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' } })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${esc(data.defaults.frontier_basis?.name ?? '')}${data.defaults.frontier_basis?.url ? ` (<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">source</a>)` : ''}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
   return pageShell(
@@ -2132,6 +2173,66 @@ ${power}
 }
 
 /**
+ * The entry-level configuration of a box against the one above it. Every other section on
+ * this page reads the step as memory, because memory is what the table's own rows measure
+ * and what decides which models fit. On these four pairs it is not only memory: the maker
+ * reaches the headline price by putting a smaller chip in the same case, so the reader is
+ * choosing between two machines, not two sizes of one. Nothing else on the page says that.
+ *
+ * What the smaller chip costs is the harder half, and the honest answer is mostly "not
+ * speed": a token is written by reading the whole model out of memory, so the speeds here
+ * follow bandwidth, and on three of the four pairs both chips read memory at the same rate.
+ * Where the data does give the dearer chip a wider path, that is what the money buys and
+ * the section says so.
+ */
+function chipStepSection(a: Hardware, b: Hardware, step: { machine: string; a: string; b: string }, va: View, fa: ModelRow[], fb: ModelRow[], ctxK: number): string {
+  const la = shortHardwareLabel(a);
+  const gap = fmtUsd((b.price_usd ?? 0) - (a.price_usd ?? 0), { cents: false });
+  const ca = gpuCores(a);
+  const cb = gpuCores(b);
+  // Apple counts GPU cores and AMD counts compute units; each page says it the way its
+  // own data says it rather than translating one maker's word into the other's
+  const unit = /\bCU\b/.test(`${a.chip_variant ?? ''}${b.chip_variant ?? ''}`) ? 'compute units' : 'GPU cores';
+  const cores = ca != null && cb != null && cb > ca
+    ? ` The step adds ${cb - ca} ${unit} to the graphics part, ${cb} against ${ca}.`
+    : '';
+
+  const bwa = a.memory_bandwidth_gbs;
+  const bwb = b.memory_bandwidth_gbs;
+  const ta = shownTps(fa[0]);
+  const tb = shownTps(fb[0]);
+  // where the two speeds on the page came from different places, the reason they differ
+  // can be the measurement rather than the machine, and a section saying the chip does
+  // not set the speed has to answer the table above it
+  const mixed = !!fa[0] && !!fb[0] && fa[0].throughput.measurement !== fb[0].throughput.measurement;
+  const sameBw = bwa != null && bwb != null && bwa === bwb;
+  const speed = bwa == null || bwb == null
+    ? 'The data does not have a bandwidth figure for both of them.'
+    : sameBw
+      ? `The bigger graphics part is not what sets the speeds on this page. Writing a token means reading the whole model out of memory, and both chips read it at ${bwa} GB/s, so the figures follow the memory rather than the chip.${
+          mixed
+            ? ` The two speeds in the table are not identical all the same, and the reason is where each figure came from: ${esc(fa[0].throughput.source)} for the ${esc(la)}, ${esc(fb[0].throughput.source)} for the ${esc(shortHardwareLabel(b))}.`
+            : ta != null && tb != null && ta === tb
+              ? ' That is why the table gives them the same speed.'
+              : ''
+        } What the extra ${unit} do is read a long prompt before the first token comes back, and that is not something this site measures or prices.`
+      : bwb > bwa
+        ? `The dearer chip has the wider path to memory as well, ${bwb} GB/s against ${bwa}. Writing a token means reading the whole model out of memory, so that is the figure the speeds in the table follow, and it is the part of this step you can see in them.`
+        : `The cheaper chip has the wider path to memory, ${bwa} GB/s against ${bwb}. Writing a token means reading the whole model out of memory, so that is the figure the speeds in the table follow.`;
+
+  const holds = fb.length > fa.length
+    ? `The ${esc(step.b)} box holds ${fb.length} of the ${va.rows.length} models the calculator counts against ${fa.length} on the ${esc(step.a)}.`
+    : `Both hold the same ${fa.length} models at ${ctxK}k of context.`;
+  const close = sameBw
+    ? `if the models you want fit the cheaper box, the chip above it is not buying you tokens.`
+    : `here the step buys room and speed together, and the years move with both.`;
+
+  return `<h2>The step up is a different chip, not just more memory</h2>
+<p>${esc(step.machine)} is one name for two machines. The data lists the ${esc(step.a)} as ${esc(a.chip_variant ?? '')} and the ${esc(step.b)} as ${esc(b.chip_variant ?? '')}.${cores} That is why this pair is not one of the site's memory-size comparisons: those hold the silicon equal so the memory is the whole of the difference, and ${esc(brandOf(a))} cut both to reach the ${fmtUsd(a.price_usd!, { cents: false })}.</p>
+<p>${speed} ${holds} <a href="${esc(calcLink({ hw: a.id }, data))}">Price the ${esc(la)} on its own</a> before paying for the step: ${close}</p>`;
+}
+
+/**
  * A machine's power draw is the running cost in every pay-back figure it has, and for
  * 30 of the 56 machines here the data has no figure for that machine at all: it borrows
  * one from the nearest hardware it does have. A generation head-to-head already says so
@@ -2174,12 +2275,17 @@ function comparePage(a: Hardware, b: Hardware): string {
   // name is said once at each end and the two chips carry the middle, which is the pair of
   // words the reader typed
   const gens = generationNames(a, b);
+  // the entry-level box against the one above it: the same name on both sides, so the
+  // heading says it once and spends the rest on the two sizes the configurator offers
+  const step = chipStepNames(a, b) ?? chipStepNames(b, a);
   // both sides of a same-silicon pair carry the same memory, so a title that prints the
   // size twice spends a search result's 60 characters saying it again instead of naming
   // the second machine, which is the half of the pair the reader has not typed yet
   const withoutSize = (h: Hardware) => shortHardwareLabel(h).replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
   const heading = tiers
     ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
+    : step
+    ? `${step.machine}, ${step.a} vs ${step.b}`
     : gens
     ? `${gens.machine} ${gens.a} vs ${gens.b}, ${gens.size}`
     : twins
@@ -2325,7 +2431,7 @@ ${ceilingLine}
     : '';
 
   const body = `<article class="prose">
-<h1>${esc(tiers || twins || gens ? heading : `${la} vs ${lb}`)} for local AI</h1>
+<h1>${esc(tiers || twins || gens || step ? heading : `${la} vs ${lb}`)} for local AI</h1>
 <p class="lede">${machineVerdict(a, b, va, vb, data)}</p>
 <table class="board compare">
 <thead><tr><th></th><th><a href="/hardware/${esc(a.id)}/">${esc(la)}</a></th><th><a href="/hardware/${esc(b.id)}/">${esc(lb)}</a></th></tr></thead>
@@ -2345,6 +2451,7 @@ ${standInPowerNote(a, b, (!!gens && b.load_watts_status === 'stand_in') || (!!tw
 <p><a class="cta" href="${esc(calcLink({ hw: a.id }, data))}">Run the numbers on the ${esc(la)}</a> · <a href="${esc(calcLink({ hw: b.id }, data))}">or the ${esc(lb)}</a></p>
 ${twins ? sameSiliconSection(a, b, va, ctxK, fa, fb) : ''}
 ${gens ? generationSection(a, b) : ''}
+${step ? chipStepSection(...(chipStepNames(a, b) ? [a, b, step, va, fa, fb, ctxK] as const : [b, a, step, vb, fb, fa, ctxK] as const)) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
@@ -2355,6 +2462,7 @@ ${extraSection}
   return pageShell(
     {
       title: titleOf([
+        ...(step ? [`${heading}: the chip changes too`] : []),
         `${heading} for local LLMs`,
         heading,
       ]),
@@ -2387,6 +2495,38 @@ ${extraSection}
                 ...bw,
                 `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} models either way. What a generation buys, and whether it pays back.`,
                 `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: what a generation buys, and whether it pays back.`,
+              ];
+            })()
+          : step
+          ? (() => {
+              const [lo, hi, loFits, hiFits] = chipStepNames(a, b) ? [a, b, fa, fb] : [b, a, fb, fa];
+              const gap = fmtUsd((hi.price_usd ?? 0) - (lo.price_usd ?? 0), { cents: false });
+              const cl = gpuCores(lo);
+              const ch = gpuCores(hi);
+              const unit = /\bCU\b/.test(`${lo.chip_variant ?? ''}${hi.chip_variant ?? ''}`) ? 'compute units' : 'GPU cores';
+              const chip = cl != null && ch != null ? `, with ${ch} ${unit} to ${cl}` : '';
+              // what the step buys leads the description, and which of the two it is
+              // depends on the pair: on one of them the dearer chip reads memory faster,
+              // on the rest it does not and the memory is the whole of it
+              const wider = lo.memory_bandwidth_gbs != null && hi.memory_bandwidth_gbs != null
+                && hi.memory_bandwidth_gbs > lo.memory_bandwidth_gbs
+                ? [
+                    `The ${step.b} ${step.machine} reads its memory at ${hi.memory_bandwidth_gbs} GB/s against the ${step.a}'s ${lo.memory_bandwidth_gbs}${chip}. What ${gap} more buys, and whether it pays back.`,
+                    `${step.machine}, ${step.a} or ${step.b}: ${hi.memory_bandwidth_gbs} GB/s against ${lo.memory_bandwidth_gbs}${chip}, ${gap} apart.`,
+                  ]
+                : [];
+              const more = hiFits.length > loFits.length
+                ? [
+                    `The ${step.b} ${step.machine} holds ${hiFits.length} of the ${va.rows.length} open models here against ${loFits.length}${chip}. What ${gap} more buys, and whether it pays back.`,
+                    `The ${step.b} ${step.machine} holds ${hiFits.length} of the ${va.rows.length} open models here against ${loFits.length}${chip}. What ${gap} more buys.`,
+                    `${step.machine}, ${step.a} or ${step.b}: ${hiFits.length} models against ${loFits.length}${chip}, ${gap} apart.`,
+                  ]
+                : [];
+              return [
+                ...wider,
+                ...more,
+                `${step.machine}, ${step.a} or ${step.b}: ${gap} apart, and the chip changes with the memory. What it buys, and whether it pays back.`,
+                `${step.machine}, ${step.a} or ${step.b}: a bigger chip as well as more memory, ${gap} apart.`,
               ];
             })()
           : tiers
@@ -3504,6 +3644,83 @@ function checkGenerationPairs() {
 }
 
 /**
+ * The four head-to-heads between two configurations of one box with different chips in
+ * them. The reader arrives at these from a configurator, where the two machines are one
+ * line apart and the only visible difference is the memory, so the page's whole job is
+ * to say what else changed — and that makes it the page with the most ways to overclaim.
+ * The cores are the thing a buyer expects to pay for and the thing that moves the speeds
+ * least: a token is written by reading the model out of memory, and on three of these
+ * four pairs both chips read it at the same rate.
+ *
+ * So this holds four claims. The pair really is one box, sold on two chips, both still
+ * on sale and both priced, with the cheaper side first and each side the cheapest of its
+ * own chip. The page names both chips in the data's own words, and where the data counts
+ * the graphics part on both sides it prints both counts and the step between them. It
+ * says the dearer chip reads memory faster only where the data says it does, and where
+ * both read it at the same rate it says that instead. And it hands the reader a way to
+ * price the cheaper box on its own, which is the choice the page is about.
+ */
+function checkChipStepPairs() {
+  const problems: string[] = [];
+  let pages = 0;
+  let equalBandwidth = 0;
+  for (const [lo, hi] of chipStepPairs(data)) {
+    pages++;
+    const path = hardwareComparePath(lo, hi);
+    const html = unesc(meta.find((m) => m.path === path)?.html ?? '');
+    if (!html) {
+      problems.push(`${path} is a chip-step pair with no page`);
+      continue;
+    }
+    const cheapestOn = (h: Hardware) =>
+      data.hardware
+        .filter((x) => x.family === h.family && x.chip === h.chip && x.chip_variant === h.chip_variant
+          && x.price_usd != null && (x.generation ?? 'current') === 'current')
+        .sort((x, y) => x.price_usd! - y.price_usd! || x.id.localeCompare(y.id))[0];
+    if (lo.family !== hi.family || lo.chip !== hi.chip || lo.chip_variant === hi.chip_variant)
+      problems.push(`${path} is not one box sold on two chips`);
+    if (lo.price_usd == null || hi.price_usd == null || lo.price_usd >= hi.price_usd)
+      problems.push(`${path} does not put the cheaper configuration first, or prices one of them at nothing`);
+    if ((lo.generation ?? 'current') !== 'current' || (hi.generation ?? 'current') !== 'current')
+      problems.push(`${path} compares a machine that is no longer sold`);
+    if (cheapestOn(lo)?.id !== lo.id || cheapestOn(hi)?.id !== hi.id)
+      problems.push(`${path} is not the cheapest machine on each of the two chips`);
+    for (const h of [lo, hi])
+      if (!html.includes(h.chip_variant ?? ''))
+        problems.push(`${path} does not name the ${shortHardwareLabel(h)}'s chip as the data writes it`);
+    const cl = gpuCores(lo);
+    const ch = gpuCores(hi);
+    if (cl != null && ch != null && ch > cl) {
+      const unit = /\bCU\b/.test(`${lo.chip_variant ?? ''}${hi.chip_variant ?? ''}`) ? 'compute units' : 'GPU cores';
+      if (!html.includes(`The step adds ${ch - cl} ${unit} to the graphics part, ${ch} against ${cl}.`))
+        problems.push(`${path} does not print the ${unit} the data counts on both sides`);
+    }
+    const bl = lo.memory_bandwidth_gbs;
+    const bh = hi.memory_bandwidth_gbs;
+    const wider = `The dearer chip has the wider path to memory as well, ${bh} GB/s against ${bl}.`;
+    const equal = `both chips read it at ${bl} GB/s`;
+    if (bl != null && bh != null && bh > bl && !html.includes(wider))
+      problems.push(`${path} does not say the dearer chip reads memory faster where the data says it does`);
+    if (bl != null && bh != null && bh === bl) {
+      equalBandwidth++;
+      if (!html.includes(equal))
+        problems.push(`${path} does not say both chips read memory at the same rate`);
+      if (html.includes('wider path to memory'))
+        problems.push(`${path} claims a wider path to memory that the data does not give either side`);
+    }
+    // the page's own top has a link to the same address, so this asks for the one in
+    // this section: the sentence that tells a reader to price the cheaper box first
+    if (!html.includes(`<a href="${calcLink({ hw: lo.id }, data)}">Price the ${shortHardwareLabel(lo)} on its own</a>`))
+      problems.push(`${path} does not offer the ${shortHardwareLabel(lo)} on its own where it asks the reader to weigh the step`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} chip-step head-to-head${problems.length === 1 ? '' : 's'} do not hold to the data`);
+  }
+  console.log(`  ${pages} head-to-heads between the two chips one box is sold on, each naming both chips as the data writes them; ${equalBandwidth} say the bigger chip reads memory no faster`);
+}
+
+/**
  * Electricity is the running cost in every pay-back figure on this site, and for 30 of
  * the 56 machines the data holds no power figure for the machine at all: it borrows the
  * nearest one it has. Printed bare, a borrowed watt reads as a measurement of the machine
@@ -3705,6 +3922,7 @@ checkHeadroom();
 checkSharedHeadroom();
 checkSameSilicon();
 checkGenerationPairs();
+checkChipStepPairs();
 checkStandInPower();
 checkModelContexts();
 checkMachineContexts();
