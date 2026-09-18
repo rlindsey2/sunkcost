@@ -104,6 +104,14 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       twenty-odd times between them. Verified before opening on `main` at `3cda750`: 233 tests,
       typecheck clean, the full `npm run build`, and the page rendered and read at 360px and 1280px.
 
+- [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
+      machines at `/hardware/`. It is a pull request rather than a push because it is a new page
+      type, which is the standing rule here. No data figure is touched and neither are `src/calc.ts`,
+      `src/compute.ts` or `src/fit.ts`. Checked again on 2026-09-18 against `main` at `c17b1ec`:
+      **it merges clean**, as do #7, #8 and #9, each tested by merging rather than assumed. This
+      repository still runs no CI on a pull request, so all four show no checks and everything on
+      them was verified locally. It has been open since 08:02 on 2026-09-18.
+
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
       fastest a PR has gone in here by a wide margin, and the first that did not need a single merge
@@ -593,21 +601,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       in: a footer and a top bar are different faults, and a reviewer reading a PR about one should
       not have to review the other.
 
-- [ ] **A machine name is crushed to 7px on a phone wherever its pay-back cannot be worked out.**
-      Found 2026-09-18 while measuring the pairing rule, and it predates it: taking the pair markup
-      back out changes nothing. On a stacked row the right-hand track is `auto`, so it takes as much
-      as its widest cell wants, and the left one is `minmax(0, 1fr)`, so it gives up everything. The
-      row for a machine with no published price answers *Not enough data to compute a pay-back.*,
-      which wants 252px of the 271px a row has at 320px, and the name beside it is left with **7px**
-      — one character a line, down the whole name. It is **24 rows on 24 pages**, every one of them
-      the same sentence about the same two unpriced machines. Two ways to fix it, and the choice
-      wants measuring rather than arguing: give the left track a floor it will not go below, which
-      costs nothing anywhere else, or let that one sentence wrap instead of setting its own width.
-      The first is one word of CSS and touches every stacked table on the site, so it wants the
-      same 320-to-1440px sweep this run did.
+- [x] **A machine name is crushed on a phone wherever its pay-back cannot be worked out.** Done
+      2026-09-18, and the fix was the first of the two the item offered: a floor on the left track,
+      measured rather than argued. The floor is **115px**, the widest one that changes nothing else —
+      the narrowest name that fits today is 117.7px, and the diff over every stacked table at six
+      widths is exactly the 24 rows and nothing besides. The item's own figure was measured on a
+      271px row; on the 288px row this environment renders it is 22.5px, and the fault runs to 390px
+      rather than stopping at 320. The run entry below has the figures and the two breaks that
+      proved the guard.
 
 - [ ] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Found
-      2026-09-18, and it predates the pairing rule as well — the table wants 596px in the 582px it
+      2026-09-18. **Re-measured 2026-09-18 and it did not reproduce**, which is worth knowing before
+      a run spends an hour on it: at every integer width from 615 to 700px the leaderboard's table
+      is 597px inside a 641px window and nothing scrolls, and the 252-page sweep at 641px found no
+      page wider than its window and no table scrolling. The arithmetic in the original measurement
+      says why: 596px wanted in 582px is a 641px window **minus a 15px classic scrollbar**, which
+      is what a desktop browser on Windows or Linux shows and what a headless context does not. So
+      the fault is probably real on those browsers and invisible here, and the next look at it
+      should force a scrollbar rather than trust a clean sweep. Found alongside the pairing rule,
+      and it predates it as well — the table wants 596px in the 582px it
       is given, and it is clean at 640px, where the phone layout takes over, and at 660px and above.
       641px is the first width above the stacking breakpoint, where the table becomes a table again
       with seven columns and only the between-bands rules to wrap them. The log has claimed since
@@ -615,6 +627,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       it was written; the leaderboard has gained a column of text since, on the hosted rows. Worth
       one look at the 641-to-1023px band, and worth re-measuring the other 306 stacked tables at
       641px at the same time, since only sixteen pages were swept at that width.
+
+- [ ] **A label on the name reads under the figure's column on 29 comparison pages.** Found
+      2026-09-18 while sweeping for the crushed-name fix, and it predates it: the floor changes
+      none of these rows. `.c-quant` is set `white-space: nowrap` at line 173 of `public/page.css`,
+      so on a phone the tier label beside a model's name — *Below every hosted tier*, 145px of it —
+      cannot wrap and runs past the name cell it sits in. **84 labels on 29 pages at 320px**,
+      overhanging by up to 36px, and 79 of them cross into the track the figure is drawn in. It is
+      untidy rather than broken: the figure is right-aligned and a line higher, so nothing is
+      clipped and nothing overlaps, and it was read rendered before being written down. It is
+      clean at 360px and above. The nowrap is there for a reason — the band rule at line 228 keeps
+      a figure whole between 641 and 1023px — so the fix is to let it wrap inside `.board.stack`
+      only, the way `.board.compare` already does at line 255, and then sweep 320 to 1440px again.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -662,6 +686,85 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the name beside a sentence stops being one character wide
+
+**Why this item.** The first job the last entry set was to check the pull requests against `main`.
+There are four, not three: #7, #8 and #9 are on Ryan's side of this file, and **#10, the machine
+index, was never written down there** — it has an entry in the Runs section and nowhere else, so it
+has now been added above. All four merge clean, tested by merging each rather than assumed, so there
+was nothing to repair. That left the push-shaped work the entry named next: the machine name crushed
+to a character's width on a phone.
+
+**What was wrong.** On a phone a table row stops being a row and becomes a two-track grid: the name
+on the left in `minmax(0, 1fr)`, the figure the page is for on the right in `auto`. The right track
+takes whatever its cell wants and the left one will shrink to nothing. That is right for a figure
+and wrong for a sentence, and **24 rows on 24 machine pages** answer the pay-back column with one:
+*Not enough data to compute a pay-back.* It is 261px of text in a 288px row, so the name beside it
+was left **22.5px** — one word a line, down the whole name. Two machines, both unpriced: the Mac
+Studio M5 Ultra, 512GB on 13 of the rows and the Strix Halo Framework Desktop, 192GB on 11.
+
+**The fault is wider than the backlog had it.** It was written as a 320px fault, measured on a 271px
+row. Measured here it runs to **390px** — the name gets 22.5px at 320, 62.5px at 360 and 92.5px at
+390, and only at 430px does it reach 132.5px and read normally. So it was three phone widths, not
+one.
+
+**The floor is arithmetic, not taste.** The left track now has a 115px floor, and 115 is the widest
+one that changes nothing else. Every stacked row on the site was measured in Chromium at 320, 360,
+390, 430, 540 and 640px — the 2,689 rows that carry both a name and a figure, over 252 pages — and
+the narrowest name that fits today is **117.7px**, on the NVIDIA RTX PRO 6000 Blackwell row of
+`/models/ling-3.0-flash-q4/`. Nothing else comes within the floor at any width. The measurement
+then ran again with the floor in and the diff is exact:
+
+| width | rows changed | of which the sentence row | narrowest name after |
+| --- | --- | --- | --- |
+| 320px | 24 | 24 | 115px |
+| 360px | 24 | 24 | 115px |
+| 390px | 24 | 24 | 115px |
+| 430px | 0 | — | 132.5px |
+| 540px | 0 | — | 242.5px |
+| 640px | 0 | — | 342.5px |
+
+A wider floor was possible and rejected: 130px would have reached 52 more rows at 320px and wrapped
+*Pays back in 10,966 years* onto two lines to give these 24 a few pixels, which is a bad trade.
+
+**What the row reads like now.** *Strix Halo Framework Desktop, 192GB* over three lines against the
+sentence over two, the same shape as the priced row under it. Read rendered at 320px on two machine
+pages before committing, not inferred from the numbers.
+
+**The guard, and the two breaks that proved it.** A new test in `tests/pagekit.test.ts` holds both
+halves of the claim: that the site still has machines with no published price and that `verdictLine`
+still answers them with that sentence, and that the phone block still carries the floor. Taking the
+floor back out fails it; changing the sentence in `src/pagekit.ts` fails it too. Neither half passes
+by agreeing with itself.
+
+**Two things found by sweeping, neither this run's and neither fixed here.** A tier label runs under
+the figure's column on **84 rows across 29 comparison pages** at 320px, because `.c-quant` is set
+`nowrap` and *Below every hosted tier* is 145px wide; it is untidy rather than broken, and it is in
+the backlog with what was measured and what the nowrap is there for. And **the 641px leaderboard
+scroll did not reproduce**: at every integer width from 615 to 700px the table is 597px inside the
+window. The original measurement's own arithmetic explains it — 582px is 641px minus a 15px classic
+scrollbar, which a headless context does not draw — so the item stays open with that written down,
+because a clean sweep here is not evidence it is fixed.
+
+**Verified**: 239 tests where there were 238, typecheck clean, 252 pages with every guard passing.
+Swept in Chromium over all 252 pages at 320, 360, 390, 430, 641, 768, 1024, 1280 and 1440px: no page
+wider than its window and no table scrolling sideways at any of them. The overflow sweep was also
+run on unchanged `main` for comparison, which is how the 29 pages above are known to predate this
+change: 53 pages at 320px before, 29 after, the difference being exactly these 24.
+
+**Where it is.** Pushed to `main` as `c17b1ec`, with this entry in the same push, which is what the
+last two entries recommended and why there is one deploy rather than two. Whether the CSS reached
+the live site could not be checked from here: `sunkcost.ai` is still not on this environment's
+allow-list, which is the first item under Ryan's side above. All four pull requests were re-checked
+against the commit and all four still merge clean — the change is one CSS declaration, a comment and
+one test, and no branch touches any of them.
+
+**What to continue.** The four pull requests are still open and still unreviewed, and they still
+block the biggest item on the backlog: the monthly-cost question page sits on PR #8's helpers, and a
+fifth branch is not worth opening while four wait. The push-shaped work left is the `.c-quant` label
+above, which is one rule inside `.board.stack` and wants the same sweep this run did, and then the
+641px band with a scrollbar forced.
 
 ### 2026-09-18 — two figures on one line, where the measurement says two figures fit
 
