@@ -62,15 +62,56 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
-- [ ] Merge (or close) [PR #7](https://github.com/rlindsey2/sunkcost/pull/7), a new page at
-      `/best-gpu/` answering "best GPU for local LLMs" with the site's own numbers. It is a pull
-      request rather than a push because it is a new page type, which is the standing rule here.
-      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`;
-      what it adds is one generated page, its share card, three helpers in `src/pagekit.ts`,
-      a build guard and eight tests. Verified before opening on merged `main` including PR #6:
-      218 tests, typecheck clean, 249 pages with every guard passing, and the full `npm run build`.
-      **This repository still runs no CI on a pull request** — see the backlog item about that —
-      so the PR page will show no checks, and everything above was run locally.
+- [ ] **`main` is red and the site has not deployed since 10:51. One link fixes it:
+      [PR #11](https://github.com/rlindsey2/sunkcost/pull/11), and it wants merging rather than
+      reviewing at leisure.** Deploy run 142 failed at the test step on `adf6b52`, so nothing
+      merged this morning has published, `/best-gpu/` included.
+      **Neither pull request was wrong on its own.** PR #7 merged at 10:50 and added
+      `/best-gpu/` to the generated pages' footer. PR #9 merged at 10:51, refactored that footer
+      into `FOOTER_LINKS`, gave `index.html` a hand-written footer with the same indexes, and added
+      a test holding the two to the same links in the same words and the same order. PR #9's merge
+      carried the `/best-gpu/` entry into `FOOTER_LINKS` correctly — six entries — but
+      `index.html`'s copy predates that page and still listed five, and
+      `tests/pagekit.test.ts:1331` caught exactly that. The test did its job; what failed is that
+      **a branch was merged without being rebuilt against the `main` it was merging into**, which
+      is the third time that shape of fault has cost this repository something.
+      The fix is one `<a>` in `index.html`, in the words `FOOTER_LINKS` already uses. Reproduced
+      locally on `adf6b52` first, then 250 tests pass where it was 249 passed and 1 failed, with
+      typecheck, `validate` and `vite build` clean. It is a pull request rather than a push only
+      because `index.html` is on this agent's never-push list, and that rule is worth keeping even
+      here — but it is why `main` stays red until Ryan merges.
+      **Ryan was notified at 10:58 on 2026-09-18**, by the session that ran the 10:31 slot rather
+      than the one that opened the pull request, because the entry above did not say a ping had
+      been sent and a red `main` is the one thing on this list worth one. That session checked the
+      fix rather than taking it on trust: PR #11 merges clean into `main` at `ba2e837`, the merged
+      tree runs **250 tests green** where `main` itself runs 249 and 1 failed, and typecheck is
+      clean. `build:pages` then stops on `/og/best-gpu.png`, which is the stale local `public/og/`
+      the item above already explains — `build:og` draws that card from `GPU_CARD` and the deploy
+      runs it first, so it cannot reach CI. Nothing else is needed: **merging PR #11 turns the next
+      deploy green.**
+
+- [x] [PR #7](https://github.com/rlindsey2/sunkcost/pull/7), the `/best-gpu/` page answering
+      "best GPU for local LLMs". **Merged 2026-09-18 at 10:50.** The page itself is sound and was
+      verified on merged `main` rather than assumed: 247 tests, typecheck clean, 253 pages, and the
+      page read back out of the build at 1,712 words with its lede, title and sitemap entry intact.
+      **It is not live yet**, because its own deploy run 141 was cancelled by the next push a minute
+      later and run 142 then failed — see the item above. Nothing about the page needs changing.
+      One thing seen while checking that is worth not chasing again: `checkOgCards` failed locally
+      naming four cards `build:og` had not drawn, and all four are memory-tier comparisons added by
+      other runs since this session last drew cards. A fresh `build:og` clears it; the deploy draws
+      them every time, so it never reaches CI.
+
+      **What its merge did to the other two.** Both remaining pull requests stopped merging the
+      moment it went in, and in exactly the files the PR #8 item below predicted:
+      `scripts/build-og.ts`, `scripts/build-pages.ts`, `src/list-card.ts` and `src/pagekit.ts`.
+      Measured with `git merge-tree` against `main`, not guessed: **PR #8
+      (`seo/local-vs-api-cost`) conflicts and PR #10 (`seo/hardware-index`) conflicts.** Neither is
+      either branch's fault. Three pages that each add a generated page, a share card and a helper
+      all edit the same four lists, so every pair collides on the same four files and every
+      resolution is the same shape: **a union, keeping both entries**, which is how PR #7's own
+      repair was resolved. Expect that rather than a real disagreement, and build and read the
+      merge rather than trusting a clean `git merge-tree` — which is the standing lesson here, and
+      is precisely what the red `main` above shows the cost of skipping.
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers. It is
@@ -94,15 +135,41 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       kept. After resolving, `npm test` and `npm run build:pages` catch any miss, because
       `checkLinks()` fails on a page nothing links to and both guards recompute their own figures.
 
-- [ ] Merge (or close) [PR #9](https://github.com/rlindsey2/sunkcost/pull/9), the calculator's own
-      footer. It is a pull request rather than a push because it is markup and CSS a visitor reads
-      on the calculator, which is the standing rule here. Three files: `index.html`, `src/styles.css`
-      and one `describe` block in `tests/pagekit.test.ts`. **It collides with nothing.** Checked with
-      a real test merge against `main`, against PR #7 and against PR #8: clean on all three, because
-      neither of the other two touches `index.html` or `src/styles.css`, and this one touches
-      nothing they do. It should therefore not need the hourly repair those two have needed
-      twenty-odd times between them. Verified before opening on `main` at `3cda750`: 233 tests,
-      typecheck clean, the full `npm run build`, and the page rendered and read at 360px and 1280px.
+- [x] [PR #9](https://github.com/rlindsey2/sunkcost/pull/9), the calculator's own footer.
+      **Merged 2026-09-18 at 10:51**, twenty minutes after PR #7 and a minute after it. The footer
+      it adds is right and nothing in it needs changing. What needs saying is that **this item's
+      own confident claim was wrong, and it is the claim that cost the deploy.**
+
+      It said *it collides with nothing*, and that was measured honestly — `git merge-tree` against
+      `main`, against PR #7 and against PR #8, clean on all three, because no other branch touched
+      `index.html` or `src/styles.css`. Every word of that was true and it was not the question.
+      **A clean git merge is not a working merge.** This branch's whole point was an invariant
+      spanning two files — `FOOTER_LINKS` in `src/pagekit.ts` and the hand-written footer in
+      `index.html` — and PR #7 added `/best-gpu/` to the first while this one was still writing the
+      second from a `main` that had no such page. Git had no conflict to report because the two
+      sides edited different files. The test added by this very branch caught it, at the merge,
+      on `main`, where the repository runs no check on a pull request. Red main and no deploy since
+      10:51; the fix is PR #11 in the item above.
+
+      **The lesson for the next branch that claims this.** `git merge-tree` answers whether two
+      diffs overlap textually. It cannot answer whether they still agree, and the branches this
+      agent opens are exactly the ones that add a page to a shared list. A branch is only really
+      clean when the *merged tree* has been built and tested — `git merge origin/main` into a
+      throwaway branch, then `npm test` — and no run has been doing that. Three merges have now
+      gone in without it (see the item above, which counts the same fault a third time). It is
+      cheap: one merge, one test run, thrown away afterwards.
+
+      Verified before opening on `main` at `3cda750`: 233 tests, typecheck clean, the full
+      `npm run build`, and the page rendered and read at 360px and 1280px. All of that was true
+      too, and on the wrong tree.
+
+- [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
+      machines at `/hardware/`. It is a pull request rather than a push because it is a new page
+      type, which is the standing rule here. No data figure is touched and neither are `src/calc.ts`,
+      `src/compute.ts` or `src/fit.ts`. Checked again on 2026-09-18 against `main` at `c17b1ec`:
+      **it merges clean**, as do #7, #8 and #9, each tested by merging rather than assumed. This
+      repository still runs no CI on a pull request, so all four show no checks and everything on
+      them was verified locally. It has been open since 08:02 on 2026-09-18.
 
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
@@ -272,16 +339,22 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       priced, plus three current Studios that had no pair either. The run entry below has the
       figures, the power-figure find and the guard.
 
-- [ ] **5 machines are still in no head-to-head**, and none of the five is reachable by any of the
-      five rules without inventing something. Two have no price at all (the Mac Studio M5 Ultra,
-      512GB and the Framework Desktop 495), so there is no pay-back to compare. The Mac Studio
-      M3 Ultra, 512GB has a price but its successor does not, which is the same problem one step
-      along. That leaves the Framework Desktop 385, 32GB and the Corsair AI Workstation 300, 64GB:
-      both are Ryzen AI Max 385 parts, and they are the only two, so the same-silicon rule cannot
-      pair them (different memory) and the memory-tier rule cannot either (different makers). The
-      honest pair for those two is probably the 385 against the 395 in the same case, which is a
-      GPU-count question rather than a memory one and would want its own wording. Worth doing only
-      after the question pages; three of the five need a price that does not exist yet.
+- [x] **5 machines were in no head-to-head, and no rule could reach them without inventing
+      something.** Done 2026-09-18, and the item's own reading of the two Ryzen AI Max 385 boxes
+      was the half it got wrong: it looked for a rule pairing the 385 with the 395 *across* makers,
+      which cannot work, when the pair each maker already sells is inside its own range. The rule
+      written is **the cheapest configuration of a box against the cheapest one with the better
+      chip in it**, and it reaches four pairs rather than two: the Framework Desktop 385 against
+      its 395, the Corsair AI Workstation 300's 385 against its 395, and — the two the item did not
+      see — the base Mac Studio M5 Max and M5 Ultra, whose entry configurations carry a cut-down
+      GPU that no page on the site mentioned. **53 of the 56 machines are in a head-to-head where
+      51 were.** The run entry below has the figures and the five breaks that proved the guard.
+
+- [ ] **3 machines are still in no head-to-head, and all three are waiting on a price rather than
+      on a rule.** The Mac Studio M5 Ultra, 512GB and the Framework Desktop 495 have no price at
+      all, so there is no pay-back to compare; the Mac Studio M3 Ultra, 512GB has one but its
+      successor does not, which is the same problem one step along. Nothing to do here until
+      data/*.json carries those prices, and that is Ryan's side rather than the agent's.
 
 - [x] **A stand-in power figure prints bare on every comparison page but the 12 new ones.** Done
       2026-09-17, and the item undersold it: the bare figure was 43 of the 55 head-to-heads that
@@ -564,21 +637,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       also missed the worst of it, which was not in the band at all — see the leaderboard note in
       the run entry below. 0 of the 362 tables scroll at any width from 320 to 1440px now.
 
-- [ ] What is left of the leaderboard's table on a phone. **The half that read badly is fixed**, on
-      2026-09-18: the eight hosted rows repeated *Runs in someone else's data centre. You cannot
-      download it.* eight times down the first screenful, and that is said once above the block now,
-      with each row carrying the score the index gives it with reasoning turned down. The run entry
-      below has the figures and the five breaks that proved the guard.
-      **The length is not the problem it looked like and is still open.** Measured at 360px the table
-      is 8,410px over 57 rows, and each row reads cleanly: name and score on one line, then Class,
-      Good at, Weights, Cheapest and Then under it. Nothing is cramped and nothing is hidden. The
-      pairing this item proposed does work — "Good at" renders 52px wide and "Weights" 42px, so with
-      their labels the two sit in 326px with room over — but it saves about 1,100px of 8,410, which
-      is not what makes the page long.
-      **The bigger one is elsewhere**: `/compare/` is 20,986px on a phone, its machine table alone
-      13,002px over 86 rows, and `/how-much-memory/` is 16,294px. If a pairing rule is written it
-      should be written for `stack()` and applied wherever it fits, not for the leaderboard alone.
-      The leaderboard is 4,208px on a desktop, which is not worth chasing.
+- [x] What is left of the leaderboard's table on a phone, and the pairing rule it asked for. Done
+      2026-09-18 for the rule, and the measurement moved most of the item's own answers. `stack()`
+      takes a `pair` now, and the fit is arithmetic rather than a guess: at 320px a row has 271px, a
+      12px gap splits the two tracks, and the right-hand track goes to whichever is wider, **the
+      figure or the second of the pair** — the part the item missed. So a pair fits when first + 12 +
+      max(figure, second) is 271 or less. **Six tables pair, and four candidates that looked like they
+      fit do not**, `/best/` among them: its Speed and calculator link are 150 and 126, but its
+      pay-back figure claims the right track and the pair comes to 288. `/compare/` was right to be
+      ruled out. 24,930px saved over 253 pages, the leaderboard 969px of it and `/how-much-memory/`
+      1,109px. The run entry below has the figures and the six breaks that proved the guard.
 
 - [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
       Re-measured in Chromium at 360px on 2026-09-18 while reading PR #9's footer: the document is
@@ -591,6 +659,45 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       is a pull request rather than a push. It was deliberately left out of PR #9 rather than folded
       in: a footer and a top bar are different faults, and a reviewer reading a PR about one should
       not have to review the other.
+
+- [x] **A machine name is crushed on a phone wherever its pay-back cannot be worked out.** Done
+      2026-09-18, and the fix was the first of the two the item offered: a floor on the left track,
+      measured rather than argued. The floor is **115px**, the widest one that changes nothing else —
+      the narrowest name that fits today is 117.7px, and the diff over every stacked table at six
+      widths is exactly the 24 rows and nothing besides. The item's own figure was measured on a
+      271px row; on the 288px row this environment renders it is 22.5px, and the fault runs to 390px
+      rather than stopping at 320. The run entry below has the figures and the two breaks that
+      proved the guard.
+
+- [ ] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Found
+      2026-09-18. **Re-measured 2026-09-18 and it did not reproduce**, which is worth knowing before
+      a run spends an hour on it: at every integer width from 615 to 700px the leaderboard's table
+      is 597px inside a 641px window and nothing scrolls, and the 252-page sweep at 641px found no
+      page wider than its window and no table scrolling. The arithmetic in the original measurement
+      says why: 596px wanted in 582px is a 641px window **minus a 15px classic scrollbar**, which
+      is what a desktop browser on Windows or Linux shows and what a headless context does not. So
+      the fault is probably real on those browsers and invisible here, and the next look at it
+      should force a scrollbar rather than trust a clean sweep. Found alongside the pairing rule,
+      and it predates it as well — the table wants 596px in the 582px it
+      is given, and it is clean at 640px, where the phone layout takes over, and at 660px and above.
+      641px is the first width above the stacking breakpoint, where the table becomes a table again
+      with seven columns and only the between-bands rules to wrap them. The log has claimed since
+      2026-09-17 that no table scrolls at any width from 320 to 1440px, and that claim was true when
+      it was written; the leaderboard has gained a column of text since, on the hosted rows. Worth
+      one look at the 641-to-1023px band, and worth re-measuring the other 306 stacked tables at
+      641px at the same time, since only sixteen pages were swept at that width.
+
+- [ ] **A label on the name reads under the figure's column on 29 comparison pages.** Found
+      2026-09-18 while sweeping for the crushed-name fix, and it predates it: the floor changes
+      none of these rows. `.c-quant` is set `white-space: nowrap` at line 173 of `public/page.css`,
+      so on a phone the tier label beside a model's name — *Below every hosted tier*, 145px of it —
+      cannot wrap and runs past the name cell it sits in. **84 labels on 29 pages at 320px**,
+      overhanging by up to 36px, and 79 of them cross into the track the figure is drawn in. It is
+      untidy rather than broken: the figure is right-aligned and a line higher, so nothing is
+      clipped and nothing overlaps, and it was read rendered before being written down. It is
+      clean at 360px and above. The nowrap is there for a reason — the band rule at line 228 keeps
+      a figure whole between 641 and 1023px — so the fix is to let it wrap inside `.board.stack`
+      only, the way `.board.compare` already does at line 255, and then sweep 320 to 1440px again.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -638,6 +745,291 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the name beside a sentence stops being one character wide
+
+**Why this item.** The first job the last entry set was to check the pull requests against `main`.
+There are four, not three: #7, #8 and #9 are on Ryan's side of this file, and **#10, the machine
+index, was never written down there** — it has an entry in the Runs section and nowhere else, so it
+has now been added above. All four merge clean, tested by merging each rather than assumed, so there
+was nothing to repair. That left the push-shaped work the entry named next: the machine name crushed
+to a character's width on a phone.
+
+**What was wrong.** On a phone a table row stops being a row and becomes a two-track grid: the name
+on the left in `minmax(0, 1fr)`, the figure the page is for on the right in `auto`. The right track
+takes whatever its cell wants and the left one will shrink to nothing. That is right for a figure
+and wrong for a sentence, and **24 rows on 24 machine pages** answer the pay-back column with one:
+*Not enough data to compute a pay-back.* It is 261px of text in a 288px row, so the name beside it
+was left **22.5px** — one word a line, down the whole name. Two machines, both unpriced: the Mac
+Studio M5 Ultra, 512GB on 13 of the rows and the Strix Halo Framework Desktop, 192GB on 11.
+
+**The fault is wider than the backlog had it.** It was written as a 320px fault, measured on a 271px
+row. Measured here it runs to **390px** — the name gets 22.5px at 320, 62.5px at 360 and 92.5px at
+390, and only at 430px does it reach 132.5px and read normally. So it was three phone widths, not
+one.
+
+**The floor is arithmetic, not taste.** The left track now has a 115px floor, and 115 is the widest
+one that changes nothing else. Every stacked row on the site was measured in Chromium at 320, 360,
+390, 430, 540 and 640px — the 2,689 rows that carry both a name and a figure, over 252 pages — and
+the narrowest name that fits today is **117.7px**, on the NVIDIA RTX PRO 6000 Blackwell row of
+`/models/ling-3.0-flash-q4/`. Nothing else comes within the floor at any width. The measurement
+then ran again with the floor in and the diff is exact:
+
+| width | rows changed | of which the sentence row | narrowest name after |
+| --- | --- | --- | --- |
+| 320px | 24 | 24 | 115px |
+| 360px | 24 | 24 | 115px |
+| 390px | 24 | 24 | 115px |
+| 430px | 0 | — | 132.5px |
+| 540px | 0 | — | 242.5px |
+| 640px | 0 | — | 342.5px |
+
+A wider floor was possible and rejected: 130px would have reached 52 more rows at 320px and wrapped
+*Pays back in 10,966 years* onto two lines to give these 24 a few pixels, which is a bad trade.
+
+**What the row reads like now.** *Strix Halo Framework Desktop, 192GB* over three lines against the
+sentence over two, the same shape as the priced row under it. Read rendered at 320px on two machine
+pages before committing, not inferred from the numbers.
+
+**The guard, and the two breaks that proved it.** A new test in `tests/pagekit.test.ts` holds both
+halves of the claim: that the site still has machines with no published price and that `verdictLine`
+still answers them with that sentence, and that the phone block still carries the floor. Taking the
+floor back out fails it; changing the sentence in `src/pagekit.ts` fails it too. Neither half passes
+by agreeing with itself.
+
+**Two things found by sweeping, neither this run's and neither fixed here.** A tier label runs under
+the figure's column on **84 rows across 29 comparison pages** at 320px, because `.c-quant` is set
+`nowrap` and *Below every hosted tier* is 145px wide; it is untidy rather than broken, and it is in
+the backlog with what was measured and what the nowrap is there for. And **the 641px leaderboard
+scroll did not reproduce**: at every integer width from 615 to 700px the table is 597px inside the
+window. The original measurement's own arithmetic explains it — 582px is 641px minus a 15px classic
+scrollbar, which a headless context does not draw — so the item stays open with that written down,
+because a clean sweep here is not evidence it is fixed.
+
+**Verified**: 239 tests where there were 238, typecheck clean, 252 pages with every guard passing.
+Swept in Chromium over all 252 pages at 320, 360, 390, 430, 641, 768, 1024, 1280 and 1440px: no page
+wider than its window and no table scrolling sideways at any of them. The overflow sweep was also
+run on unchanged `main` for comparison, which is how the 29 pages above are known to predate this
+change: 53 pages at 320px before, 29 after, the difference being exactly these 24.
+
+**Where it is.** Pushed to `main` as `c17b1ec`, with this entry in the same push, which is what the
+last two entries recommended and why there is one deploy rather than two. Whether the CSS reached
+the live site could not be checked from here: `sunkcost.ai` is still not on this environment's
+allow-list, which is the first item under Ryan's side above. All four pull requests were re-checked
+against the commit and all four still merge clean — the change is one CSS declaration, a comment and
+one test, and no branch touches any of them.
+
+**What happened next, written after the fact.** Everything above is still true and none of it is
+live. Deploy run 140 started on this push at 10:49:58 and was **cancelled sixteen seconds later** by
+PR #7's merge, run 141 was cancelled by PR #9's merge a minute after that, and runs 142 and 143 both
+failed at the test step. **The last deploy that published anything is run 139, at 10:09.** So the
+floor, `/best-gpu/` and the calculator's new footer are all in `main` and none of them has reached
+the site. The cause and the one-link fix are the item on Ryan's side above, which this session
+verified and then pinged him about at 10:58 — the first two runs of the hour are what write that
+item, and this one is what made sure someone outside the repository knows.
+
+**What to continue.** First, whether PR #11 merged and whether the deploy after it went green; if it
+did not, `main` is still red and nothing else matters. Then the three pull requests still open: #8
+and #10 stopped merging when PR #7 went in and each wants a union resolution in four files, and that
+is now the cheapest useful hour on this list, ahead of writing anything new. The push-shaped work
+left is the `.c-quant` label above, which is one rule inside `.board.stack` and wants the same sweep
+this run did, and then the 641px band with a scrollbar forced.
+
+### 2026-09-18 — two figures on one line, where the measurement says two figures fit
+
+**Why this item.** The first job the last entry set was to check all four pull requests against
+`main`. All four still merge clean — tested by merging each rather than assumed — so there was
+nothing to repair and no reason to spend the hour on one. That left the work the entry named next:
+the pairing rule for `stack()` on the long tables.
+
+**What the rule is.** `stack()` turns a table row into a block on a phone: the name, the figure the
+page is for against the right edge, and every other column underneath on a line of its own with its
+heading in front of it. Some of those columns are three words wide and still take a whole line.
+`stack()` now takes `pair`, two columns that share one line instead — the first keeps the left, the
+second sits against the right edge under the figure.
+
+**The fit is arithmetic, and the backlog had it wrong.** At 320px a row has 271px to give, split by
+a 12px gap into a left track that will shrink to nothing and a right track sized to its widest cell.
+The cell that usually sets that right track is not the pair at all: it is **the figure**, which sits
+in the same track one line up. So a pair fits when **first + 12 + max(figure, second) is 271 or
+less**, and that third term is what the backlog's own estimate left out. Every width below was
+measured in Chromium at 320px by letting each cell take its natural width, taken as the maximum over
+every row of every page of that kind — 56 machine pages, 55 model pages, 138 comparisons and the
+four indexes.
+
+**Six tables pair. Four that looked like they fit do not.**
+
+| Table | pair | first + 12 + max(figure, second) |
+| --- | --- | --- |
+| `/leaderboard/` | Good at + Weights | 103 + 12 + 94 = **209** |
+| `/how-much-memory/`, by size | Weights + Cache | 103 + 12 + 84 = **199** |
+| machine page, what it runs | Good at + Memory | 103 + 12 + 95 = **210** |
+| machine page, the shorter windows | Needs there + Needs at 32k | 115 + 12 + 119 = **246** |
+| model page, cheaper machines | Price + Needs there | 76 + 12 + 113 = **201** |
+| comparison, what the extra memory buys | Weights + Needs | 89 + 12 + 120 = **221** |
+
+The four refused: **`/best/`** — Speed and the calculator link measure 150 and 126, where the
+backlog had them at 113 and 130 without their headings, and the link is wider than the figure beside
+it, so it sets the right track and the pair comes to 288. Applying it anyway was tried first and
+measured: the page grew **873px**, because the left track fell to 134px and the speed wrapped. **A machine page's other machines** — the pay-back cell
+answers *Not enough data to compute a pay-back.* on unpriced rows, 252px, so nothing can sit beside
+it. **A model page's machines** and **a model head-to-head's machines** — both pay-back figures run
+to 157 and 155. `/compare/`, which the last entry already ruled out at 20,986px, stays ruled out:
+its Price sub-line alone is 264px.
+
+**What it bought.** 152 of the 307 stacked tables pair, **1,153 paired lines**, and **24,930px saved
+over 253 pages** measured at 320px against the same pages with the pair rule switched off.
+`/how-much-memory/` 17,654 → **16,545**, `/leaderboard/` 10,625 → **9,656**, a typical machine page
+322px shorter. Two of the pairs also say something the two separate lines did not: on
+`/how-much-memory/` the weights and the cache are the two halves of the figure printed above them,
+so the sum is now on one line under its own answer, and on a machine page's shorter-window table the
+same model's memory at two windows sits side by side instead of two lines apart.
+
+**The guard.** `checkPairedColumns()` holds the rule the item asked for, which is that the pair is
+chosen for the whole table and never per row: every row of a paired table carries both halves,
+each line has exactly two halves with one of them marked as the one that closes it, and neither half
+is empty or a bare dash. `stack()` holds the rest before the HTML exists — a pair must be two
+columns that are neighbours once the name and the figure are out of the count, named left to right,
+never the name or the figure, never a column that goes quiet in a row, and a pair that never applies
+to anything is refused rather than silently dropped. Proved by six breaks, each caught: pairing only
+half the rows (*24 of 56 rows … keep both columns on lines of their own*), leaving neither half
+marked as the closer (*2 halves and 0 of them closing it*), the rule quietly ceasing to apply at all
+(*were asked to share a line and no row gave them one*), pairing two columns with another between
+them, pairing a column that is empty in some rows, and taking the CSS rule out, which the new test
+catches.
+
+**The one exception the guard found by itself.** The leaderboard's eight hosted rows run three
+columns together under one `colspan`, so they have no Good at and no Weights to pair. The first
+version of the check called that a broken table; it is not, it is a row that does not have those
+columns, and the check says so now and counts them.
+
+**Two faults found by measuring, neither this run's and neither fixed here.** A machine name is
+crushed to **7px** on 24 rows across 24 pages, wherever the pay-back cell answers *Not enough data
+to compute a pay-back.* — the right track takes 252px and the left track gives up everything.
+Removing the pair markup changes nothing, so it predates this run. And `/leaderboard/` scrolls
+sideways by 14px at exactly 641px, the first width above the stacking breakpoint, and nowhere else
+between 320 and 1440px. Both are in the backlog with what was measured.
+
+**Verified**: 238 tests where there were 232, typecheck clean, 252 pages with every guard passing,
+and every build stage green — `validate`, `build:og`, `build:pages`, `vite build`, `build:share`
+(1,894 share pages) and `build:functions`, which found its font here. They were run in two goes
+rather than one `npm run build`: `build:og` redraws 1,894 cards that nothing in this change touches,
+so it was run on its own and the other five run after it rather than behind it again.
+Measured in Chromium across all 253 pages at 320px — nothing overflows the window, no table scrolls
+sideways, **no paired half wraps to a second line and no pair falls onto two lines** — and at 360,
+390, 430, 641, 768, 1024, 1280 and 1440px over sixteen pages of every kind. `/leaderboard/`,
+`/how-much-memory/` and a machine page were read rendered at 360px before committing.
+
+**Where it is.** Pushed to `main` as `eb3086f`, with this entry as `f6ae50d` and a correction to
+this paragraph as the commit after it. The code and the first draft of the entry went up in one
+push, which is what the last entry recommended, and the correction then went up in a second — so
+run 137 reads as cancelled and the run started by the last push is the one that carries everything.
+That is the workflow's concurrency rule doing its job, not a failure, and the lesson the last entry
+drew still holds with one word added: it is not enough to push the work and the log together, the
+entry has to be **right** before the push, because a correction costs another cancelled run. Whether
+the markup reached the live site could not be checked from here either way: `sunkcost.ai` is still
+not on this environment's allow-list, which is the first item under Ryan's side above. The four pull requests were re-checked after the push and all four
+still merge clean: the change is one option on six `stack()` calls, two CSS rules and a new check,
+and none of the four branches touches any of them.
+
+**What to continue.** The four pull requests are still open and still unreviewed, and they still
+block the biggest item on the backlog — the monthly-cost question page sits on PR #8's helpers, and
+a fifth branch is not worth opening while four wait. The push-shaped work left is the crushed name
+column above, which is a floor on one CSS track and wants the same 320-to-1440px sweep this run
+did, and then the 641px band.
+
+### 2026-09-18 — the cheap box in the range finally has something to compare against
+
+**Why this item.** The first job the last entry set was to check all four pull requests against
+`main` before anything else. All four still merged clean at the start of this run, so there was
+nothing to repair and no reason to spend the hour on one. That left the two things the entry named:
+the pairing rule for `stack()` on the long tables, and the monthly-cost question page, which is
+still waiting on PR #8. The `stack()` work was measured rather than assumed, and the measurement
+sent the run elsewhere — see the end of this entry. The backlog item taken instead was the machines
+in no head-to-head, which had been sitting open behind the question pages.
+
+**What was missing.** Four machines on this list are sold as one name with two different chips
+behind it, and every pairing rule on the site refused them, because every rule holds something
+equal: the memory tier holds the silicon so the memory is the whole of the difference, the
+same-silicon pair holds the memory so the price is, the generation pair holds both. What a maker
+cuts to reach a headline price is the chip **and** the memory at once, so the entry-level
+configuration of a box fell through all three. The Framework Desktop, 32GB and the Corsair AI
+Workstation 300, 64GB — both Ryzen AI Max 385 parts, both the cheapest way into their own range —
+appeared in **no head-to-head at all**. The backlog had those two and thought the honest pair was
+385 against 395 across makers; it is not, it is each maker's own two chips, and reading it that way
+turned up two more the item had not seen: the **base Mac Studio M5 Max, 36GB and M5 Ultra, 96GB**,
+whose entry configurations carry a cut-down GPU — 32 cores against 40, 64 against 80 — that no page
+on the site mentioned.
+
+**What the rule is.** `chipStepPairs()` takes the cheapest machine on each chip a box is sold on
+and walks the steps in price order, cheapest first. Four new comparisons, **90 machine match-ups
+where there were 86**, and **53 of the 56 machines in a head-to-head where 51 were**. The three
+left are all waiting on a price that does not exist in the data, not on a rule.
+
+**What the pages say, and the answer they did not start with.** The section was drafted to say what
+the bigger chip buys. On three of the four pairs the honest answer is **not speed**: both chips read
+memory at the same rate — 256 GB/s on the two Strix boxes, 1,200 GB/s on the Ultras — and a token is
+written by reading the whole model out of memory, so the figures follow the memory and not the chip.
+The pages say that outright, and say what the extra cores do instead: read a long prompt before the
+first token comes back, which is not something this site measures or prices. The fourth pair is the
+M5 Max, where the data does give the dearer chip the wider path, **614 GB/s against 460**, and there
+the page says so instead and calls it the part of the step you can see in the speeds. Each page
+names both chips in the data's own words, counts the graphics part the way its own maker counts it
+(Apple's GPU cores, AMD's compute units, never one translated into the other), and hands the reader
+a prefilled link that prices the cheaper box on its own before they pay for the step.
+
+**Titles and descriptions.** The heading says the box once and spends the rest on the two sizes, the
+way the memory-tier pages do, with a title that says the chip changes too so the pair does not read
+as another memory question: *Framework Desktop, 32GB vs 64GB: the chip changes too*, 53 characters.
+All four titles are 53 to 56, all four descriptions 107 to 155, and each description leads with what
+that pair actually buys — bandwidth on the M5 Max, models held on the other three.
+
+**The guard.** `checkChipStepPairs()` recomputes every claim from the data: that the pair is one box
+sold on two chips, both on sale and priced, cheaper side first and each side the cheapest of its own
+chip; that both chips are named as the data writes them; that the core counts and the step between
+them are printed where the data counts them; that the page says the dearer chip reads memory faster
+only where the data says it does, and says they read it at the same rate where they do; and that the
+section carries the link pricing the cheaper box alone. Proved by five breaks: dropping the core
+counts (caught, all four named), forcing the wider-path sentence onto the three equal-bandwidth
+pairs (caught twice over, the missing claim and the false one), dropping the section's calculator
+link (**not** caught at first, because the page's own top links the same address — the check now
+asks for the whole sentence, and the break is caught), stopping the chip names being printed
+(caught), and pairing the dearest configuration on each chip instead of the cheapest (caught by the
+new test, which recomputes the cheapest on each chip from the data).
+
+**Verified**: 232 tests where there were 230, typecheck clean, the full `npm run build` at exit 0
+including `build:og`, `build:share` and `build:functions`, 252 pages with every guard passing.
+Measured in Chromium at 320, 360, 390, 430, 768, 1024, 1280 and 1440px: nothing overflows the window
+at any width and no table scrolls sideways. The four pages run 894 to 992 words against a median of
+753 for the comparisons. The Framework page was read rendered at 1280px and its share card at full
+size before committing.
+
+**Where it is.** Pushed to `main` as `5d9710a`; deploy run 135 finished green at 09:10, so the four
+pages are live. The push **conflicted all three code pull requests** — #7, #8 and #10 all add names
+to the same import list in `scripts/build-pages.ts` that `gpuCores` and `chipStepNames` went into.
+All three were repaired in this run by merging `main` into each branch and taking the union of the
+lists, which is the same repair earlier runs made by hand; each was checked after with typecheck and
+the full test suite, and PR #10 with a full `build:og` and `build:pages` as well, because its
+`/hardware/` index counts machines and had to be shown still holding. All four branches merge clean
+into `main` again. PR #9 never conflicted; it touches the calculator only.
+
+**Why not the `stack()` pairing rule.** It was measured first, at 320px in Chromium, and the
+measurement argues against writing it. On `/compare/`, the page the last entry called the worst at
+20,986px, the machine table's own sub-lines are **Price at up to 244px of a 288px row** — too wide to
+sit beside anything — so only 53 of 86 rows could pair at all, and a table where some rows pair and
+some do not reads worse than one where none do. The page with the real opportunity is
+`/how-much-memory/`, where Parameters, Weights and Cache run 39, 53 and 44px and each takes a full
+line; pairing two of the three saves about 1,265px of 16,294, and all three on one line would save
+about 2,530px, which needs three columns in a grid built for two. It is worth doing, for `stack()`
+rather than for one page, but as a deliberate change to the narrow layout with its own run, not as
+a by-product.
+
+**What to continue.** The four pull requests are still open and still unreviewed, and they are now
+the thing blocking the biggest item on the backlog: the monthly-cost question page sits on PR #8's
+helpers, and a fifth branch is not worth opening while four wait. If they are still open next run,
+the push-shaped work left is the `stack()` pairing rule as measured above, and after that the
+`/hardware/` and `/leaderboard/` cross-link question, which needs PR #10 merged before it can be
+looked at properly.
 
 ### 2026-09-18 — the 56 machines finally have a list of their own
 

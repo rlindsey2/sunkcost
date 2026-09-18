@@ -262,7 +262,12 @@ a:hover { color: var(--ink); }
      the rest underneath, each with its column heading in front of it. */
   .board.stack { display: table; width: 100%; overflow-x: visible; white-space: normal; }
   .board.stack thead { display: none; }
-  .board.stack tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 3px; padding: 10px 1px 11px; border-bottom: 1px solid var(--line); }
+  /* The right-hand track is sized to what its cell wants, and the left one gives
+     up everything, so a row whose figure is a sentence rather than a number left
+     the name a single character wide. The floor is 115px because that is the
+     widest one that changes nothing else: the narrowest name that fits today is
+     117.7px, measured at 320px across every stacked table on the site. */
+  .board.stack tbody tr { display: grid; grid-template-columns: minmax(115px, 1fr) auto; column-gap: 12px; row-gap: 3px; padding: 10px 1px 11px; border-bottom: 1px solid var(--line); }
   .board.stack tbody tr:last-child { border-bottom: 0; }
   .board.stack td, .board.stack tbody th { padding: 0; border: 0; white-space: normal; }
   .board.stack .k-name { grid-column: 1; grid-row: 1; }
@@ -270,6 +275,12 @@ a:hover { color: var(--ink); }
   .board.stack .k-sub { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-2); }
   .board.stack .k-sub[data-label]::before { content: attr(data-label); margin-right: 5px; color: var(--faint); }
   .board.stack .k-sub:empty, .board.stack .k-none { display: none; }
+  /* Two narrow columns that would each take a whole line share one instead: the
+     first keeps the left, the second sits against the right edge under the
+     figure. Chosen per table, and only where both fit at 320px, because a table
+     that pairs some rows and not others reads worse than one that pairs none. */
+  .board.stack .k-pair { grid-column: auto; }
+  .board.stack .k-pair-end { text-align: right; }
   .board.stack .k-wide { grid-column: 1 / -1; }
   .board.stack tr.is-frontier { padding: 14px 1px 4px; border-bottom: 0; background: none; }
   .board.stack tr.is-frontier .k-wide { font-size: 11.5px; color: var(--faint); }
