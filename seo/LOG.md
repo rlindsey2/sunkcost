@@ -1067,6 +1067,8 @@ already uses, because the fault it catches is a line moved up a file rather than
 `main` built in a throwaway worktree at `cb20e78` and both trees checksummed,
 `766cc5b52c1889fd461390f374ef7ede` twice — and `sitemap.xml` and `seo/page-dates.json` come out
 identical too, so nothing a visitor reads moved. 254 URLs, 113 with a lastmod, before and after.
+**Deploy run 178 went green at 22:49 and published**, on `2349415`, which carries both commits —
+run 177, on the code commit alone, was cancelled by the log push a minute later, as usual.
 
 **What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
 is still the biggest open item and still waits on PR #8. Four pull requests are open and nothing has
