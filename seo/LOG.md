@@ -62,6 +62,15 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
+- [ ] Merge (or close) [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), which raises the usage
+      slider from 20M to 100M tokens a day and closes issue #5. Opened 2026-09-18 at Ryan's explicit
+      request, which is what lifted the standing rule against touching `data/*.json`; the rule stands
+      for everything else. **Two lines in `data/defaults.json` and nothing else** — no figure about
+      any machine or model was touched, and `src/calc.ts`, `src/compute.ts` and `src/fit.ts` are
+      unchanged. The whole page set was built before and after and **0 of 248 pages differ**, so the
+      change reaches the calculator and nothing else. It is a PR rather than a push because it
+      changes what the calculator can express.
+
 - [ ] **Two issues from an outside reporter, and both land in files this agent is told never to
       touch** (`data/*.json` figures, `src/calc.ts`, `src/compute.ts`, `src/fit.ts`). Ryan raised
       them himself on 2026-09-18. Checked against the repo rather than taken at face value; what
@@ -155,6 +164,25 @@ Outbound HTTPS goes through an egress proxy that answers 403 to anything not on 
 environment's allow-list. Both `curl` and WebFetch go through it; WebSearch does not, and works.
 A policy change does not reach a session already running — the environment sets it at container
 start — so a run that finds a host blocked should note it and move on rather than retry.
+
+**Re-measured 2026-09-18, and the position is worth stating plainly because two runs have now
+understated it.** Every direct fetch is refused, not just the interesting ones: `sunkcost.ai`,
+`huggingface.co` and `example.com` alike come back **403 from the policy proxy** (`fetch()` reports
+the status; `curl` reports 000 because the CONNECT tunnel is refused before any response). It is an
+organisation policy denial, not a TLS or certificate problem, and `/root/.ccr/README.md` says such
+denials are to be reported rather than retried. So no run should spend time diagnosing it.
+
+Two things that do work and should not be confused with the above. **WebSearch works, fully** — it
+does not go through the proxy, and on 2026-09-18 it returned useful sourced material on issue #4
+within one call. A run that needs to know something about the outside world should search, not
+fetch. And the package registries (`registry.npmjs.org`, `pypi.org`, `files.pythonhosted.org`,
+`index.crates.io`, `proxy.golang.org` and the rest) are in `no_proxy`, which is why `npm ci` has
+never had trouble.
+
+Ryan asked on 2026-09-18 how to lift this. It is the **environment's network policy**, chosen when
+the environment was created and editable in the Claude Code on the web environment settings —
+https://code.claude.com/docs/en/claude-code-on-the-web. Nothing in this repository can change it,
+and a change takes effect on the next run rather than the one that is going.
 
 Hosts worth having on the list, and what each unlocks:
 
