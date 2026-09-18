@@ -161,6 +161,15 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       merge rather than trusting a clean `git merge-tree` — which is the standing lesson here, and
       is precisely what the red `main` above shows the cost of skipping.
 
+- [ ] Merge (or close) **[PR #14](https://github.com/rlindsey2/sunkcost/pull/14)**, the waterline's
+      time axis. Opened 2026-09-18. It is the one open pull request that fixes something a visitor
+      can hit today: the axis labelled every hundredth year past a 600-year horizon, so three share
+      cards are 6 to 10 MB of stacked text and the calculator puts up to 68,747 SVG text nodes into
+      the page when a reader picks one of those machines. It is a pull request rather than a push
+      only because it changes what the calculator draws — 520 of the 2,970 charts it can draw, all
+      at horizons over 600 years. `src/waterline.ts` alone, 310 tests, three guards each proved by
+      a break.
+
 - [ ] Merge (or close) **[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, the calculator's
       assumptions panel. Opened 2026-09-18. It fixes three things the generated pages fixed weeks
       ago and the panel kept: a power figure printed as the data's own key (*140 W, stand in*), the
@@ -955,13 +964,15 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       now, and nothing on the site moves above 360px. The run entry below has the figures and the
       two breaks that proved the guard.
 
-- [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
-      M6 32GB card the label "never reaches the surface" is drawn right-anchored by
-      `renderWaterline` and ends at x=1181, where every other line on the card now stops at 1144.
-      It is not clipped, so it is untidy rather than broken, and it is `src/waterline.ts`, which
-      the calculator draws with too — there the chart is full-bleed and the label belongs at the
-      edge, so the fix is a margin the card passes in rather than a change to the renderer.
-      Turned up while fixing the card's own text on 2026-09-17.
+- [x] **The waterline's own labels sat outside the share card's text column.** Done 2026-09-18, and
+      the fix was the one this item proposed — a margin the card passes in — but its reading of the
+      size was the smaller half. The right-hand label it found was 35px out by its anchor rather
+      than 19, on 113 cards; and **every one of the 1,894 cards had four kinds of label 35px out on
+      the left**, which the item did not see. What reading the fixed card then turned up is the
+      bigger find and is [PR #14](https://github.com/rlindsey2/sunkcost/pull/14): the year axis
+      labelled every hundredth year past a 600-year horizon, 68,747 of them on one card and 10 MB
+      of SVG, in code the calculator draws with. The run entry below has the figures and the six
+      breaks that proved the guards.
 
 - [x] Every graphics card page opened "Can a NVIDIA GeForce RTX 3090, 24GB run local LLMs?".
       Done 2026-09-17. `indefiniteArticle()` reads a name set in capitals as an initialism and
@@ -1016,6 +1027,63 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — the chart's labels line up with the card, and the axis stops labelling every hundredth year
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job, and the
+last entry's instruction was conditional: write the monthly-cost page if PR #8 has merged, and the
+waterline label margin if it has not. It has not — #8, #10, #12 and #13 are all still open — so the
+margin was the job. Pushed as **`60f2388`**. Measuring it turned up something larger in the same
+file, which went out as **[PR #14](https://github.com/rlindsey2/sunkcost/pull/14)**, branch
+`seo/waterline-ticks`.
+
+**The margin, and the item's own count of it.** The item had one label 19px from the right edge. The
+anchors say 35px, on both sides, and the left side is the bigger half:
+
+| | before | after |
+| --- | --- | --- |
+| cards with a label left of the text column | 1,894 of 1,894 | 0 |
+| cards with one right of it | 113 | 0 |
+| worst overhang, either side | 35px | 0 |
+
+The left-hand ones are the depth-grid figures (4,957 of them), `BREAK EVEN` (1,894), the year-one
+marker (1,648) and `bought` (113); the right-hand one is `never reaches the surface`. The fix is the
+one the item proposed — a margin the caller passes — and the calculator passes none, because there
+the chart is the whole panel and a label at the edge is where it belongs. **Byte-identical for the
+page over 11,881 renders** of its own call, across every machine × model it can plot at four widths,
+which is why it went to main rather than a pull request.
+
+**Reading the fixed card is what found the rest.** The year axis climbed a ladder that stopped at
+100 years, so past a 600-year horizon it labelled every hundredth year against a wait measured in
+millions. **68,747 tick labels on one card**, 66,837 and 42,012 on two more, stacked on top of each
+other in the first thirty pixels of the axis; 222 of the 1,894 cards drew more than eight; the worst
+card was **10,488 KB of SVG**. Every card now draws two to five and none is over 6 KB. The
+calculator draws the same chart from the same code, so choosing one of those machines put all 68,747
+text nodes into the live page — which is why that half is a pull request and not a push. 520 of the
+2,970 charts the calculator can draw change, all of them at horizons over 600 years.
+
+**Two more faults on the same line, both from reading the card rather than the code.** A tick had a
+fixed 18px allowance either side, so `4,000 yr` ran past the column where `4 yr` fitted, on five
+cards. And `surfaces at 8278467 yrs` printed ungrouped beside a verdict reading *You're underwater
+for 8,278,467 years* — the same figure, set two ways, on the same card.
+
+**Six breaks proved six claims, one each.** On main: the card no longer passing its margin, the
+off-chart verdict put back to the plot edge, and the margin taken on the page as well — one test
+each. On the branch: the stopping ladder restored (four tests, because stacked ticks break the
+column and the grouping too), the labels ungrouped, and the fixed tick allowance back.
+
+**Verified.** Main: 308 tests (2 new), typecheck clean, the full `npm run build` end to end with
+`build:functions` included, and a card rendered to PNG and read. Branch: 310 tests (4 new),
+typecheck clean, the same full build, 253 pages, and the worst card rendered and read.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest open item and still waits on PR #8. **Five pull requests are open now** and
+nothing has merged since PR #11: **#8** and **#10** unblock page work, **#12**, **#13** and **#14**
+are the calculator's own head. Of the items that can go straight to main, the honest answer is the
+same as last night's: there is no obvious one left. The nearest are the `/hardware/` and
+`/leaderboard/` cross-link and the model page's duplicate call to action, and both are a question to
+settle before they are a change — either would be a reasonable hour's work if the next run wants to
+settle one rather than wait.
 
 ### 2026-09-18 — nothing the build publishes is written until the guards have passed
 
