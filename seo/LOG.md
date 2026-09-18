@@ -161,6 +161,15 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       merge rather than trusting a clean `git merge-tree` — which is the standing lesson here, and
       is precisely what the red `main` above shows the cost of skipping.
 
+- [ ] Merge (or close) **[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, the calculator's
+      assumptions panel. Opened 2026-09-18. It fixes three things the generated pages fixed weeks
+      ago and the panel kept: a power figure printed as the data's own key (*140 W, stand in*), the
+      whole of `hw.notes` under Usable memory so a graphics card explained its bandwidth arithmetic
+      under its memory, and source links named *source 1, source 2, source 3* — the last place on
+      the site naming a link after a number. It is a pull request because it is `src/render.ts`.
+      **It collides with nothing**: really merged into PR #8, PR #10 and PR #12 in worktrees, all
+      three green, and the 253 generated pages come out byte-for-byte identical to `main`'s.
+
 - [ ] Merge (or close) **[PR #12](https://github.com/rlindsey2/sunkcost/pull/12)**, three lines of
       `src/styles.css` that fix the calculator's top bar. **It collides with nothing**: PR #8 and
       PR #10 touch nine files between them and neither goes near `src/styles.css`, and no test spans
@@ -474,7 +483,13 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       proved the guard. `/how-much-memory/`'s key-value cache note was read out loud at the same
       time and is sound.
 
-- [ ] **The calculator prints `hw.notes` whole, the way the machine pages did until today.**
+- [x] **The calculator prints `hw.notes` whole, the way the machine pages did until today.** Done
+      2026-09-18 as [PR #13](https://github.com/rlindsey2/sunkcost/pull/13), with the two items the
+      entry below folded in, and the item was right that it is one paragraph of one file. Where it
+      guessed was the bandwidth sentence: the panel had no bandwidth row to send it to, so it has
+      one now, which also sources the figure the speed estimate is built on. The run entry below has
+      the four homes each sentence goes to, the third fault reading the paragraph turned up, and the
+      five breaks that proved the guards. The original wording follows.
       `src/render.ts:543` puts the field under "Usable memory" in the assumptions panel, so the
       laptops explain there that speed falls once the fans cap out and the cards derive their
       bandwidth figure under their memory. `splitHardwareNote()` is exported from `src/pagekit.ts`,
@@ -564,8 +579,10 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       in words what a borrowed number does and does not tell you, and `checkStandInPower()` holds
       three claims. The run entry below has the figures and the three breaks that proved the guard.
 
-- [ ] The calculator's assumptions panel still prints the data's own key as English. The generated
-      pages stopped on 2026-09-17: `powerSourceLabel()` turns `third_party_measured` into
+- [x] The calculator's assumptions panel still prints the data's own key as English. Done
+      2026-09-18 in the same pull request, [PR #13](https://github.com/rlindsey2/sunkcost/pull/13),
+      which is what this item asked for. The original wording follows.
+      The generated pages stopped on 2026-09-17: `powerSourceLabel()` turns `third_party_measured` into
       "measured by a third party" and `stand_in` into "stand-in", where both used to arrive as
       "third party measured" and "stand in" from a `replace(/_/g, ' ')`. `src/render.ts:542` still
       runs that same replace, so the calculator's own Power under load line reads "140 W, **stand
@@ -988,6 +1005,84 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — the calculator's assumptions panel says what every page says
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job. Its top
+open item is the calculator's assumptions panel, which the run before this one left with three
+reasons to exist rather than two, and the page it is on is the one a visitor from a search lands on.
+It is a pull request rather than a push because it is `src/render.ts`, the calculator's own head:
+**[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, branch `seo/assumptions-panel`.
+
+**The item's own count was two faults. Reading the paragraph found a third, and it is the one this
+file spent yesterday on.** `links()` in `src/render.ts` printed *source 1, source 2, source 3* under
+Hardware price — the same links, on the same machines, that `a48ef96` renamed on all 111 generated
+pages the run before. The panel was the last place on the site naming a link after a number.
+
+**Where each sentence of `hw.notes` goes, now that it is split.** The panel has fewer rows than a
+machine page, so the question the item left open was where the bandwidth sentence lands. It lands in
+a row that was not there: **Memory bandwidth**, which the panel wanted anyway, because the figure is
+what an estimated speed is divided from and the panel's whole job is to say where a figure came from.
+All 56 machines carry one, so the row shows for every machine on the list and says *entered by you*
+on a machine you describe yourself.
+
+| sentence | machines | where it goes |
+| --- | --- | --- |
+| memory | 56 | Usable memory, where it was |
+| bandwidth | 19 | the new Memory bandwidth row |
+| speed | 11 | Local speed |
+| availability | 2 | Hardware price, which is the row that says which product this is |
+
+**One typographic fault the rendered page turned up and the source did not.** A note is a sentence,
+and what it followed did not always end like one: the Local speed line read *"…bandwidth-bound
+estimate, not a measurement On a laptop, sustained speed drops…"*. `endStop()` moves to
+`src/format.ts` with the other three and ends the line the note follows — after `</a>` where the
+source is a link, so the RTX 4080's availability sentence reads *ggml-org/llama.cpp. The 4080 SUPER
+has the same 16 GB…* rather than running on.
+
+**`src/format.ts` is the shared home, which is what the item asked for.** It is the one module the
+bundle and the build both import, and it imports nothing, so `powerSourceLabel()`,
+`splitHardwareNote()` with `noteSentences()`, `endStop()` and the whole source-link namer moved into
+it. `src/pagekit.ts` re-exports all of them, so `scripts/build-pages.ts` and the tests keep one
+import site and neither file changed.
+
+**The proof that a refactor changed nothing: the 253 generated pages are byte-for-byte identical.**
+`build:pages` was run on the branch and on `main` and both trees checksummed — `766cc5b5…` twice.
+Not a spot check, and not an argument that it should be the same.
+
+**Five breaks proved five guards, one each.** The numbered links back; the data's own key back; the
+note whole under the memory figure; the Memory bandwidth row deleted so a sentence has no row to sit
+under; and `powerSourceLabel()` forked into a second copy in `pagekit.ts`, which is the one a future
+run is most likely to do by accident. Each failed the test that claims it and nothing else. The
+identity check is why the fork break fires: the tests import the four from `src/format.ts` and from
+`src/pagekit.ts` and expect the same function object, not the same answer.
+
+**Verified.** 308 tests (5 new), `tsc --noEmit` clean, and the full `npm run build` end to end,
+`build:functions` included. Read rendered in Chromium on the built bundle, as text and as a picture,
+for a card with four sources and a bandwidth note, the RTX 4080 with its availability sentence, a
+MacBook Pro with its thermal one, a Strix Halo box, and both custom-machine paths — with a bandwidth
+entered and without. **0 elements past the window and nothing scrolling inside the panel at 320, 360,
+390, 430, 641, 768 and 1024px.** The two elements that do overflow at 320 and 360px are
+`.topbar-end` and the theme button, which is PR #12's fault and not this one. Bundle 276.88 kB →
+276.97 kB.
+
+**All three other open pull requests were really merged into this branch rather than trusted to
+`git merge-tree`**, which is this file's standing lesson and called all three clean before the fact.
+In throwaway worktrees: **PR #8 merges to 316 tests and 254 pages, PR #10 to 313 and 254, PR #12 to
+308 and 253**, every guard passing and typecheck clean on all three. Nothing here needs repairing
+and nothing this branch does breaks them — `pagekit.ts` loses 196 lines and every one of them is
+re-exported from where it went.
+
+**What is still Ryan's, and this run confirmed it rendered.** The Electricity row prints
+`TODO: confirm the latest monthly figure at eia.gov/electricity/monthly and update` to visitors,
+because `electricity.source` in `data/defaults.json` carries that sentence and the panel prints the
+field whole. It is one line of data and it is the one rule this repository holds everywhere else.
+Photographed in the panel this run, four rows under the fix.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is the biggest open item and still waits on PR #8, which is repaired, green and ready. Under it, the
+sitemap and the date ledger are still written before any guard runs, which is a move rather than a
+rewrite and is the next thing that can go straight to main.
 
 ### 2026-09-18 — every source link stops being a number and says whose page it is
 
