@@ -62,7 +62,11 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
-- [ ] **`main` is red and the site has not deployed since 10:51. One link fixes it:
+- [x] **`main` was red and nothing had deployed since 10:51. Settled: Ryan merged PR #11 at 11:01
+      and deploy run 146 went green at 11:06** on `be11535`, so the machine-name floor,
+      `/best-gpu/` and the calculator's new footer are all published. Kept below because the
+      fault is worth not repeating. The old item:
+      **One link fixes it:
       [PR #11](https://github.com/rlindsey2/sunkcost/pull/11), and it wants merging rather than
       reviewing at leisure.** Deploy run 142 failed at the test step on `adf6b52`, so nothing
       merged this morning has published, `/best-gpu/` included.
@@ -114,8 +118,15 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       is precisely what the red `main` above shows the cost of skipping.
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
-      `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers. It is
-      a pull request rather than a push because it is a new page, which is the standing rule here.
+      `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
+      **Repaired against green `main` at 11:41 on 2026-09-18 and ready to merge** (`8789b62`):
+      16 union hunks in six files, the `/best/` note merged so both pages keep their link, a
+      seventh footer entry carried into `index.html`, and one stray file dropped. Verified on the
+      merged tree: 258 tests, typecheck clean, 254 pages with every guard passing, the full
+      `npm run build`, and `/best/` read rendered with all three links in its closing note.
+      **Merging this breaks PR #10 and the other way round** — they conflict in five files,
+      `index.html` among them now, and the repair is the same union plus a footer line.
+      It is a pull request rather than a push because it is a new page, which is the standing rule here.
       No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`;
       what it adds is one generated page, its share card, four helpers in `src/pagekit.ts`, a build
       guard and eight tests. Verified before opening on `main` at `94c354a`: 218 tests, typecheck
@@ -164,7 +175,13 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       too, and on the wrong tree.
 
 - [ ] Merge (or close) [PR #10](https://github.com/rlindsey2/sunkcost/pull/10), an index of all 56
-      machines at `/hardware/`. It is a pull request rather than a push because it is a new page
+      machines at `/hardware/`. **Repaired against green `main` at 11:47 on 2026-09-18 and ready
+      to merge** (`81cd7d1`): 10 union hunks in four files, the build's own count line kept from
+      this branch because `/hardware/` is a page rather than a machine, and `/hardware/` carried
+      into `index.html`'s footer, which no conflict marker asked for. Verified on the merged tree:
+      255 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`,
+      and `/hardware/` read rendered at 1,811 words. **Merging this breaks PR #8 and the other way
+      round**, as the item above says. It is a pull request rather than a push because it is a new page
       type, which is the standing rule here. No data figure is touched and neither are `src/calc.ts`,
       `src/compute.ts` or `src/fit.ts`. Checked again on 2026-09-18 against `main` at `c17b1ec`:
       **it merges clean**, as do #7, #8 and #9, each tested by merging rather than assumed. This
@@ -745,6 +762,73 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the two pages waiting on a merge stop waiting on a conflict
+
+**Why this item.** The last entry set two jobs in order. The first is answered: Ryan merged PR #11
+at 11:01, deploy run 146 went green at 11:06 on `be11535`, and the three things stuck behind red
+`main` — the machine-name floor, `/best-gpu/` and the calculator's own footer — are published. The
+second was the two pull requests that stopped merging when PR #7 went in, which the last entry
+called the cheapest useful hour on the list. Both are repaired and pushed.
+
+**The conflicts were the union the backlog predicted.** PR #8 had 16 hunks across six files, PR #10
+had 10 across four, and all but two are two pages appending their own card constant, card builder,
+import, `write()` call, build guard, test block and footer entry to the same lists. Both sides kept,
+every time.
+
+**The two that are not unions.**
+
+- **The closing note on `/best/`**, which the PR #8 item warned about and which is the one place a
+  page could have lost its only link in that paragraph. Main's sentence links the card ranking;
+  the branch's last sentence links the token-cost page. The resolution keeps main's line and takes
+  the branch's last sentence, so the rendered note now carries `/best-gpu/`, `/compare/` and
+  `/local-llm-vs-api-cost/`. Read out of the build rather than inferred from the diff.
+- **The build's own count line on PR #10.** Main counts machines as every path starting `/hardware`;
+  the branch counts every path starting `/hardware/` that is not `/hardware/` itself, because
+  `/hardware/` is now an index page and not a machine. The branch's line is the right one, and the
+  build prints 56 machines with it.
+
+**What no conflict marker asked for, and what it cost this morning.** `FOOTER_LINKS` in
+`src/pagekit.ts` and the hand-written footer in `index.html` have to hold the same links in the same
+words and the same order. PR #8 adds a seventh entry to the first; on PR #10 both entries merged
+silently with no conflict at all. Either branch would therefore have merged clean and failed on
+`main`, which is exactly what happened at 10:51 and is the fault the last two entries counted three
+times. Both branches now carry the `index.html` line. The guard is real and was proved rather than
+trusted: taking the line back out of `index.html` fails *the calculator's own foot offers the same
+indexes, in the same words and the same order, as a generated page*, on the merged tree.
+
+**One thing found by sweeping, and it was this repository's own rule catching a slip.** PR #8's
+branch was carrying `public/best-gpu/index.html`, 226 lines of build output committed by the
+previous merge repair on that branch (`40a3cbd`). It is not on `main`, and `main`'s own ignore rules
+name `public/best-gpu/`, but ignore rules do not apply to a file already tracked, so it would have
+merged into the repository and gone stale on the next data change. Dropped. Worth running on any
+branch before pushing it, since it takes a second:
+`git ls-files | git check-ignore --no-index --stdin -v`. It is clean on PR #10 and on `main`.
+
+**Verified, on the merged trees rather than on the branches, which is the standing lesson here.**
+PR #8: 258 tests, typecheck clean, 254 pages with every guard passing, the full `npm run build`
+through `build:functions`, `/best/` read rendered, and the built `dist/index.html` footer read with
+all six indexes in it. PR #10: 255 tests, typecheck clean, 254 pages with every guard passing, the
+full build, and `/hardware/` read rendered at 1,811 words with its lede, title and footer intact.
+Both were then re-checked against `main` with `git merge-tree`: **both merge clean.**
+
+**They still conflict with each other**, in `scripts/build-og.ts`, `scripts/build-pages.ts`,
+`src/list-card.ts`, `tests/list-card.test.ts` and — new since this run — `index.html`, because both
+now add a footer line to it. Whichever merges first, the second wants the same union again plus its
+own footer entry in `FOOTER_LINKS`'s order. That is a repair of a few minutes, not a reason to hold
+either back.
+
+**Where it is.** Two pushes, no change to `main` but this entry: `8789b62` on
+`seo/local-vs-api-cost` and `81cd7d1` on `seo/hardware-index`. Whether the live site is serving the
+11:06 deploy could not be checked from here; `sunkcost.ai` is still off this environment's
+allow-list, which is the first item under Ryan's side above.
+
+**What to continue.** Both pull requests are Ryan's to merge and nothing else on them needs an
+agent. The push-shaped work left is the `.c-quant` tier label that runs under the figure's column on
+84 rows across 29 comparison pages at 320px, which is one rule inside `.board.stack` and wants the
+320-to-1440px sweep the 10:31 run did; then the 641px leaderboard band with a scrollbar forced,
+which did not reproduce headless. The biggest item on the backlog is still the monthly-cost question
+page, and it sits on PR #8's helpers, so it stays behind that merge.
 
 ### 2026-09-18 — the name beside a sentence stops being one character wide
 
