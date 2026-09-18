@@ -14,13 +14,13 @@ import {
   footerHtml, gbRange,
   cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineVerdict, median, meetAtShorterContext, modelLabel, modelVerdict, MTOK, nearestCompleteComputer,
+  machineVerdict, median, missedMachines, meetAtShorterContext, modelLabel, modelVerdict, MTOK, nearestCompleteComputer,
   otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope,
   priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   speedWithBasis, splitCapabilityNote, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
-  type SharedMachine, type ShorterFit, type ShorterMachine,
+  type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
@@ -1034,6 +1034,90 @@ function checkShorterMachines() {
  * that has models to name must name them all, and a page that has none may not
  * claim any.
  */
+/**
+ * The section on the machines that miss a model makes three claims a reader
+ * cannot check without the data: that each machine listed holds the model at no
+ * window at all, that the weights alone are what stops them where the page says
+ * so, and that the last column is the strongest model each one does hold. All
+ * three are recomputed here, on the words the page actually shipped, because the
+ * section exists on the pages with the least else on them: a wrong figure there
+ * is the whole page.
+ */
+function checkMissedMachines() {
+  const problems: string[] = [];
+  const ctx = data.defaults.context.default_tokens;
+  const shortest = Math.min(...data.defaults.context.options);
+  let pages = 0;
+  let rows = 0;
+  let links = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const want = cheapestPerFamily(runnersFor(m, data)).length <= 1 ? missedMachines(m, data) : [];
+    const found = html.match(/<h2>The machines that miss it, and what they run<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    if (!want.length) {
+      if (found) problems.push(`${path} lists the machines that miss it, and it is not a model one machine runs`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${path} is a model one machine runs and says nothing about the ${want.length} families that miss it`);
+      continue;
+    }
+    pages++;
+    const section = found[1];
+    // the claim that a shorter window cannot close the gap, which is only true
+    // where the weights on their own are bigger than the memory
+    const weightsAlone = m.weights_gb != null && want.every((r) => r.hw.usable_memory_gb != null && m.weights_gb! > r.hw.usable_memory_gb!);
+    const said = section.includes('of weights are larger than the usable memory in every one of them');
+    if (weightsAlone !== said)
+      problems.push(
+        weightsAlone
+          ? `${path} does not say that its weights alone are larger than the memory in every machine that misses it, which they are`
+          : `${path} says its weights alone are larger than the memory in every machine that misses it, and on at least one they are not`,
+      );
+    const listed = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>[\s\S]*?<\/tr>/g) ?? [];
+    if (listed.length !== want.length) {
+      problems.push(`${path} lists ${listed.length} machines that miss it, not the ${want.length} families there are`);
+      continue;
+    }
+    listed.forEach((row, i) => {
+      const r = want[i];
+      rows++;
+      const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+      const text = (c: string) => (c ?? '').replace(/<span class="c-quant">[\s\S]*?<\/span>/g, '').replace(/<[^>]*>/g, '').trim();
+      // the row is only in this table because the machine holds it nowhere
+      if (longestContext(m, r.hw, data) != null)
+        problems.push(`${path} lists ${hardwareLabel(r.hw)} as holding it at no window, where it holds it at ${ctxLabel(longestContext(m, r.hw, data)!)}`);
+      if (!(cells[0] ?? '').includes(`href="/hardware/${esc(r.hw.id)}/"`))
+        problems.push(`${path} does not name ${hardwareLabel(r.hw)} in the row that misses it by ${fmtGb1(r.shortGb)}`);
+      if ((cells[1] ?? '').trim() !== priceWithScope(r.hw))
+        problems.push(`${path} prints ${text(cells[1]) || 'nothing'} as the price of ${hardwareLabel(r.hw)}, which is ${priceWithScopeText(r.hw)}`);
+      if (text(cells[2]) !== fmtGb1(r.hw.usable_memory_gb))
+        problems.push(`${path} prints ${text(cells[2]) || 'nothing'} as the usable memory of ${hardwareLabel(r.hw)}, which has ${fmtGb1(r.hw.usable_memory_gb)}`);
+      if (text(cells[3]) !== fmtGb1(r.shortGb))
+        problems.push(`${path} prints ${text(cells[3]) || 'nothing'} as what ${hardwareLabel(r.hw)} is short by at ${ctxLabel(shortest)}, where it is short ${fmtGb1(r.shortGb)}`);
+      const alt = strongestThatFits(r.hw, ctx);
+      if (alt && !(cells[4] ?? '').includes(`href="/models/${esc(alt.id)}/"`))
+        problems.push(`${path} does not name ${alt.display_name} as the strongest model ${hardwareLabel(r.hw)} holds`);
+      if (i > 0 && r.shortGb < want[i - 1].shortGb) problems.push(`${path} lists the machines that miss it out of order at ${hardwareLabel(r.hw)}`);
+    });
+    // the way out of the section: the nearest machine on the model it does run
+    const alt = strongestThatFits(want[0].hw, ctx);
+    if (alt) {
+      const href = esc(calcLink({ hw: want[0].hw.id, model: alt.id }, data));
+      if (!section.includes(`href="${href}"`))
+        problems.push(`${path} does not open the calculator on the ${hardwareLabel(want[0].hw)} with ${alt.display_name}, the model it does hold`);
+      else links++;
+    }
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what model pages say about the machines that miss them`);
+  }
+  console.log(`  ${pages} model pages one machine runs name ${rows} machines that miss them, one per family, with how far short each falls and what it holds instead`);
+  console.log(`  ${links} of those pages open the calculator on the nearest machine with the model it does hold`);
+}
+
 function checkShorterFits() {
   const problems: string[] = [];
   const ctx = data.defaults.context.default_tokens;
@@ -1607,6 +1691,79 @@ ${stack(`<table class="board">
 `;
 }
 
+/**
+ * Seven model pages name one machine and stop. That is the whole answer for a
+ * reader who owns that machine and no answer at all for everyone else, who has
+ * three questions the page never takes: how close does mine come, would a
+ * shorter window close it, and what do I run instead. All three are in the data
+ * already. The gap is measured at the shortest window the calculator offers, so
+ * no machine is being judged at a context its owner never asked for, and the
+ * last column is the same "strongest model that fits" the machine index counts.
+ */
+function missedMachinesSection(m: Model, rows: MissedMachine[], only: Hardware | null, ctx: number): string {
+  if (!rows.length) return '';
+  const shortest = Math.min(...data.defaults.context.options);
+  const alt = new Map(rows.map((r) => [r.hw.id, strongestThatFits(r.hw, ctx)] as const));
+  const nearest = rows[0];
+  // The claim the first paragraph makes has to be true of every row, so it is
+  // read off the rows rather than assumed: weights larger than usable memory
+  // means no window closes the gap, because the cache is the only part a
+  // shorter context shrinks.
+  const weightsAlone = m.weights_gb != null && rows.every((r) => r.hw.usable_memory_gb != null && m.weights_gb! > r.hw.usable_memory_gb!);
+  const body = rows
+    .map((r) => {
+      const a = alt.get(r.hw.id) ?? null;
+      return `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a></td>
+  <td>${priceWithScope(r.hw)}</td>
+  <td>${fmtGb1(r.hw.usable_memory_gb)}</td>
+  <td>${fmtGb1(r.shortGb)}</td>
+  <td>${a ? `<a href="/models/${esc(a.id)}/">${esc(a.display_name)}</a>` : '<span class="dim">nothing on this list</span>'}</td>
+</tr>`;
+    })
+    .join('');
+
+  // Where the one machine that holds it does not hold it at the context the page
+  // prices everything at, the answer box above has already said nothing runs it,
+  // so naming the machine without its window would read as a contradiction.
+  const onlyAt = only ? longestContext(m, only, data) : null;
+  const opening = only
+    ? `Every machine here but the ${esc(hardwareLabel(only))}${onlyAt != null && onlyAt < ctx ? `, which holds it at ${ctxLabel(onlyAt)},` : ''} misses ${esc(m.display_name)}`
+    : `No machine here holds ${esc(m.display_name)} at any window`;
+  const why = weightsAlone
+    ? `, and none of them misses by a window: its ${fmtGb(m.weights_gb)} of weights are larger than the usable memory in every one of them, before a single token of key-value cache`
+    : `, at every window the calculator offers`;
+  const near = `The ${esc(hardwareLabel(nearest.hw))} comes nearest, ${fmtGb1(nearest.shortGb)} short at ${ctxLabel(shortest)}, the shortest window on the list.`;
+
+  // What each one runs instead is the useful half, and on these models it is
+  // usually the same model on every row, which is worth saying in words rather
+  // than leaving to be noticed down a column.
+  const scored = rows.map((r) => alt.get(r.hw.id)).filter((a): a is Model => a != null && a.frontier_equivalent?.score != null);
+  const counts = new Map<string, number>();
+  for (const a of scored) counts.set(a.id, (counts.get(a.id) ?? 0) + 1);
+  const topId = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const top = scored.find((a) => a.id === topId) ?? null;
+  const mine = m.frontier_equivalent?.score ?? null;
+  const allHigher = scored.length === rows.length && mine != null && scored.every((a) => a.frontier_equivalent!.score! > mine);
+  const instead = !top || mine == null
+    ? ''
+    : ` <a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> is the strongest model ${counts.get(top.id) === rows.length ? 'every one of them holds' : `${numberWord(counts.get(top.id) ?? 0)} of the ${numberWord(rows.length)} hold`}, and it scores ${top.frontier_equivalent!.score} on the intelligence index against this model's ${mine}.${allHigher ? ` So every machine that cannot hold ${esc(m.display_name)} runs one that scores higher than it.` : ''}`;
+
+  const cta = top
+    ? `\n<p><a class="cta" href="${esc(calcLink({ hw: nearest.hw.id, model: top.id }, data))}">Price the ${esc(hardwareLabel(nearest.hw))} on ${esc(top.display_name)} instead</a></p>`
+    : '';
+
+  return `<h2>The machines that miss it, and what they run</h2>
+<p>${opening}${why}. ${near}${instead}</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Short by</th><th>Strongest model it holds</th></tr></thead>
+<tbody>${body}</tbody>
+</table>`, { fig: 4, pair: [1, 2] })}
+<p class="note">One machine per family, the largest configuration in each that still misses, nearest first. Short by is the weights plus the key-value cache at ${ctxLabel(shortest)} measured against the memory that machine's GPU can address, which that machine's own page gives. The last column is the highest-scoring current model the machine holds at ${ctxLabel(ctx)}.</p>${cta}
+
+`;
+}
+
 function modelPage(m: Model): string {
   const runners = runnersFor(m, data);
   const perFamily = cheapestPerFamily(runners);
@@ -1712,6 +1869,13 @@ function modelPage(m: Model): string {
   // page that has no machine at all is the case above, already answered in full,
   // so this is only for the pages that have both.
   const shorterMachines = runners.length ? machinesShorter(m, data) : [];
+  // Where one family of machine runs a model, the table above is a single row
+  // and the page has nothing for anyone who owns something else. That is the
+  // seven thinnest pages on the site, and missedMachines() is the other half of
+  // the answer. Above one family the same table is a list of machines a reader
+  // already has better options than, so it stays off those pages.
+  const missed = perFamily.length <= 1 ? missedMachines(m, data) : [];
+  const holders = machinesConsidered(data).filter((hw) => longestContext(m, hw, data) != null);
   const alsoAt = otherQuantisations(m, data);
 
   // The two head-to-heads this model is in, named from its own point of view.
@@ -1769,7 +1933,7 @@ ${stack(`<table class="board">
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
-${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}<h2>The specifics</h2>
+${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
@@ -4517,6 +4681,7 @@ checkModelContexts();
 checkMachineContexts();
 checkShorterFits();
 checkShorterMachines();
+checkMissedMachines();
 checkHiddenModels();
 checkLeaderboardLinks();
 checkBestGpu();
