@@ -62,6 +62,16 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
+- [ ] Merge (or close) [PR #7](https://github.com/rlindsey2/sunkcost/pull/7), a new page at
+      `/best-gpu/` answering "best GPU for local LLMs" with the site's own numbers. It is a pull
+      request rather than a push because it is a new page type, which is the standing rule here.
+      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`;
+      what it adds is one generated page, its share card, three helpers in `src/pagekit.ts`,
+      a build guard and eight tests. Verified before opening on merged `main` including PR #6:
+      218 tests, typecheck clean, 249 pages with every guard passing, and the full `npm run build`.
+      **This repository still runs no CI on a pull request** — see the backlog item about that —
+      so the PR page will show no checks, and everything above was run locally.
+
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
       fastest a PR has gone in here by a wide margin, and the first that did not need a single merge
@@ -356,20 +366,22 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       build says so itself now — **"every page is linked from at least 2 other pages"**, and the
       check holds that floor, so a page cannot drop back to one without failing the build.
       Re-measured on merged main at 21:30 on 2026-09-17. Nothing further is wanted.
-- [ ] Question pages for the searches people actually type, and **this is the top item again, now
-      unblocked**. The memory one is live: `/how-much-memory/` merged at 21:11 on 2026-09-17 and
-      covers "how much RAM to run a 70B model" and its variants. The page type, its helpers
-      (`SIZE_BANDS`, `bandFit`, `cheapestThatHolds`) and its OG card are all on main now, so the
-      next question page is much less work than the first was, and no PR is in the way of it —
-      fourteen runs took smaller items because this one was blocked, and it no longer is.
-      Still open, roughly in the order they are worth writing: "best GPU for local LLMs" (nothing
-      here filters the list to cards, and /best/ answers by usage rather than by part), "local
-      LLM vs API cost" (the site's whole thesis, and the home page is the only thing that states
-      it), "RTX 3090 for local LLM worth it" and "is a Mac mini good for local LLMs" (both need a
-      hard look first: the per-machine pages may already answer them, and a second page saying
-      the same thing in different words is the duplicate this site should not create). Each
-      answers in the first paragraph with the site's own numbers, links into the calculator with
-      the configuration prefilled, and cites sources.
+- [ ] Question pages for the searches people actually type. **Still the top item, and the second
+      one is now live.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
+      as [PR #7](https://github.com/rlindsey2/sunkcost/pull/7) on 2026-09-18** and took one run
+      start to finish, because the first page had already paid for the page type and the share-card
+      builder. The run entry below has what `/best-gpu/` answers and the one claim in it that did
+      not survive being checked.
+      Still open, in the order they are worth writing. **"local LLM vs API cost"** is next and is
+      the strongest of what is left: it is the site's whole thesis, the home page is the only thing
+      that states it, and every figure it needs is already computed — a page that says plainly what
+      a token costs to rent against what it costs to generate, at each level of use, would be the
+      page every other page on the site is an instance of. Then **"RTX 3090 for local LLM worth
+      it"** and **"is a Mac mini good for local LLMs"**, both of which need a hard look before a
+      line is written: the per-machine pages may already answer them, `/best-gpu/` now answers a
+      good part of the 3090 one, and a second page saying the same thing in other words is the
+      duplicate this site should not create. Each answers in the first paragraph with the site's
+      own numbers, links into the calculator with the configuration prefilled, and cites sources.
 - [x] The model pages have the mirror of what the machine pages gained on 2026-09-17. Done
       2026-09-17, and the item undersold it twice over: 16 model pages, not ten, and what the
       omission hid is not a missing machine but a wrong price. On 12 of the 16 the cheapest machine
@@ -539,6 +551,95 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — the question this site could not answer: which graphics card
+
+**Took the top backlog item, and it has been the top one for fifteen runs.** The question pages.
+Eight runs in a row deferred them for one reason — a new page type is a pull request, and PR #3 was
+open and costing a merge repair most hours — and the last entry said plainly that the reason had
+expired, because PR #3 merged at 23:57. It had. Nothing was in the way, so this run took the item
+rather than a ninth deferral, and picked the candidate the last three entries all named:
+**"best GPU for local LLMs"**.
+
+**What was missing.** Nothing on the site filtered the list to graphics cards. `/best/` answers by
+usage, `/leaderboard/` by model, and the 56 machine pages one machine at a time, so a reader who
+had already decided to buy a card had no way to cut 56 machines down to the seven that are cards.
+A search of what else ranks for this found one shape everywhere: a VRAM tier list ordered by
+opinion. That is the part this site can answer with arithmetic, and none of them prices a card
+against renting the same model, which is the whole of this site's thesis.
+
+**The page is `/best-gpu/`, opened as PR #7, and every finding on it came out of the data rather
+than out of a view about cards.**
+
+- The strongest open model any card here holds is **Qwen3.8 27B**, and the cheapest card that holds
+  it is the **$1,299 Radeon AI PRO R9700**. The **$18,000 RTX PRO 6000 Blackwell** holds 33 of the
+  39 current models against the R9700's 27, and runs the shared one at 78 tok/s against 30. It does
+  not run a better model. That is the lede, and it is the sentence the whole page is built on.
+- **Six of the 34** scored current models fit no card at all at 32k, and the three strongest open
+  models on the site are among them. GLM-5.3-Flash is 189 GB of weights; the cheapest machine that
+  runs it is a $10,799 Mac Studio, and the dearest card holds it no better than the cheapest does.
+- On **two of the seven**, the complete computer nearest in price holds more models than the card:
+  the Mac Studio M5 Ultra, 256GB holds 38 where the RTX PRO 6000 holds 33, and the Framework
+  Desktop, 32GB holds 24 where the RTX 4080 holds 13, for $70 more and with a computer attached.
+- Per usable gigabyte, **one card** beats the cheapest gigabyte in a complete computer: the RTX 3060
+  at $30 against the Corsair AI Workstation 300 at $35 — and the $35 comes with the computer.
+- Pay-back at the five levels of use the calculator names. Nothing pays back at ordinary use. The
+  quickest figure anywhere on the page is **4.0 months**, on the $329 RTX 3060 running Ministral 3
+  8B at 20M tokens a day, which the answer box says in as many words is the cheapest card working a
+  small model rather than the best card working a good one. The slowest is 2,273 years.
+
+**One claim did not survive being checked, and it was mine.** A first draft closed the money section
+with "bandwidth, which is the one thing no unified-memory box on this list matches". It reads well
+and it is false: only the RTX 5090 and the RTX PRO 6000 clear the Mac Studio M5 Ultra's 1,200 GB/s,
+and **five of the seven cards are slower than that machine**. The sentence is counted from the data
+now rather than asserted, and it says more for being true. Two smaller things went the same way:
+the "three strongest open models" claim is now a count of how far down the index the cards reach,
+and the title stopped naming seven cards in hard type.
+
+**The guard.** `checkBestGpu()` recomputes the three things the data can move underneath this page —
+which cards there are, what each holds counted the way its own machine page counts it, and the
+lede's own answer — and stops the build where the page and the data disagree. Proved by breaking
+all four claims: dropping the cheapest card from the table failed on two counts, printing one model
+more than a card holds failed on seven, naming the site's best model in place of the best a card
+holds failed on one, and dropping a usage level from the pay-back table failed on one. A first
+attempt at that last break also cut a column, and failed earlier still inside `stack()`, which is
+the older guard doing its job.
+
+**The share card.** `/og/best-gpu.png`, from the same `listCardSvg` the other four list pages use
+and cut from the same `graphicsCards()` the page is cut from. Drawn first with a "Strongest: …"
+line under each card name, which at seven rows sat on the rule above the next one — caught by
+opening the PNG and looking at it, not by a test. It carries name, price and count now, and the
+count column makes the page's point without a word: $18,000 → 33, $1,299 → 27, $329 → 11.
+
+**Where the links are.** The footer of all 249 generated pages, which is how `/how-much-memory/` is
+reached; the note on `/best/`, where cards are already the subject of a sentence; and the lede of
+all seven card pages, which is the page a reader is on when the question occurs to them.
+
+**Verified**: 218 tests (210 before, eight new across two files), typecheck clean, 249 pages with
+every guard passing — including `checkCardPrices()`, which independently holds every card price on
+the new page to saying it buys the card alone, and `checkTables()`, which holds all three tables to
+reading as a block on a phone. The full `npm run build` including `build:og`, `build:share` and
+`build:functions`. The page was read rendered out of `public/best-gpu/index.html` end to end before
+committing, which is where the bandwidth correction came from along with prices printing in cents,
+a number word opening a sentence in lower case, "Run the numbers on X on the Y", and a paragraph
+that named the same machine three times.
+
+**`main` moved mid-run and was merged in rather than ignored.** PR #6 landed at 01:0x, raising the
+usage slider from 20M to 100M tokens a day. `bestUsageLevels()` clamps each label to the maximum
+and the top label's own `up_to` is 20M, so **the five levels this page prices are unchanged** — but
+that was checked by merging and rebuilding, not reasoned about and left. The whole suite and the
+whole build pass on the merge.
+
+**Continue next: the next question page, and the reason to keep going is now evidence rather than
+hope.** This one took a single run start to finish, because `/how-much-memory/` had already paid for
+the page-type work and `listCardSvg` already existed. The remaining candidates, in the order they
+are worth writing: **"local LLM vs API cost"**, which is the site's whole thesis and which only the
+home page states; then "RTX 3090 for local LLM worth it" and "is a Mac mini good for local LLMs",
+both of which need a hard look first — the per-machine pages may already answer them, and
+`/best-gpu/` now answers a good part of the 3090 one, so a second page saying the same thing in
+other words is the duplicate this site should not create. PR #7 is open and wants watching: a branch
+touching `scripts/build-pages.ts` has gone un-mergeable within hours every time, so whoever reads
+this should expect to repair it rather than leave it.
 
 ### 2026-09-18 — PR #3 merged, and what the merge commit brought with it
 
