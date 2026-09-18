@@ -810,7 +810,7 @@
       "changed": null
     },
     "/models/deepseek-v4-flash-ud-q4/": {
-      "hash": "ee33eb92aa324e15",
+      "hash": "a78067ed59309418",
       "changed": "2026-09-18"
     },
     "/models/devstral-2-123b-q4/": {
@@ -854,7 +854,7 @@
       "changed": "2026-09-18"
     },
     "/models/glm-5.3-flash-ud-q4/": {
-      "hash": "b394881227dec7c6",
+      "hash": "17ffded22672e7d2",
       "changed": "2026-09-18"
     },
     "/models/gpt-oss-120b-mxfp4/": {
@@ -874,11 +874,11 @@
       "changed": "2026-09-18"
     },
     "/models/hunyuan-hy3-q4/": {
-      "hash": "141c104215f10baf",
+      "hash": "b57224cca43f6a6c",
       "changed": "2026-09-18"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "3462649e18f61dbb",
+      "hash": "196583fcabca37a9",
       "changed": "2026-09-18"
     },
     "/models/kat-coder-v2.5-q4/": {
@@ -922,7 +922,7 @@
       "changed": "2026-09-18"
     },
     "/models/minimax-m2.7-q4/": {
-      "hash": "fd5b4dba4d4ca6df",
+      "hash": "84e21b09648e71f3",
       "changed": "2026-09-18"
     },
     "/models/ministral-3-14b-q4/": {
@@ -962,8 +962,8 @@
       "changed": null
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "1fd3d9022c502986",
-      "changed": null
+      "hash": "0b2051d962558ce0",
+      "changed": "2026-09-18"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
       "hash": "187f28f38df12991",
@@ -1014,7 +1014,7 @@
       "changed": "2026-09-18"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "4e054390bb1c5075",
+      "hash": "cc682c4095a38e0c",
       "changed": "2026-09-18"
     },
     "/models/spark-x2.5-4b-q4/": {

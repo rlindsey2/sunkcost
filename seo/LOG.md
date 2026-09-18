@@ -401,6 +401,38 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
 
+- [x] **36 model pages opened with this site's own ratings paperwork, and 31 of them then printed
+      the score it said they did not have.** Done 2026-09-18. `capability_note` glues a line about
+      the five capability ratings to the description of the model, and the lede printed the field
+      whole. Split now: the description opens the page, the ratings line sits under the five blanks
+      it explains. The same commit ends the KV cache sentence once instead of twice on 41 pages, and
+      a second commit undoes a blank line that had dated 14 unchanged pages in the sitemap. The run
+      entry below has the figures and the five breaks that proved the guard.
+
+- [ ] **The 7 thinnest pages on the site are all model pages, and all seven are models almost
+      nothing runs.** Measured 2026-09-18 across the 253 generated pages: median 787 words, and
+      `/models/hunyuan-hy3-q4/` is 394, `/models/qwen3-235b-a22b-2507-q4/` 417, then minimax-m2.7,
+      inkling-small, qwen3.8-flash-next, glm-5.3-flash and deepseek-v4-flash, none over 462. They
+      are thin for one reason: no machine here holds them at 32k, so the "Machines that run it"
+      table that carries every other model page is missing and what is left is the answer box, the
+      score and the specifics. The question to settle before writing anything is what a reader
+      searching "Tencent Hy3 hardware requirements" wants that the page does not already say — it
+      does say what it needs at 32k, which machine holds it at 16k, and what that costs. The
+      candidate answer the data can support without inventing a figure is the memory ladder: how
+      far each of the shorter context settings gets it, and on which machines, which is the same
+      figure `longestContext()` already computes for every other page. Worth one look before it is
+      written; a page that repeats the answer box in longer words is the thin page this item is
+      trying to fix.
+
+- [ ] **The prose inside `<main>` has never been swept the way the titles and descriptions have.**
+      Three audits have held the metadata to unique, short and answering; nothing has read the
+      sentences. One grep for a doubled full stop on 2026-09-18 found 41 pages, and one read of a
+      lede found 36 opening with the site's own process. Both are now checked by `checkNotes()`, and
+      both were in the same place: a note out of `data/*.json` pasted into a template's sentence.
+      The other places that do it are `hw.notes` under "Usable by the GPU" on the machine pages and
+      the key-value cache note on `/how-much-memory/`. Neither prints a doubled stop today, which is
+      why the check is a sweep rather than a line, but neither has been read out loud either.
+
 - [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
       appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
       20 new comparisons, 48 machine match-ups in place of 28. The run entry below has the figures
@@ -887,6 +919,85 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — 36 model pages stop opening with this site's own paperwork
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job, and its
+top items are where the last three runs left them: the monthly-cost page waits on PR #8, and what is
+under it is marked *probably leave* or waiting on a price only Ryan can supply. So this run did what
+the sitemap run did and read what the build actually ships — 253 pages, every title unique, every
+description unique and inside 155 characters, no missing canonical, no page with two `<h1>`. The
+metadata is in good order. The prose was not.
+
+**36 of the 55 model pages opened by telling the reader the model was unrated, and 31 of them then
+printed its score.** `capability_note` in `data/models.json` carries two different sentences glued
+together: one about this site's own five capability ratings — *"Not yet rated: released after our
+last ratings pass."* — and then the description, which is the part about the model. The lede printed
+the field whole. So the first paragraph of `/models/qwen3.8-27b-q4/`, the best model on this site
+that a graphics card runs, said it was not yet rated, and two sections down the same page said it
+scores **34** on the Artificial Analysis index and sits in the Sonnet-class band. That is the site's
+own process in the paragraph a search result shows, and on 31 pages it contradicted the page.
+
+**`splitCapabilityNote()` splits the field where it changes subject**, and each half goes where it
+answers something. The description opens the page. The ratings line goes under the five ratings
+themselves, which is the one place on the page a reader is looking at five blanks and wondering why.
+Three ledes lose their second sentence — Gemma 4 31B it, Qwen3.6 35B-A3B and Qwen3.8 27B, whose
+notes say nothing but the ratings line and *"Sizes and prices are current."*, which is the same
+thought and travels with it. Those three ledes are one true sentence now instead of two, and nothing
+was written to fill the gap: every figure on these pages still comes out of `data/*.json`.
+
+**The other half of the same fault was punctuation nobody could see in the source.** The architecture
+notes all end in a full stop, and the KV cache line added its own, so **41 model pages printed "on
+all 80 layers.."** in The specifics. `endStop()` ends the sentence once. It is checked across every
+page rather than at that line, because any note pasted in front of a template's punctuation can do
+it, and 41 pages is how long this one lasted.
+
+**Then the fix dated 14 pages that had not changed, and that needed a second commit.** The new
+conditional sat on a line of its own, so a model page without a ratings line printed an empty line in
+its place. The sitemap fingerprints the body as it is written, whitespace included, so 14 pages whose
+words are identical hashed differently and went out stamped *changed today* — which is the fault the
+fingerprint was built to prevent, at 14 URLs instead of 254. The conditional carries its own newline
+now, those 14 pages are byte-for-byte what they were this morning, and their records were restored to
+what was recorded before: no date rather than a wrong one. A rebuild writes the file back unchanged,
+which is how the repair was checked. **41 pages are dated today and every one of them says something
+different than it did this morning.**
+
+**Five breaks, each bringing back its own fault and no other.** Lede printing the whole note: the
+ratings line is back in the opening paragraph, and on the page twice. Ratings line dropped from under
+the caps: 36 pages print it nowhere. KV line punctuating itself again: the doubled stop returns on 41
+pages, found by the sweep rather than by the line. Lede dropping the description: 55 pages lose what
+their note says about the model. `RATING_SENTENCES` no longer matching the data's wording: the build
+stops on the first model whose blank ratings have no line the split recognises, which is the guard
+that matters, because that is how a future note would slide back into a lede unseen.
+
+**Verified.** 282 tests (8 new), `tsc --noEmit` clean, and the full `npm run build` end to end
+including `build:functions`. Pages read rendered in Chromium at 900px and 390px before committing —
+0 elements past the window at either — and read as text on a page with a description, a page without
+one, a page with no index score at all, and a rated model that should not have changed and did not.
+**Deploy runs 164 and 165 both finished green**, at 17:55 and 18:02, and both are live.
+
+**The calculator prints the same field and is right to.** `src/render.ts:331` puts `capability_note`
+whole inside `.m-caps`, directly beside the capability dots — which is where this run just moved it
+to on the generated pages. Nothing to fix there. Worth writing down so the next run does not read
+the grep hit as the same bug.
+
+**Two branch repairs, because this push moved files both open PRs are built on.** Checked with
+`git merge-tree`, which is this file's standing lesson: **PR #10** conflicted in
+`scripts/build-pages.ts` (one import list, both names go in) and **PR #8** in `seo/page-dates.json`
+(main's record for every shared page, PR #8's own record kept for its own page). Both merged, tested,
+built and pushed; all three branches merge clean against main now. PR #10's merge also does the
+`git rm --cached` the last run diagnosed and left: `public/local-llm-vs-api-cost/index.html` was
+tracked there, is PR #8's page, and main has no builder for it — merging PR #10 as it stood would
+have deployed a two-day-old copy of another branch's page that nothing links to and the sitemap does
+not list. One comment on PR #10 says so; nothing else was pushed to either branch.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8. The small pull request left is the assumptions
+panel printing *stand in* at `src/render.ts:542`, which wants a shared home for four words in
+`src/format.ts` and collides with nothing. And the thing this run would tell the next one: **the
+metadata on this site has been audited three times and the prose inside `<main>` had not been swept
+once.** A search for a doubled full stop found 41 pages in a second. It is worth reading the rendered
+words, not just the tags.
 
 ### 2026-09-18 — the top bar fits a phone, and the theme button stops drawing two icons
 

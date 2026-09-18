@@ -1003,6 +1003,43 @@ export function machinesShorter(m: Model, data: Dataset): ShorterMachine[] {
   return out;
 }
 
+export interface MissedMachine {
+  hw: Hardware;
+  /** weights plus cache at the shortest window the calculator offers */
+  needGb: number;
+  /** how much more usable memory it would take at that window */
+  shortGb: number;
+}
+
+/**
+ * The machines that hold this model at no window the calculator offers. On a
+ * model one machine runs, the page names that machine and stops, which leaves
+ * the reader who owns one of the other fifty-odd with nothing: not how close
+ * theirs comes, not whether a shorter window would close it, not what it runs
+ * instead. Every figure here is the same fit the rest of the site uses, taken
+ * at the shortest window on the calculator's list, so it is the kindest reading
+ * a machine can get. One machine per family — the one in it that comes closest
+ * — nearest miss first.
+ */
+export function missedMachines(m: Model, data: Dataset): MissedMachine[] {
+  const shortest = Math.min(...data.defaults.context.options);
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const out: MissedMachine[] = [];
+  for (const hw of machinesConsidered(data)) {
+    if (longestContext(m, hw, data) != null) continue;
+    const f = memoryFit(m, hw, shortest, data.defaults.nearly_fits_ratio, kvScale);
+    if (f.needGb == null || f.haveGb == null) continue;
+    out.push({ hw, needGb: f.needGb, shortGb: f.needGb - f.haveGb });
+  }
+  out.sort((a, b) => a.shortGb - b.shortGb || (a.hw.price_usd ?? 0) - (b.hw.price_usd ?? 0));
+  const seen = new Set<string>();
+  return out.filter((r) => {
+    if (seen.has(r.hw.family)) return false;
+    seen.add(r.hw.family);
+    return true;
+  });
+}
+
 /** A price, with the note that a graphics card is priced without the PC around it. */
 export function priceWithScope(hw: Hardware): string {
   if (hw.price_usd == null) return '<span class="dim">not published</span>';
