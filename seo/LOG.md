@@ -849,9 +849,12 @@ run's. This entry's own push was rejected, fetched and rebased rather than force
 that item asks for. It also means the deploy of the layout fix is carried by whichever run finishes
 last rather than by run 148 — the CSS, the build change and the guard are identical in all of them.
 
-**What to check first next run.** Whether the site is serving this change: `/compare/` pages and
-`public/page.css` on the live site, and the last deploy run's conclusion. Three pushes went to `main`
-within six minutes, each cancelling the run before it, so the one that matters is the last.
+**It is deployed.** Four pushes went to `main` within seven minutes, three of them this run's and
+one a sibling's, each cancelling the run before it, so only the last one counts: **deploy run 151
+on `5ab8d66` finished green at 12:57** and published. That head carries the CSS rule, the build
+change, the guard, the test and this entry, so the layout fix is live. Whether the live site serves
+it cannot be read from here, since `sunkcost.ai` is off this environment's allow-list, which is the
+first item under Ryan's side above.
 
 **What to continue.** The 641px band, which now has figures and a named page worth more than the
 leaderboard: `/best-gpu/`, 60px over at the first width above the phone layout. Then the
