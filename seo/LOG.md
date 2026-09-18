@@ -62,15 +62,47 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
-- [ ] Merge (or close) [PR #7](https://github.com/rlindsey2/sunkcost/pull/7), a new page at
-      `/best-gpu/` answering "best GPU for local LLMs" with the site's own numbers. It is a pull
-      request rather than a push because it is a new page type, which is the standing rule here.
-      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`;
-      what it adds is one generated page, its share card, three helpers in `src/pagekit.ts`,
-      a build guard and eight tests. Verified before opening on merged `main` including PR #6:
-      218 tests, typecheck clean, 249 pages with every guard passing, and the full `npm run build`.
-      **This repository still runs no CI on a pull request** — see the backlog item about that —
-      so the PR page will show no checks, and everything above was run locally.
+- [ ] **`main` is red and the site has not deployed since 10:51. One link fixes it:
+      [PR #11](https://github.com/rlindsey2/sunkcost/pull/11), and it wants merging rather than
+      reviewing at leisure.** Deploy run 142 failed at the test step on `adf6b52`, so nothing
+      merged this morning has published, `/best-gpu/` included.
+      **Neither pull request was wrong on its own.** PR #7 merged at 10:50 and added
+      `/best-gpu/` to the generated pages' footer. PR #9 merged at 10:51, refactored that footer
+      into `FOOTER_LINKS`, gave `index.html` a hand-written footer with the same indexes, and added
+      a test holding the two to the same links in the same words and the same order. PR #9's merge
+      carried the `/best-gpu/` entry into `FOOTER_LINKS` correctly — six entries — but
+      `index.html`'s copy predates that page and still listed five, and
+      `tests/pagekit.test.ts:1331` caught exactly that. The test did its job; what failed is that
+      **a branch was merged without being rebuilt against the `main` it was merging into**, which
+      is the third time that shape of fault has cost this repository something.
+      The fix is one `<a>` in `index.html`, in the words `FOOTER_LINKS` already uses. Reproduced
+      locally on `adf6b52` first, then 250 tests pass where it was 249 passed and 1 failed, with
+      typecheck, `validate` and `vite build` clean. It is a pull request rather than a push only
+      because `index.html` is on this agent's never-push list, and that rule is worth keeping even
+      here — but it is why `main` stays red until Ryan merges.
+
+- [x] [PR #7](https://github.com/rlindsey2/sunkcost/pull/7), the `/best-gpu/` page answering
+      "best GPU for local LLMs". **Merged 2026-09-18 at 10:50.** The page itself is sound and was
+      verified on merged `main` rather than assumed: 247 tests, typecheck clean, 253 pages, and the
+      page read back out of the build at 1,712 words with its lede, title and sitemap entry intact.
+      **It is not live yet**, because its own deploy run 141 was cancelled by the next push a minute
+      later and run 142 then failed — see the item above. Nothing about the page needs changing.
+      One thing seen while checking that is worth not chasing again: `checkOgCards` failed locally
+      naming four cards `build:og` had not drawn, and all four are memory-tier comparisons added by
+      other runs since this session last drew cards. A fresh `build:og` clears it; the deploy draws
+      them every time, so it never reaches CI.
+
+      **What its merge did to the other two.** Both remaining pull requests stopped merging the
+      moment it went in, and in exactly the files the PR #8 item below predicted:
+      `scripts/build-og.ts`, `scripts/build-pages.ts`, `src/list-card.ts` and `src/pagekit.ts`.
+      Measured with `git merge-tree` against `main`, not guessed: **PR #8
+      (`seo/local-vs-api-cost`) conflicts and PR #10 (`seo/hardware-index`) conflicts.** Neither is
+      either branch's fault. Three pages that each add a generated page, a share card and a helper
+      all edit the same four lists, so every pair collides on the same four files and every
+      resolution is the same shape: **a union, keeping both entries**, which is how PR #7's own
+      repair was resolved. Expect that rather than a real disagreement, and build and read the
+      merge rather than trusting a clean `git merge-tree` — which is the standing lesson here, and
+      is precisely what the red `main` above shows the cost of skipping.
 
 - [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers. It is
