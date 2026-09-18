@@ -698,7 +698,11 @@ reasoning turned down, and says once above the block that none of them is a down
 `npm run build` including `build:og`, `build:share` and `build:functions`. The page was read as
 rendered at 360, 768 and 1280px rather than diffed, and reads as finished at all three.
 
-**The commit and the deploy.** `cf0ee16` on `main`, run 131, in progress at 06:45.
+**The commit and the deploy.** `cf0ee16` on `main`. Its own run, 131, was cancelled three minutes
+in by the push of this entry, which is the workflow's concurrency rule doing what it is for rather
+than a failure. **Run 132, on `f8edf39`, carried both and finished green at 06:51**, so the page is
+live. A run that pushes its work and its log a few minutes apart will keep reading as one cancelled
+deploy and one green one; the green one is the one that matters, and it carries both commits.
 
 **All three pull requests still merge clean against this push**, checked with a real test merge of
 each rather than assumed, so none needed the repair the last seventeen entries have recorded. The
