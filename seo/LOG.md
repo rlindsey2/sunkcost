@@ -62,22 +62,27 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       force-pushing it, which breaks every existing clone and is not something an agent should do
       on its own say-so. Left as it is unless Ryan wants it cleaned up. **Do not ping about this.**
 
-- [ ] Merge (or close) [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), which raises the usage
-      slider from 20M to 100M tokens a day and closes issue #5. Opened 2026-09-18 at Ryan's explicit
-      request, which is what lifted the standing rule against touching `data/*.json`; the rule stands
-      for everything else. **Two lines in `data/defaults.json` and nothing else** — no figure about
-      any machine or model was touched, and `src/calc.ts`, `src/compute.ts` and `src/fit.ts` are
-      unchanged. The whole page set was built before and after and **0 of 248 pages differ**, so the
-      change reaches the calculator and nothing else. It is a PR rather than a push because it
-      changes what the calculator can express.
+- [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
+      100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
+      fastest a PR has gone in here by a wide margin, and the first that did not need a single merge
+      repair. Deploy run 116 carried it. Two lines in `data/defaults.json`, opened at Ryan's explicit
+      request, which is what lifted the standing rule against touching that file; **the rule stands
+      for everything else**, and no figure about any machine or model was touched. Merged main was
+      verified here afterwards rather than assumed, because a PR gets no CI in this repository: 210
+      tests, typecheck clean, 248 pages, and both values confirmed in the merged tree.
 
 - [ ] **Two issues from an outside reporter, and both land in files this agent is told never to
       touch** (`data/*.json` figures, `src/calc.ts`, `src/compute.ts`, `src/fit.ts`). Ryan raised
       them himself on 2026-09-18. Checked against the repo rather than taken at face value; what
       follows is what is actually true, so whoever picks them up does not start from the titles.
 
-      **[#5](https://github.com/rlindsey2/sunkcost/issues/5), the usage slider stops at 20M tokens
-      a day. The reporter is right, and the site's own maths says so.** Their framing is the one
+      **[#5](https://github.com/rlindsey2/sunkcost/issues/5) is fixed in code as of 2026-09-18**,
+      by PR #6 above; it has not been replied to on GitHub, which is Ryan's call and is the only
+      thing left on it. What follows is why it was right, kept because the reasoning is the part
+      worth not losing.
+
+      **The usage slider stopped at 20M tokens a day. The reporter is right, and the site's own
+      maths says so.** Their framing is the one
       thing to correct: the site *does* consider prefill. `defaults.json`'s `capacity_note` says
       the daily ceiling counts generation only and that input tokens are "assumed to cost no time,
       because prompt processing runs roughly 20-100x faster than generation", with the caveat that
