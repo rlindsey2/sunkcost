@@ -79,9 +79,20 @@ the backlog, or the open item the previous run said to continue. Never redo a do
       what it adds is one generated page, its share card, four helpers in `src/pagekit.ts`, a build
       guard and eight tests. Verified before opening on `main` at `94c354a`: 218 tests, typecheck
       clean, 249 pages with every guard passing, and the full `npm run build`.
-      **It touches the same two files PR #7 does** (`scripts/build-pages.ts` and the footer line in
-      `src/pagekit.ts`), so whichever merges second will want a small conflict resolved in the
-      footer and the import list. Nothing else overlaps.
+      **It collides with PR #7 in six files, and the first estimate of that was too rosy.**
+      Measured with a real test merge of the two branches, not guessed: `scripts/build-og.ts`,
+      `scripts/build-pages.ts`, `src/list-card.ts`, `src/pagekit.ts`, `tests/list-card.test.ts` and
+      `tests/pagekit.test.ts`. **Each PR merges clean against `main` on its own**; the conflict is
+      only between the two, so it lands on whichever goes second.
+      Every hunk but one is a **union**: two pages each appending their own card constant, card
+      builder, import, `write()` call, build guard, test block and footer link to the same lists.
+      Keep both sides of each.
+      **The exception, and the one that can quietly lose something:** the closing `<p class="note">`
+      on `/best/`. PR #7 edits its graphics-cards sentence to link `/best-gpu/`; PR #8 rewrites its
+      last sentence to link `/local-llm-vs-api-cost/`. They are different edits to the same
+      paragraph, so taking either side whole drops the other page's link. Both edits have to be
+      kept. After resolving, `npm test` and `npm run build:pages` catch any miss, because
+      `checkLinks()` fails on a page nothing links to and both guards recompute their own figures.
 
 - [x] [PR #6](https://github.com/rlindsey2/sunkcost/pull/6), raising the usage slider from 20M to
       100M tokens a day. **Merged 2026-09-18 at 00:38, twenty minutes after it was opened** — the
@@ -643,8 +654,16 @@ costs either way" paragraph where the rental price is already the subject; and `
 pay-back figure divides the same gap.
 
 **PR #7 was checked first and needed nothing**: still open, mergeable, its base already `94c354a`.
-**PR #8 touches the same two files it does**, so whichever merges second wants a small conflict
-resolved in the footer line and the import list, and nothing else.
+
+**The overlap between the two PRs was then measured rather than estimated, and the first estimate
+was wrong.** This entry and PR #8 first said the two collide in "the footer line and the import
+list" and that nothing else overlaps. A real test merge of the two branches says **six files**:
+`scripts/build-og.ts`, `scripts/build-pages.ts`, `src/list-card.ts`, `src/pagekit.ts`,
+`tests/list-card.test.ts` and `tests/pagekit.test.ts`. Each still merges clean against `main` alone,
+so only the second one in pays it. Every hunk but one is a union of two additive changes and keeping
+both sides is the whole job. The exception is the closing note on `/best/`, where the two PRs made
+different edits to the same paragraph: taking one side whole drops the other page's link. The
+Ryan's-side item above has the detail, and both the log and the PR body are corrected.
 
 **Continue next: read the two remaining question-page candidates honestly before writing either.**
 "RTX 3090 for local LLM worth it" and "is a Mac mini good for local LLMs" may both be answered by
