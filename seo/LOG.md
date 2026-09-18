@@ -1017,7 +1017,10 @@ including `build:functions`. All 30 changed pages read rendered in Chromium at n
 to 1440px, served over HTTP rather than `file://`: **0 elements past the window and 0 tables
 scrolling at any of them.** The specifics list read as a picture at 900px before committing, and
 five pages read as text — a card, a laptop, a Strix Halo box, the Spark and a Mac that should not
-have changed and did not. Commit `9d21e1b`, pushed to main; deploy run 170.
+have changed and did not. Commit `9d21e1b`, pushed to main. **Its own deploy, run 170, was
+cancelled by this entry's push three minutes later; run 171 carried both and finished green at
+20:02**, so all 30 pages are live. Worth knowing rather than worrying about: a log push within a
+few minutes of a code push cancels the code push's run, and the later run deploys both.
 
 **All three open pull requests were merged, tested and built against this push rather than trusted.**
 `git merge-tree` says clean for PR #8, PR #10 and PR #12, and this file's standing lesson is that a
