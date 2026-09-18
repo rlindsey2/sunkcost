@@ -1050,14 +1050,25 @@ import site and neither file changed.
 `build:pages` was run on the branch and on `main` and both trees checksummed — `766cc5b5…` twice.
 Not a spot check, and not an argument that it should be the same.
 
-**Five breaks proved five guards, one each.** The numbered links back; the data's own key back; the
+**Seven breaks proved seven guards, one each.** The numbered links back; the data's own key back; the
 note whole under the memory figure; the Memory bandwidth row deleted so a sentence has no row to sit
-under; and `powerSourceLabel()` forked into a second copy in `pagekit.ts`, which is the one a future
-run is most likely to do by accident. Each failed the test that claims it and nothing else. The
+under; `powerSourceLabel()` forked into a second copy in `pagekit.ts`, which is the one a future
+run is most likely to do by accident; a link called `Source` back; and the version printed from both
+fields. Each failed the test that claims it and nothing else. The
 identity check is why the fork break fires: the tests import the four from `src/format.ts` and from
 `src/pagekit.ts` and expect the same function object, not the same answer.
 
-**Verified.** 308 tests (5 new), `tsc --noEmit` clean, and the full `npm run build` end to end,
+**Reading the panel's neighbours found the same fault twice more, and a doubling.** Two more links in
+`src/render.ts` were named after nothing — the note under the intelligence scale ended `(source)`, and
+the assumptions panel's own falling-prices row ended `Source.` — which is the list `checkSourceLinks()`
+refuses on every generated page. They name what is on the other end now: **Qwen3 8B on Artificial
+Analysis**, which is that model's own row on the index and is where the URL goes, and **Epoch AI**,
+which publishes the price-trend study. And the sentence around the first printed the index version
+**twice**, once from `frontier_basis.name` and once from the model's own `index_version`, so it read
+*Artificial Analysis Intelligence Index v4.3 v4.3*. `indexVersion()` prints it only where the name
+does not already carry it, and every model in the data today is in the case where it does.
+
+**Verified.** 310 tests (7 new), `tsc --noEmit` clean, and the full `npm run build` end to end,
 `build:functions` included. Read rendered in Chromium on the built bundle, as text and as a picture,
 for a card with four sources and a bandwidth note, the RTX 4080 with its availability sentence, a
 MacBook Pro with its thermal one, a Strix Halo box, and both custom-machine paths — with a bandwidth
