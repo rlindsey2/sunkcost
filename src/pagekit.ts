@@ -804,6 +804,25 @@ export function priceWithScopeText(hw: Hardware): string {
 }
 
 /**
+ * The card-price caveat, said only on the pages it applies to and about the
+ * machines it applies to. A graphics card's price buys the card and nothing to
+ * put it in, so a page that sets one against a complete computer has to say so.
+ * A page where nothing on it is a card should not raise the question at all,
+ * and a page where both sides are cards should not send the reader looking for
+ * which one it means.
+ */
+export function cardScopeNote(machines: Hardware[]): string {
+  const all = [...new Map(machines.map((h) => [h.id, h])).values()];
+  const cards = all.filter((h) => h.price_scope === 'card_only');
+  if (!cards.length) return '';
+  if (cards.length === 1)
+    return `The ${esc(shortHardwareLabel(cards[0]))} is priced as the card alone, so add the PC around it before comparing it with a complete computer.`;
+  if (cards.length === all.length && all.length === 2)
+    return 'Both are priced as the card alone, so neither figure includes the PC to put it in.';
+  return 'Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.';
+}
+
+/**
  * A power figure, marked where the data has no figure for that machine and
  * borrows one. Electricity is the running cost in every pay-back sum on the
  * site, so a borrowed watt printed bare reads as a measurement of the machine

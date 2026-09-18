@@ -277,6 +277,54 @@ export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   return out;
 }
 
+/**
+ * A machine's head-to-heads, split by the question each one answers. A page that lists
+ * twelve of them in one line reads as a wall, and two of the twelve can read as the page
+ * arguing with itself: the Mac Studio M5 Max, 128GB was set against "vs Mac Studio M5 Max,
+ * 48GB", which spends the line saying the name the reader is already on. Grouped, the
+ * memory pairs say only the size, and every other link arrives under the reason it exists.
+ * The groups come back in the order a buyer asks them, the reader's own kind of machine
+ * first, and a group is left out where the machine has no pair of that sort.
+ */
+export interface HeadToHeadGroup {
+  /** the noun the paragraph puts after "Head to head with", e.g. "another computer" */
+  lead: string;
+  links: { href: string; label: string }[];
+}
+
+export function headToHeadGroups(
+  self: Hardware,
+  pairs: { href: string; other: Hardware }[],
+): HeadToHeadGroup[] {
+  const isCard = (h: Hardware) => h.price_scope === 'card_only';
+  const selfIsCard = isCard(self);
+  const computers: HeadToHeadGroup['links'] = [];
+  const cards: HeadToHeadGroup['links'] = [];
+  const tiers: { link: HeadToHeadGroup['links'][number]; gb: number }[] = [];
+  const replaced: HeadToHeadGroup['links'] = [];
+  const replacedBy: HeadToHeadGroup['links'] = [];
+  for (const { href, other } of pairs) {
+    const tier = memoryTierNames(self, other) ?? memoryTierNames(other, self);
+    if (tier) {
+      tiers.push({ link: { href, label: `${other.unified_memory_gb}GB` }, gb: other.unified_memory_gb });
+      continue;
+    }
+    const link = { href, label: shortHardwareLabel(other) };
+    if (generationNames(other, self)) replaced.push(link);
+    else if (generationNames(self, other)) replacedBy.push(link);
+    else if (isCard(other)) cards.push(link);
+    else computers.push(link);
+  }
+  const cardGroup = { lead: selfIsCard ? 'another card' : 'a graphics card', links: cards };
+  const computerGroup = { lead: selfIsCard ? 'a complete computer' : 'another computer', links: computers };
+  return [
+    ...(selfIsCard ? [cardGroup, computerGroup] : [computerGroup, cardGroup]),
+    { lead: 'the same machine at another memory size', links: tiers.sort((a, b) => a.gb - b.gb).map((t) => t.link) },
+    { lead: 'the machine it replaced', links: replaced },
+    { lead: 'the machine that replaced it', links: replacedBy },
+  ].filter((g) => g.links.length > 0);
+}
+
 /** Every model pair that has a page: each model against the next one down the leaderboard. */
 export function modelPairs(data: Dataset): [Model, Model][] {
   const r = rankedModels(data);
