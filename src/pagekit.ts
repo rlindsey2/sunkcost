@@ -713,6 +713,34 @@ export function contextHeadroom(models: Model[], a: Hardware, b: Hardware, data:
     .filter((r) => r.a !== r.b);
 }
 
+/**
+ * Where one machine holds models the other cannot, a page that stops at that
+ * list has answered half the question. The models they both hold are not held
+ * to the same length: fit turns on usable memory, so the roomier machine has
+ * more left over once the weights are in, and that is what the cache grows into
+ * as you keep more tokens. These are the models both hold at the context the
+ * page prices, in the order the page already lists them, with `a` the roomier
+ * machine's longest window.
+ */
+export function sharedHeadroom(roomier: Hardware, tighter: Hardware, tighterView: View, data: Dataset): Headroom[] {
+  return contextHeadroom(fitsOf(tighterView).map((r) => r.model), roomier, tighter, data);
+}
+
+/**
+ * The model whose two windows are furthest apart, which is the one worth naming
+ * when the page has room for one rather than a table. Measured as a ratio, so a
+ * jump from 32k to 256k beats one from 128k to 256k; ties keep the page's own
+ * order, which puts the strongest model first.
+ */
+export function widestHeadroom(rows: Headroom[]): Headroom | null {
+  let best: Headroom | null = null;
+  for (const r of rows) {
+    if (r.a == null || r.b == null) continue;
+    if (best === null || r.a / r.b > best.a! / best.b!) best = r;
+  }
+  return best;
+}
+
 export interface ShorterFit {
   model: Model;
   /** the longest window the calculator offers that this machine holds it at */
