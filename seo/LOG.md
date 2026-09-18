@@ -443,14 +443,33 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       written; a page that repeats the answer box in longer words is the thin page this item is
       trying to fix.
 
-- [ ] **The prose inside `<main>` has never been swept the way the titles and descriptions have.**
-      Three audits have held the metadata to unique, short and answering; nothing has read the
-      sentences. One grep for a doubled full stop on 2026-09-18 found 41 pages, and one read of a
-      lede found 36 opening with the site's own process. Both are now checked by `checkNotes()`, and
-      both were in the same place: a note out of `data/*.json` pasted into a template's sentence.
-      The other places that do it are `hw.notes` under "Usable by the GPU" on the machine pages and
-      the key-value cache note on `/how-much-memory/`. Neither prints a doubled stop today, which is
-      why the check is a sweep rather than a line, but neither has been read out loud either.
+- [x] **The prose inside `<main>` has never been swept the way the titles and descriptions have.**
+      Done 2026-09-18, and the sweep's own result is the part worth keeping: **the punctuation is
+      clean.** Fifteen mechanical faults read out of the rendered body of all 253 pages — doubled
+      stops, doubled words, a space before a comma, a stop with no space after it, maintainer words,
+      an unclosed bracket — and every hit was an artefact of flattening a table into a line. What
+      was wrong was not how a sentence was written but where it sat, which is the third time a note
+      out of `data/*.json` has been in the wrong template. `hw.notes` is split now, by subject, the
+      way `capability_note` was; the run entry below has the figures and the five breaks that
+      proved the guard. `/how-much-memory/`'s key-value cache note was read out loud at the same
+      time and is sound.
+
+- [ ] **The calculator prints `hw.notes` whole, the way the machine pages did until today.**
+      `src/render.ts:543` puts the field under "Usable memory" in the assumptions panel, so the
+      laptops explain there that speed falls once the fans cap out and the cards derive their
+      bandwidth figure under their memory. `splitHardwareNote()` is exported from `src/pagekit.ts`,
+      which `render.ts` does not import and should not — the same seam the *stand in* label hit at
+      `src/render.ts:542`, one line above. So both want the same shared home, `src/format.ts`, and
+      both should ride the same pull request: it is one paragraph of one file, and two faults.
+
+- [ ] **The links under Sources name nothing.** Every machine page ends "source 1, source 2,
+      source 3, source 4" — 56 pages, 4 to 5 links each — and `/how-much-memory/` has a bare
+      "(source)" in the middle of a paragraph. Anchor text is one of the few things on a page that
+      says what is on the other end of a link, to a reader deciding whether to click and to a
+      crawler deciding what the link is worth, and a number says neither. The host would: *NVIDIA*,
+      *TechPowerUp*, *llama.cpp*. It is one line of `scripts/build-pages.ts` and the domain is in
+      the URL already, so nothing has to be invented; the question to settle first is what to print
+      when two sources share a host, which several machines have.
 
 - [x] Only 8 of the 56 machines appeared in any head-to-head, and five of the seven graphics cards
       appeared in none. Done 2026-09-17: every card now has a head-to-head with every other card,
@@ -938,6 +957,82 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-18 — every machine note moves to the figure it is about
+
+**Why this item.** `npm run model-watch` says *done for today*, so the backlog was the job, and the
+run before this one closed its top item. What is under it is the prose sweep: three audits have held
+every title and description to unique, short and answering, and **nothing had ever read the
+sentences inside `<main>`.**
+
+**The sweep found no punctuation to fix, and that is worth writing down.** Fifteen mechanical faults
+were read out of the rendered body of all 253 pages — a doubled full stop, a doubled word, a space
+before a comma, a stop with no space after it, `TODO` and its relatives, an unclosed bracket, an
+empty pair of them. Every hit was an artefact of flattening a table row into a line of text. Read
+properly, with block boundaries kept and inline tags closed up, the body of this site is clean.
+
+**What was wrong was placement, and it is the same fault as the last two runs' one page type
+along.** `hw.notes` is the field a machine records everything in, and the machine page printed it
+whole under **Usable by the GPU**. So the memory note on all seven graphics cards opened with the
+arithmetic behind the bandwidth figure in the row above — *"23 GB — Bandwidth: 19.5 Gbps × 384-bit
+bus ÷ 8 = 936 GB/s"* — while the **Memory bandwidth** row printed 936 GB/s and nothing else. Ten
+laptops explained under their memory figure that sustained speed drops once the chassis warms up.
+The twelve Strix Halo boxes said under their memory that measured bandwidth is ~212-215 GB/s of
+the 256 GB/s their bandwidth row prints, which is the most useful caveat on the page and was in the
+wrong row. The RTX 4080 said under its memory that the 4080 SUPER is a different card; the DGX
+Spark, that partner boxes exist and none was cheaper.
+
+**`splitHardwareNote()` sends each sentence to the figure it is about.** Bandwidth to the bandwidth
+row, the caveat about speed to a note under the speed column where the tokens/sec figures are, which
+entry this is and where you buy it to **Availability**, and everything else stays where it was.
+**19 machine pages explain their bandwidth under it, 11 put the speed caveat beside the speed
+column, 2 say under Availability which machine this is**, and 30 of the 56 pages changed. The
+markers are the subject a sentence names rather than the sentence itself, so a machine added
+tomorrow is read by what its note talks about.
+
+**One sentence is edited and it is a label, not a claim.** *"Bandwidth: 22.4 Gbps × 256-bit bus ÷ 8
+= 716.8 GB/s"* carried its own label because it used to sit under the memory figure. Under the
+bandwidth row the label is the row's name, so it goes. Nothing else about any note is rewritten,
+and the guard holds that literally: the sentences joined back up have to be the note.
+
+**Five breaks, each bringing back its own fault and no other.** The note printed whole under the
+memory figure again, 49 faults: the moved sentences print twice, and the sweep from the other end —
+markers the router itself does not use — catches the bandwidth working back under the memory figure.
+The speed caveat not rendered, 22: 11 pages print it 0 times and 11 have nothing under the speed
+column. The splitter cutting at every full stop rather than at the end of a sentence, 58: the notes
+stop coming back whole when their sentences are joined, which is the guard that matters, because
+that is how a sentence would quietly lose half of itself. Availability sent to the Chip row, 2. The
+bandwidth working printed in both rows, 26.
+
+**The blank line that dated 14 pages last night tried it again, at 26.** The new speed note sat on
+a line of its own, so the 45 machines with no speed caveat printed an empty line in its place and
+hashed differently — and 26 of those had changed nothing else, so **56 pages would have gone out
+stamped *changed today* when 30 had changed a word.** Same fault, same fix: the conditional carries
+its own newline. It was caught before the commit this time, by diffing a Mac page that should not
+have moved against the build from before the change. **30 records are dated today and every one of
+those pages says something different than it did an hour ago.**
+
+**Verified.** 294 tests (7 new), `tsc --noEmit` clean, and the full `npm run build` end to end
+including `build:functions`. All 30 changed pages read rendered in Chromium at nine widths from 320
+to 1440px, served over HTTP rather than `file://`: **0 elements past the window and 0 tables
+scrolling at any of them.** The specifics list read as a picture at 900px before committing, and
+five pages read as text — a card, a laptop, a Strix Halo box, the Spark and a Mac that should not
+have changed and did not. Commit `9d21e1b`, pushed to main; deploy run 170.
+
+**All three open pull requests were merged, tested and built against this push rather than trusted.**
+`git merge-tree` says clean for PR #8, PR #10 and PR #12, and this file's standing lesson is that a
+clean merge is not a working merge, so each was really merged into `main` in a throwaway worktree:
+302, 299 and 294 tests green, typecheck clean on all three, and the two that add a page built 254
+pages with the new guard passing. **No repair was needed on any branch**, which is the first push in
+days that has moved `src/pagekit.ts` without costing two.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest item and still waits on PR #8. The small pull request left has grown a second
+reason to exist: `src/render.ts` prints `hw.notes` whole in the assumptions panel at line 543, one
+line below the `stand in` label, so the same file wants the same shared home in `src/format.ts` for
+both. And the new item this run turned up while reading: **56 machine pages end in "source 1,
+source 2, source 3, source 4"**, which tells a reader and a crawler nothing about what is on the
+other end.
 
 ### 2026-09-18 — the seven pages one machine runs stop being dead ends
 
