@@ -570,30 +570,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       also missed the worst of it, which was not in the band at all — see the leaderboard note in
       the run entry below. 0 of the 362 tables scroll at any width from 320 to 1440px now.
 
-- [ ] What is left of the leaderboard's table on a phone. **The half that read badly is fixed**, on
-      2026-09-18: the eight hosted rows repeated *Runs in someone else's data centre. You cannot
-      download it.* eight times down the first screenful, and that is said once above the block now,
-      with each row carrying the score the index gives it with reasoning turned down. The run entry
-      below has the figures and the five breaks that proved the guard.
-      **The length is not the problem it looked like and is still open.** Measured at 360px the table
-      is 8,410px over 57 rows, and each row reads cleanly: name and score on one line, then Class,
-      Good at, Weights, Cheapest and Then under it. Nothing is cramped and nothing is hidden. The
-      pairing this item proposed does work — "Good at" renders 52px wide and "Weights" 42px, so with
-      their labels the two sit in 326px with room over — but it saves about 1,100px of 8,410, which
-      is not what makes the page long.
-      **The bigger one is elsewhere**: `/compare/` is 20,986px on a phone, its machine table alone
-      13,002px over 86 rows, and `/how-much-memory/` is 16,294px. If a pairing rule is written it
-      should be written for `stack()` and applied wherever it fits, not for the leaderboard alone.
-      **Measured properly on 2026-09-18, and `/compare/` is the wrong page to write it for.** At
-      320px a stacked row is 288px wide, and `/compare/`'s own sub-lines do not fit two to a line:
-      Price runs to 244px, so only 53 of the 86 rows could pair, and a table where some rows pair
-      and some do not reads worse than one where none do. The page that wants it is
-      `/how-much-memory/`, where Parameters, Weights and Cache measure 39, 53 and 44px and each
-      takes a whole line: two of the three on one line saves about 1,265px of 16,294, and all three
-      saves about 2,530px but needs three columns in a grid built for two. `/best/` can pair its
-      Speed and its calculator link at 113 and 130px. So the rule is worth writing, for `stack()`
-      and chosen per table, with the column pair fixed for the whole table rather than per row.
-      The leaderboard is 4,208px on a desktop, which is not worth chasing.
+- [x] What is left of the leaderboard's table on a phone, and the pairing rule it asked for. Done
+      2026-09-18 for the rule, and the measurement moved most of the item's own answers. `stack()`
+      takes a `pair` now, and the fit is arithmetic rather than a guess: at 320px a row has 271px, a
+      12px gap splits the two tracks, and the right-hand track goes to whichever is wider, **the
+      figure or the second of the pair** — the part the item missed. So a pair fits when first + 12 +
+      max(figure, second) is 271 or less. **Six tables pair, and four candidates that looked like they
+      fit do not**, `/best/` among them: its Speed and calculator link are 150 and 126, but its
+      pay-back figure claims the right track and the pair comes to 288. `/compare/` was right to be
+      ruled out. 24,930px saved over 253 pages, the leaderboard 969px of it and `/how-much-memory/`
+      1,109px. The run entry below has the figures and the six breaks that proved the guard.
 
 - [ ] The calculator's own page scrolls sideways on a phone, and **the cause is confirmed**.
       Re-measured in Chromium at 360px on 2026-09-18 while reading PR #9's footer: the document is
@@ -606,6 +592,29 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       is a pull request rather than a push. It was deliberately left out of PR #9 rather than folded
       in: a footer and a top bar are different faults, and a reviewer reading a PR about one should
       not have to review the other.
+
+- [ ] **A machine name is crushed to 7px on a phone wherever its pay-back cannot be worked out.**
+      Found 2026-09-18 while measuring the pairing rule, and it predates it: taking the pair markup
+      back out changes nothing. On a stacked row the right-hand track is `auto`, so it takes as much
+      as its widest cell wants, and the left one is `minmax(0, 1fr)`, so it gives up everything. The
+      row for a machine with no published price answers *Not enough data to compute a pay-back.*,
+      which wants 252px of the 271px a row has at 320px, and the name beside it is left with **7px**
+      — one character a line, down the whole name. It is **24 rows on 24 pages**, every one of them
+      the same sentence about the same two unpriced machines. Two ways to fix it, and the choice
+      wants measuring rather than arguing: give the left track a floor it will not go below, which
+      costs nothing anywhere else, or let that one sentence wrap instead of setting its own width.
+      The first is one word of CSS and touches every stacked table on the site, so it wants the
+      same 320-to-1440px sweep this run did.
+
+- [ ] **`/leaderboard/` scrolls sideways by 14px at exactly 641px, and nowhere else.** Found
+      2026-09-18, and it predates the pairing rule as well — the table wants 596px in the 582px it
+      is given, and it is clean at 640px, where the phone layout takes over, and at 660px and above.
+      641px is the first width above the stacking breakpoint, where the table becomes a table again
+      with seven columns and only the between-bands rules to wrap them. The log has claimed since
+      2026-09-17 that no table scrolls at any width from 320 to 1440px, and that claim was true when
+      it was written; the leaderboard has gained a column of text since, on the hosted rows. Worth
+      one look at the 641-to-1023px band, and worth re-measuring the other 306 stacked tables at
+      641px at the same time, since only sixteen pages were swept at that width.
 
 - [ ] The waterline's own marker label reaches within 19px of a share card's edge. On the Mac mini
       M6 32GB card the label "never reaches the surface" is drawn right-anchored by
@@ -653,6 +662,101 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 ## Runs
+
+### 2026-09-18 — two figures on one line, where the measurement says two figures fit
+
+**Why this item.** The first job the last entry set was to check all four pull requests against
+`main`. All four still merge clean — tested by merging each rather than assumed — so there was
+nothing to repair and no reason to spend the hour on one. That left the work the entry named next:
+the pairing rule for `stack()` on the long tables.
+
+**What the rule is.** `stack()` turns a table row into a block on a phone: the name, the figure the
+page is for against the right edge, and every other column underneath on a line of its own with its
+heading in front of it. Some of those columns are three words wide and still take a whole line.
+`stack()` now takes `pair`, two columns that share one line instead — the first keeps the left, the
+second sits against the right edge under the figure.
+
+**The fit is arithmetic, and the backlog had it wrong.** At 320px a row has 271px to give, split by
+a 12px gap into a left track that will shrink to nothing and a right track sized to its widest cell.
+The cell that usually sets that right track is not the pair at all: it is **the figure**, which sits
+in the same track one line up. So a pair fits when **first + 12 + max(figure, second) is 271 or
+less**, and that third term is what the backlog's own estimate left out. Every width below was
+measured in Chromium at 320px by letting each cell take its natural width, taken as the maximum over
+every row of every page of that kind — 56 machine pages, 55 model pages, 138 comparisons and the
+four indexes.
+
+**Six tables pair. Four that looked like they fit do not.**
+
+| Table | pair | first + 12 + max(figure, second) |
+| --- | --- | --- |
+| `/leaderboard/` | Good at + Weights | 103 + 12 + 94 = **209** |
+| `/how-much-memory/`, by size | Weights + Cache | 103 + 12 + 84 = **199** |
+| machine page, what it runs | Good at + Memory | 103 + 12 + 95 = **210** |
+| machine page, the shorter windows | Needs there + Needs at 32k | 115 + 12 + 119 = **246** |
+| model page, cheaper machines | Price + Needs there | 76 + 12 + 113 = **201** |
+| comparison, what the extra memory buys | Weights + Needs | 89 + 12 + 120 = **221** |
+
+The four refused: **`/best/`** — Speed and the calculator link measure 150 and 126, where the
+backlog had them at 113 and 130 without their headings, and the link is wider than the figure beside
+it, so it sets the right track and the pair comes to 288. Applying it anyway was tried first and
+measured: the page grew **873px**, because the left track fell to 134px and the speed wrapped. **A machine page's other machines** — the pay-back cell
+answers *Not enough data to compute a pay-back.* on unpriced rows, 252px, so nothing can sit beside
+it. **A model page's machines** and **a model head-to-head's machines** — both pay-back figures run
+to 157 and 155. `/compare/`, which the last entry already ruled out at 20,986px, stays ruled out:
+its Price sub-line alone is 264px.
+
+**What it bought.** 152 of the 307 stacked tables pair, **1,153 paired lines**, and **24,930px saved
+over 253 pages** measured at 320px against the same pages with the pair rule switched off.
+`/how-much-memory/` 17,654 → **16,545**, `/leaderboard/` 10,625 → **9,656**, a typical machine page
+322px shorter. Two of the pairs also say something the two separate lines did not: on
+`/how-much-memory/` the weights and the cache are the two halves of the figure printed above them,
+so the sum is now on one line under its own answer, and on a machine page's shorter-window table the
+same model's memory at two windows sits side by side instead of two lines apart.
+
+**The guard.** `checkPairedColumns()` holds the rule the item asked for, which is that the pair is
+chosen for the whole table and never per row: every row of a paired table carries both halves,
+each line has exactly two halves with one of them marked as the one that closes it, and neither half
+is empty or a bare dash. `stack()` holds the rest before the HTML exists — a pair must be two
+columns that are neighbours once the name and the figure are out of the count, named left to right,
+never the name or the figure, never a column that goes quiet in a row, and a pair that never applies
+to anything is refused rather than silently dropped. Proved by six breaks, each caught: pairing only
+half the rows (*24 of 56 rows … keep both columns on lines of their own*), leaving neither half
+marked as the closer (*2 halves and 0 of them closing it*), the rule quietly ceasing to apply at all
+(*were asked to share a line and no row gave them one*), pairing two columns with another between
+them, pairing a column that is empty in some rows, and taking the CSS rule out, which the new test
+catches.
+
+**The one exception the guard found by itself.** The leaderboard's eight hosted rows run three
+columns together under one `colspan`, so they have no Good at and no Weights to pair. The first
+version of the check called that a broken table; it is not, it is a row that does not have those
+columns, and the check says so now and counts them.
+
+**Two faults found by measuring, neither this run's and neither fixed here.** A machine name is
+crushed to **7px** on 24 rows across 24 pages, wherever the pay-back cell answers *Not enough data
+to compute a pay-back.* — the right track takes 252px and the left track gives up everything.
+Removing the pair markup changes nothing, so it predates this run. And `/leaderboard/` scrolls
+sideways by 14px at exactly 641px, the first width above the stacking breakpoint, and nowhere else
+between 320 and 1440px. Both are in the backlog with what was measured.
+
+**Verified**: 238 tests where there were 232, typecheck clean, 252 pages with every guard passing,
+and every build stage green — `validate`, `build:og`, `build:pages`, `vite build`, `build:share`
+(1,894 share pages) and `build:functions`, which found its font here. They were run in two goes
+rather than one `npm run build`: `build:og` redraws 1,894 cards that nothing in this change touches,
+so it was run on its own and the other five run after it rather than behind it again.
+Measured in Chromium across all 253 pages at 320px — nothing overflows the window, no table scrolls
+sideways, **no paired half wraps to a second line and no pair falls onto two lines** — and at 360,
+390, 430, 641, 768, 1024, 1280 and 1440px over sixteen pages of every kind. `/leaderboard/`,
+`/how-much-memory/` and a machine page were read rendered at 360px before committing.
+
+**Where it is.** Pushed to `main` as `eb3086f`. The four pull requests were re-checked after the push
+and all four still merge clean: the change is one option on six `stack()` calls, two CSS rules and a
+new check, and none of the four branches touches any of them.
+
+**What to continue.** The four pull requests are still open and still unreviewed, and they still
+block the biggest item on the backlog — the monthly-cost question page sits on PR #8's helpers, and
+a fifth branch is not worth opening while four wait. The push-shaped work left is the crushed name
+column above, which is a floor on one CSS track and wants the same 320-to-1440px sweep this run
+did, and then the 641px band.
 
 ### 2026-09-18 — the cheap box in the range finally has something to compare against
 
