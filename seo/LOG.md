@@ -1668,7 +1668,14 @@ reading the ledger, not the page.
 **Verified**: 407 tests, typecheck clean, 307 pages with every guard passing, the full `npm run
 build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
 rendered out of `dist/` — the lede, the three class lines at 50k and the two-clause line at 20M,
-where *39 never pay back and 63 can’t produce this much in a day*. **Pushed as `5627008`.**
+where *39 never pay back and 63 can’t produce this much in a day*. **Pushed as `5627008`, and it is
+live**: its own run 252 was cancelled by this entry's push a minute later, as usual, so **deploy run
+253 on `341b9e2` carries both and went green at 22:56**, three minutes thirteen from queue to
+published. The live site was not read back: this environment's egress proxy blocks `sunkcost.ai`.
+**And the Actions cache the last run was caught by is still there.** Four reads of
+`list_workflow_jobs` came back byte-identical, timestamps included, while the build step was really
+finishing; the fifth showed it done at 22:56:28 and the sixth the whole run green. An identical
+answer here means nothing was re-fetched, so it is worth neither a conclusion nor a wait.
 
 **Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree and
 built there rather than trusted to `git merge-tree`, because it is the one that touches
