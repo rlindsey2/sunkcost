@@ -11,6 +11,28 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 
 ## Ryan's side (needs the site owner)
 
+- [ ] **Merge (or close) [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), the home page's
+      missing heading.** Opened 2026-09-19. The root URL is the only page on this site with no `h1`:
+      all 261 generated pages have exactly one, `index.html` has five `h2`s under nothing, and the
+      only static prose inside its `<main>` is 142 words of form labels. The sentence already in the
+      top bar becomes the heading, and below 900px, where the bar has no room to paint it, it is
+      clipped rather than removed, so a phone and a crawler both still get it. It is a pull request
+      rather than a push only because it is the calculator's own head, which is the standing rule.
+      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`.
+      Verified on `main` at `b659506`: 372 tests, typecheck clean, the full `npm run build` with
+      `build:functions`, 261 pages with every guard passing, the four breaks that proved the two new
+      tests, and the page read rendered at 390, 900 and 1,280px. Measured at thirteen widths from 320
+      to 1440px, nothing on the page moves by a pixel. It also takes the duplicated `--ok-text` line
+      the backlog had parked for the next pull request touching `src/styles.css`.
+      **It collides with PR #16, in one file and one line, and the resolution is a rebuild rather
+      than a choice.** Both branches edit `index.html`, so both rewrite the `"/"` hash in
+      `seo/page-dates.json`, and neither value is right for the merged tree: it hashes to
+      `d47470180e0b4932` where this branch says `c4dbfa4065262b1f` and PR #16 says `eb2f546c5e896018`.
+      Take either side of that one line, run `npm run build:pages`, commit what it writes. Committing
+      either hash as it stands costs the home page its sitemap `lastmod` in silence. Really merged
+      here rather than assumed: 382 tests, typecheck clean, 262 pages with every guard passing. The
+      note is on both pull requests too, so whichever you merge second says what to do.
+
 - [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
       `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
       does it cost to run a local LLM per month*, which is the shape every bill it would replace is
@@ -538,6 +560,35 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       **The open question it raises is Ryan's**, and it is on his side of this file: the watch can
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
+
+- [ ] **The home page carries 142 words, and every one of them is a form label.** Measured
+      2026-09-19 over the static markup inside `<main>` on `index.html`: *Tokens a day*, *Context
+      window you want*, *Copy link*, *Assumptions you can change*, and the privacy note. The thinnest
+      generated page on the site is 603 words and the median machine page is 1,024. The missing `h1`
+      is fixed in [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), which gives the page a
+      sentence saying what it is for; this item is the bigger half, and it is a design question
+      rather than an SEO one, so it is not the agent's to decide alone.
+      **What the site has that the home page does not say.** Every one of the four index pages answers
+      its question in prose above the interface. The calculator answers the same question better than
+      any of them, but only after a reader moves three controls, and only in figures a crawler reads
+      as a snapshot of one machine and one model. The candidate the data supports without inventing
+      anything: a short static answer under the machine sentence, in the site's own numbers — what the
+      cheapest machine here pays back at, what the dearest does not, and the one sentence this site
+      exists to say, which is that it is willing to answer never. Every figure in it would come from
+      the same helpers the generated pages already use.
+      **The question to settle before writing a line of it** is whether prose belongs on the front of
+      a tool at all. The design note in the README is explicit that the machine is a sentence and
+      everything hangs off it, and a paragraph above the fold is the first thing that would push the
+      water down the page. Worth Ryan's opinion before it is built, not after.
+
+- [ ] **Nobody had measured how deep the site is, and it is two clicks. Nothing to do.** Measured
+      2026-09-19, breadth-first from `/` over the built site: **262 of 262 pages are within two
+      clicks of the home page**, 7 at depth 1 and 254 at depth 2, none unreached. Counting only links
+      inside `<main>`, so the shared footer flatters nothing, gives the same three numbers, which
+      means the depth does not depend on the footer at all. There is no deep corner here, no crawl
+      budget problem, and no work. Written down so the next run does not take the measurement again,
+      and so that a page type that ever lands at depth 3 or more is recognised as new rather than
+      normal.
 
 - [x] **The page that answers "which graphics card" was the least linked page on the site.** Done
       2026-09-19. Counting links inside `<main>`, so the shared footer flatters nothing, `/best-gpu/`
@@ -1201,7 +1252,12 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       starts at 320, so nothing is wrong today. It is written down so the next run that sweeps the
       home page knows what the floor is and does not read it as a new fault.
 
-- [ ] **`src/styles.css:98` declares `--ok-text`, `--warn-text` and `--bad-text` twice in a row**, with
+- [x] **`src/styles.css:98` declares `--ok-text`, `--warn-text` and `--bad-text` twice in a row.**
+      Done 2026-09-19, exactly as this item asked: it rode with the next pull request to touch that
+      file, [PR #17](https://github.com/rlindsey2/sunkcost/pull/17). One line deleted, identical
+      values, the second declaration was winning already, so nothing renders differently. The
+      original wording follows.
+      With
       identical values and the wrong indentation on the first of the pair, inside the
       `prefers-color-scheme: dark` block. It changes nothing — the second wins and says the same thing —
       so it is untidy rather than broken. Found 2026-09-18 while reading the file for PR #12 and
@@ -1226,6 +1282,92 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the page all 261 others link back to had no heading at all
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is either waiting on Ryan (the Q8 question wants Search Console, the
+three unpaired machines want prices, the submissions page wants an export), already written down as
+"leave it" (the home page's date, the 307px floor, the seven long titles), or a "worth one look"
+that its own wording expects to end in nothing. So this run went looking with a measurement instead,
+and the first one it took found something.
+
+**The measurement that found nothing, written down so nobody takes it again.** Crawl depth from `/`,
+breadth-first over the built site, following every internal link: **262 of 262 pages are within two
+clicks of the home page**, 7 at depth 1 and 254 at depth 2, with nothing unreached. Counting only
+links inside `<main>`, so the shared footer flatters nothing, gives exactly the same three numbers.
+There is no deep corner of this site and no crawl-budget problem to fix.
+
+**The fault.** The home page is the only page on this site with no `h1`. Measured in Chromium on the
+built site at thirteen widths from 320 to 1440px: `document.querySelectorAll('h1')` comes back empty
+at every one of them. All 261 generated pages have exactly one; `index.html` has five `h2`s under
+nothing, and the app bundle emits no `h1` either, so it is not a rendering timing question.
+
+It is worse than a missing tag, because of what else the page does not have. **The static prose
+inside `<main>` on the home page is 142 words, and every word of it is a form label** — *Tokens a
+day*, *Context window you want*, *Copy link*, *Assumptions you can change*. The thinnest generated
+page on the site is 603 words and the median machine page is 1,024. So the URL that every one of the
+other 261 pages links back to from its wordmark, its breadcrumb and its footer, and the one that
+ranks for what this site is and what it does, had no sentence in its markup saying so.
+
+**The fix, as [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), and the one thing in it that
+needed deciding.** The sentence was already written and already on the page: `.topbar-line` in the
+bar reads *"If you buy a machine to run local models, how long until it pays for itself, and what can
+it actually do?"*, which is the product statement and the question every generated page is an
+instance of. It is the `h1` now. What needed deciding is the phone: PR #12 hid that line below 900px
+because the bar has no room for it, and `display: none` on a phone means Google does not get the
+heading, since indexing reads the mobile page. So below 900px it is **clipped** rather than removed,
+with the declarations `.sr-only` already uses for this page's other screen-reader headings. The words
+are in the document at every width and painted only where they fit.
+
+**Nothing moves, and that was measured rather than asserted.** The same thirteen widths before and
+after, reading the box of the top bar, the brand, the tagline, the "Data checked" stamp, the theme
+button and the machine sentence below: **44 rows differ out of 572, and all 44 are the change
+itself** — the `h1` appearing at thirteen widths, and `.topbar-line` going from `display: none` to a
+1×1 clipped box at the nine widths under 900px. Every other box is identical to the pixel and no
+width overflows where none did. The painted line keeps 13px, weight 400 and the same muted colour,
+which is what the `margin: 0` and `font-weight: 400` on `.topbar-line` are for: without them the UA
+stylesheet would make an `h1` bold with a 0.67em margin. Read rendered at 390, 900 and 1280px, not
+just as HTML.
+
+**Verified:** 372 tests (2 new), typecheck clean, and the full `npm run build` including
+`build:functions`, 261 pages with every guard passing. **Four breaks proved the two tests**, exit 1
+each time: the `h1` put back to a `<p>` (*expected [] to have a length of 1*), a second `h1` added to
+the page, `display: none` restored in the phone rule, and the clip rule dropped.
+
+**It also takes the one line the backlog parked for it.** `src/styles.css` declared `--ok-text`,
+`--warn-text` and `--bad-text` twice in a row in the dark-mode block, identical values with the first
+misindented, and the item said it should ride with the next pull request touching that file. It does.
+The second declaration won, so nothing renders differently. The other parked one-liner, the doubled
+full stop in the Memory fit line, is `src/render.ts` and is untouched here — a reviewer reading a
+pull request about a heading should not have to review that too, and it is still open below.
+
+**The collision with PR #16 is the one on this repository that a union resolves wrongly, and it is
+worth knowing before either is merged.** They conflict in one file and one line. Both branches edit
+`index.html` — PR #16 adds a footer entry, this one changes the tagline's tag — so both rewrite the
+`"/"` hash in `seo/page-dates.json`, and **neither value is right for the merged tree**. Measured by
+really merging the two in a worktree rather than trusting `git merge-tree`: the merged home page
+hashes to `d47470180e0b4932`, where this branch records `c4dbfa4065262b1f` and PR #16 records
+`eb2f546c5e896018`. Taking either side and committing it costs the home page its sitemap date in
+silence: the build then says *"1 changed since the record was last written and go out without one"*
+and writes `<url><loc>https://sunkcost.ai/</loc></url>` with no `<lastmod>` at all, which is the
+record doing exactly what it was built to do. **Resolve that line either way, run
+`npm run build:pages`, commit what it writes.** Nothing else needs attention: `index.html` and
+`tests/pagekit.test.ts` auto-merge, and the merged tree was verified here at 382 tests, typecheck
+clean and 262 pages with every guard passing. The note is on the pull request as well as here.
+
+**What it deliberately does not do, so the next run does not read it as a gap.** It does not make the
+heading visually prominent. Between 900 and about 1,100px the bar ellipsises the sentence, as it has
+since it was a `<p>`; the whole of it is in the DOM either way, so a crawler reads all of it and only
+the painting is cut. A heading that reads as a heading — above the machine sentence rather than in
+the bar — is a design decision about the calculator's front door, not a markup one, and it belongs to
+Ryan. It is a backlog item below, with the 142-word measurement that makes the case.
+
+**What to continue.** Nothing here is half-finished. PR #17 and PR #16 are both waiting on Ryan, and
+the next run should check that both still merge, remembering that these two do not merge cleanly into
+each other and that the resolution above is a rebuild rather than a choice. The top of the backlog is
+the standing model watch; after that, the new item on what the home page says when nothing is
+selected is the one with the most behind it.
 
 ### 2026-09-19 — the page that answers "which machine" was linked from nowhere but the footer
 
