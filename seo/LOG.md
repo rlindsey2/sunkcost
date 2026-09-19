@@ -611,18 +611,37 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       half of it: the 307 pages carry 307 `h1`s, 1,177 `h2`s and **no `h3` at all**, so there is no
       second level of heading waiting for the same treatment.
 
-- [ ] **1,177 sections can now be linked to, and 1,172 of them have nothing pointing at them.**
-      Every heading got its anchor this afternoon; only `/best/` uses one, in the *Jump to* line
-      above its five usage bands. Two things the site could now do and does not. A long page could
-      carry `/best/`'s own *Jump to* line — the machine and model pages run to four sections and a
-      reader from a search lands mid-page — and an internal link that today points at a whole page
-      could point at the section that answers it, which is what a crawler reads as the specific
-      answer. Both are `scripts/build-pages.ts`, so both are a push. **The thing to settle first**
-      is which links are worth re-pointing: a link into a section is better than a link to a page
-      only where the section really is the answer, and re-pointing every internal link on the site
-      because it is now possible is the keyword-stuffing of internal linking. The honest cut is
-      probably the links that already name a section's own subject. Worth an hour; written down
-      2026-09-19 rather than taken because one change per run is the rule.
+- [x] **Half of it is done: the links that name a section now land on it.** Done 2026-09-19,
+      pushed as `09911ca`. 448 links on 303 pages, ten of them in the source. The cut is the link
+      whose own words name one section and where that section is the whole answer, and the measured
+      thing that set it is worth keeping: **not one internal link on this site has a heading for its
+      text.** All 8,930 of them are written as prose, so a rule matching link text against the
+      target's headings would have re-pointed nothing. What the site does have is ten sentences that
+      name a section's subject in their own words, and they were carrying 448 of the links.
+      `sectionLink()` writes the address out of the section's own heading, the way `anchoredHeading()`
+      writes the heading, and `checkSectionLinks()` holds three claims across every page. The run
+      entry below has the figures, the four breaks and the three links the cut deliberately leaves
+      pointing at the top of a page.
+
+- [ ] **The other half: 1,172 sections still have nothing pointing at them, and the *Jump to* line
+      is what would change that.** `/best/` carries one, above its five usage bands, and it is still
+      the only page on the site that does. A reader from a search lands mid-page and a search result
+      can offer a jump into a section only where the page itself offers one. **What the run of
+      2026-09-19 found before leaving this half alone**, so it is not re-derived: a jump line built
+      from the headings themselves reads as keyword stuffing on the two biggest page types, because
+      yesterday's run made every heading name its own subject. A model page would open *Jump to: How
+      good is Gemma 4 31B, really? · What Gemma 4 31B costs either way · Machines that run Gemma 4
+      31B · The specifics* — the model named three times in one line. The machine pages are the same
+      shape and carry only three sections besides. **Where it reads clean is the 190 head-to-heads**,
+      whose four headings name the pair once between them (*Side by side on Gemma 4 12B · How much
+      use it takes to pay back · What the extra memory buys · The assumptions behind both columns*),
+      and the three long indexes: `/how-much-memory/` at seven sections, four of them a pick-one
+      ladder by model size, `/best-gpu/` at five and `/local-llm-vs-api-cost/` at five.
+      **The two things to settle**: where the line goes, given the site's own rule that the answer
+      comes first — under the lede would push the answer block down, so above the first `<h2>` is
+      the likelier place — and whether the cut is written as a rule the build can hold or as a flag
+      per page type. `scripts/build-pages.ts` either way, so it is a push. `checkSectionLinks()` is
+      already there and would cover the new links the day they are written.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1475,6 +1494,108 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the links that name a section now land on it
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the one the 15:0x run wrote down as it finished
+the anchors: 1,177 sections could be linked to and 1,172 had nothing pointing at them. It has two
+halves and this run took the one the item itself said to settle first — which internal links are
+worth re-pointing at a section.
+
+**What settled it was a count, and it came out at zero.** The obvious rule is to re-point a link
+whose text *is* a heading on the page it points at. Measured over all 8,930 internal links inside
+`<main>` on the 307 pages: **not one of them.** This site writes links as prose — *the cards are
+ranked against each other here*, *What a million tokens costs each way* — so a rule keyed on heading
+text would have shipped nothing and looked thorough doing it. What the site does have is ten
+sentences whose own words name a section's subject, and between them they were carrying 448 links to
+the top of a page the reader had already been told the answer was inside.
+
+| | before | after |
+| --- | --- | --- |
+| links that land on the section answering them | 5, all on `/best/`, all same-page | 453 |
+| pages carrying one | 1 | 303 |
+| sections other pages point at | 0 | 5 |
+| internal links whose text is a heading on the target | 0 | 0 |
+| words a visitor reads that changed | — | 0 |
+| pages re-dated | — | 0 |
+
+**The cut, and what it leaves alone.** A link is re-pointed where its own words name one section and
+that section is the whole of the answer. Ten sentences qualify: *What a million tokens costs each
+way* and *what a million tokens costs to rent against generating it* → `#a-million-tokens-model-by-model`;
+*How weights and cache add up* and *How the two add up* → `#where-the-cache-figure-comes-from`;
+*ranked by what each one holds*, *set against the others here* and *the cards are ranked against each
+other here* → `#every-card-here-side-by-side`; *N machine match-ups on the site* and, on the 111
+machine head-to-heads, *every other match-up* → `#machine-against-machine`; and on the 78 model
+head-to-heads the same words → `#model-against-model`, which is the one place the same sentence
+lands somewhere different depending on which page the reader is on.
+**Three sentences that could have been swept in and were not**, because each names two sections
+rather than one: the machine pages' *a page on how that sum works, and what each size needs* is the
+cache section plus the four size sections, the leaderboard's *how much memory each size really takes*
+is the four on their own, and `/hardware/`'s *how much memory you need* is the page. They open the
+page at the top, which is where their answer starts. Re-pointing every link because it is now
+possible is the keyword-stuffing of internal linking, and the item said so before the work began.
+
+**How the two ends of a link are kept together.** `sectionLink(path, heading)` builds the address out
+of the section's own heading, the same way `anchoredHeading()` builds the heading — one function of
+one set of words at both ends, so rewording a heading moves the link with it rather than away from
+it. `SECTIONS` in `src/pagekit.ts` names the five sections other pages link to, so a reworded heading
+is one edit rather than a hunt through the emitters.
+
+**The guard.** `checkSectionLinks()` holds three claims: every fragment a page links to exists on the
+page it points at, every one is the id of a section rather than of something the page happens to
+carry, and every section `SECTIONS` names is linked from somewhere — so a heading that stops being
+linked shows up in the build rather than sitting in the list. It covers `/best/`'s own five same-page
+jump links too, which nothing checked before. The build prints *`453 links name a section and land
+on it, across 10 sections of 4 other pages`*.
+
+**Four breaks, each run and each caught.** Reword `/compare/`'s *Machine against machine* heading and
+leave the link → *`/hardware/mac-mini-m6-16/` links to `/compare/#machine-against-machine`, where
+`/compare/` heads no section with that id*, and the build stops on 164 of them. Aim one at a page nothing writes →
+*`/best/` links to `/best-gpus/#every-card-here-side-by-side`, and no page here is written at
+`/best-gpus/`*. Put one link back to the page it used to point at → *`/compare/#model-against-model`
+is the section SECTIONS calls modelMatchUps, and no page on this site links to it*. Mistype the id
+alone → *`/best/` links to `/best-gpu/#every-card-here-side-by-sides`, where `/best-gpu/` heads no
+section with that id*. Three tests hold the part the build cannot: that `sectionLink` and
+`anchoredHeading` agree on the id for the same heading, that every entry in `SECTIONS` is a path in
+front of a slug, and that no section is named twice.
+
+**One line that changes nothing today and would have mattered one day.** `write()` harvested inbound
+links with a regex that stopped at the first `#`, so a link landing on a section did not count as
+reaching the page — and `checkLinks()` fails the build on a page nothing links to. Measured both
+ways: `/compare/`, `/best-gpu/`, `/how-much-memory/` and `/local-llm-vs-api-cost/` are each linked
+from 306 pages either way, because the footer links all four from every page. So this is a
+correctness fix ahead of the case rather than a rescue, and it is worth saying plainly rather than
+claiming a save.
+
+**How it was checked that no word changed.** The site was built twice, once from `main` at `883c041`
+in a worktree and once from this change, and all 307 pages compared with every tag stripped: **zero
+differences**. 303 of the 307 differ as markup and `sitemap.xml` is identical byte for byte, so not
+one page is re-dated — 606 lines of `seo/page-dates.json` move and every one of them is a hash.
+
+**Verified**: 399 tests (396 plus three new), typecheck clean, `npm run validate` with the two null
+prices that are already on Ryan's side of this file, 307 pages with every guard passing, and the
+full `npm run build` end to end including `build:og`, `build:share` and `build:functions`. All ten
+re-pointed links read back out of the built pages, each landing on the id its target really heads.
+
+**Pushed as `09911ca`; deploy run 233 was in progress when this entry was written.** The live site
+was not read back: this environment's egress proxy blocks `sunkcost.ai`, so everything above is from
+the built output.
+
+**Both open pull requests still merge, and really rather than by `git merge-tree`.** #16 and #17 were
+each merged into `main` at `09911ca` in a throwaway worktree and built there: #16 gives 409 tests and
+308 pages, #17 gives 401 tests and 307. One thing #16 picks up that is worth Ryan knowing: its own
+new page carries one of the re-pointed sentences, so `/cost-per-month/`'s hash moves in the merged
+tree. The instruction already on that pull request covers it — merge, run `npm run build:pages`,
+commit what it writes — and it now matters even if #16 is merged on its own rather than beside #17.
+(The local clone was shallow, which makes `git merge-tree` answer *refusing to merge unrelated
+histories* on a pull request branch; `git fetch --unshallow` first. Worth knowing before a future
+run reads that as a conflict.)
+
+**What to continue.** The other half of the same item: the *Jump to* line. The backlog entry above
+now carries what this run measured before leaving it — where it reads clean, where it reads as the
+page's own subject three times in a line, and the two things to settle before a line of it is
+written.
 
 ### 2026-09-19 — every section on the site got a link that lands on it
 
