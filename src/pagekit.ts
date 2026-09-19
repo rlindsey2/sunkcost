@@ -1034,6 +1034,38 @@ export function machinesShorter(m: Model, data: Dataset): ShorterMachine[] {
   return out;
 }
 
+/**
+ * What a machine page says about the models that fit it but sit below its
+ * table. The table stops at twelve, so on the largest machines it answered
+ * "twenty-six more fit" and named none of them — a count, and then the reader
+ * who wanted to know whether their model was one of the twenty-six had nowhere
+ * to go. Every one of them is named here, in the order the table would have
+ * put them, and every name is that model's own page. The ones the intelligence
+ * index has not scored come last, because a table ordered by class cannot
+ * place them, and that is worth saying rather than leaving as an odd tail.
+ */
+export function runsOnNote(hidden: Model[], link: (m: Model) => string): string {
+  if (!hidden.length) return '';
+  const scored = hidden.filter((m) => m.frontier_equivalent?.score != null);
+  const unscored = hidden.filter((m) => m.frontier_equivalent?.score == null);
+  const names = (ms: Model[]) => ms.map(link).join(', ');
+  const pages = hidden.length === 1 ? 'Its page shows what it needs and what runs it.' : 'Their pages show what each one needs and what runs it.';
+  const count = hidden.length === 1 ? 'One more fits' : `${hidden.length} more fit`;
+  if (!scored.length) {
+    const why =
+      hidden.length === 1
+        ? 'and the intelligence index has not scored it, so the table above cannot place it'
+        : 'and the intelligence index has scored none of them, so the table above cannot place them';
+    return `${count}, ${why}: ${names(unscored)}. ${pages}`;
+  }
+  if (!unscored.length) return `${count}, ranked below the twelve above: ${names(scored)}. ${pages}`;
+  const tail =
+    unscored.length === 1
+      ? `The other has no intelligence-index score, so the ranking cannot place it: ${names(unscored)}.`
+      : `The other ${unscored.length} have no intelligence-index score, so the ranking cannot place them: ${names(unscored)}.`;
+  return `${count}. Ranked below the twelve above: ${names(scored)}. ${tail} ${pages}`;
+}
+
 export interface MissedMachine {
   hw: Hardware;
   /** weights plus cache at the shortest window the calculator offers */

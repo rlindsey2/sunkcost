@@ -7,14 +7,14 @@ import {
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelsInBand, modelVerdict,
   footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
-  runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
+  runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
-import type { Dataset, Hardware } from '../src/types';
+import type { Dataset, Hardware, Model } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
 import throughput from '../data/throughput.json';
@@ -1632,5 +1632,79 @@ describe('a source link says who is on the other end', () => {
       expect([u, /^source( \d+)?$/i.test(name)]).toEqual([u, false]);
       expect([u, name.length > 0 && !name.includes('/'.repeat(2))]).toEqual([u, true]);
     }
+  });
+});
+
+
+describe('the models a machine runs that its table has no room for', () => {
+  const link = (m: Model) => `<a href="/models/${m.id}/">${m.display_name}</a>`;
+  const scored = data.models.filter((m) => m.frontier_equivalent?.score != null);
+  const unscored = data.models.filter((m) => m.frontier_equivalent?.score == null);
+  const linksIn = (note: string) => [...note.matchAll(/<a href="([^"]+)">/g)].map((m) => m[1]);
+
+  it('names every model it is given, once each, as a link to that model\u2019s page', () => {
+    const given = [...scored.slice(0, 4), ...unscored.slice(0, 2)];
+    const hrefs = linksIn(runsOnNote(given, link));
+    expect(hrefs).toHaveLength(given.length);
+    expect(new Set(hrefs).size).toBe(given.length);
+    for (const m of given) expect(hrefs).toContain(`/models/${m.id}/`);
+  });
+
+  it('opens on the count of what it names', () => {
+    expect(runsOnNote(scored.slice(0, 5), link).startsWith('5 more fit')).toBe(true);
+    expect(runsOnNote(scored.slice(0, 1), link).startsWith('One more fits')).toBe(true);
+    // the count is everything below the table, not just the part the index can rank
+    expect(runsOnNote([...scored.slice(0, 4), ...unscored.slice(0, 2)], link).startsWith('6 more fit')).toBe(true);
+    expect(runsOnNote(unscored.slice(0, 3), link).startsWith('3 more fit')).toBe(true);
+  });
+
+  it('sets the unscored ones apart, counted, with the reason they are not in the ranking', () => {
+    const note = runsOnNote([...scored.slice(0, 3), ...unscored.slice(0, 2)], link);
+    expect(note).toContain('5 more fit.');
+    expect(note).toContain('Ranked below the twelve above:');
+    expect(note).toContain('The other 2 have no intelligence-index score');
+    // the two lists are disjoint: an unscored model is named in the tail, not the ranking
+    const [ranked, rest] = note.split('The other 2');
+    for (const m of unscored.slice(0, 2)) expect(ranked).not.toContain(`/models/${m.id}/`);
+    for (const m of scored.slice(0, 3)) expect(rest).not.toContain(`/models/${m.id}/`);
+  });
+
+  it('drops the caveat when the index has scored every one of them', () => {
+    const note = runsOnNote(scored.slice(0, 3), link);
+    expect(note).toContain('3 more fit, ranked below the twelve above:');
+    expect(note).not.toContain('intelligence-index score');
+  });
+
+  it('says why there is no ranking at all when none of them is scored', () => {
+    expect(runsOnNote(unscored.slice(0, 2), link)).toContain('the intelligence index has scored none of them');
+    expect(runsOnNote(unscored.slice(0, 1), link)).toContain('the intelligence index has not scored it');
+    expect(runsOnNote(unscored.slice(0, 1), link)).toContain('Its page shows what it needs');
+  });
+
+  it('says nothing when the table had room for everything', () => {
+    expect(runsOnNote([], link)).toBe('');
+  });
+
+  it('is handed every model the machine runs that the table of twelve left out', () => {
+    let machines = 0;
+    let pairs = 0;
+    for (const machine of machinesConsidered(data)) {
+      const view = computeView({ ...defaultState(data), hw: machine.id }, data);
+      const fits = view.rows.filter((r) => r.fit.status === 'fits').map((r) => r.model);
+      const hidden = fits.slice(12);
+      const note = runsOnNote(hidden, link);
+      if (!hidden.length) {
+        expect(note).toBe('');
+        continue;
+      }
+      machines++;
+      pairs += hidden.length;
+      const hrefs = linksIn(note);
+      expect([machine.id, hrefs.length]).toEqual([machine.id, hidden.length]);
+      for (const m of hidden) expect([machine.id, hrefs.includes(`/models/${m.id}/`)]).toEqual([machine.id, true]);
+      for (const m of fits.slice(0, 12)) expect([machine.id, hrefs.includes(`/models/${m.id}/`)]).toEqual([machine.id, false]);
+    }
+    expect(machines).toBeGreaterThan(30);
+    expect(pairs).toBeGreaterThan(300);
   });
 });

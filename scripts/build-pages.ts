@@ -18,7 +18,7 @@ import {
   meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, otherQuantisations, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
   rowFor,
-  runnersFor, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
+  runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   sourceLinks, sourceName, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
@@ -1240,33 +1240,35 @@ function checkArticles() {
 
 /**
  * A machine page lists the twelve strongest models that fit it, in index-class
- * order, which puts every model the index has not scored yet below the cut. On
- * all but the smallest machines that hid all five of them, and three — Kat
- * Coder v2.5, Laguna XS 2.1 and Ornith 1.5 35B-A3B — were in no machine's first
- * twelve at all, leaving each of their pages with exactly one inbound link on
- * the whole site. The note under the table names them now. The rule this holds
- * is the simple one: if a model fits a machine, that machine's page links it,
- * whether it made the table or not.
+ * order, and everything else it runs sat below the cut as a number. On the
+ * largest machines that number was twenty-six, so a page answering "what does
+ * this run?" named eighteen models and left the reader to open the calculator
+ * and find out about the rest. The note under the table names every one of
+ * them now. The rule this holds is the one the note was always written to:
+ * if a model fits a machine, that machine's page links it, whether it made
+ * the table or not.
  */
 function checkHiddenModels() {
   const problems: string[] = [];
   let named = 0;
+  let unnamed = 0;
   for (const hw of data.hardware) {
     const path = `/hardware/${hw.id}/`;
     const page = meta.find((p) => p.path === path);
     if (!page) throw new Error(`no page written for ${path}`);
     for (const r of fitsOn(hw)) {
-      if (r.model.frontier_equivalent?.score != null) continue;
       const href = `/models/${r.model.id}/`;
-      if (page.links.includes(href)) named++;
-      else problems.push(`${path} does not link ${href}, a model with no index score that fits it`);
+      if (page.links.includes(href)) {
+        named++;
+        if (r.model.frontier_equivalent?.score == null) unnamed++;
+      } else problems.push(`${path} does not link ${href}, a model that fits it`);
     }
   }
   if (problems.length) {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
-    throw new Error(`${problems.length} unscored model${problems.length === 1 ? ' fits a machine whose page does' : 's fit a machine whose page does'} not link it`);
+    throw new Error(`${problems.length} model${problems.length === 1 ? ' fits a machine whose page does' : 's fit a machine whose page does'} not link it`);
   }
-  console.log(`  ${named} machine-and-unscored-model pairs, every one of them a link on the machine's page`);
+  console.log(`  ${named} machine-and-model pairs, every one of them a link on the machine's page, ${unnamed} of them unscored`);
 }
 
 /**
@@ -2016,21 +2018,6 @@ function relatedRow(h: Hardware): string {
 </tr>`;
 }
 
-/**
- * What to say about the models that fit but are below the table. A count on its
- * own is a dead end; the ones worth naming are those the intelligence index has
- * not scored, because a table ordered by class is exactly what buries them.
- */
-function runsOnNote(hiddenCount: number, unscored: Model[], link: (m: Model) => string): string {
-  const more = hiddenCount === 1 ? 'One more fits; the calculator lists it.' : `${hiddenCount} more fit; the calculator lists them all.`;
-  if (!unscored.length) return more;
-  if (hiddenCount === 1)
-    return `One more fits: ${link(unscored[0])}, which has no intelligence-index score, so it sits below the twelve above. Its page shows what it needs and what runs it.`;
-  if (unscored.length === 1)
-    return `${more} One of them, ${link(unscored[0])}, has no intelligence-index score, so it sits below the twelve above. Its page shows what it needs and what runs it.`;
-  return `${more} ${unscored.length} of them have no intelligence-index score, so they sit below the twelve above: ${unscored.map(link).join(', ')}. Their pages show what each one needs and what runs it.`;
-}
-
 /** How many of the models in a machine's table its own memory stops, as the page writes it. */
 const memoryCount = (n: number) => (n === 1 ? 'one' : String(n));
 
@@ -2082,10 +2069,10 @@ function hardwarePage(hw: Hardware): string {
 
   // The table stops at twelve, ordered by index class, which puts every model
   // the index has not scored beneath it — below the cut on all but the smallest
-  // machines. Three of those models were in no machine's first twelve, so the
-  // only thing on the site linking them was one line under the leaderboard.
-  const hidden = fits.slice(12);
-  const unscored = hidden.filter((r) => r.model.frontier_equivalent?.score == null).map((r) => r.model);
+  // machines. What sat below the cut used to be a count, so on the largest
+  // machines the page named eighteen of the thirty-eight models it runs and
+  // sent the rest to the calculator. runsOnNote() names all of them.
+  const hidden = fits.slice(12).map((r) => r.model);
   const modelLink = (m: Model) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`;
 
   // Every figure in this table is taken at the context the page assumes, and that
@@ -2178,7 +2165,7 @@ ${stack(`<table class="board">
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
 <p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
-${hidden.length ? `<p class="note">${runsOnNote(hidden.length, unscored, modelLink)}</p>` : ''}` : ''}
+${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
 ${stack(`<table class="board">
