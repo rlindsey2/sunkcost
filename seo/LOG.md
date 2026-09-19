@@ -587,7 +587,14 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       class and said neither that number nor that 23 other models pay back behind them. It now prints
       the cut from `BEST_PER_CLASS` and counts what each class leaves out, and `checkBestCuts()` holds
       the page to both. The run entry below has the table and the five breaks.
-      The two left are the same shape and still unheld. Found 2026-09-19 while fixing `/compare/`,
+      **`/hardware/` is half-done and `/leaderboard/` is untouched.** The one claim on `/hardware/`
+      that was measurably false — 56 configurations priced where 54 are — is held by
+      `checkPricedRows()` as of `e0b6b23`. What is still hand-written there is the rest of the same
+      lede and the assumptions note: the count of models at 32k, the order the families are in, what
+      usable memory means. `/leaderboard/` is where the next run should go, because nothing on it is
+      held at all: it says what its table holds, what the ranking is and where the hosted rows come
+      from, all in prose beside figures the build recomputes.
+      Found 2026-09-19 while fixing `/compare/`,
       which had drifted by two rules on one side and one on the other. `/hardware/` and
       `/leaderboard/` each say in their own words what their table holds and how it is cut — which
       machines are in it, what the ranking is, where the hosted rows come from — and every one of
@@ -596,14 +603,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       page print it, and let the build fail when the two disagree. One page a run, and only where the
       sentence really is a claim about the data rather than about the reader.
 
-- [ ] **`/hardware/` says the site prices all 56 configurations, and it prices 54.** Measured
-      2026-09-19 while `/best/` was being held to its own list. The lede opens *All 56 configurations
-      this site prices, in one table*, and two machines — the Mac Studio M5 Ultra, 512GB and the
-      Strix Halo Framework Desktop, 192GB — have no published price, so their own rows read *not
-      published · price it yourself*. The table is right and the sentence above it is not, by two.
-      It is one clause and it wants the same treatment as the rest of that page's prose, which is
-      the item above: write the count from the data rather than from `data.hardware.length`, and
-      say what the other two rows are. Nothing about a figure changes.
+- [x] **`/hardware/` said the site prices all 56 configurations, and it prices 54.** Done
+      2026-09-19, pushed as `e0b6b23`. The lede opened *All 56 configurations this site prices, in
+      one table*, and the Mac Studio M5 Ultra, 512GB and the Framework Desktop, 192GB have no
+      published price, so their own rows read *not published · price it yourself* under a sentence
+      promising a price for every machine in the table. It lists 56 now and prices 54, and it names
+      the two, which is the part a reader can act on: those are the two rows the calculator wants a
+      number for. `publishedPriceLine()` writes the count from the data and `checkPricedRows()`
+      holds four claims about it, one of them read back out of the rendered table rather than taken
+      from the array that wrote it. One page's words moved and no figure, row or count changed. The
+      run entry below has the four breaks and the two that proved the tests.
 
 - [ ] **A class on `/best/` counts the models it leaves out and names none of them.** Left
       deliberately by the 2026-09-19 run rather than missed, because naming them is a different page:
@@ -1610,6 +1619,71 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a table of 56 machines under a sentence that priced all of them
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which its own text says
+to leave until Ryan's two pull requests are settled. The next is the one the last two runs have been
+working down — `/hardware/` and `/leaderboard/` explain their own tables in prose and nothing holds
+those sentences to the code — and the item under it names the one sentence on `/hardware/` that is
+measurably wrong. That is this run.
+
+**What was wrong.** The lede opened *All 56 configurations this site prices, in one table*, written
+from `data.hardware.length`. Two of the 56 have no `price_usd`: the **Mac Studio M5 Ultra, 512GB**
+and the **Framework Desktop, 192GB**. Their own rows already said so — *not published · price it
+yourself* in the price cell, *needs a price* in the pay-back cell — so the page contradicted itself
+between its first paragraph and its table, and the reader who scrolled to the row found out the hard
+way. Nothing about it was a figure: the table has been right the whole time.
+
+**What it says now.**
+
+> All 56 configurations this site lists, in one table: … **54 of them carry a published price. The
+> Mac Studio M5 Ultra, 512GB and the Framework Desktop, 192GB do not, so their rows open the
+> calculator for you to put in what you would pay.**
+
+*Prices* became *lists*, which is what the table does, and the count of what it prices is its own
+sentence. Naming the two is the part a reader can act on rather than a caveat: those are the two
+rows where the price is theirs to enter, and the link in the cell already goes there.
+`publishedPriceLine()` in `src/pagekit.ts` writes it from `data.hardware`, singular and plural both,
+and says *Every one of them carries a published price* on a fleet where nobody is missing one — so a
+price published tomorrow rewrites the sentence rather than dating it.
+
+**`checkPricedRows()`, four claims.** The count in the paragraph is the count of rows the table
+really prints a price on, **read back out of the rendered page** rather than taken from the same
+array that wrote the sentence. Every machine without a published price is named in the lede. No
+machine that has one is named among them. And each of those rows offers the calculator, which is
+what the sentence promises.
+
+**Four breaks, each run.** Drop `${publishedPriceLine(data)}` from the lede → exit 1, *the machine
+index does not open by saying that 54 of its 56 rows carry a published price*. Invert the filter so
+it names two priced machines → exit 1 with 4 problems, naming the Mac Studio M5 Ultra and the
+Framework Desktop as unnamed and the two Mac minis as wrongly named, *and it is priced at $899*.
+Stop marking the two rows *not published* → exit 1, *prints a price on 56 of its 56 rows, where 54
+of the machines here have a published price*. Change the link's words from *price it yourself* → exit
+1 on both rows, *is named as a machine you price yourself and its row does not offer the calculator*.
+The first version of that fourth break removed the link outright and was caught one guard earlier by
+`checkHardwareIndex`, which wants the calculator link on every row; it was re-run keeping the link
+and changing only its words, so the claim proved is this guard's own.
+
+**Two breaks proved the four new tests.** Count `data.hardware.length` instead of the priced ones →
+three of the four fail. Drop the singular branch → *keeps its singulars where one machine has no
+price* fails, because one machine without a price read as several.
+
+**Nothing else on the site moved.** `seo/page-dates.json` is the measurement: exactly one hash
+changed, `/hardware/`, and the other 306 pages are byte-for-byte what they were. 411 tests (407
+before), typecheck clean, the full `npm run build` including `build:functions`, 307 pages with every
+guard passing, and the page read rendered out of `dist/`.
+
+**Pushed to `main` as `e0b6b23`.** It is `scripts/build-pages.ts`, `src/pagekit.ts` and a test, which
+is the push side of the standing rule; no data file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts`
+is touched.
+
+**What to continue.** `/leaderboard/` is the page left in the item above, and it is the bigger half:
+nothing it says about its own table is held by anything. Same shape as `checkBestCuts()` and this
+run's guard — name the rule once, let the page print it, let the build fail when the two disagree.
+Ryan's side is unchanged: PR #16 and PR #17 are both open and both merge clean as of the last check,
+and the Ternary Bonsai 2 27B figures still need him.
 
 ### 2026-09-19 — three rows a class, and the other 23 models were in no row and no count
 
