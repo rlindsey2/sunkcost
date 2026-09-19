@@ -6267,21 +6267,6 @@ function checkSubjectHeadings() {
 }
 
 /**
- * Every section on this site can be linked to, and no two sections on one page
- * answer to the same link.
- *
- * A heading with no id is a section another site has to send a reader to the top
- * of, and a section a search engine cannot offer a jump link into. Two headings
- * sharing one id is worse than neither having one: the browser honours the first
- * and silently ignores the second, so a link that looks right lands wrong.
- *
- * It also holds the one thing the guards above depend on, which is that a slug is
- * a function of the heading's own words. They ask for a heading through
- * `anchoredHeading`, which slugs the text the same way the build did; if an id
- * anywhere were set by hand instead, those guards would start missing sections
- * that are really there and this one says so first.
- */
-/**
  * Every page on this site is cut into sections, and no section is the page over
  * again.
  *
@@ -6328,12 +6313,39 @@ function checkPageSections() {
   );
 }
 
+/**
+ * Every section on this site can be linked to, and no two sections on one page
+ * answer to the same link.
+ *
+ * A heading with no id is a section another site has to send a reader to the top
+ * of, and a section a search engine cannot offer a jump link into. Two headings
+ * sharing one id is worse than neither having one: the browser honours the first
+ * and silently ignores the second, so a link that looks right lands wrong.
+ *
+ * It also holds the one thing the guards above depend on, which is that a slug is
+ * a function of the heading's own words. They ask for a heading through
+ * `anchoredHeading`, which slugs the text the same way the build did; if an id
+ * anywhere were set by hand instead, those guards would start missing sections
+ * that are really there and this one says so first.
+ *
+ * Answering to one link is not the same as reading differently, and until now
+ * this guard only held the first. `anchorHeadings` numbers a slug it has already
+ * used, so a page headed "The specifics" twice builds clean on ids
+ * `the-specifics` and `the-specifics-2`, and the jump line above those sections
+ * then offers the reader the same words twice pointing at two different places.
+ * Every id is unique and the line is useless. So the last claim is about the
+ * words rather than the addresses: no page heads two sections that read the same.
+ * Nothing on the site does it today, which is the point of saying so now rather
+ * than the day a template repeats a heading.
+ */
 function checkHeadingAnchors() {
   const problems: string[] = [];
+  const words = (h: string) => unesc(h.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
   let headings = 0;
   for (const { path, html } of meta) {
     const body = mainOf(html);
     const seen = new Set<string>();
+    const read = new Set<string>();
     for (const [, id, text] of body.matchAll(/<h2(?:\s+id="([^"]*)")?[^>]*>([\s\S]*?)<\/h2>/g)) {
       headings++;
       if (!id) {
@@ -6344,6 +6356,9 @@ function checkHeadingAnchors() {
       seen.add(id);
       if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) problems.push(`${path} gives a section the id "${id}", which is not a slug`);
       const expected = headingSlug(text);
+      if (read.has(expected))
+        problems.push(`${path} heads two sections "${words(text)}", so a jump into them offers the reader the same words twice`);
+      read.add(expected);
       if (id !== expected && id !== `${expected}-2` && id !== `${expected}-3`)
         problems.push(`${path} gives "${text.slice(0, 40)}" the id "${id}" where its own words slug to "${expected}"`);
     }
@@ -6352,7 +6367,9 @@ function checkHeadingAnchors() {
     console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
     throw new Error(`${problems.length} section heading${problems.length === 1 ? '' : 's'} cannot be linked to`);
   }
-  console.log(`  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, none repeated on its page`);
+  console.log(
+    `  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, no id repeated on its page and no two of them reading the same`,
+  );
 }
 
 /**
