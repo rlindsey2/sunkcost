@@ -81,6 +81,26 @@ export function shortHardwareLabel(h: Hardware): string {
 }
 
 /**
+ * The screen size in a laptop's name tells a reader which of two machines this
+ * is, and only where both are priced here. Where only one size of a chip is
+ * sold, those ten characters separate nothing, and in a title they cost the
+ * second machine's memory size, which is the figure the page is about. So a
+ * title may drop the bracket where nothing else here answers to the name
+ * without it, and must keep it where something does. Every other label on the
+ * site, and the page's own heading, keeps the full name.
+ */
+export function titleHardwareLabel(h: Hardware, fleet: Hardware[]): string {
+  const label = shortHardwareLabel(h);
+  const bare = withoutBracket(label);
+  if (bare === label) return label;
+  return fleet.some((o) => o.id !== h.id && withoutBracket(shortHardwareLabel(o)) === bare) ? label : bare;
+}
+
+export function withoutBracket(label: string): string {
+  return label.replace(/ \([^()]*\)/g, '');
+}
+
+/**
  * The part that decides how fast a machine runs a model. `chip_variant` writes the CPU
  * and the GPU either side of a middle dot where a machine has both, so the GPU is the
  * last segment of it; where the field names one thing, that one thing is the answer.

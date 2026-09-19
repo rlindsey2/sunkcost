@@ -11,7 +11,7 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
+  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import {
   indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
@@ -399,6 +399,43 @@ describe('the calculator’s own head', () => {
     expect(page!.name).toBe(home.match(/<title>([^<]+)<\/title>/)![1]);
     expect(page!.description).toBe(home.match(/<meta name="description" content="([^"]+)"/)![1]);
     expect(home).toContain(`<link rel="canonical" href="${site}/" />`);
+  });
+});
+
+describe('the name a machine goes by in a title', () => {
+  const bare = (h: Hardware) => shortHardwareLabel(h).replace(/ \([^()]*\)/g, '');
+  const brackets = data.hardware.filter((h) => bare(h) !== shortHardwareLabel(h));
+
+  it('keeps the screen size where a second machine answers to the name without it', () => {
+    const airs = data.hardware.filter((h) => bare(h) === 'MacBook Air M5, 16GB');
+    expect(airs.length).toBe(2);
+    for (const air of airs) expect(titleHardwareLabel(air, data.hardware)).toBe(shortHardwareLabel(air));
+  });
+
+  it('drops it where only one machine here does', () => {
+    const only = brackets.filter((h) => data.hardware.filter((o) => bare(o) === bare(h)).length === 1);
+    expect(only.length).toBeGreaterThan(0);
+    for (const h of only) {
+      expect(titleHardwareLabel(h, data.hardware)).toBe(bare(h));
+      expect(titleHardwareLabel(h, data.hardware)).not.toContain('(');
+    }
+  });
+
+  it('leaves a name with no screen size in it alone', () => {
+    for (const h of data.hardware.filter((h) => bare(h) === shortHardwareLabel(h)))
+      expect(titleHardwareLabel(h, data.hardware)).toBe(shortHardwareLabel(h));
+  });
+
+  it('still names one machine, whichever way it goes', () => {
+    const names = data.hardware.map((h) => titleHardwareLabel(h, data.hardware));
+    expect(new Set(names).size).toBe(data.hardware.length);
+  });
+
+  it('keeps the screen size once a second size of the same machine is priced', () => {
+    const pro = hw('macbook-pro-16-m5-pro-64');
+    expect(titleHardwareLabel(pro, data.hardware)).toBe('MacBook Pro M5 Pro, 64GB');
+    const fourteen = { ...pro, id: 'macbook-pro-14-m5-pro-64', chip: 'M5 Pro (14-inch)' } as Hardware;
+    expect(titleHardwareLabel(pro, [...data.hardware, fourteen])).toBe(shortHardwareLabel(pro));
   });
 });
 

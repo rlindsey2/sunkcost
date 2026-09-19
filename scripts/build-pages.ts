@@ -19,7 +19,7 @@ import {
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
+  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -3133,16 +3133,23 @@ function comparePage(a: Hardware, b: Hardware): string {
   // both sides of a same-silicon pair carry the same memory, so a title that prints the
   // size twice spends a search result's 60 characters saying it again instead of naming
   // the second machine, which is the half of the pair the reader has not typed yet
-  const withoutSize = (h: Hardware) => shortHardwareLabel(h).replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
-  const heading = tiers
-    ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
-    : step
-    ? `${step.machine}, ${step.a} vs ${step.b}`
-    : gens
-    ? `${gens.machine} ${gens.a} vs ${gens.b}, ${gens.size}`
-    : twins
-      ? `${withoutSize(a)} vs ${shortHardwareLabel(b)}`
-      : `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`;
+  const withoutSize = (h: Hardware, label: string) => label.replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
+  const headingFrom = (label: (h: Hardware) => string) =>
+    tiers
+      ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
+      : step
+      ? `${step.machine}, ${step.a} vs ${step.b}`
+      : gens
+      ? `${gens.machine} ${gens.a} vs ${gens.b}, ${gens.size}`
+      : twins
+        ? `${withoutSize(a, label(a))} vs ${label(b)}`
+        : `${label(a)} vs ${label(b)}`;
+  const heading = headingFrom(shortHardwareLabel);
+  // the heading above is what the page says of itself and it keeps every machine's full
+  // name. A search result is 60 characters wide, and on the longest of these pairs the
+  // full names fill them before the second machine's memory size arrives, so the title
+  // falls back to names with a screen size that separates nothing dropped out of them
+  const shortHeading = headingFrom((h) => titleHardwareLabel(h, data.hardware));
   const ctxK = Math.round(st.ctx / 1024);
   const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
 
@@ -3319,6 +3326,7 @@ ${machineSiblingNote(a, b)}
         ...(step ? [`${heading}: the chip changes too`] : []),
         `${heading} for local LLMs`,
         heading,
+        ...(shortHeading === heading ? [] : [`${shortHeading} for local LLMs`, shortHeading]),
       ]),
       description: descOf(
         twins
@@ -5961,6 +5969,58 @@ function checkPayBackReads() {
   }
 }
 
+/**
+ * A search result shows about 60 characters of a title. On the longest
+ * head-to-heads here the two full machine names filled them before the second
+ * machine's memory size arrived, so the one figure the page turns on was the
+ * part a searcher never saw. The fix is narrow and it has to cut both ways: a
+ * title may leave the screen size out of a laptop's name only where no other
+ * machine here answers to the name without it, and a head-to-head still over
+ * the 60 characters has to be one where neither name had a bracket to lose.
+ */
+function checkTitleLabels() {
+  const problems: string[] = [];
+  // cut here rather than taken from the builder, so that a rule that stopped shortening
+  // anything at all fails this instead of quietly passing it
+  const bare = (h: Hardware) => shortHardwareLabel(h).replace(/ \([^()]*\)/g, '');
+  const answerTo = (name: string) => data.hardware.filter((o) => bare(o) === name);
+  const bracketed = data.hardware.filter((h) => bare(h) !== shortHardwareLabel(h));
+  // nothing anywhere on the site may name a machine by a name a second machine answers to
+  for (const h of bracketed.filter((h) => answerTo(bare(h)).length > 1))
+    for (const m of meta.filter((m) => m.title.includes(bare(h))))
+      problems.push(`${m.path} calls the ${shortHardwareLabel(h)} "${bare(h)}", and ${answerTo(bare(h)).length} machines here answer to that`);
+  // and a title still over the limit has to be one this rule could not shorten
+  let shortened = 0;
+  let over = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    const path = hardwareComparePath(a, b);
+    const title = meta.find((m) => m.path === path)?.title;
+    if (title == null) {
+      problems.push(`${path} is a head-to-head with no title`);
+      continue;
+    }
+    const loseable = [a, b].filter((h) => bare(h) !== shortHardwareLabel(h) && answerTo(bare(h)).length === 1);
+    const lost = loseable.filter((h) => title.includes(bare(h)));
+    if (lost.length) shortened++;
+    // and a screen size is only ever dropped where keeping it would not have fit
+    const full = lost.reduce((t, h) => t.replace(bare(h), shortHardwareLabel(h)), title);
+    if (lost.length && full.length <= TITLE_MAX)
+      problems.push(`${path} drops a screen size to reach ${title.length} characters where the full names fit in ${full.length}`);
+    if (title.length <= TITLE_MAX) continue;
+    over++;
+    if (loseable.length)
+      problems.push(`${path} is ${title.length} characters and still carries the screen size of the ${loseable.map((h) => shortHardwareLabel(h)).join(' and the ')}`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page titles name a machine by a name that is not its own or are longer than a search result shows`);
+  }
+  console.log(
+    `  ${meta.filter((m) => m.title.length <= TITLE_MAX).length} of ${meta.length} titles fit the ${TITLE_MAX} characters a search result shows; ` +
+      `${shortened} head-to-heads drop a screen size only this site's own range makes redundant`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -6009,6 +6069,7 @@ checkTokenCost();
 checkMarkerWords();
 checkSourceLinks();
 checkPageDates();
+checkTitleLabels();
 // Every guard has passed, so the three files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a

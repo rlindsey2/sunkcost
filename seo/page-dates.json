@@ -346,7 +346,7 @@
       "changed": "2026-09-19"
     },
     "/compare/mac-studio-m5-max-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "09ed522cb207621c",
+      "hash": "0896a16c5b908f32",
       "changed": "2026-09-19"
     },
     "/compare/mac-studio-m5-max-128gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
@@ -398,7 +398,7 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-air-m5-15-inch-16gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "5ccff3a580abd97a",
+      "hash": "98182eb161db40cd",
       "changed": "2026-09-19"
     },
     "/compare/macbook-air-m5-15-inch-16gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
@@ -414,7 +414,7 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "f28b78d749f55660",
+      "hash": "81220914f5527304",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-macbook-pro-m5-max-16-inch-128gb/": {
@@ -426,7 +426,7 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-max-16-inch-64gb-vs-mac-studio-m5-ultra-96gb/": {
-      "hash": "ef364f94bf149b79",
+      "hash": "ab0161fabaf8789b",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-max-16-inch-64gb-vs-macbook-pro-m5-max-16-inch-128gb/": {
@@ -434,7 +434,7 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-mac-studio-m5-max-48gb/": {
-      "hash": "81be1c140897999a",
+      "hash": "e8769b9f052b8a9d",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-macbook-pro-m5-pro-16-inch-48gb/": {
@@ -454,19 +454,19 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-48gb-vs-strix-halo-minisforum-ms-s1-max-128gb/": {
-      "hash": "a4ec46eeb28bf889",
+      "hash": "d5a96ca86ad770d0",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-64gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "65600eb52a56dd10",
+      "hash": "6411aeb18941daaa",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-64gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "687e8e64db22694d",
+      "hash": "ddab93f77bb753de",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-64gb-vs-strix-halo-beelink-gtr9-pro-128gb/": {
-      "hash": "2a035992f39424e0",
+      "hash": "328c47d7769c6753",
       "changed": "2026-09-19"
     },
     "/compare/minicpm5-2b-q4-vs-qwen3-5-4b-q4/": {
@@ -770,7 +770,7 @@
       "changed": "2026-09-19"
     },
     "/compare/strix-halo-minisforum-ms-s1-max-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "bf3b6f68b3c8cb59",
+      "hash": "3a4a30d5548d82f8",
       "changed": "2026-09-19"
     },
     "/hardware/": {
