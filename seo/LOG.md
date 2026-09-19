@@ -282,8 +282,23 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       magnitude smaller. Left rather than pushed because PR #10 is not that run's branch and this file
       records three hours lost to two sessions repairing one branch a minute apart.
 
-- [ ] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
+- [x] Merge (or close) [PR #8](https://github.com/rlindsey2/sunkcost/pull/8), a new page at
       `/local-llm-vs-api-cost/` answering "local LLM vs API cost" with the site's own numbers.
+      **Merged, and the session that opened it was woken by the merge and checked the result at
+      05:20 on 2026-09-19.** It had been open since 02:05 on 2026-09-18 and was repaired several
+      times; the repair history is in the run entries rather than here.
+      Merged `main` was verified rather than assumed: **367 tests, typecheck clean, 261 pages with
+      every guard passing**, and the full `npm run build` including `build:og`, `build:share` and
+      `build:functions`. `checkTokenCost()` still recomputes the page's own claim on the merged
+      tree and reports what it reported the day it was written — 27 models priced both ways and
+      **7.97B tokens paying the machine back at all five levels of use** — so a day of other
+      people's changes has not moved a figure on it. The page reads back at 1,498 words, title 50
+      characters, description 136, and it is in the sitemap.
+      **The build-output fault the item above predicted did not come back.** That item warned that
+      merging this PR would leave `public/local-llm-vs-api-cost/index.html` tracked on `main`,
+      because an ignore rule does not untrack a tracked file. It was untracked on both sides before
+      the merge, and `git ls-files` on merged `main` lists nothing under that directory or under
+      `public/best-gpu/`. Nothing is left on this item.
       **Repaired again at 14:51 on 2026-09-18 against the marker push and ready to merge**
       (`ecec366`): two union hunks in `scripts/build-pages.ts`, and then the fault git had nothing
       to say about — `checkMarkerWords()` refused two markers on the page itself, which is written
@@ -1172,6 +1187,45 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — PR #8 merged, and nothing is open behind it
+
+Not an hourly run: the session that opened PR #8 at 02:05 on 2026-09-18 was woken by the merge
+event and checked the result. The whole of it is in the Ryan's-side item above; what follows is
+what a later run needs and would otherwise have to re-derive.
+
+**`/local-llm-vs-api-cost/` is live and intact.** Merged `main` was verified here rather than
+assumed: 367 tests, typecheck clean, 261 pages with every guard passing, and the full
+`npm run build`. `checkTokenCost()` reports the same figures on the merged tree that it reported
+the day the page was written, 27 models and 7.97B tokens at all five levels of use, so the day of
+other work between the two did not move anything the page claims. The page was written against 249
+pages and a five-link footer; it now sits in a site of 261 with seven, and not a line of it needed
+changing, because every figure on it is recomputed from the data at build time.
+
+**Two things the log can now stop carrying.** The build-output fault is settled: the earlier item
+warned that merging this PR would leave `public/local-llm-vs-api-cost/index.html` tracked on `main`,
+since an ignore rule does not untrack a tracked file. Both sides were untracked before the merge, and
+`git ls-files` on merged `main` lists nothing under it or under `public/best-gpu/`. And **no pull
+request is open** — the first time that has been true since PR #1 was opened on 2026-09-16. Several
+entries below say the monthly-cost page waits on PR #8 or on PR #15; both have merged, so it waits
+on nothing, and the next run should take it rather than re-check whether it is blocked.
+
+**One caution for whoever picks that up.** A second session was pushing to `main` while this check
+ran: deploy 203 was already building `0b58a27`, another session's record of PR #13, before this
+entry was written. That commit touches only `seo/LOG.md`, so the tree this run tested is the tree
+that is deployed. The standing instruction in the item at the top of this file applies and was
+followed here: fetch, verify the other side's work, rebase rather than force.
+
+**Continue next: the monthly-cost page**, *how much does it cost to run a local LLM per month*,
+which is the top open backlog item and is now unblocked. `calc.ts` already computes
+`cloudCostPerMonth` and `localCostPerMonth`, and `/local-llm-vs-api-cost/` has the helpers a
+monthly page would sit on: `tokenCost()`, `tokenCosts()` and `costMachine()` in `src/pagekit.ts`.
+The question to settle before writing a line is what it says that the token-cost page does not,
+because a monthly bill is the same arithmetic divided by twelve, and a second page saying that in
+other words is the duplicate this site should not create. The honest candidate is the thing the
+token page deliberately left out: a monthly figure a reader can compare against a subscription,
+which the calculator already takes as `state.sub` and no generated page does.
+
 
 ### 2026-09-19 — the page that answers "which graphics card" was the least linked page on the site
 
