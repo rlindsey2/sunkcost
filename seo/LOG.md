@@ -1578,7 +1578,9 @@ prices that are already on Ryan's side of this file, 307 pages with every guard 
 full `npm run build` end to end including `build:og`, `build:share` and `build:functions`. All ten
 re-pointed links read back out of the built pages, each landing on the id its target really heads.
 
-**Pushed as `09911ca`; deploy run 233 was in progress when this entry was written.** The live site
+**Pushed as `09911ca`. Deploy run 233 was cancelled by the log push a minute later, as usual, and
+run 234 went green at 16:49 on 2026-09-19 on `f993f62`, which carries both commits**, so the section
+links are live. The live site
 was not read back: this environment's egress proxy blocks `sunkcost.ai`, so everything above is from
 the built output.
 
