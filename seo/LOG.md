@@ -1654,8 +1654,11 @@ today. The page is 6,004 words where it was 5,909.
 build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
 rendered out of the built output in Chromium at 1,280 and 390px — the seven lines carry their
 markers, the lead line sits above them and the sentence about the two speeds sits below.
-**Pushed as `a868268`.** The live site was not read back: this environment's egress proxy blocks
-`sunkcost.ai`, so everything above is from the built output.
+**Pushed as `a868268`.** Run 247 was cancelled a minute later by the push of this entry, as usual,
+and **deploy run 248 was still running fifteen minutes after it started**, where the last few runs
+took three: nothing about it had failed, it was simply slow, so the next run should read its
+conclusion rather than assume this one is live. The live site was not read back either way: this
+environment's egress proxy blocks `sunkcost.ai`, so everything above is from the built output.
 
 **Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree
 and built there rather than trusted to `git merge-tree`: no conflict, **413 tests**, typecheck
