@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   addJumpLine, anchoredHeading, anchorHeadings, headingSlug, JUMP_MIN_SECTIONS, sectionLink, SECTIONS, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
-  contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  bestLeftOut, contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
@@ -2374,5 +2374,39 @@ describe('the line of jumps into a page\u2019s own sections', () => {
     // and a page with no h1 is not a page this rule knows the subject of
     const headless = four.map((h) => anchoredHeading(h)).join('');
     expect(addJumpLine(headless, [])).toBe(headless);
+  });
+});
+
+describe('what a class on /best/ leaves out', () => {
+  const klass = (picks: number, never = 0, overCapacity = 0, considered = 100) =>
+    ({ picks: Array.from({ length: picks }, (_, i) => i), never, overCapacity, considered });
+
+  it('counts the models a class pays back but does not list, and says so in their own number', () => {
+    expect(bestLeftOut(klass(17), 3).more).toBe(14);
+    expect(bestLeftOut(klass(17), 3).moreSaid).toBe('14 more models in this class pay back and are not listed.');
+    // one is the case the plural would read wrong in, and it is a real class on the page
+    expect(bestLeftOut(klass(4), 3).moreSaid).toBe('1 more model in this class pays back and is not listed.');
+  });
+
+  it('says nothing about models where the class lists every one that pays back', () => {
+    expect(bestLeftOut(klass(3), 3).more).toBe(0);
+    expect(bestLeftOut(klass(3), 3).moreSaid).toBe('');
+    expect(bestLeftOut(klass(1), 3).moreSaid).toBe('');
+  });
+
+  it('counts pairs as pairs, and keeps the two reasons a pair is not a row apart', () => {
+    expect(bestLeftOut(klass(3, 57, 0, 530), 3).pairsSaid).toBe('of the 530 machine-and-model pairs that fit, 57 never pay back.');
+    expect(bestLeftOut(klass(3, 0, 18, 33), 3).pairsSaid).toBe('of the 33 machine-and-model pairs that fit, 18 can’t produce this much in a day.');
+    expect(bestLeftOut(klass(3, 39, 63, 530), 3).pairsSaid).toBe(
+      'of the 530 machine-and-model pairs that fit, 39 never pay back and 63 can’t produce this much in a day.',
+    );
+    // a class that leaves no pair out counts none, rather than printing a nought
+    expect(bestLeftOut(klass(3, 0, 0, 33), 3).pairsSaid).toBe('');
+  });
+
+  it('moves with the cut rather than with the number three', () => {
+    expect(bestLeftOut(klass(17), 5).more).toBe(12);
+    expect(bestLeftOut(klass(17), 17).moreSaid).toBe('');
+    expect(bestLeftOut(klass(17), Infinity).more).toBe(0);
   });
 });

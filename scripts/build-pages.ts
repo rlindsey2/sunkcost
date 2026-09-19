@@ -7,7 +7,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  addJumpLine, anchoredHeading, anchorHeadings, appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  addJumpLine, anchoredHeading, anchorHeadings, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
@@ -2192,10 +2192,22 @@ ${unplaced.length ? `<h2>Models the index has not scored yet</h2>
 
 /* ------------------------------ best buys ------------------------------ */
 
+/**
+ * How many models a class on `/best/` lists. The rest of the class is counted rather
+ * than listed, which is a fair cut on a page about the quickest pay-back — but the page
+ * has to say so, and until now it did not: 23 of the 32 models that pay back somewhere
+ * sat in no row and in no count, at every one of the five levels of use.
+ *
+ * The number lives here, the lede prints it and `checkBestCuts()` holds the page to it,
+ * so changing the cut changes the sentence and the guard with it.
+ */
+const BEST_PER_CLASS = 3;
+
+const bestAnchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
 function bestBuys(): string {
   const d = data.defaults;
-  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage) }));
-  const anchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage, Infinity) }));
 
   // the headline: at the default usage, the most capable class with anything that pays back
   const headLevel = levels.find((l) => l.usage >= d.usage.default_tokens_per_day) ?? levels[0];
@@ -2207,11 +2219,13 @@ function bestBuys(): string {
       const rows = l.tiers
         .map((t) => {
           const header = `<tr class="is-frontier"><th colspan="5">${esc(t.label)}${t.hosted.length ? ` <span class="dim">· alongside ${esc(t.hosted.join(', '))}</span>` : ''}</th></tr>`;
-          const counts = `${t.never ? `${t.never} never pay back` : ''}${t.never && t.overCapacity ? '; ' : ''}${t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : ''}`;
+          const { moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
+          const counted = pairsSaid ? sentenceCase(pairsSaid) : '';
           if (!t.picks.length) {
-            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage${counts ? ` (${counts}, of ${t.considered} pairs that fit)` : ''}.</td></tr>`;
+            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
           }
           return header + t.picks
+            .slice(0, BEST_PER_CLASS)
             .map((c) => {
               const v = c.view;
               const tp = v.throughput;
@@ -2225,10 +2239,10 @@ function bestBuys(): string {
   <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
-            .join('') + (counts ? `<tr><td colspan="5" class="dim">Also in this class: ${counts}, of ${t.considered} pairs that fit.</td></tr>` : '');
+            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
         })
         .join('');
-      return `<section id="${anchor(l.usage)}">
+      return `<section id="${bestAnchor(l.usage)}">
 <h2>${esc(fmtTokens(l.usage))} tokens a day <span class="dim">· ${esc(l.label)}</span></h2>
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Machine</th><th>Speed</th><th>Pays back in</th><th></th></tr></thead>
@@ -2240,9 +2254,9 @@ ${stack(`<table class="board">
 
   const body = `<article class="prose">
 <h1>Best buys: the quickest pay-back at each level of capability</h1>
-<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each model appears once, on its quickest machine.</p>
+<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; what a class leaves out is counted under its table. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
-<p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
+<p class="note">Jump to: ${levels.map((l) => `<a href="#${bestAnchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
 <p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="${SECTIONS.cardsSideBySide}">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="${SECTIONS.millionTokens}">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
 </article>`;
@@ -2263,6 +2277,68 @@ ${sections}
 }
 
 /* --------------------- headings that name their subject -------------------- */
+
+/**
+ * `/best/` is a page about the quickest pay-back, so it lists the quickest few in each
+ * class and counts the rest. That is a fair cut and it was an unstated one: three rows
+ * a class, four, eleven and seventeen models paying back behind them, and no sentence
+ * on the page saying any of the other 23 existed. A reader counting three rows under
+ * *Haiku-class* had no way to tell whether that was the whole class or the top of it.
+ *
+ * The cut is `BEST_PER_CLASS` and the lede prints it from there. This holds the page to
+ * it, class by class and level by level: the rows a class carries, the models it says
+ * it leaves out, and the pairs it counts. Raising the cut without changing the sentence,
+ * listing a fourth model, or claiming a model is left out when none is, fails the build.
+ */
+function checkBestCuts() {
+  const page = meta.find((p) => p.path === '/best/');
+  if (!page) throw new Error('no best-buys page was written');
+  const problems: string[] = [];
+
+  const cut = `Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest`;
+  if (!page.html.includes(cut)) problems.push(`/best/ does not say that a class lists ${BEST_PER_CLASS} models: "${cut}"`);
+
+  let classes = 0;
+  let left = 0;
+  const levels = bestUsageLevels(data);
+  for (const l of levels) {
+    const at = `${fmtTokens(l.usage)} tokens a day`;
+    const section = page.html.split(`<section id="${bestAnchor(l.usage)}">`)[1]?.split('</section>')[0];
+    if (!section) {
+      problems.push(`/best/ has no section for ${at}, which the calculator names as a level of use`);
+      continue;
+    }
+    const blocks = section.split('<tr class="is-frontier">').slice(1);
+    const tiers = bestByTier(data, l.usage, Infinity);
+    if (blocks.length !== tiers.length) {
+      problems.push(`/best/ heads ${blocks.length} classes at ${at}, where ${tiers.length} classes have a machine-and-model pair that fits`);
+      continue;
+    }
+    for (const [i, t] of tiers.entries()) {
+      classes++;
+      const block = blocks[i];
+      // `stack()` rewrites the class list on every cell, so a row is counted by its name cell rather than by the markup this file wrote
+      const listed = (block.match(/class="[^"]*\bc-model\b/g) ?? []).length;
+      const want = Math.min(t.picks.length, BEST_PER_CLASS);
+      if (listed !== want) problems.push(`/best/ lists ${listed} models in ${t.label} at ${at}, where the cut takes ${want} of the ${t.picks.length} that pay back`);
+      const { more, moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
+      left += more;
+      if (more && !block.includes(moreSaid)) problems.push(`/best/ lists ${listed} of the ${t.picks.length} models that pay back in ${t.label} at ${at} and does not say the other ${more} ${more === 1 ? 'is' : 'are'} left out`);
+      if (!more && /more model/.test(block)) problems.push(`/best/ says ${t.label} at ${at} leaves a model out, and every model in it that pays back is listed`);
+      if (pairsSaid && !block.includes(sentenceCase(pairsSaid))) problems.push(`/best/ does not count what ${t.label} at ${at} leaves out: ${pairsSaid}`);
+    }
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing /best/ says about its own list does not hold'
+        : `${problems.length} things /best/ says about its own lists do not hold`,
+    );
+  }
+  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, and counts the ${left} more that pay back behind them`);
+}
 
 /**
  * A machine page and a model page are each about one thing, and until now their
@@ -6693,6 +6769,7 @@ checkFamilyReach();
 checkModelGenerations();
 checkLeaderboardLinks();
 checkBestGpu();
+checkBestCuts();
 checkNotes();
 checkHardwareNotes();
 checkTierLabels();

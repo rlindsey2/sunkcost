@@ -1244,6 +1244,35 @@ export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
  * that do not. Every machine that holds it is covered by one of these clauses,
  * which is the claim the guard checks.
  */
+/**
+ * What a class on `/best/` leaves out, each figure in the unit it is counted in.
+ * The page lists the few models in a class that pay back soonest, so two different
+ * things sit behind the rows: models that pay back on some machine and are not
+ * listed, and machine-and-model pairs that fit and never pay back at all. Counting
+ * them together would read as one number and be two.
+ *
+ * The page prints these sentences and its guard checks for them, so the words under
+ * a table and the figures behind it cannot drift apart. It wants the uncut list of
+ * picks, which is what `bestByTier(data, usage, Infinity)` returns.
+ */
+export function bestLeftOut(
+  t: { picks: unknown[]; considered: number; never: number; overCapacity: number },
+  perClass: number,
+): { more: number; moreSaid: string; pairsSaid: string } {
+  const more = Math.max(0, t.picks.length - perClass);
+  const counted = [
+    t.never ? `${t.never} never pay back` : '',
+    t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : '',
+  ].filter(Boolean);
+  return {
+    more,
+    moreSaid: more
+      ? `${more} more model${more === 1 ? '' : 's'} in this class pay${more === 1 ? 's' : ''} back and ${more === 1 ? 'is' : 'are'} not listed.`
+      : '',
+    pairsSaid: counted.length ? `of the ${t.considered} machine-and-model pairs that fit, ${counted.join(' and ')}.` : '',
+  };
+}
+
 export function familyReachNote(reach: FamilyReach[], listed: number, rows: number, ctx: number): string {
   if (!reach.length) return '';
   const held = reach.reduce((n, r) => n + r.runs, 0);
