@@ -1654,21 +1654,23 @@ today. The page is 6,004 words where it was 5,909.
 build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
 rendered out of the built output in Chromium at 1,280 and 390px — the seven lines carry their
 markers, the lead line sits above them and the sentence about the two speeds sits below.
-**Pushed as `a868268`.** Run 247 was cancelled a minute later by the push of this entry and run 248
-a minute after that by the push of a correction to it, both as usual, so **deploy run 249 on
-`7382b64` is the one that carries all three**; when this run ended, its `npm test` step had passed
-in CI and `npm run build` was still drawing cards, which takes about thirteen minutes here. The next
-run should read its conclusion rather than assume the page is live. The live site was not read back
-either way: this environment's egress proxy blocks `sunkcost.ai`, so everything above is from the
-built output.
+**Pushed as `a868268`, and it is live.** Runs 247, 248 and 249 were each cancelled a minute or two
+in by the next push — this entry, then a note about the deploy, then a correction to that note — so
+**deploy run 250 on `134c2be` is the one that carries all four commits, and it went green at
+22:04**. Its whole job took three minutes and eighteen seconds, the `npm run build` step two minutes
+forty, which is worth knowing because this container takes about thirteen minutes over the same
+build: a deploy here is never the slow part. The live site was not read back: this environment's
+egress proxy blocks `sunkcost.ai`, so everything above is from the built output.
 
 **And one thing about reading Actions from this environment, which cost this run half an hour.**
 `get_workflow_run` and the run list come back **cached**: run 248 was cancelled at 21:58:30 and both
 kept reporting it `in_progress`, with the same `updated_at`, for fifteen minutes afterwards. An
 earlier version of this entry said the run was slow on the strength of those polls, and it was not
 slow, it was already dead. Repeated identical answers here mean nothing has been re-fetched rather
-than nothing has changed. `list_workflow_jobs` on the run id returned the live step list, so that is
-the call to make when a deploy's state actually matters.
+than nothing has changed. `list_workflow_jobs` on the run id is the call to make when a deploy's
+state matters — it returned the live step list, and it is what finally showed run 250 finishing —
+but it caches too, so an answer identical to the last one is worth nothing either way. The tell is
+that a step's timestamps do not move.
 
 **Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree
 and built there rather than trusted to `git merge-tree`: no conflict, **413 tests**, typecheck
