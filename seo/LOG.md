@@ -32,6 +32,10 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       either hash as it stands costs the home page its sitemap `lastmod` in silence. Really merged
       here rather than assumed: 382 tests, typecheck clean, 262 pages with every guard passing. The
       note is on both pull requests too, so whichever you merge second says what to do.
+      **It still merges clean with `main` at `479b982`**, checked 2026-09-19 by merging it for real
+      in a throwaway worktree and building there: 405 tests, typecheck clean, 307 pages with every
+      guard passing. It gains no jump line from that push, because the line is written by the page
+      builder and `index.html` is not one of its pages.
 
 - [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
       `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
