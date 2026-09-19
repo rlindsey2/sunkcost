@@ -18,7 +18,7 @@ import {
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
 import { footprintGb, kvCacheGb } from '../src/fit';
-import { modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
+import { hardwarePairs, modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
@@ -525,6 +525,20 @@ describe('machine head-to-heads', () => {
       const sameModel = fitsOf(va)[0].model.id === fitsOf(vb)[0].model.id;
       expect(/own strongest model/.test(verdict)).toBe(!sameModel);
     }
+  });
+
+  it('never calls a pay-back sooner than a figure it prints as equal to it', () => {
+    // two machines at the same price can come out days apart over decades, and days do
+    // not survive the rounding these pages print at. Where both sides print the same
+    // figure the lede has to say both, or it argues with the table under it.
+    let both = 0;
+    for (const [a, b] of hardwarePairs(data)) {
+      const verdict = machineVerdict(a, b, view(a.id), view(b.id), data);
+      const m = verdict.match(/pays for itself sooner, in (.+?) against (.+?) at /);
+      if (m) expect(m[1]).not.toBe(m[2]);
+      if (/Both pay for themselves in/.test(verdict)) both++;
+    }
+    expect(both).toBeGreaterThan(0);
   });
 
   it('counts the models each machine holds the way the table does', () => {

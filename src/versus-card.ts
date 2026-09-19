@@ -286,11 +286,75 @@ export function generationPairs(data: Dataset): [Hardware, Hardware][] {
 }
 
 /**
+ * How far apart two prices may be and still be the same money. A tenth is a round
+ * number, but on this data it does not sit in the middle of anything: the widest pair
+ * it keeps is 8.8% apart and the nearest one it turns away is 15.5%, so no machine is
+ * excluded by a hair.
+ */
+export const PRICE_NEIGHBOUR_GAP = 0.1;
+
+/**
+ * Each machine against the machine from another family nearest it in price, cheaper
+ * side first, where the two prices are within a tenth of each other.
+ *
+ * Every other rule here holds a piece of the hardware equal and asks what the price gap
+ * buys: the same chip at two memory sizes, the same silicon in two boxes, the same box a
+ * generation apart. This one holds the *price* equal and asks what the money buys, which
+ * is the question a buyer actually starts from — $1,299 is a Mac mini with 32 GB or an
+ * AMD card with 32 GB, and nothing on this site put those two side by side. The families
+ * have to differ, because two machines from one maker at the same price are the memory
+ * tiers and chip steps the rules above already cut.
+ *
+ * One pair per machine, its own nearest, rather than every pair inside a price band: a
+ * band would write a grid of near-identical pages around the crowded prices and leave
+ * the cheap and dear ends with none. Discontinued and unpriced machines are left out,
+ * because the price is the whole of the comparison.
+ */
+export function priceNeighbourPairs(data: Dataset): [Hardware, Hardware][] {
+  const sold = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
+  const out: [Hardware, Hardware][] = [];
+  const seen = new Set<string>();
+  for (const h of sold) {
+    const near = sold
+      .filter((o) => o.family !== h.family)
+      .sort(
+        (x, y) =>
+          Math.abs(x.price_usd! - h.price_usd!) - Math.abs(y.price_usd! - h.price_usd!) ||
+          x.id.localeCompare(y.id),
+      )[0];
+    if (!near) continue;
+    if (Math.abs(near.price_usd! - h.price_usd!) / Math.min(near.price_usd!, h.price_usd!) > PRICE_NEIGHBOUR_GAP) continue;
+    const [lo, hi] = h.price_usd! < near.price_usd! || (h.price_usd === near.price_usd && h.id < near.id) ? [h, near] : [near, h];
+    const key = `${lo.id}|${hi.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push([lo, hi]);
+  }
+  return out;
+}
+
+/**
+ * Whether these two machines are a price-neighbour pair, whichever way round they are
+ * given. The build asks this once a page, and the rule is a sweep over every machine, so
+ * the set is cut once per dataset and kept.
+ */
+const priceNeighbourKeys = new WeakMap<Dataset, Set<string>>();
+export function priceNeighbours(a: Hardware, b: Hardware, data: Dataset): boolean {
+  let keys = priceNeighbourKeys.get(data);
+  if (!keys) {
+    keys = new Set(priceNeighbourPairs(data).map(([x, y]) => `${x.id}|${y.id}`));
+    priceNeighbourKeys.set(data, keys);
+  }
+  return keys.has(`${a.id}|${b.id}`) || keys.has(`${b.id}|${a.id}`);
+}
+
+/**
  * Every machine pair that has a page, in the order the build writes them: the grid of
  * family flagships first, then the card grid, then the memory tiers of one machine, then
  * each box against the cheapest box of the same hardware, then each discontinued machine
  * against the one that replaced it, then each box's entry-level chip against the one
- * above it. Each
+ * above it, and last each machine against the one from another family nearest it in
+ * price. Each
  * rule is appended after the ones before it, so a pair keeps the address it has always
  * had, and a pair is only ever written once, whichever way round the rules reach it.
  */
@@ -311,6 +375,7 @@ export function hardwarePairs(data: Dataset): [Hardware, Hardware][] {
   for (const [a, b] of sameSiliconPairs(data)) add(a, b);
   for (const [a, b] of generationPairs(data)) add(a, b);
   for (const [a, b] of chipStepPairs(data)) add(a, b);
+  for (const [a, b] of priceNeighbourPairs(data)) add(a, b);
   return out;
 }
 

@@ -1372,7 +1372,11 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
     else if (da === null || db === null) {
       const [payer, days] = da === null ? [lb, db!] : [la, da!];
       out.push(`At ${usage} tokens a day the ${payer} pays for itself in ${fmtDuration(days)}${sameModel ? '' : ', on its own strongest model'}; the other never does.`);
-    } else if (da === db) {
+    } else if (fmtDuration(da) === fmtDuration(db)) {
+      // two machines at the same price on the same model can come out days apart over
+      // decades, and "sooner, in 17 years against 17 years" is a sentence that argues
+      // with the table under it. Where the two figures print the same, they are the same
+      // answer at the precision this site gives, and the page says so.
       out.push(`Both pay for themselves in ${fmtDuration(da)} at ${usage} tokens a day${onEachOwn}.`);
     } else {
       out.push(`The ${da < db ? la : lb} pays for itself sooner, in ${fmtDuration(Math.min(da, db))} against ${fmtDuration(Math.max(da, db))} at ${usage} tokens a day${onEachOwn}.`);

@@ -25,6 +25,7 @@ import {
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
   MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, sameSiliconPairs, versusCardPath,
+  PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, TOKEN_COST_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
@@ -3007,6 +3008,52 @@ function standInPowerNote(a: Hardware, b: Hardware, explainedBelow: boolean): st
   return `<p class="note">The ${s.load_watts} W beside the ${esc(shortHardwareLabel(s))} is a stand-in, not a figure for that machine: the data borrows it from the nearest hardware it does have, and the machine's own page names which and why. So the two figures above are not like for like${other.load_watts === s.load_watts ? ', and their matching says nothing about either machine' : ''}, and the electricity in its pay-back here is priced from a borrowed number.</p>`;
 }
 
+/**
+ * Two machines from different families that cost about the same. Every other rule that
+ * cuts these pages holds a piece of the hardware equal — the same chip at two memory
+ * sizes, the same silicon in two boxes, the same box a generation apart — and spends the
+ * page on what the price gap buys. This one holds the price, so the page has the opposite
+ * shape and nothing else on it says so: the price row is the thing the two machines have
+ * in common rather than the thing that separates them.
+ *
+ * The rest of the page already prices what each one holds, how fast it runs it and how
+ * long it takes to pay back, so this section does not repeat a figure. It names the
+ * question, and where one side is a graphics card it says the one thing that stops the
+ * two prices being the same money at all.
+ */
+function sameMoneySection(x: Hardware, y: Hardware): string {
+  const [cheap, dear] = (x.price_usd ?? 0) <= (y.price_usd ?? 0) ? [x, y] : [y, x];
+  const lc = shortHardwareLabel(cheap);
+  const ld = shortHardwareLabel(dear);
+  const gap = (dear.price_usd ?? 0) - (cheap.price_usd ?? 0);
+  // the scope travels with the figure: on four of these pages one side is a graphics
+  // card, and $1,999 beside a machine name reads as a whole computer unless it says so
+  const priced = (h: Hardware) => `${fmtUsd(h.price_usd!, { cents: false })} for the ${esc(shortHardwareLabel(h))}${h.price_scope === 'card_only' ? ', card only' : ''}`;
+  const prices = gap === 0
+    ? `These two cost the same: ${priced(cheap)} and ${priced(dear)}.`
+    : `These two cost within ${fmtUsd(gap, { cents: false })} of each other: ${priced(cheap)} and ${priced(dear)}.`;
+
+  // the families differ by the rule that made the pair; the makers need not, and a
+  // sentence that says "different makers" of two Apple machines is wrong on eleven of
+  // these pages
+  const sameBrand = brandOf(cheap) === brandOf(dear);
+  const kinds = sameBrand
+    ? `Both are ${esc(brandOf(cheap))} machines, but a ${esc(cheap.family)} and a ${esc(dear.family)} are two different machines rather than two sizes of one.`
+    : `${esc(brandOf(cheap))} makes one and ${esc(brandOf(dear))} the other.`;
+
+  // the lede and the assumptions note both raise the card caveat already, so this says
+  // only the part neither of them does: what the reader should do with that column
+  const cards = [cheap, dear].filter((h) => h.price_scope === 'card_only');
+  const scope = cards.length === 2
+    ? ` Both figures are the card alone, so what they have in common is the money for the part that does the work and nothing to put it in.`
+    : cards.length === 1
+      ? ` The two are less equal than they look: the ${esc(shortHardwareLabel(cards[0]))}'s price buys the card alone, so read its column as the cost of the part that does the work on top of a machine you already own.`
+      : '';
+
+  return `<h2>The same money, two different machines</h2>
+<p>${prices} ${kinds} Every other head-to-head on this site holds a piece of the hardware equal and asks what the price gap buys. This one holds the price, so the row that usually carries the answer is the row the two machines agree on, and everything under it is what the same money buys twice.${scope}</p>`;
+}
+
 function comparePage(a: Hardware, b: Hardware): string {
   const st = defaultState(data);
   const va = computeView({ ...st, hw: a.id }, data);
@@ -3027,6 +3074,9 @@ function comparePage(a: Hardware, b: Hardware): string {
   // the entry-level box against the one above it: the same name on both sides, so the
   // heading says it once and spends the rest on the two sizes the configurator offers
   const step = chipStepNames(a, b) ?? chipStepNames(b, a);
+  // two machines from different families at about the same price: the price row is the
+  // one the two agree on, which is the opposite of every other pair on this site
+  const money = priceNeighbours(a, b, data);
   // both sides of a same-silicon pair carry the same memory, so a title that prints the
   // size twice spends a search result's 60 characters saying it again instead of naming
   // the second machine, which is the half of the pair the reader has not typed yet
@@ -3201,6 +3251,7 @@ ${standInPowerNote(a, b, (!!gens && b.load_watts_status === 'stand_in') || (!!tw
 ${twins ? sameSiliconSection(a, b, va, ctxK, fa, fb) : ''}
 ${gens ? generationSection(a, b) : ''}
 ${step ? chipStepSection(...(chipStepNames(a, b) ? [a, b, step, va, fa, fb, ctxK] as const : [b, a, step, vb, fb, fa, ctxK] as const)) : ''}
+${money ? sameMoneySection(a, b) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
@@ -3297,6 +3348,24 @@ ${machineSiblingNote(a, b)}
                   `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} models to the same length either way, so the memory buys nothing here.`,
                   `${tiers.machine}, ${tiers.a} or ${tiers.b}: the extra memory buys nothing local AI can use.`,
                 ]
+          : money
+          ? (() => {
+              const [cheap, dear, cf, df] = (a.price_usd ?? 0) <= (b.price_usd ?? 0) ? [a, b, fa, fb] : [b, a, fb, fa];
+              const lc = shortHardwareLabel(cheap);
+              const ld = shortHardwareLabel(dear);
+              const at = (cheap.price_usd === dear.price_usd
+                ? `At ${fmtUsd(cheap.price_usd!, { cents: false })} each`
+                : `At ${fmtUsd(cheap.price_usd!, { cents: false })} against ${fmtUsd(dear.price_usd!, { cents: false })}`);
+              const holds = cf.length === df.length
+                ? `both hold ${cf.length} of the ${va.rows.length} open models here`
+                : `the ${lc} holds ${cf.length} of the ${va.rows.length} open models here and the ${ld} ${df.length}`;
+              return [
+                `${at}, ${holds}. What the same money buys, and which pays back sooner.`,
+                `${at}, ${holds}. What the same money buys.`,
+                `${lc} or ${ld} for the same money: what each holds, how fast it runs it and which pays back sooner.`,
+                `${lc} or ${ld} for the same money: what each holds and which pays back sooner.`,
+              ];
+            })()
           : [
               `${fa.length} of the ${va.rows.length} open models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
               `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
@@ -5685,6 +5754,96 @@ function checkSpeedBasis() {
   console.log(`  ${cells} speeds in tables and ${answers} in answer blocks say whether they were measured or estimated; ${notes} machine pages say what the mark means`);
 }
 
+/**
+ * The pairs cut by price rather than by hardware. Recut from the rule rather than read
+ * off the list the pages were built from: a pair that is no longer anybody's nearest
+ * price, or that has drifted past a tenth as a price in data/*.json changes, should fail
+ * the build rather than keep a page that says two machines cost the same money.
+ *
+ * It also holds the other side of it, which is the one a template gets wrong: no page
+ * that is not such a pair may carry the section, and where one side is a graphics card
+ * the section has to say that its price is the card alone, because the whole claim the
+ * heading makes is that the two prices are the same money.
+ */
+function checkPriceNeighbours() {
+  const problems: string[] = [];
+  const heading = '<h2>The same money, two different machines</h2>';
+  const sold = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
+  const nearest = (h: Hardware) =>
+    sold
+      .filter((o) => o.family !== h.family)
+      .sort(
+        (x, y) =>
+          Math.abs(x.price_usd! - h.price_usd!) - Math.abs(y.price_usd! - h.price_usd!) ||
+          x.id.localeCompare(y.id),
+      )[0];
+
+  let pages = 0;
+  let cards = 0;
+  const wanted = new Set<string>();
+  for (const [lo, hi] of priceNeighbourPairs(data)) {
+    pages++;
+    const path = hardwareComparePath(lo, hi);
+    wanted.add(path);
+    const html = unesc(meta.find((m) => m.path === path)?.html ?? '');
+    if (!html) {
+      problems.push(`${path} is a price-neighbour pair with no page`);
+      continue;
+    }
+    if (lo.family === hi.family) problems.push(`${path} sets two machines of one family against each other`);
+    if ((lo.generation ?? 'current') !== 'current' || (hi.generation ?? 'current') !== 'current')
+      problems.push(`${path} compares a machine that is no longer sold`);
+    if (lo.price_usd == null || hi.price_usd == null || lo.price_usd > hi.price_usd)
+      problems.push(`${path} does not put the cheaper machine first, or prices one of them at nothing`);
+    const spread = Math.abs(hi.price_usd! - lo.price_usd!) / Math.min(hi.price_usd!, lo.price_usd!);
+    if (spread > PRICE_NEIGHBOUR_GAP)
+      problems.push(`${path} is ${Math.round(spread * 100)}% apart in price, past the ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}% this rule allows`);
+    if (nearest(lo)?.id !== hi.id && nearest(hi)?.id !== lo.id)
+      problems.push(`${path} is neither machine's nearest price outside its own family`);
+    if (!html.includes(heading)) {
+      problems.push(`${path} costs the same money either way and does not say so`);
+      continue;
+    }
+    const section = html.slice(html.indexOf(heading), html.indexOf('</p>', html.indexOf(heading)));
+    for (const h of [lo, hi])
+      if (!section.includes(fmtUsd(h.price_usd!, { cents: false })))
+        problems.push(`${path} does not print the ${shortHardwareLabel(h)}'s price where it says the two are the same money`);
+    const card = [lo, hi].filter((h) => h.price_scope === 'card_only');
+    if (card.length) {
+      cards++;
+      if (!/card only|card alone/.test(section))
+        problems.push(`${path} calls a card's price the same money as a whole computer without saying what it buys`);
+    }
+  }
+  for (const m of meta)
+    if (m.html.includes(heading) && !wanted.has(m.path))
+      problems.push(`${m.path} says two machines cost the same money and is not a pair the rule cut`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} price-neighbour head-to-head${problems.length === 1 ? '' : 's'} do not hold to the rule that cut them`);
+  }
+  console.log(`  ${pages} head-to-heads between machines of different families within ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}% of each other in price, ${cards} of them pricing a card against a whole computer`);
+}
+
+/**
+ * A pay-back sentence that hands one machine the win and then prints the same figure on
+ * both sides argues with the table under it. Two machines at the same price can come out
+ * days apart over decades, and days do not survive the rounding the pages print at, so
+ * the lede says both or it says which.
+ */
+function checkPayBackReads() {
+  const problems: string[] = [];
+  for (const p of meta) {
+    const m = unesc(p.html).match(/pays for itself sooner, in ([^<]{1,24}?) against ([^<]{1,24}?) at /);
+    if (m && m[1] === m[2]) problems.push(`${p.path} says one machine pays back sooner and prints ${m[1]} on both sides`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} call a pay-back sooner than a figure equal to it`);
+  }
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -5712,6 +5871,8 @@ checkSharedHeadroom();
 checkSameSilicon();
 checkGenerationPairs();
 checkChipStepPairs();
+checkPriceNeighbours();
+checkPayBackReads();
 checkStandInPower();
 checkModelContexts();
 checkMachineContexts();

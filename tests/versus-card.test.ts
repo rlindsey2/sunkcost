@@ -5,6 +5,7 @@ import {
   MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard, rankedModels,
   versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
+  PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
 import {
@@ -139,7 +140,7 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, every entry-level chip with the one above it, once each', () => {
+  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, every entry-level chip with the one above it, every machine with the nearest price outside its family, once each', () => {
     const pairs = hardwarePairs(data);
     const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
     const keys = pairs.map(([a, b]) => key(a, b));
@@ -152,10 +153,11 @@ describe('the pairs the cards and the pages cut', () => {
     const twins = sameSiliconPairs(data);
     const gens = generationPairs(data);
     const steps = chipStepPairs(data);
+    const money = priceNeighbourPairs(data);
     const want = new Set<string>();
     for (const xs of [flagships, cards])
       for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
-    for (const [a, b] of [...tiers, ...twins, ...gens, ...steps]) want.add(key(a, b));
+    for (const [a, b] of [...tiers, ...twins, ...gens, ...steps, ...money]) want.add(key(a, b));
     expect(new Set(keys)).toEqual(want);
 
     // a card is priced as the part, not as a computer, and the flagship grid on its own
@@ -171,9 +173,9 @@ describe('the pairs the cards and the pages cut', () => {
     // two of the flagships are themselves cards, so one pair is in both grids and is
     // written once: the union is the page set, not the sum
     expect(pairs.length).toBe(want.size);
-    // and the four later rules are appended after both grids, in the order they run, for
+    // and the five later rules are appended after both grids, in the order they run, for
     // the same reason: a pair keeps the address it has always had
-    const later = [...tiers, ...twins, ...gens, ...steps];
+    const later = [...tiers, ...twins, ...gens, ...steps, ...money];
     const tail = pairs.slice(-later.length).map(([a, b]) => key(a, b));
     expect(tail).toEqual(later.map(([a, b]) => key(a, b)));
   });
@@ -589,5 +591,73 @@ describe('the head-to-heads at the foot of a machine page', () => {
     }
     expect(older).toBe(generationPairs(data).length);
     expect(newer).toBe(generationPairs(data).length);
+  });
+});
+
+describe('machines of different families at about the same price', () => {
+  const pairs = priceNeighbourPairs(data);
+  const sold = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
+  const nearest = (h: Hardware) =>
+    sold
+      .filter((o) => o.family !== h.family)
+      .sort(
+        (x, y) =>
+          Math.abs(x.price_usd! - h.price_usd!) - Math.abs(y.price_usd! - h.price_usd!) ||
+          x.id.localeCompare(y.id),
+      )[0];
+
+  it('cuts pairs at all', () => {
+    expect(pairs.length).toBeGreaterThan(0);
+  });
+
+  it('takes two machines on sale from different families, cheaper side first', () => {
+    for (const [lo, hi] of pairs) {
+      expect(lo.family).not.toBe(hi.family);
+      expect(lo.price_usd).not.toBeNull();
+      expect(hi.price_usd).not.toBeNull();
+      expect(lo.generation ?? 'current').toBe('current');
+      expect(hi.generation ?? 'current').toBe('current');
+      expect(lo.price_usd!).toBeLessThanOrEqual(hi.price_usd!);
+    }
+  });
+
+  it('keeps the two prices within the gap that makes them the same money', () => {
+    for (const [lo, hi] of pairs) {
+      const spread = (hi.price_usd! - lo.price_usd!) / lo.price_usd!;
+      expect(spread).toBeLessThanOrEqual(PRICE_NEIGHBOUR_GAP);
+    }
+  });
+
+  it('pairs each machine with its own nearest price outside its family, not with any machine in a band', () => {
+    for (const [lo, hi] of pairs) {
+      // the rule is one pair per machine, its own nearest, so at least one side of every
+      // pair has to name the other as the closest price it can reach outside its family
+      expect([nearest(lo)?.id, nearest(hi)?.id]).toContain(lo.id === nearest(hi)?.id ? lo.id : hi.id);
+      expect(nearest(lo)?.id === hi.id || nearest(hi)?.id === lo.id).toBe(true);
+    }
+  });
+
+  it('writes each pair once', () => {
+    const keys = pairs.map(([a, b]) => [a.id, b.id].sort().join('|'));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('is asked the same question either way round, and says no to a pair it did not cut', () => {
+    for (const [lo, hi] of pairs) {
+      expect(priceNeighbours(lo, hi, data)).toBe(true);
+      expect(priceNeighbours(hi, lo, data)).toBe(true);
+    }
+    const [a, b] = memoryTierPairs(data)[0];
+    expect(priceNeighbours(a, b, data)).toBe(false);
+  });
+
+  it('leaves every pair the older rules cut at the address it already had', () => {
+    const all = hardwarePairs(data);
+    const keys = new Set(pairs.map(([a, b]) => [a.id, b.id].sort().join('|')));
+    const older = all.filter(([a, b]) => !keys.has([a.id, b.id].sort().join('|')));
+    // the rule is appended last, so nothing it adds may sit before a pair another rule cut
+    const firstNew = all.findIndex(([a, b]) => keys.has([a.id, b.id].sort().join('|')));
+    expect(firstNew).toBe(older.length);
+    expect(all.length).toBe(older.length + pairs.length);
   });
 });
