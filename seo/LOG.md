@@ -571,6 +571,26 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **The index of all 190 head-to-heads named five of the seven rules that cut it, and two of
+      the three on its model side.** Done 2026-09-19, pushed as `a868268`. 50 of the 189 rows — the
+      4 chip-step pairs, the 21 price neighbours and the 29 memory neighbours — sat under an
+      explanation that did not reach them, because the price-neighbour rule landed one day and the
+      memory-neighbour rule the next and neither run went back to `/compare/`. Both sentences are
+      written from the rules now and `checkMatchUpKinds()` holds the list to them both ways, so a
+      rule added without a clause fails the build. Seven clauses also stopped being a sentence: at
+      170 words and six semicolons they are a list, one rule to a line. The run entry below has the
+      table of rules, the four breaks and the measurement that says the other 306 pages did not move.
+
+- [ ] **Three other pages explain their own lists in prose, and nothing holds those sentences to the
+      code either.** Found 2026-09-19 while fixing `/compare/`, which had drifted by two rules on one
+      side and one on the other. `/hardware/`, `/leaderboard/` and `/best/` each say in their own
+      words what their table holds and how it is cut — which machines are in it, what the ranking is,
+      what each usage level means — and every one of those sentences is hand-written next to a figure
+      the build recomputes. None is known to be wrong today; the point is that nothing would say so.
+      The cheap version is the shape `checkMatchUpKinds()` just took: name the rule in one place, let
+      the page print it, and let the build fail when the two disagree. Worth doing one page at a time
+      and only where the sentence really is a claim about the data rather than about the reader.
+
 - [x] **Every heading on the 56 machine pages and the 55 model pages called the page's own subject
       "it".** Done 2026-09-19, pushed as `f2e2d2d`. *What it runs*, *Machines that run it*, *How good
       is it, really?* — 284 headings across 111 pages and not one named a machine or a model. The
@@ -1568,6 +1588,89 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the index that named five rules where seven cut its list
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, a new page type and a
+top-level page, so it is a third pull request against `index.html` behind two Ryan has not settled,
+and the item says to do it once those are settled. The items below it — the three over-long titles,
+the memory cap, the price cap, the 45 shared words, the site's depth — are all written up as
+considered rather than open. So this run read the pages instead, and the biggest index on the site
+was wrong about itself.
+
+**What was wrong, measured rather than reasoned about.** `/compare/` is the index of all 190
+head-to-heads, and above each of its two tables it says what cuts the list. It said *Five kinds of
+match-up* over the machine table and *Two kinds of match-up* over the model table.
+`hardwarePairs()` applies **seven** rules and `modelPairs()` **three**:
+
+| the rule | rows it cuts | named on the page |
+| --- | --- | --- |
+| one machine per family against every other | 28 | yes |
+| every graphics card against every other | 21 | yes |
+| every memory tier of a machine against the others | 18 | yes |
+| the same silicon in two boxes | 8 | yes |
+| every discontinued machine against its successor | 12 | yes |
+| the cheapest box against the one with the better chip | 4 | **no** |
+| two machines of different families at the same price | 21 | **no** |
+| each model against the next one down the leaderboard | 47 | yes |
+| each last-generation model against what replaced it | 7 | yes |
+| two models of different families that need the same memory | 29 | **no** |
+
+**50 of the 189 rows** — a quarter of the index — sat under an explanation that did not reach them.
+A reader who found *Mac mini M6, 32GB vs Radeon AI PRO R9700, 32GB* on a page naming five kinds,
+none of them that one, had no way to tell why the two were on a page together. Both sentences were
+written by hand and both fell behind the code that cuts the list: the price-neighbour rule landed on
+2026-09-18 and the memory-neighbour rule on 2026-09-19, and neither run went back to the index.
+
+**What it does now.** Both sentences are written from a list of the rules themselves, one entry a
+rule's own pairs and the clause the page gives it, and `checkMatchUpKinds()` holds the list to the
+rules in both directions: every match-up the page lists is cut by a kind the page names, every kind
+it names cuts at least one match-up on it, and the page really carries each clause and the count of
+them. A rule added to `versus-card.ts` without a clause here now fails the build naming the pairs
+nothing explains. The match is on the pair rather than on the address, because four card pairs are
+cut by both grids and carry the flagship grid's order.
+
+**And seven clauses are not a sentence.** Strung together the way five were, they ran to 170 words
+and six semicolons in front of the table they explain, on a page a reader comes to for one row. They
+are a list now, one rule to a line, under a line saying how many there are: three lines of CSS in
+`public/page.css`, which is the generated pages' own stylesheet rather than the calculator's.
+
+**Four breaks, each run.** Drop the price-neighbour clause → exit 1, *the head-to-head index lists
+Mac mini M6, 32GB vs MacBook Air M5 (13-inch), 16GB and names no kind of match-up that cuts it*, 21
+of them. Name a kind that cuts nothing — each model against the one it was distilled from → exit 1,
+naming the clause. Print one clause fewer than the list holds, which is what a hand-edit of the page
+would do → exit 1, *does not say what puts 21 machine match-ups on it* and 29 model ones. And the
+negative control that says the guard is about the rules rather than about the number seven: add an
+eighth kind that really does cut three of the listed pairs → **the build passes**, 11 rules named.
+
+**Nothing else on the site moved, and this was checked rather than assumed.** The site was built
+from `main` and from the change and all 307 pages compared: `/compare/` differs, `page.css` differs,
+the other 306 pages are byte-for-byte identical and `sitemap.xml` is unchanged, `lastmod` included.
+One hash line moves in `seo/page-dates.json` and no date moves, because the page had already changed
+today. The page is 6,004 words where it was 5,909.
+
+**Verified**: 403 tests, typecheck clean, 307 pages with every guard passing, the full `npm run
+build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
+rendered out of the built output in Chromium at 1,280 and 390px — the seven lines carry their
+markers, the lead line sits above them and the sentence about the two speeds sits below.
+**Pushed as `a868268`.** The live site was not read back: this environment's egress proxy blocks
+`sunkcost.ai`, so everything above is from the built output.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree
+and built there rather than trusted to `git merge-tree`: no conflict, **413 tests**, typecheck
+clean, 308 pages with every guard passing, and the new guard holds over the merged tree's own list
+unchanged. PR #17 touches `index.html` and `src/styles.css`, which this change goes nowhere near;
+`git merge-tree` reports it clean.
+
+**One thing about this environment, the same as the last run's.** The clone starts on a **detached
+HEAD**, so a commit goes onto no branch and `git push origin main` would push the stale local `main`.
+`git branch -f main HEAD && git checkout main` first; nothing was forced.
+
+**What to continue.** The backlog's top open item is still the per-memory-size pages, a pull request
+that wants Ryan's two settled first. New below it: the same drift this run fixed is worth looking
+for elsewhere — `/hardware/`, `/leaderboard/` and `/best/` all explain in prose what their own lists
+hold, and nothing holds those sentences to the code either.
 
 ### 2026-09-19 — the guard that checked the addresses and printed a claim about the words
 
