@@ -978,7 +978,7 @@ function checkModelContexts() {
     const perFamily = cheapestPerFamily(runnersFor(m, data));
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
-    const section = html.split('<h2>Machines that run it</h2>')[1]?.split('<h2>')[0] ?? '';
+    const section = sectionUnder(html, runnersHeading(m)) ?? '';
     if (!perFamily.length) {
       if (section) problems.push(`${path} has a machines table and no machine on the list runs it`);
       continue;
@@ -1061,11 +1061,11 @@ function checkMachineContexts() {
   for (const hw of data.hardware) {
     const path = `/hardware/${hw.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
-    const section = html.split('<h2>What it runs</h2>')[1]?.split('<h2>')[0] ?? '';
+    const section = sectionUnder(html, runsHeading(hw)) ?? '';
     const view = computeView({ ...defaultState(data), hw: hw.id }, data);
     const shown = view.rows.filter((r) => r.fit.status === 'fits').slice(0, 12);
     if (!shown.length) {
-      if (section) problems.push(`${path} has a "What it runs" table and nothing on the list fits it`);
+      if (section) problems.push(`${path} has a table of what it runs and nothing on the list fits it`);
       continue;
     }
     if (!section) {
@@ -1268,17 +1268,17 @@ function checkMissedMachines() {
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const want = cheapestPerFamily(runnersFor(m, data)).length <= 1 ? missedMachines(m, data) : [];
-    const found = html.match(/<h2>The machines that miss it, and what they run<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const found = sectionUnder(html, missedHeading(m));
     if (!want.length) {
-      if (found) problems.push(`${path} lists the machines that miss it, and it is not a model one machine runs`);
+      if (found != null) problems.push(`${path} lists the machines that miss it, and it is not a model one machine runs`);
       continue;
     }
-    if (!found) {
+    if (found == null) {
       problems.push(`${path} is a model one machine runs and says nothing about the ${want.length} families that miss it`);
       continue;
     }
     pages++;
-    const section = found[1];
+    const section = found;
     // the claim that a shorter window cannot close the gap, which is only true
     // where the weights on their own are bigger than the memory
     const weightsAlone = m.weights_gb != null && want.every((r) => r.hw.usable_memory_gb != null && m.weights_gb! > r.hw.usable_memory_gb!);
@@ -1392,7 +1392,7 @@ function checkShorterFits() {
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const runners = runnersFor(m, data);
-    const heading = html.match(/<h2>It fits at (\d+k) of context<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const heading = [...html.matchAll(/<h2>[^<]* fits at (\d+k) of context<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/g)][0] ?? null;
     if (runners.length) {
       if (heading) problems.push(`${path} says the window is what stops it, and machines here run it at ${ctxLabel(ctx)}`);
       continue;
@@ -2164,6 +2164,42 @@ ${sections}
   );
 }
 
+/* --------------------- headings that name their subject -------------------- */
+
+/**
+ * A machine page and a model page are each about one thing, and until now their
+ * headings called it "it": *What it runs*, *Machines that run it*, *How good is
+ * it, really?*. The h1 above names the subject, so the sentence is grammatical
+ * and a reader from the top is never lost. A reader from a search result does
+ * not arrive at the top. They arrive at the heading that matched what they
+ * typed, which is the name of a machine or a model and a question about it, and
+ * a heading with a pronoun in it answers a question about nothing.
+ *
+ * So a heading that answers a question somebody asks in the subject's own name
+ * names it. A heading about the page's own furniture — the spec list, the models
+ * a shorter window brings into reach — keeps its wording, because it is not the
+ * answer to anything anybody searches for. The rule is one line long and
+ * checkSubjectHeadings() holds it: no heading on these 111 pages refers to the
+ * page's subject as "it".
+ *
+ * A machine is named the way the tables and the other pages name it, which is
+ * shortHardwareLabel(): the family prefix in hardwareLabel() belongs in the h1
+ * and the breadcrumb, not three times down one page.
+ */
+const runsHeading = (hw: Hardware) => `What the ${esc(shortHardwareLabel(hw))} runs`;
+const rivalsHeading = (hw: Hardware) => `Other machines to weigh against the ${esc(shortHardwareLabel(hw))}`;
+const qualityHeading = (m: Model) => `How good is ${esc(m.display_name)}, really?`;
+const costHeading = (m: Model) => `What ${esc(m.display_name)} costs either way`;
+const runnersHeading = (m: Model) => `Machines that run ${esc(m.display_name)}`;
+const missedHeading = (m: Model) => `The machines that miss ${esc(m.display_name)}, and what they run`;
+const shorterRunHeading = (m: Model, runCtx: number) => `${esc(m.display_name)} fits at ${ctxLabel(runCtx)} of context`;
+
+/** The section a heading opens, up to the next one. */
+function sectionUnder(html: string, heading: string): string | null {
+  const after = html.split(`<h2>${heading}</h2>`)[1];
+  return after == null ? null : after.split('<h2>')[0];
+}
+
 /* ------------------------------ model pages ------------------------------ */
 
 /**
@@ -2181,7 +2217,7 @@ function shorterWindowRun(m: Model, run: { ctx: number; runner: Runner }, ctx: n
   const cost = view.calc?.breakevenDays == null
     ? `it never pays for itself against the API at ordinary usage`
     : `${lowerFirst(verdictLine(view))} at ${fmtTokens(defaultState(data).usage)} tokens a day`;
-  return `<h2>It fits at ${ctxLabel(run.ctx)} of context</h2>
+  return `<h2>${shorterRunHeading(m, run.ctx)}</h2>
 <p>Every figure above is taken at ${ctxLabel(ctx)}, where ${esc(m.display_name)} needs ${fmtGb((m.weights_gb ?? 0) + (cacheAt ?? 0))}. The weights are ${fmtGb(m.weights_gb)} of that and they do not move; the rest is the key-value cache, which grows with every token you keep. Ask for ${ctxLabel(run.ctx)} instead and the cache falls from ${fmtGb(cacheAt)} to ${fmtGb(cacheThere)}, so the model needs ${fmtGb((m.weights_gb ?? 0) + (cacheThere ?? 0))}, which the ${esc(hardwareLabel(hw))} holds in its ${hw.usable_memory_gb} GB. At ${priceWithScopeText(hw)}${tps == null ? '' : ` it runs at ${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`} and ${cost}.</p>
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: m.id, ctx: run.ctx }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(run.ctx)} on the ${esc(hardwareLabel(hw))}</a></p>
 
@@ -2292,7 +2328,7 @@ function missedMachinesSection(m: Model, rows: MissedMachine[], only: Hardware |
     ? `\n<p><a class="cta" href="${esc(calcLink({ hw: nearest.hw.id, model: top.id }, data))}">Price the ${esc(hardwareLabel(nearest.hw))} on ${esc(top.display_name)} instead</a></p>`
     : '';
 
-  return `<h2>The machines that miss it, and what they run</h2>
+  return `<h2>${missedHeading(m)}</h2>
 <p>${opening}${why}. ${near}${instead}</p>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Short by</th><th>Strongest model it holds</th></tr></thead>
@@ -2484,7 +2520,7 @@ ${cheapest
         : ''}
 </div>`}
 
-<h2>How good is it, really?</h2>
+<h2>${qualityHeading(m)}</h2>
 <p>${fe?.score != null
       ? `On the ${fe.url ? `<a href="${esc(fe.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}</a>` : esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
       : 'It has not been placed on the intelligence index yet.'}
@@ -2492,10 +2528,10 @@ ${cheapest
 <ul class="caps">${caps}</ul>${note.ratings ? `
 <p class="note">${esc(note.ratings)}</p>` : ''}
 ${versusLine}
-<h2>What it costs either way</h2>
+<h2>${costHeading(m)}</h2>
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="/local-llm-vs-api-cost/">What a million tokens costs each way</a> puts the two prices side by side.</p>
 
-${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>Machines that run it</h2>
+${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>${runnersHeading(m)}</h2>
 ${lengthLine}
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Longest context</th><th>Pay-back</th><th></th></tr></thead>
@@ -2742,7 +2778,7 @@ function hardwarePage(hw: Hardware): string {
 
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id }, data))}">Run the numbers on this machine</a></p>
 
-${rows ? `<h2>What it runs</h2>
+${rows ? `<h2>${runsHeading(hw)}</h2>
 ${contextLine}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
@@ -2751,7 +2787,7 @@ ${stack(`<table class="board">
 <p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
-${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
+${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Memory</th><th>Models that fit</th><th>Pay-back</th></tr></thead>
 <tbody>
@@ -5282,7 +5318,7 @@ function dd(page: string, label: string): string | null {
 
 /** The notes under the machine's own "What it runs" table, where the speed column is. */
 function speedNotes(page: string): string | null {
-  const after = page.split('<h2>What it runs</h2>')[1]?.split('<h2>')[0];
+  const after = page.split(/<h2>What the [^<]+ runs<\/h2>/)[1]?.split('<h2>')[0];
   return after == null ? null : [...after.matchAll(/<p class="note">([\s\S]*?)<\/p>/g)].map((m) => m[1]).join(' ');
 }
 
@@ -5827,7 +5863,7 @@ function checkSpeedBasis() {
   for (const hw of data.hardware) {
     const path = `/hardware/${hw.id}/`;
     const html = meta.find((m) => m.path === path)?.html;
-    if (html == null || !html.includes('<h2>What it runs</h2>')) continue;
+    if (html == null || !html.includes(`<h2>${runsHeading(hw)}</h2>`)) continue;
     if (!(speedNotes(html) ?? '').includes('Each speed says how it was arrived at')) {
       problems.push(`the ${shortHardwareLabel(hw)} page marks its speeds and never says what the mark means`);
       continue;
@@ -6128,6 +6164,62 @@ function checkMemoryLadder() {
   );
 }
 
+/**
+ * The headings on the 111 pages that are about one thing: a machine or a model.
+ *
+ * Two claims, and the first is the rule the headings were rewritten to. **No
+ * heading on these pages refers to the page's subject as "it."** A heading is
+ * where a reader from a search result lands, and it has to say what it is the
+ * answer about without the h1 above it. The subject's own name is stripped out
+ * before the pronoun is looked for, because two models here are called *Gemma 3
+ * 12B it* and one machine could be named the same way tomorrow.
+ *
+ * The second is that a heading of the shape that names a subject names **this**
+ * page's subject. Every one of these headings is built from the page's own
+ * machine or model, so the fault it catches is a builder handed the wrong one —
+ * the neighbour's name under this page's table, which reads as a fact and is
+ * the one mistake a reader could not spot.
+ */
+function checkSubjectHeadings() {
+  const problems: string[] = [];
+  // each shape, and the name it holds: the heading a searcher's question lands on
+  const shapes: RegExp[] = [
+    /^What the (.+) runs$/,
+    /^Other machines to weigh against the (.+)$/,
+    /^How good is (.+), really\?$/,
+    /^What (.+) costs either way$/,
+    /^Machines that run (.+)$/,
+    /^The machines that miss (.+), and what they run$/,
+    /^(.+) fits at \d+k of context$/,
+  ];
+  const subjects = [
+    ...data.hardware.map((hw) => ({ path: `/hardware/${hw.id}/`, name: esc(shortHardwareLabel(hw)) })),
+    ...data.models.map((m) => ({ path: `/models/${m.id}/`, name: esc(m.display_name) })),
+  ];
+  let named = 0;
+  for (const { path, name } of subjects) {
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const headings = [...html.matchAll(/<h2>([\s\S]*?)<\/h2>/g)].map((h) => h[1]);
+    if (!headings.length) problems.push(`${path} has no headings at all`);
+    for (const heading of headings) {
+      if (/\bits?\b/i.test(heading.split(name).join(' ')))
+        problems.push(`${path} heads a section "${heading}", which calls ${name} "it"`);
+      const shape = shapes.find((r) => r.test(heading));
+      if (!shape) continue;
+      const found = heading.match(shape)![1];
+      if (found === name) named++;
+      else problems.push(`${path} heads a section "${heading}", which names ${found} where the page is about ${name}`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} heading${problems.length === 1 ? '' : 's'} on a machine or model page do not name what the page is about`);
+  }
+  console.log(
+    `  ${subjects.length} machine and model pages name their subject in ${named} headings; none of the headings on them calls it "it"`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -6142,6 +6234,7 @@ checkCardScope();
 checkCardRanking();
 checkMachineIndex();
 checkMachineLedes();
+checkSubjectHeadings();
 checkSpeedBasis();
 checkTables();
 checkPairedColumns();
