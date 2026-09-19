@@ -10,11 +10,12 @@ import {
   addJumpLine, anchoredHeading, anchorHeadings, appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
-  familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
+  DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
+  machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
+  monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
@@ -28,7 +29,7 @@ import {
   versusCardPath,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
-import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, TOKEN_COST_CARD } from '../src/list-card';
+import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, MONTHLY_CARD, TOKEN_COST_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -4850,7 +4851,7 @@ ${stack(`<table class="board">
 <thead><tr><th>A day's use</th><th>Tokens to break even</th><th>How long that takes</th></tr></thead>
 <tbody>${levelRows}</tbody>
 </table>
-<p>That is the case for buying, and the case against it, in one table. The machine is cheap per token and expensive to own, so the only thing that makes it pay is volume you actually have.</p>
+<p>That is the case for buying, and the case against it, in one table. The machine is cheap per token and expensive to own, so the only thing that makes it pay is volume you actually have. What those months cost as a bill, with the machine divided over the months you keep it, is <a href="/cost-per-month/">on its own page</a>.</p>
 
 <h2>What you use it for moves the line further than what you buy</h2>
 <p>The mix matters because the two sides bill it differently. The API charges for every token you send; the machine spends its time and its watts on the tokens it writes. So work that sends a lot and writes a little is the cheapest to rent, and the slowest to justify a machine.</p>
@@ -4896,6 +4897,151 @@ ${stack(`<table class="board">
   );
 }
 
+/* --------------------- what a month of it costs --------------------- */
+
+/**
+ * The other way people ask this site's question: not how long the machine takes
+ * to pay for itself, but what running a local model costs each month, because
+ * that is the shape of every bill it would replace.
+ *
+ * The answer the data gives is worth the page on its own. The electricity is
+ * cents a month, and it barely moves between machines; what varies, by more than
+ * a factor of ten, is the price of the box divided by the months you keep it. So
+ * the page is built on that division, said out loud each time: a machine bought
+ * once has no monthly cost until you name the months.
+ */
+function monthlyCostPage(): string {
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const view = computeView({ ...st, hw: hw.id }, data);
+  const dm = view.model!;
+  const drow = rowFor(view, dm)!;
+  const base = monthlyCost(dm, hw, data)!;
+  const ce = dm.cloud_equivalent;
+  const label = hardwareLabel(hw);
+  const kctx = Math.round(st.ctx / 1024);
+  const n = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const standInPower = hw.load_watts_status === 'stand_in';
+  const spread = SPREAD_MONTHS.map((months) => ({
+    months,
+    owned: monthlyOwned(hw, months, base.electricity)!,
+    crossing: monthlyCrossing(dm, hw, data, months),
+  }));
+  const twoYears = spread.find((s) => s.months === 24) ?? spread[Math.min(1, spread.length - 1)];
+  const yearWord = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
+
+  // the working behind the electricity figure, in the page's own numbers
+  const outTokens = st.usage / (st.ratio + 1);
+  const inTokens = st.usage - outTokens;
+  const minutesPerDay = base.hoursPerDay * 60;
+  const kwhPerMonth = ((base.hoursPerDay * hw.load_watts!) / 1000) * DAYS_PER_MONTH;
+
+  // a month at each level of use, which is the axis the reader is on
+  const levels = bestUsageLevels(data).map((l) => ({ ...l, cost: monthlyCost(dm, hw, data, l.usage)! }));
+  const levelRows = levels
+    .map(
+      (l) => `<tr>
+  <th>${esc(fmtTokens(l.usage))}<span class="c-quant">${holdHyphens(l.label)}</span></th>
+  <td>${esc(fmtHours(l.cost.hoursPerDay))}${l.cost.capped ? '<span class="c-quant">its ceiling</span>' : ''}</td>
+  <td>${fmtUsd(l.cost.electricity)}</td>
+  <td>${fmtUsd(l.cost.rented)}</td>
+  <td>${esc(fmtDuration(l.cost.breakevenDays))}</td>
+</tr>`,
+    )
+    .join('\n');
+
+  // every current machine that runs the same model, priced by the month rather
+  // than by the pay-back, so the spread in the power sits beside the spread in
+  // the price it is dwarfed by
+  const runners = data.hardware
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .map((h) => ({ hw: h, cost: monthlyCost(dm, h, data) }))
+    .filter((r): r is { hw: Hardware; cost: MonthlyCost } => !!r.cost)
+    .sort((a, b) => a.hw.price_usd! - b.hw.price_usd!);
+  const elec = runners.map((r) => r.cost.electricity);
+  const owned = runners.map((r) => monthlyOwned(r.hw, twoYears.months, r.cost.electricity)!);
+  // Watts do not order the power bill, and where the data says so out loud it is
+  // worth saying with the two machines that prove it rather than in the abstract:
+  // a machine that generates faster is finished sooner, and spends less.
+  const byWatts = [...runners].sort((a, b) => a.hw.load_watts! - b.hw.load_watts!);
+  const thirsty = byWatts[byWatts.length - 1];
+  const frugal = byWatts[0];
+  const wattsLine =
+    thirsty.cost.electricity < frugal.cost.electricity
+      ? `Watts do not order the electricity: the ${esc(shortHardwareLabel(thirsty.hw))} draws ${thirsty.hw.load_watts} W and spends ${fmtUsd(thirsty.cost.electricity)} a month, where the ${esc(shortHardwareLabel(frugal.hw))} draws ${frugal.hw.load_watts} W and spends ${fmtUsd(frugal.cost.electricity)}. A machine that generates faster is finished sooner.`
+      : 'A machine that generates faster is finished sooner, so it can spend less on power even where it draws more watts.';
+
+  const runnerRows = runners
+    .map(
+      (r) => `<tr>
+  <td class="c-model"><a href="/hardware/${esc(r.hw.id)}/">${esc(shortHardwareLabel(r.hw))}</a>${r.hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</td>
+  <td>${fmtUsd(r.hw.price_usd)}</td>
+  <td>${fmtUsd(r.cost.electricity)}</td>
+  ${SPREAD_MONTHS.map((months) => `<td>${fmtUsd(monthlyOwned(r.hw, months, r.cost.electricity))}</td>`).join('\n  ')}
+</tr>`,
+    )
+    .join('\n');
+
+  const body = `<article class="prose">
+<h1>What does it cost to run a local LLM per month?</h1>
+<p class="lede">The power is cents. Running ${esc(dm.display_name)} on a ${esc(label)} at ${esc(fmtTokens(st.usage))} tokens a day costs ${fmtUsd(base.electricity)} a month in electricity. The monthly number that matters is the machine: ${fmtUsd(hw.price_usd)} once, which is ${fmtUsd(twoYears.owned)} a month if you keep it ${yearWord(twoYears.months)}. Renting the same month's work costs ${fmtUsd(base.rented)}.</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">Electricity a month</span><span class="answer-v">${fmtUsd(base.electricity)}, on a <a href="/hardware/${esc(hw.id)}/">${esc(label)}</a>: ${esc(fmtHours(base.hoursPerDay))} of generating a day at ${hw.load_watts} W${standInPower ? `<span class="c-quant">${holdHyphens('stand-in')}</span>` : ''} and ${fmtUsd(st.kwh, { cents: true })} per kWh</span></div>
+  <div class="answer-row"><span class="answer-k">The machine, by the month</span><span class="answer-v">${spread.map((s) => `${fmtUsd(s.owned)} over ${yearWord(s.months)}`).join(', ')}: ${fmtUsd(hw.price_usd)} divided by the months you keep it, plus the power</span></div>
+  <div class="answer-row"><span class="answer-k">The same month, rented</span><span class="answer-v">${fmtUsd(base.rented)} to rent ${ce.stand_in ? `${esc(ce.name)}, which is what ${esc(dm.display_name)} is priced as because nobody rents it` : ce.is_exact_match ? 'the same model' : `the nearest hosted equivalent, ${esc(ce.name)}`}, at ${fmtUsd(ce.input_price_per_mtok, { cents: true })} per million in and ${fmtUsd(ce.output_price_per_mtok, { cents: true })} out${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}</span></div>
+  ${twoYears.crossing ? `<div class="answer-row"><span class="answer-k">Where the two meet</span><span class="answer-v">the rental bill passes ${fmtUsd(twoYears.owned)} a month at <b>${esc(fmtTokens(twoYears.crossing))} tokens a day</b>. Below that, renting is the cheaper month.</span></div>` : ''}
+</div>
+
+<p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">Price your own month</a></p>
+
+<h2>Where the ${fmtUsd(base.electricity)} comes from</h2>
+<p>${esc(fmtTokens(st.usage))} tokens a day at ${esc(String(st.ratio))}:1 is ${n(inTokens)} you send and ${n(outTokens)} the model writes back. Only the ones it writes take time: at ${fmtNum(base.tokensPerSec, 1)} tok/s that is ${n(minutesPerDay)} minutes of generating a day. At ${hw.load_watts} W that comes to ${fmtNum(kwhPerMonth, 2)} kWh over a month, and at ${fmtUsd(st.kwh, { cents: true })} per kWh${data.defaults.electricity.source_url ? ` (the ${esc(data.defaults.electricity.country)} average, <a href="${esc(data.defaults.electricity.source_url)}" rel="noopener">${esc(sourceName(data.defaults.electricity.source_url))}</a>)` : ''} that is ${fmtUsd(base.electricity)} a month.</p>
+<p class="note">That is the power the machine draws while it is generating.${standInPower ? ` The ${hw.load_watts} W is a stand-in: nobody has put a meter on this machine, and <a href="/hardware/${esc(hw.id)}/">its own page</a> says what the figure borrows.` : ''} Left out, all of which favour the machine less than shown: the time and power that reading your prompt takes, the machine idling while you think, and API prompt caching, which cuts the price of context you send again. Left out in the machine's favour: what it is worth when you sell it, and every other job it does while you own it.</p>
+
+<h2>A month at each level of use</h2>
+<p>Use it harder and the electricity rises with the hours; the rental bill rises with it, from the same tokens, and a great deal faster. The last column is the machine's price divided by what the month leaves over.</p>
+${stack(`<table class="board">
+<thead><tr><th>A day's use</th><th>Generating</th><th>Electricity a month</th><th>Rented</th><th>Pays the machine back in</th></tr></thead>
+<tbody>${levelRows}</tbody>
+</table>`, { fig: 4, labels: { 2: 'Electricity' } })}
+<p>At ${esc(fmtTokens(levels[levels.length - 1].usage))} tokens a day, ${esc(lowerFirst(levels[levels.length - 1].label))}, the power bill is ${fmtUsd(levels[levels.length - 1].cost.electricity)} a month and the rental bill is ${fmtUsd(levels[levels.length - 1].cost.rented)}. That gap is the whole case for buying, and at ${esc(fmtTokens(st.usage))} tokens a day it is ${fmtUsd(base.gap)} a month against a ${fmtUsd(hw.price_usd)} machine.</p>
+
+<h2>The power is not the cost. The machine is.</h2>
+<p>Across the ${runners.length} current machines that run ${esc(dm.display_name)} at ${kctx}k context, a month of this work costs between ${fmtUsd(Math.min(...elec))} and ${fmtUsd(Math.max(...elec))} in electricity. Divide what they cost to buy over ${yearWord(twoYears.months)} and the same month runs from ${fmtUsd(Math.min(...owned))} to ${fmtUsd(Math.max(...owned))}. The machine you pick moves the monthly figure by ${fmtNum(Math.max(...owned) / Math.min(...owned), 0)} times; the power it draws moves it by cents.</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Electricity a month</th>${SPREAD_MONTHS.map((months) => `<th>A month over ${yearWord(months)}</th>`).join('')}</tr></thead>
+<tbody>${runnerRows}</tbody>
+</table>`, { fig: 1, labels: { 2: 'Electricity' } })}
+<p class="note">List prices, current machines, each running ${esc(dm.display_name)} at ${kctx}k context and ${esc(fmtTokens(st.usage))} tokens a day. ${cardScopeNote(runners.map((r) => r.hw), data)} ${wattsLine}</p>
+
+<h2>If you pay a subscription instead</h2>
+<p>Every rental figure here is priced by the token, from the published rate for ${esc(ce.name)}, because that is a price this site can check. A subscription is a flat monthly bill, and the number to set against it is in the table above: ${fmtUsd(twoYears.owned)} a month for ${esc(fmtTokens(st.usage))} tokens a day on a ${esc(label)}${spread.length > 1 ? `, or ${fmtUsd(spread[spread.length - 1].owned)} if you keep it ${yearWord(spread[spread.length - 1].months)}` : ''}. If your bill is smaller than that, the machine does not pay for itself by replacing it.</p>
+<p>The calculator takes the bill directly: enter what you pay each month and it prices the machine against that instead of against per-token rates. Two things go with it, and both are in the small print there. A subscription buys the lab's own model, so the comparison only holds if ${esc(dm.display_name)} can do the work you are paying for. And a bill you pay whatever you use is not a bill that rises with use, so the falling-price assumption is switched off in that mode.</p>
+<p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">Put your own bill in</a></p>
+
+<p class="note">Every figure is ${esc(dm.display_name)} at ${esc(dm.quantisation)} unless the row names another machine, at ${kctx}k context, ${esc(String(st.ratio))}:1 input to output, ${fmtUsd(st.kwh, { cents: true })} per kWh, and today's API prices held flat. A month is ${fmtNum(DAYS_PER_MONTH, 2)} days, the year divided by twelve. The speed above is ${esc(drow.throughput.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth rather than measured')}, and each machine page says which of the two it has. For the same arithmetic counted in tokens rather than months, read <a href="/local-llm-vs-api-cost/">what a million tokens costs each way</a>; for the machine that pays back soonest at each level of use, <a href="/best/">the best buys</a>.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([
+        'What does it cost to run a local LLM per month?',
+        'Local LLM cost per month',
+      ]),
+      description: descOf([
+        `${fmtUsd(base.electricity)} a month of electricity at ${fmtTokens(st.usage)} tokens a day, ${fmtUsd(base.rented)} to rent the same work, and ${fmtUsd(twoYears.owned)} a month for the machine itself. Every machine priced by the month.`,
+        `What a local model costs a month: the electricity, the machine spread over the months you keep it, and the API bill for the same work.`,
+      ]),
+      canonical: '/cost-per-month/',
+      ogImage: MONTHLY_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/cost-per-month/', label: 'Cost per month' }],
+    },
+    body,
+    data,
+  );
+}
+
 /* --------------------------------- build --------------------------------- */
 
 write('/leaderboard/', leaderboard());
@@ -4903,6 +5049,7 @@ write('/best/', bestBuys());
 write('/how-much-memory/', memoryPage());
 write('/best-gpu/', gpuPage());
 write('/local-llm-vs-api-cost/', tokenCostPage());
+write('/cost-per-month/', monthlyCostPage());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 write('/hardware/', hardwareIndex());
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
@@ -5242,6 +5389,105 @@ function checkTokenCost() {
 }
 
 /**
+/**
+ * The monthly page makes four claims the data can move underneath it, and every
+ * one of them reads well while being wrong. The electricity and the rental bill
+ * at each level of use; the machine's price divided over each span it offers;
+ * the level of use where the rental bill passes that; and the spread across the
+ * machines that run the same model, which is the page's own finding — that the
+ * box you buy moves the monthly figure by an order of magnitude and the watts it
+ * draws move it by cents.
+ *
+ * So it recomputes the lot and holds the page to it. A wattage, a rental price or
+ * a measured speed changing is enough to move any of them.
+ */
+function checkMonthlyCost() {
+  const path = '/cost-per-month/';
+  const yearWord = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
+  const page = meta.find((p) => p.path === path);
+  if (!page) throw new Error('no cost-per-month page was written');
+  const html = unesc(page.html);
+  const problems: string[] = [];
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const dm = computeView({ ...st, hw: hw.id }, data).model!;
+  const base = monthlyCost(dm, hw, data);
+  if (!base) throw new Error(`${path}: the ${hardwareLabel(hw)} cannot be priced on ${dm.display_name}`);
+
+  // the two sides of the headline month, and the hours the electricity is
+  for (const [what, v] of [['the electricity', base.electricity], ['the rental bill', base.rented]] as const)
+    if (!html.includes(fmtUsd(v))) problems.push(`${path} does not print ${fmtUsd(v)}, ${what} for a month at ${fmtTokens(st.usage)} tokens a day`);
+  if (!html.includes(fmtHours(base.hoursPerDay)))
+    problems.push(`${path} does not print ${fmtHours(base.hoursPerDay)}, what the machine spends generating a day`);
+
+  // a month at each level of use, both ways, and how long the machine takes at it
+  for (const l of bestUsageLevels(data)) {
+    const c = monthlyCost(dm, hw, data, l.usage);
+    if (!c) {
+      problems.push(`${path} prices ${fmtTokens(l.usage)} tokens a day, which cannot be priced`);
+      continue;
+    }
+    for (const [side, v] of [['costs in electricity', c.electricity], ['costs rented', c.rented]] as const)
+      if (!html.includes(`>${fmtUsd(v)}<`))
+        problems.push(`${path} does not print ${fmtUsd(v)}, what a month at ${fmtTokens(l.usage)} tokens a day ${side}`);
+    if (!html.includes(fmtDuration(c.breakevenDays)))
+      problems.push(`${path} does not print ${fmtDuration(c.breakevenDays)}, how long the machine takes at ${fmtTokens(l.usage)} a day`);
+  }
+
+  // the division the whole page rests on: the price over each span it offers,
+  // and the use at which renting stops being the cheaper month
+  for (const months of SPREAD_MONTHS) {
+    const owned = monthlyOwned(hw, months, base.electricity)!;
+    if (!html.includes(fmtUsd(owned)))
+      problems.push(`${path} does not print ${fmtUsd(owned)}, what the ${hardwareLabel(hw)} costs a month over ${months} months`);
+  }
+  const crossing = monthlyCrossing(dm, hw, data, SPREAD_MONTHS[Math.min(1, SPREAD_MONTHS.length - 1)]);
+  if (crossing != null && !html.includes(`${fmtTokens(crossing)} tokens a day`))
+    problems.push(`${path} does not print ${fmtTokens(crossing)} tokens a day, where the rental bill passes what the machine costs a month`);
+  if (crossing == null && html.includes('the rental bill passes'))
+    problems.push(`${path} says where the rental bill passes the machine's month, and there is no such level of use`);
+
+  // the spread the page's own finding is drawn from, and the power figure it rests on
+  const runners = data.hardware
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .map((h) => ({ hw: h, cost: monthlyCost(dm, h, data) }))
+    .filter((r): r is { hw: Hardware; cost: MonthlyCost } => !!r.cost);
+  const elec = runners.map((r) => r.cost.electricity);
+  const owned = runners.map((r) => monthlyOwned(r.hw, SPREAD_MONTHS[Math.min(1, SPREAD_MONTHS.length - 1)], r.cost.electricity)!);
+  for (const [what, v] of [
+    ['the cheapest month of electricity', Math.min(...elec)],
+    ['the dearest month of electricity', Math.max(...elec)],
+    ['the cheapest machine by the month', Math.min(...owned)],
+    ['the dearest machine by the month', Math.max(...owned)],
+  ] as const)
+    if (!html.includes(fmtUsd(v)))
+      problems.push(`${path} does not print ${fmtUsd(v)}, ${what} across the ${runners.length} machines that run ${dm.display_name}`);
+  for (const r of runners) {
+    if (!html.includes(`/hardware/${r.hw.id}/`))
+      problems.push(`${path} leaves out the ${hardwareLabel(r.hw)}, which runs ${dm.display_name}`);
+    // every machine over every span the page offers, so a column cannot quietly
+    // go missing: the spread is the page's answer and each row of it is a claim
+    for (const months of SPREAD_MONTHS) {
+      const v = monthlyOwned(r.hw, months, r.cost.electricity)!;
+      if (!html.includes(`>${fmtUsd(v)}<`))
+        problems.push(`${path} does not print ${fmtUsd(v)}, what the ${hardwareLabel(r.hw)} costs a month over ${months} months`);
+    }
+  }
+  for (const months of SPREAD_MONTHS)
+    if (!html.includes(`A month over ${yearWord(months)}`))
+      problems.push(`${path} prices the machines over ${months} months without a column that says so`);
+  if (hw.load_watts_status === 'stand_in' && !page.html.includes(`${hw.load_watts} W<span class="c-quant">${holdHyphens('stand-in')}</span>`))
+    problems.push(`${path} prices the electricity on ${hw.load_watts} W without saying that figure is a stand-in`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} figure${problems.length === 1 ? '' : 's'} on ${path} no longer match the data`);
+  }
+  console.log(
+    `  ${path} prices a month on ${runners.length} machines: ${fmtUsd(Math.min(...elec))} to ${fmtUsd(Math.max(...elec))} of electricity against ${fmtUsd(Math.min(...owned))} to ${fmtUsd(Math.max(...owned))} for the machines themselves`,
+  );
+}
+
 /**
  * Two ways a page can print a note out of the data and have it stop reading as
  * the page's own sentence, both of which shipped for weeks.
@@ -6468,6 +6714,7 @@ checkNotes();
 checkHardwareNotes();
 checkTierLabels();
 checkTokenCost();
+checkMonthlyCost();
 checkMarkerWords();
 checkSourceLinks();
 checkPageDates();

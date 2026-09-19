@@ -7,10 +7,11 @@
  * read by someone arriving from a search, and to be indexable, so nothing here
  * may depend on JavaScript running.
  */
-import { calculate } from './calc';
+import { calculate, DAYS_PER_MONTH } from './calc';
+export { DAYS_PER_MONTH };
 import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
 import { footprintGb, kvCacheGb } from './fit';
-import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
+import { fmtDuration, fmtGb, fmtHours, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 // Four helpers that turn the data's own words into a reader's: they live in
 // format.ts because the calculator's assumptions panel prints the same fields
 // and cannot import this module, which is the build's rather than the bundle's.
@@ -400,6 +401,7 @@ export const FOOTER_LINKS: { href: string; label: string }[] = [
   { href: '/how-much-memory/', label: 'How much memory you need' },
   { href: '/best-gpu/', label: 'Which graphics card' },
   { href: '/local-llm-vs-api-cost/', label: 'What a token costs either way' },
+  { href: '/cost-per-month/', label: 'What it costs a month' },
 ];
 
 export function footerHtml(): string {
@@ -973,7 +975,7 @@ export function kvWorking(m: Model, contextTokens: number): string | null {
   return `2 (a key and a value) × ${a.n_kv_heads} key-value heads × ${a.head_dim} numbers per head × ${bytes} bytes = ${n(perLayer)} bytes per token, per layer. Over ${a.n_layers} layers that is ${n(perToken)} bytes for every token in the window. Fill ${n(contextTokens)} tokens of context and the cache is ${fmtGb1(total)}.`;
 }
 
-export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc };
+export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtHours, fmtNum, fmtTokens, fmtUsd, esc };
 
 /* --------------------- machine head-to-heads --------------------- */
 
@@ -2041,6 +2043,102 @@ export function fmtPerMtok(v: number | null | undefined): string {
   const cents = v * 100;
   if (cents === 0) return 'nothing';
   return `${cents >= 1 ? cents.toFixed(1) : cents.toFixed(2)}c`;
+}
+
+/* ------------------------ what a month of it costs ------------------------ */
+
+/**
+ * The spans a machine's price is spread over on the page that asks what a local
+ * model costs a month. A monthly figure for a thing you buy once is the price
+ * divided by the months you keep it, so the only honest way to print one is to
+ * say how many months the division used and to offer more than one of them.
+ */
+export const SPREAD_MONTHS = [12, 24, 36];
+
+export interface MonthlyCost {
+  /** the electricity the machine draws generating a month of this work */
+  electricity: number;
+  /** what the same month's work costs to rent from the hosted API */
+  rented: number;
+  /** what is left of the rental bill once the electricity is paid */
+  gap: number;
+  /** hours a day the machine spends generating, which is what the electricity is */
+  hoursPerDay: number;
+  /** days until the gap has covered the machine; null where it never does */
+  breakevenDays: number | null;
+  /** the day's tokens these figures price */
+  usage: number;
+  tokensPerSec: number;
+  /** true where the day's tokens are more than the machine can generate in a day */
+  capped: boolean;
+}
+
+/**
+ * A month on one machine and one model, both ways.
+ *
+ * Like `tokenCost` it is the calculator's own `computeView`, read at the month
+ * rather than at the day, so the page cannot drift from what the calculator
+ * shows anybody who opens the same pairing: `cloudCostPerMonth` and
+ * `localCostPerMonth` are the two figures its own figures panel prints.
+ */
+export function monthlyCost(m: Model, hw: Hardware, data: Dataset, usage?: number): MonthlyCost | null {
+  if (hw.price_usd == null || hw.load_watts == null) return null;
+  const st = defaultState(data);
+  const view = computeView({ ...st, hw: hw.id, model: m.id, usage: usage ?? st.usage }, data);
+  const row = view.model?.id === m.id ? view.rows.find((r) => r.model.id === m.id) : null;
+  if (!view.calc || !row || row.throughput.tokensPerSec == null) return null;
+  const c = view.calc;
+  return {
+    electricity: c.localCostPerMonth,
+    rented: c.cloudCostPerMonth,
+    gap: c.cloudCostPerMonth - c.localCostPerMonth,
+    hoursPerDay: c.localGenerationHoursPerDay,
+    breakevenDays: c.breakevenDays,
+    usage: view.capacity.effective,
+    tokensPerSec: row.throughput.tokensPerSec,
+    capped: view.capacity.capped,
+  };
+}
+
+/** The machine's price over `months`, plus the power it draws: what owning it costs a month. */
+export function monthlyOwned(hw: Hardware, months: number, electricity: number): number | null {
+  if (hw.price_usd == null) return null;
+  return hw.price_usd / months + electricity;
+}
+
+/**
+ * The day's use at which the rental bill for the same work passes what the
+ * machine costs a month. Below it renting is the cheaper month; above it the
+ * machine is, and the page's whole answer is which side of that line a reader
+ * is on.
+ *
+ * The rental bill rises with use and the machine's own monthly cost barely
+ * does, so there is one crossing and a bisection finds it. It is refused where
+ * the crossing needs more tokens in a day than the machine can generate in one,
+ * because a line the machine cannot reach is not a line a reader can cross.
+ */
+export function monthlyCrossing(m: Model, hw: Hardware, data: Dataset, months: number): number | null {
+  const u = data.defaults.usage;
+  const net = (usage: number) => {
+    const c = monthlyCost(m, hw, data, usage);
+    if (!c) return null;
+    const owned = monthlyOwned(hw, months, c.electricity);
+    return owned == null ? null : { diff: c.rented - owned, capped: c.capped };
+  };
+  const top = net(u.max_tokens_per_day);
+  const bottom = net(u.min_tokens_per_day);
+  if (!top || !bottom || top.diff <= 0 || bottom.diff >= 0) return null;
+  let lo = u.min_tokens_per_day;
+  let hi = u.max_tokens_per_day;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    const at = net(mid);
+    if (!at) return null;
+    if (at.diff < 0) lo = mid;
+    else hi = mid;
+  }
+  const crossing = (lo + hi) / 2;
+  return net(crossing)?.capped ? null : crossing;
 }
 
 /* ----------- the other match-ups the two on a head-to-head are in ----------- */
