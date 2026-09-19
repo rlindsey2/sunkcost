@@ -6,7 +6,8 @@ import {
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
-  costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, MTOK, nearestCompleteComputer,
+  costMachine, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
+  monthlyCost, monthlyCrossing, monthlyOwned, MTOK, nearestCompleteComputer, SPREAD_MONTHS,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
@@ -1431,6 +1432,79 @@ describe('what a million tokens costs', () => {
       expect(fmtPerMtok(cost.generated)).not.toBe('$0.00');
       expect(fmtPerMtok(cost.generated)).not.toBe('0.00c');
     }
+  });
+});
+
+describe('what a month of it costs', () => {
+  const st = defaultState(data);
+  const machine = costMachine(data);
+  const view = computeView({ ...st, hw: machine.id }, data);
+  const model = view.model!;
+
+  it('prices both sides of the month from the figures the page prints beside them', () => {
+    const c = monthlyCost(model, machine, data)!;
+    const calc = view.calc!;
+    // the two figures the calculator's own panel prints, read at the month
+    expect(c.electricity).toBeCloseTo(calc.localCostPerMonth, 9);
+    expect(c.rented).toBeCloseTo(calc.cloudCostPerMonth, 9);
+    expect(c.gap).toBeCloseTo(c.rented - c.electricity, 9);
+    // the electricity is the hours it spends generating, at its wattage and the price of power
+    expect(c.electricity).toBeCloseTo((c.hoursPerDay * machine.load_watts!) / 1000 * st.kwh * DAYS_PER_MONTH, 9);
+    expect(c.hoursPerDay).toBeCloseTo(st.usage / (st.ratio + 1) / c.tokensPerSec / 3600, 9);
+  });
+
+  it('refuses a machine with no price and a model it cannot hold', () => {
+    const unpriced = data.hardware.find((h) => h.price_usd == null);
+    if (unpriced) expect(monthlyCost(model, unpriced, data)).toBeNull();
+    const biggest = [...data.models].sort((a, b) => (b.weights_gb ?? 0) - (a.weights_gb ?? 0))[0];
+    const smallest = data.hardware
+      .filter((h) => h.price_usd != null)
+      .sort((a, b) => a.usable_memory_gb! - b.usable_memory_gb!)[0];
+    if ((biggest.weights_gb ?? 0) > smallest.usable_memory_gb!) expect(monthlyCost(biggest, smallest, data)).toBeNull();
+  });
+
+  it('divides the machine over the months you keep it, and says which months those are', () => {
+    const c = monthlyCost(model, machine, data)!;
+    for (const months of SPREAD_MONTHS)
+      expect(monthlyOwned(machine, months, c.electricity)).toBeCloseTo(machine.price_usd! / months + c.electricity, 9);
+    // a longer span is always the cheaper month, which is the page's whole point
+    const owned = SPREAD_MONTHS.map((m) => monthlyOwned(machine, m, c.electricity)!);
+    expect([...owned].sort((a, b) => b - a)).toEqual(owned);
+    expect(monthlyOwned({ ...machine, price_usd: null }, 24, c.electricity)).toBeNull();
+  });
+
+  it('finds the use at which renting stops being the cheaper month', () => {
+    for (const months of SPREAD_MONTHS) {
+      const crossing = monthlyCrossing(model, machine, data, months);
+      if (crossing == null) continue;
+      const at = monthlyCost(model, machine, data, crossing)!;
+      // at the crossing the two months are the same figure, and it is a real crossing:
+      // renting is cheaper below it and the machine is cheaper above it
+      expect(at.rented).toBeCloseTo(monthlyOwned(machine, months, at.electricity)!, 2);
+      const below = monthlyCost(model, machine, data, crossing * 0.9)!;
+      const above = monthlyCost(model, machine, data, crossing * 1.1)!;
+      expect(below.rented).toBeLessThan(monthlyOwned(machine, months, below.electricity)!);
+      expect(above.rented).toBeGreaterThan(monthlyOwned(machine, months, above.electricity)!);
+    }
+  });
+
+  it('keeps a longer span crossing at a lower level of use than a shorter one', () => {
+    const crossings = SPREAD_MONTHS.map((m) => monthlyCrossing(model, machine, data, m)).filter((c): c is number => c != null);
+    expect(crossings.length).toBeGreaterThan(1);
+    expect([...crossings].sort((a, b) => b - a)).toEqual(crossings);
+  });
+
+  it('is the electricity that barely moves between machines, and the machine that does not', () => {
+    // the page's own finding, which is why it exists: the power is cents either way
+    const runners = data.hardware
+      .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+      .map((h) => ({ hw: h, cost: monthlyCost(model, h, data) }))
+      .filter((r): r is { hw: (typeof data.hardware)[number]; cost: NonNullable<ReturnType<typeof monthlyCost>> } => !!r.cost);
+    expect(runners.length).toBeGreaterThan(10);
+    const elec = runners.map((r) => r.cost.electricity);
+    const owned = runners.map((r) => monthlyOwned(r.hw, 24, r.cost.electricity)!);
+    expect(Math.max(...elec) - Math.min(...elec)).toBeLessThan(5);
+    expect(Math.max(...owned) / Math.min(...owned)).toBeGreaterThan(5);
   });
 });
 

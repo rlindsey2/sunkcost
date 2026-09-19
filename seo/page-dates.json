@@ -2,7 +2,7 @@
   "note": "When each page last changed, for sitemap lastmod. Written by npm run build:pages; commit it with the change it records. A date is published only while the page still hashes to what is recorded here, so a stale entry costs a lastmod rather than printing a wrong date. Generated — edit the build, not this file.",
   "pages": {
     "/": {
-      "hash": "55cc0440c63fe67e",
+      "hash": "eb2f546c5e896018",
       "changed": "2026-09-19"
     },
     "/best-gpu/": {
@@ -589,6 +589,10 @@
       "hash": "e92d374b75a491ed",
       "changed": "2026-09-19"
     },
+    "/cost-per-month/": {
+      "hash": "3af9b608bafe2906",
+      "changed": "2026-09-19"
+    },
     "/hardware/": {
       "hash": "39f827d6d22fb792",
       "changed": "2026-09-19"
@@ -826,7 +830,7 @@
       "changed": "2026-09-18"
     },
     "/local-llm-vs-api-cost/": {
-      "hash": "08bda2b375d0dedc",
+      "hash": "03127ce72ccbdb3f",
       "changed": "2026-09-19"
     },
     "/models/deepseek-r1-distill-llama-70b-q4/": {
