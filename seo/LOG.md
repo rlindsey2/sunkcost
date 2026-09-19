@@ -494,6 +494,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
 
+- [x] **No head-to-head on the site linked another head-to-head.** Done 2026-09-19. The 143
+      comparisons were the deepest pages here, median 3 links in and always the same three:
+      `/compare/` and the two things compared. Each one now names the other match-ups its two sides
+      are in, grouped the way each side's own page groups them, with the pair the reader is on left
+      out. 1,090 links where there were none, median 3 inbound to 7, and one comparison names none
+      because both its machines are in no other pair. The run entry below has the figures, the five
+      breaks that proved the guard and the three that proved the tests.
+      **What it deliberately does not do, so the next run does not read it as a gap:** there is no
+      cap on how many a page names. The worst carries 22, which is what a machine page already ships
+      as two lists, and a cap would have to drop match-ups by a rule the page could not justify. It
+      is also what keeps `checkMatchUpSiblings()` exact, since the set of links is the set of pairs.
+
 - [x] **Every model head-to-head on the site was cut by one rule, and it is the rule that cannot
       answer the upgrade question.** Done 2026-09-19. Each model against the next one down the
       leaderboard answers "which of these two", and the two sides of "is the current one worth
@@ -1112,6 +1124,79 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a head-to-head that names the other head-to-heads its two sides are in
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch is done and the backlog was
+the job. Its top item is still the monthly-cost page and still waits on PR #15, so the work had to be
+something that goes straight to `main`. What the 259 pages were measured for this time is inbound
+internal links, and the answer is one shape: **the 143 head-to-heads are the deepest pages on the
+site**, median 3 links in, and those three are always the same three — `/compare/`, and the two pages
+of the things being compared. Machine pages and model pages have carried the match-ups they are in
+for weeks. The match-up itself named no third machine and no third model, so **no comparison on this
+site linked another one**, and the reader who had just finished choosing between two boxes, the
+likeliest person here to be weighing a third, was sent back to an index of 90 to find it. Pushed as
+**`be3484e`**.
+
+**What each page says now.** At the foot of the content, before the assumptions, each side's other
+match-ups, in the words that side's own page uses for the same list. The machine side is grouped by
+the question each pair answers, the same grouping `headToHeadGroups()` already cuts: *The Mac Studio
+M5 Max, 128GB is also head to head with another computer: … With a graphics card: … With the same
+machine at another memory size: 48GB. With the machine it replaced: Mac Studio M4 Max, 128GB.* The
+model side is at most three pairs, so all of them fit, and each arrives with the rule that made it:
+*Qwen3.8 27B is also head to head with Inkling Small below it on the leaderboard and Qwen3 32B, the
+last-generation Qwen nearest it in size.* The pair the reader is already on is left out of both
+lists, which is the whole of the exclusion rule.
+
+| | before | after |
+| --- | --- | --- |
+| inbound links to a head-to-head, median | 3 | 7 |
+| head-to-heads with only the three every one has | 143 | 1 |
+| links between one head-to-head and another | 0 | 1,090 |
+| head-to-heads that name their neighbours | 0 | 142 of 143 |
+
+**The one that names none** is `/compare/macbook-pro-m5-14-inch-16gb-vs-macbook-pro-m5-14-inch-32gb/`,
+and it is right: both sides are in that one pair and nothing else, so there is nothing to name. The
+build counts it rather than passing over it.
+
+**A paragraph per machine, and that was the find in reading it rendered.** Written as one paragraph
+the note is unreadable on exactly the pages that need it most: two graphics cards have been set
+against the same five cards and the same six computers, so the two lists are the same eleven names
+twice over, against different pages, run together in one block of 766 characters. Split in two, each
+list reads as what it is — these are the R9700's, these are the RTX PRO 6000's. The model note stays
+one paragraph, because two sentences of one clause each is not a wall.
+
+**No cap, deliberately.** The worst page carries 22 links, which is the two lists a machine page
+already ships side by side, and a cap would have to choose which match-ups to drop by a rule nothing
+on the page could justify. Keeping every one is also what makes the guard exact: the set of links is
+the set of pairs, so any drift fails the build rather than reading as a design choice.
+
+**Five breaks proved the guard.** `checkMatchUpSiblings()` does not call the builders: it reads the
+notes back off the shipped pages and cuts both lists again from `hardwarePairs()`, `modelPairs()` and
+`modelGenerationPairs()`. The machine note dropped fails with *is beside 18 other match-ups and names
+none of them*; the exclusion dropped fails with *links itself in its own other match-ups*; a memory
+tier labelled by name rather than by size fails with *calls /compare/mac-mini-m6-16gb-vs-mac-mini-m6-32gb/
+"the 32GB one" where that pair is "32GB"*; the generation clause flipped fails with *does not say why
+one of its other match-ups exists*; and the model note dropped fails the same way the machine one
+does. Exit code 1 in each case.
+
+**And three breaks proved the tests.** The eight new ones in `tests/pagekit.test.ts` hold the two
+sentence builders: the closing stop dropped fails two of them, the leaderboard named twice where a
+model has a rung either side fails the one written for it, and the ordering dropped fails that one
+and the generation-last one together.
+
+**Verified.** 342 tests (8 new), `tsc --noEmit` clean, and the full `npm run build` end to end with
+`build:functions` included: 259 pages, every guard passing, 1,894 share cards. All 212 note
+paragraphs were read out of the built HTML rather than from the source and swept for doubled stops,
+stray commas, double spaces and maintainer words: none. Two pages were read whole, a memory-tier pair
+and a model pair. The 143 comparisons take 2026-09-19 in the sitemap; no other page's words changed.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is the top open item and still waits on PR #15. Of what can go straight to `main`, the measurement
+that found this one is worth repeating on the other page types: the leaderboard, `/best/` and
+`/best-gpu/` are each linked from every page, but the model and machine pages sit at 43 and 21 inbound
+links against the comparisons' 7, and nothing has checked whether the pages linking them are the ones
+a reader would come from.
 
 ### 2026-09-19 — a model against the current one of its family, which the leaderboard can never pair
 
