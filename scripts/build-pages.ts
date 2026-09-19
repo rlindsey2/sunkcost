@@ -7,13 +7,13 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  anchoredHeading, anchorHeadings, appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  addJumpLine, anchoredHeading, anchorHeadings, appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -68,10 +68,25 @@ const unesc = (s: string) =>
  */
 const headingLike = (start: string) => new RegExp(`<h2\\b[^>]*>${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
 
-/** the page with its body's headings anchored, and its header and footer untouched */
+/**
+ * The names this site's own data holds, as a page prints them. A heading
+ * repeating one of these where the page's h1 already carries it is the page
+ * saying its subject twice, which is what decides whether a jump line reads as a
+ * contents page or as keyword stuffing. See addJumpLine in src/pagekit.ts.
+ */
+const subjectNames = [
+  ...data.hardware.map((hw) => esc(shortHardwareLabel(hw))),
+  ...data.models.map((m) => esc(m.display_name)),
+];
+
+/**
+ * The page with its body's headings anchored and its line of jumps into them
+ * written, and its header and footer untouched. The jumps go in after the
+ * anchors because each one lands on an id the anchoring has just made.
+ */
 function anchorBody(html: string): string {
   const body = mainOf(html);
-  return body === html ? html : html.replace(body, () => anchorHeadings(body));
+  return body === html ? html : html.replace(body, () => addJumpLine(anchorHeadings(body), subjectNames));
 }
 
 function write(path: string, html: string) {
@@ -6284,6 +6299,77 @@ function checkHeadingAnchors() {
 }
 
 /**
+ * A page with more sections than fit on a screen says at the top what is in
+ * them, and every jump it offers lands on one of its own.
+ *
+ * Three claims, and the first is the one that keeps the line honest. A page
+ * carries the line where it heads four sections or more and at most one of those
+ * headings repeats a name its own h1 already carries — so the head-to-heads and
+ * the long indexes have one and the machine and model pages, whose every heading
+ * names the machine or the model, do not. Write a fourth section onto a machine
+ * page, or take the model's name out of a model page's headings, and the rule
+ * changes its mind about that page; this says so rather than leaving it to
+ * whoever next reads the page.
+ *
+ * The second is that the line covers the page: one jump per section, in the
+ * order the page puts them in, each landing on an id the page really heads. A
+ * line that names three of four sections is a contents page with a section
+ * missing, which is worse than none. The third is that it sits above the first
+ * section it points into, because a jump link below what it jumps to is a link
+ * the reader has already scrolled past.
+ *
+ * `/best/` writes its own line, shortening five headings that each carry a
+ * second clause, and this holds that one to the same three claims.
+ */
+function checkJumpLines() {
+  const problems: string[] = [];
+  let lines = 0;
+  let jumps = 0;
+  let quiet = 0;
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const h1 = body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '';
+    const sections = [...body.matchAll(/<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => ({ id: m[1], heading: m[2] }));
+    const named = sections.filter((x) => subjectNames.some((n) => n && h1.includes(n) && x.heading.includes(n)));
+    const wanted = sections.length >= JUMP_MIN_SECTIONS && named.length <= 1;
+    const line = body.match(/<p class="note">Jump to: ([\s\S]*?)<\/p>/);
+    if (!line) {
+      if (wanted) problems.push(`${path} heads ${sections.length} sections and offers no way into them`);
+      else quiet++;
+      continue;
+    }
+    if (!wanted) {
+      problems.push(
+        sections.length < JUMP_MIN_SECTIONS
+          ? `${path} offers jump links into ${sections.length} sections, which is a contents line for what is already on the screen`
+          : `${path} offers jump links whose words name ${named[0]?.heading.slice(0, 40)} and ${named.length - 1} more heading${named.length === 2 ? '' : 's'} carrying the same name`,
+      );
+      continue;
+    }
+    lines++;
+    const hrefs = [...line[1].matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+    jumps += hrefs.length;
+    if (hrefs.length !== sections.length)
+      problems.push(`${path} jumps into ${hrefs.length} of the ${sections.length} sections it heads`);
+    const at = hrefs.map((h) => body.indexOf(`id="${h}"`));
+    for (const [i, x] of at.entries()) {
+      if (x < 0) problems.push(`${path} jumps to #${hrefs[i]}, which is not an id on the page`);
+      else if (i && at[i - 1] >= 0 && x <= at[i - 1])
+        problems.push(`${path} lists #${hrefs[i]} after #${hrefs[i - 1]}, where the page itself has them the other way round`);
+    }
+    if (body.indexOf(line[0]) > body.indexOf('<h2 id="'))
+      problems.push(`${path} puts its jump links below the first section they point into`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} offer the wrong way into their own sections`);
+  }
+  console.log(
+    `  ${lines} pages offer ${jumps} jumps into their own sections, one a section; ${quiet} pages carry none, each under ${JUMP_MIN_SECTIONS} sections or naming its own subject in more than one`,
+  );
+}
+
+/**
  * A link that names a section has to land on it. The id it aims at is a
  * function of that section's own heading, so the two ends of the link are
  * written from the same words and a reworded heading moves both — but only on
@@ -6350,6 +6436,7 @@ checkMachineIndex();
 checkMachineLedes();
 checkSubjectHeadings();
 checkHeadingAnchors();
+checkJumpLines();
 checkSpeedBasis();
 checkTables();
 checkPairedColumns();
