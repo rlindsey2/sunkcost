@@ -561,6 +561,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
 
+- [ ] **A machine page prints 661 speeds and says of none of them whether anybody measured it.** Found
+      2026-09-19 while giving those pages an opening paragraph of their own. The "What it runs" table
+      on all 56 machine pages prints a `tok/s` figure per row, 661 of them, bare. `/hardware/` prints
+      56 speeds through `speedWithBasis()` and marks every one *measured* or *estimated*; the
+      leaderboard and the head-to-heads mark theirs too. The machine pages, which are where a reader
+      actually lands, mark none. It matters more than the count suggests: across all 1,425
+      machine-and-model pairs this site computes, **1,397 are estimated from memory bandwidth and 28
+      are measured**, so an unmarked figure is almost always the estimate. `speedWithBasis()` is
+      already exported from `src/pagekit.ts` and already used by the index, so the change is that
+      helper in place of the bare cell, plus a line in the note under the table saying what the mark
+      means, which the index's own note already words. It is `scripts/build-pages.ts`, so it is a
+      push rather than a pull request. This is a trust fix rather than a traffic one, and it is the
+      same fault the stand-in power figure had on the comparison pages two days ago.
+
 - [ ] **The home page carries 142 words, and every one of them is a form label.** Measured
       2026-09-19 over the static markup inside `<main>` on `index.html`: *Tokens a day*, *Context
       window you want*, *Copy link*, *Assumptions you can change*, and the privacy note. The thinnest
@@ -580,6 +594,24 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       a tool at all. The design note in the README is explicit that the machine is a sentence and
       everything hangs off it, and a paragraph above the fold is the first thing that would push the
       water down the page. Worth Ryan's opinion before it is built, not after.
+
+- [x] **Fifty of the 56 machine pages opened with a paragraph that belonged to another machine.**
+      Done 2026-09-19. The first paragraph answered memory and nothing else, and memory is the one
+      figure a $1,299 mini PC and a $4,999 Mac Studio can share, so there were 18 distinct opening
+      paragraphs for 56 pages and ten pages opened with the same words. It carries this machine's
+      own price and its own pay-back now, both of which the answer block below it and the meta
+      description had been printing all along. 56 distinct paragraphs, none repeated. The run entry
+      below has the figures, the three breaks that proved the guard and the fourth that an existing
+      guard caught on its own.
+      **What the same measurement says about the pages as wholes, so nobody measures it again.**
+      Pairwise 5-word-shingle similarity inside `<main>`, by page type: comparisons median 0.115 and
+      worst 0.745, models median 0.278 and worst 0.701, machines median 0.289 and worst 0.864, the
+      seven indexes below 0.02 against each other. The worst pairs are all two memory sizes of one
+      machine or two members of one model family, where the pages genuinely differ only in the
+      figures, and no page is a copy of another. There is no duplicate-content problem here at the
+      level of whole pages, and rewriting a template to push a similarity number down would be
+      writing for a measurement rather than for a reader. The paragraph was the part worth fixing
+      and it is fixed.
 
 - [ ] **Nobody had measured how deep the site is, and it is two clicks. Nothing to do.** Measured
       2026-09-19, breadth-first from `/` over the built site: **262 of 262 pages are within two
@@ -1282,6 +1314,83 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — fifty machine pages opened with somebody else's paragraph
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is still waiting on Ryan, already written down as "leave it", or a
+"worth one look" its own wording expects to end in nothing, which is where the 07:5x run found it
+too. Both open pull requests were checked before anything else and **both still merge clean into
+`main`**, #17 at `6c81367` and #16 at `2c7e5e2`, so there was no repair to do. So this run took a
+measurement nobody here had taken, and it found something on the second look rather than the first.
+
+**The measurement.** Pairwise similarity between every generated page, as the Jaccard overlap of
+5-word shingles over the rendered text inside `<main>`, within each page type. Near-duplicate pages
+are the classic risk for a site that builds 261 pages from four templates, and nobody had checked.
+The numbers: comparisons median 0.115 and worst 0.745, models median 0.278 and worst 0.701, machines
+median 0.289 and worst 0.878, and the seven indexes under 0.02 against each other. The worst pairs
+are two memory sizes of one machine, or two models of one family. **As whole pages that is fine**,
+and the answer to this measurement on its own is to leave it alone: the pages differ in every figure
+that matters, and rewriting a template to push a similarity number down is writing for a measurement
+rather than for a reader. It is written down in the backlog above so nobody takes it again. For the
+record, this run's own change barely moves it: the worst machine pair goes from 0.878 to 0.864,
+because the paragraph it rewrites is fifty words of a thousand-word page. The paragraph is not where
+that number lives, which is exactly why the number could not see the fault.
+
+**The fault, which was in the one paragraph the number could not see.** Reading the worst pair rather
+than trusting its score: `/hardware/mac-mini-m5-pro-48/` and `/hardware/mac-mini-m5-pro-64/` open with
+the same sentence, and so do 48 other pages. Counted exactly, over the first paragraph of all 56
+machine pages: **18 distinct opening paragraphs, and 50 of the 56 pages opened with one that was
+character-identical, figures and all, to another page's.** Ten pages shared a single sentence; nine
+shared another; six shared a third. A $1,299 Framework Desktop and a $4,999 Mac Studio both said
+*"33 of the 39 open models on this site fit in its 96 GB of usable memory, the strongest being
+Qwen3.8 27B. Whether that saves you money is a different question, and the answer is usually no."*
+
+The reason is in what the paragraph answered. It answered memory, and memory is the one figure two
+machines thousands of dollars apart can share. Price, speed and pay-back are what separate them, and
+all three were on the page already, in the answer block directly below and in the description a
+search engine prints, which has carried this machine's own pay-back since it was written. The one
+sentence Google is most likely to quote was the one sentence that did not.
+
+**The fix.** The second sentence of the paragraph now gives the machine's own answer instead of a
+general one: *"Whether that saves you money is a different question: at $3,449 and 500k tokens a day,
+it pays back in 45 years."* Both figures come from the same `hwVerdict` and `hw.price_usd` the page
+already prints two lines down, so no figure is new and none was invented. **56 distinct paragraphs
+where there were 18, none repeated.** The 2 machines with no published price keep the sentence they
+had, because there is no pay-back to name; that is 54 pages changed, and `seo/page-dates.json` moved
+on exactly those 54 and on nothing else, no model page, no comparison, no index.
+
+**Two things the wording had to get right.** A discontinued machine says *"at its $1,999 launch
+price"* rather than *"at $1,999"*, because it is not a price anyone can pay today, and the answer row
+below it already says so. And a graphics card's paragraph now says *"the card alone"* where it said
+*"the card on its own"*: that is the phrase the rest of this site uses for it, and it is
+what `checkCardPrices()` looks for beside a card price. That guard is how the fault was found, which
+is the point of it. The first build after adding a price to the card pages' paragraph stopped at
+*"7 card prices are printed as if they bought a whole computer"*, exit 1, before anything was pushed.
+
+**The guard.** `checkMachineLedes()` holds three claims: every machine page opens with a paragraph,
+a machine whose pay-back can be computed names that pay-back and its own price in it, and no two
+machines open with the same words. It prints `56 machine pages open with a paragraph no other machine
+repeats, 54 of them naming that machine's own price and pay-back`.
+
+**Verified:** 370 tests, typecheck clean, the full `npm run build` including `build:functions`, and
+261 pages with every guard passing. **Three breaks proved the guard**, exit 1 each time: the general
+sentence put back (146 problems, being 54 pages missing a pay-back, 54 missing a price and 38
+opening with another machine's words), the price alone dropped from the sentence (55), and the
+opening paragraph stripped of its `lede` class (56). Read rendered out of `dist/` on nine machines
+covering every branch: priced and current, discontinued, card-only, card-only and discontinued, and
+both machines with no price. No doubled stop, no double space, no stray space before a stop on any
+of the 56.
+
+**Pushed to `main` as `b5aae1f`**, deploy run 214.
+
+**What to continue.** Nothing here is half-finished. The top of the backlog is the new item this run
+found while doing it: the machine pages print 661 speed figures and mark none of them measured or
+estimated, where `/hardware/` marks all 56 of its own, and 1,397 of the 1,425 pairs behind those
+figures are estimates. It is one helper that already exists, on pages that already import it.
+PR #17 and PR #16 are both still waiting on Ryan, both still merge clean into `main` as of this run,
+and they still do not merge cleanly into each other; the resolution for that is a rebuild rather
+than a choice and it is written on both of them and at the top of this file.
 
 ### 2026-09-19 — the page all 261 others link back to had no heading at all
 
