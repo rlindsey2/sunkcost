@@ -18,7 +18,7 @@ import {
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
-  sourceLinks, sourceName, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
+  sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
@@ -2081,7 +2081,7 @@ function bestBuys(): string {
               return `<tr>
   <td class="c-model"><a href="/models/${esc(c.model.id)}/">${esc(c.model.display_name)}</a><span class="c-quant">score ${c.model.frontier_equivalent!.score}${c.model.frontier_equivalent?.estimated ? '*' : ''}</span>${ce.stand_in ? `<br><span class="dim">nobody rents it; priced as ${esc(ce.name)}</span>` : ''}</td>
   <td class="c-hw"><a href="/hardware/${esc(c.hw.id)}/">${esc(hardwareLabel(c.hw))}</a> <span class="dim">${fmtUsd(c.hw.price_usd)}${c.hw.price_scope === 'card_only' ? ', card only' : ''}</span></td>
-  <td>${tp?.tokensPerSec != null ? `${fmtNum(tp.tokensPerSec, 0)} tok/s` : '?'}${tp?.measurement && tp.measurement !== 'measured' ? ` <span class="dim">${esc(tp.measurement)}</span>` : ''}</td>
+  <td>${speedFrom(tp)}</td>
   <td><b>${esc(fmtDuration(c.days))}</b></td>
   <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
@@ -2419,7 +2419,7 @@ ${cheapest
   <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${priceWithScope(cheapest.hw)}</span></div>
   ${shorterMachines[0] && shorterMachines[0].hw.price_usd != null && cheapest.hw.price_usd != null && shorterMachines[0].hw.price_usd < cheapest.hw.price_usd ? `<div class="answer-row"><span class="answer-k">Cheaper at a shorter window</span><span class="answer-v"><a href="/hardware/${esc(shorterMachines[0].hw.id)}/">${esc(hardwareLabel(shorterMachines[0].hw))}</a> at ${priceWithScope(shorterMachines[0].hw)}, which holds it at ${ctxLabel(shorterMachines[0].ctx)}</span></div>
   ` : ''}${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
-  ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — ${fmtNum(fastest.view.throughput!.tokensPerSec, 0)} tok/s at ${Math.round(ctx / 1024)}k context</span></div>` : ''}
+  ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — at ${Math.round(ctx / 1024)}k context, ${speedFrom(fastest.view.throughput)}</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
 </div>`
       : `<div class="answer">
@@ -2617,7 +2617,7 @@ function hardwarePage(hw: Hardware): string {
       const memory = holds != null && contextCappedBy(r.model, holds, data) === 'memory';
       return `<tr>
   <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${holdHyphens(r.model.quantisation)}</span></td>
-  <td>${r.throughput.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(r.throughput.tokensPerSec, r.throughput.tokensPerSec < 10 ? 1 : 0)} tok/s`}</td>
+  <td>${speedWithBasis(r)}</td>
   <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
   <td>${dotRow(r.model)}</td>
   <td>${fmtGb(r.fit.needGb)}</td>
@@ -2651,6 +2651,23 @@ function hardwarePage(hw: Hardware): string {
     return `<p>They do not all hold the same window. The weights are a fixed size, but the key-value cache grows with every token you keep, so what is left of ${spare} GB after the weights is how far the context goes. On ${memoryCount(stoppedByMemory.length)} of the ${shown.length} below, this machine's memory is what runs out first: ${esc(worst.model.display_name)} stops soonest, at ${ctxLabel(reach.get(worst.model.id)!)}.${others}</p>`;
   })();
 
+  // What the speed column's marks mean, on the page where a reader actually meets
+  // them. Every speed here says measured or estimated, the way /hardware/ and the
+  // head-to-heads have always said it, and on most machines every one of them is
+  // an estimate — so the sentence names this machine's own split rather than
+  // explaining a mark in the abstract.
+  const speedBasisLine = (() => {
+    const known = shown.filter((r) => r.throughput.tokensPerSec != null);
+    if (!known.length) return '';
+    const measured = known.filter((r) => r.throughput.measurement === 'measured').length;
+    const band = hw.memory_bandwidth_gbs ? `${hw.memory_bandwidth_gbs} GB/s of memory bandwidth` : 'memory bandwidth';
+    if (!measured)
+      return ` Each speed says how it was arrived at, and every one here is estimated from this machine's ${band} rather than taken from a published benchmark.`;
+    if (measured === known.length)
+      return ` Each speed says how it was arrived at, and every one here is measured: a published benchmark run on this machine.`;
+    return ` Each speed says how it was arrived at: ${memoryCount(measured)} of the ${known.length} here ${measured === 1 ? 'is' : 'are'} measured, from a published benchmark run on this machine, and the rest are estimated from its ${band}.`;
+  })();
+
   const best = fits[0];
   // What the table leaves out: the models this machine misses at the context every
   // figure above is taken at, and holds at a shorter window.
@@ -2665,7 +2682,7 @@ function hardwarePage(hw: Hardware): string {
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
   <div class="answer-row"><span class="answer-k">Memory</span><span class="answer-v">${hw.unified_memory_gb} GB${hw.usable_memory_gb != null ? `, about ${hw.usable_memory_gb} GB of it addressable by the GPU` : ''}${hw.memory_bandwidth_gbs ? ` at ${hw.memory_bandwidth_gbs} GB/s` : ''}</span></div>
-  ${best ? `<div class="answer-row"><span class="answer-k">Best model it runs</span><span class="answer-v"><a href="/models/${esc(best.model.id)}/">${esc(best.model.display_name)}</a> — ${esc(tierName(best.model, data))}${best.throughput.tokensPerSec ? `, ${fmtNum(best.throughput.tokensPerSec, 0)} tok/s` : ''}</span></div>` : ''}
+  ${best ? `<div class="answer-row"><span class="answer-k">Best model it runs</span><span class="answer-v"><a href="/models/${esc(best.model.id)}/">${esc(best.model.display_name)}</a> — ${esc(tierName(best.model, data))}${best.throughput.tokensPerSec ? `, ${speedFrom(best.throughput)}` : ''}</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Pay-back against the API</span><span class="answer-v">${view.calc ? esc(verdictLine(view)) : 'cannot be computed yet'}${view.calc?.breakevenDays != null ? ` at ${fmtTokens(state.usage)} tokens a day` : ''}</span></div>
 </div>
 
@@ -2677,7 +2694,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
@@ -5618,6 +5635,56 @@ function checkMachineLedes() {
   console.log(`  ${seen.size} machine pages open with a paragraph no other machine repeats, ${priced} of them naming that machine's own price and pay-back`);
 }
 
+/**
+ * No speed on this site prints bare. Of the 1,425 pairs where a machine here
+ * holds a model and has a speed for it, 1,397 are worked out from memory
+ * bandwidth rather than timed, so a figure with no word beside it reads as a
+ * measurement almost every time it is not one. The machine pages printed 661 of
+ * them that way until this guard was written, and a machine page is where a
+ * reader lands: /hardware/ marked all 56 of its own, the head-to-heads marked
+ * theirs, and the pages in between said nothing.
+ */
+function checkSpeedBasis() {
+  const problems: string[] = [];
+  let cells = 0;
+  let answers = 0;
+  let notes = 0;
+  for (const p of meta) {
+    for (const m of p.html.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)) {
+      if (!m[1].includes('tok/s')) continue;
+      cells += 1;
+      if (!/\b(measured|estimated)\b/.test(m[1]))
+        problems.push(`${p.path} prints a speed in a table without saying whether anybody measured it`);
+    }
+    // The answer block is the machine's own headline figure and the model page's
+    // fastest machine. Everywhere else a speed sits in prose that says its basis
+    // in its own words, which no pattern should try to police.
+    if (!p.path.startsWith('/hardware/') && !p.path.startsWith('/models/')) continue;
+    for (const m of p.html.matchAll(/<div class="answer-row">([\s\S]*?)<\/div>/g)) {
+      if (!m[1].includes('tok/s')) continue;
+      answers += 1;
+      if (!/\b(measured|estimated)\b/.test(m[1]))
+        problems.push(`${p.path} answers with a speed without saying whether anybody measured it`);
+    }
+  }
+  // A mark only means something where the page says what it means.
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const html = meta.find((m) => m.path === path)?.html;
+    if (html == null || !html.includes('<h2>What it runs</h2>')) continue;
+    if (!(speedNotes(html) ?? '').includes('Each speed says how it was arrived at')) {
+      problems.push(`the ${shortHardwareLabel(hw)} page marks its speeds and never says what the mark means`);
+      continue;
+    }
+    notes += 1;
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} speed${problems.length === 1 ? '' : 's'} print without saying how they were arrived at`);
+  }
+  console.log(`  ${cells} speeds in tables and ${answers} in answer blocks say whether they were measured or estimated; ${notes} machine pages say what the mark means`);
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -5632,6 +5699,7 @@ checkCardScope();
 checkCardRanking();
 checkMachineIndex();
 checkMachineLedes();
+checkSpeedBasis();
 checkTables();
 checkPairedColumns();
 checkArticles();

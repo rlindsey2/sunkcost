@@ -10,7 +10,7 @@ import {
   costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, MTOK, nearestCompleteComputer,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
-  runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
+  runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import {
@@ -438,6 +438,20 @@ describe('machine head-to-heads', () => {
     const [va] = differ.map(view);
     expect(speedWithBasis(fitsOf(va)[0])).toMatch(/tok\/s <span class="dim">(measured|estimated)<\/span>/);
     expect(speedWithBasis(undefined)).toBe('<span class="dim">unknown</span>');
+  });
+
+  it('says the same where the speed is held without the row it came from', () => {
+    const [va] = differ.map(view);
+    const row = fitsOf(va)[0];
+    expect(speedFrom(row.throughput)).toBe(speedWithBasis(row));
+    expect(speedFrom(null)).toBe('<span class="dim">unknown</span>');
+    expect(speedFrom({ tokensPerSec: null, measurement: 'estimated' })).toBe('<span class="dim">unknown</span>');
+  });
+
+  it('rounds a speed the way the page prints it, to a decimal below ten', () => {
+    expect(speedFrom({ tokensPerSec: 8.44, measurement: 'measured' })).toBe('8.4 tok/s <span class="dim">measured</span>');
+    expect(speedFrom({ tokensPerSec: 24.6, measurement: 'estimated' })).toBe('25 tok/s <span class="dim">estimated</span>');
+    expect(speedFrom({ tokensPerSec: 9.97, measurement: 'measured' })).toBe('10 tok/s <span class="dim">measured</span>');
   });
 
   it('says when a price is for the card alone', () => {

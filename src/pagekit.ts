@@ -1261,16 +1261,31 @@ export function powerWithSource(hw: Hardware): string {
  * dividing one figure on the page by another gets the third figure on the page.
  */
 export function shownTps(row: ModelRow | null | undefined): number | null {
-  const tps = row?.throughput.tokensPerSec;
+  return roundTps(row?.throughput.tokensPerSec);
+}
+
+function roundTps(tps: number | null | undefined): number | null {
   if (tps == null) return null;
   return tps < 10 ? Math.round(tps * 10) / 10 : Math.round(tps);
 }
 
 /** A speed, always with how it was arrived at, the way every other page shows one. */
 export function speedWithBasis(row: ModelRow | null | undefined): string {
-  const tps = shownTps(row);
+  return speedFrom(row?.throughput);
+}
+
+/**
+ * The same, for the places that hold a speed without the row it came from — an
+ * answer block naming the fastest machine, say. A speed on this site never
+ * prints without saying whether anybody measured it: of the 1,425 pairs where a
+ * machine here holds a model and has a speed for it, 1,397 are worked out from
+ * memory bandwidth, so a bare figure is almost always an estimate reading as a
+ * measurement.
+ */
+export function speedFrom(tp: { tokensPerSec: number | null; measurement: string } | null | undefined): string {
+  const tps = roundTps(tp?.tokensPerSec);
   if (tps == null) return '<span class="dim">unknown</span>';
-  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(row!.throughput.measurement)}</span>`;
+  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(tp!.measurement)}</span>`;
 }
 
 /** How a pair of speeds was arrived at, as a clause to hang off a sentence. */
