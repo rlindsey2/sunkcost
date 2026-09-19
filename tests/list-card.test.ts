@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, GPU_CARD, gpuCard, LEADERBOARD_CARD, leaderboardCard,
-  listCardSvg, MEMORY_CARD, memoryCard, quickestAt,
+  BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, GPU_CARD, gpuCard, HARDWARE_CARD, hardwareIndexCard,
+  LEADERBOARD_CARD, leaderboardCard, listCardSvg, MEMORY_CARD, memoryCard, quickestAt,
 } from '../src/list-card';
 import { bestUsageLevels } from '../src/best';
 import {
@@ -25,7 +25,8 @@ const best = bestBuysCard(data);
 const compare = compareIndexCard(data);
 const memory = memoryCard(data);
 const gpu = gpuCard(data);
-const cards = [leaderboard, best, compare, memory, gpu];
+const machines = hardwareIndexCard(data);
+const cards = [leaderboard, best, compare, memory, gpu, machines];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
 /** The same text with the spaces taken out, so a name that wrapped onto two lines still matches. */
@@ -291,5 +292,53 @@ describe('the graphics-card card', () => {
 
   it('is drawn where the page asks for it', () => {
     expect(GPU_CARD).toBe('/og/best-gpu.png');
+  });
+});
+
+describe('the machine index card', () => {
+  const st = defaultState(data);
+  const families = [...new Set(data.hardware.map((hw) => hw.family))];
+
+  it('carries every family the site prices, in order of what the cheapest of them costs', () => {
+    for (const family of families) expect(flat(machines)).toContain(noSpace(family));
+    const order = families
+      .map((family) => ({
+        family,
+        from: Math.min(...data.hardware.filter((hw) => hw.family === family).map((hw) => hw.price_usd ?? Infinity)),
+      }))
+      .sort((a, b) => a.from - b.from)
+      .map((f) => f.family);
+    const at = order.map((family) => flat(machines).indexOf(noSpace(family)));
+    for (let i = 1; i < at.length; i++) expect(at[i]).toBeGreaterThan(at[i - 1]);
+  });
+
+  it('gives each family the cheapest price in it, and says where a price is the card alone', () => {
+    for (const family of families) {
+      const priced = data.hardware
+        .filter((hw) => hw.family === family && hw.price_usd != null)
+        .sort((a, b) => a.price_usd! - b.price_usd!);
+      if (!priced.length) continue;
+      expect(flat(machines)).toContain(noSpace(`from ${priceWithScopeText(priced[0])}`));
+    }
+  });
+
+  it('gives each family the most models any configuration of it holds', () => {
+    const held = (hw: (typeof data.hardware)[number]) => fitsOf(computeView({ ...st, hw: hw.id }, data)).length;
+    for (const family of families) {
+      const most = Math.max(...data.hardware.filter((hw) => hw.family === family).map(held));
+      // the figure is in the card; the row it belongs to is checked by the order above
+      expect(flat(machines)).toContain(noSpace(String(most)));
+      expect(most).toBeLessThanOrEqual(computeView(st, data).rows.length);
+    }
+  });
+
+  it('counts what it says it counts, and says what the figures assume', () => {
+    expect(text(machines)).toContain(`${data.hardware.length} configurations across ${families.length} families`);
+    expect(text(machines)).toContain('list price');
+    expect(text(machines)).toContain(`Data checked ${data.defaults.data_last_checked}`);
+  });
+
+  it('is drawn where the page asks for it', () => {
+    expect(HARDWARE_CARD).toBe('/og/hardware.png');
   });
 });
