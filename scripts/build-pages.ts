@@ -4421,7 +4421,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 5, labels: { 2: 'Usable', 3: 'Models', 4: 'Strongest model' } })}
-<p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
+<p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
 </article>`;
 
   return pageShell(
@@ -5394,7 +5394,7 @@ function checkCardRanking() {
     if (!rows.length) continue;
     said += check(`/hardware/${h.id}/`, !!cardScopeNote(rows), h.price_scope !== 'card_only');
   }
-  for (const path of ['/best/', '/compare/', '/how-much-memory/']) {
+  for (const path of ['/best/', '/compare/', '/how-much-memory/', '/hardware/']) {
     const got = links(path);
     if (got == null || got.n !== 1) problems.push(`${path} raises what a card price leaves out and links the ranking ${got?.n ?? 0} times rather than once`);
     else said++;
