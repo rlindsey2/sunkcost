@@ -3598,15 +3598,37 @@ function memoryPage(): string {
     .map((gb) => buyable.filter((h) => h.usable_memory_gb === gb).sort((a, b) => a.price_usd! - b.price_usd!)[0]);
 
   const plateau = strongestPlateau(ladder, CTX);
-  const ladderRows = ladder
+
+  // The plateau reads the ladder in order of what a model actually gets, which is
+  // the figure that decides. The table reads it in order of the number on the box,
+  // which is the only figure the reader knows before they look anything up, so the
+  // sizes a machine is sold in stay together instead of being split apart by the
+  // usable share.
+  const byInstalled = [...ladder].sort(
+    (a, b) => a.unified_memory_gb - b.unified_memory_gb || a.usable_memory_gb! - b.usable_memory_gb!,
+  );
+
+  // The size where reading the wrong row costs most: the one sold in the most
+  // shapes here, and among those the one whose two ends are furthest apart.
+  const splitSize = [...new Set(byInstalled.map((h) => h.unified_memory_gb))]
+    .map((installed) => byInstalled.filter((h) => h.unified_memory_gb === installed))
+    .filter((rows) => rows.length > 1)
+    .sort(
+      (a, b) =>
+        b.length - a.length ||
+        b[b.length - 1].usable_memory_gb! - b[0].usable_memory_gb! - (a[a.length - 1].usable_memory_gb! - a[0].usable_memory_gb!),
+    )[0];
+
+  const ladderRows = byInstalled
     .map((hw) => {
       const top = strongestThatFits(hw, CTX);
       return `<tr>
-  <td><b>${fmtGb1(hw.usable_memory_gb)}</b></td>
-  <td>${hw.unified_memory_gb} GB</td>
+  <td><b>${hw.unified_memory_gb} GB</b></td>
+  <td>${fmtGb1(hw.usable_memory_gb)}</td>
   <td class="c-hw">${machineLink(hw)}</td>
   <td>${fitCount(hw, CTX)}</td>
   <td class="c-model">${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> <span class="dim">${esc(tierName(top, data))}</span>` : '<span class="dim">none</span>'}</td>
+  <td>${top ? `<a href="${esc(calcLink({ hw: hw.id, model: top.id, ctx: CTX }, data))}">Run the numbers</a>` : ''}</td>
 </tr>`;
     })
     .join('');
@@ -3691,15 +3713,19 @@ ${
   }
 <p>You can also make the cache smaller. ${esc(kv?.note ?? '')}${kv?.source_url ? ` (<a href="${esc(kv.source_url)}" rel="noopener">${esc(sourceName(kv.source_url))}</a>)` : ''} The calculator has that switch, and every figure on this page is at the 16-bit default.</p>
 
-<h2>Installed memory is not usable memory</h2>
-<p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level, counted against the ${currentModels.length} current models.</p>
+<h2>What can you run with the memory you already have?</h2>
+<p>Every size a machine on sale here comes in is below, with how much of it a model actually gets, how many of the ${currentModels.length} current models fit in that at ${kctx} context, and the strongest of them.${
+    splitSize
+      ? ` The number on the box is not the number a model gets: the system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. ${splitSize[0].unified_memory_gb} GB appears ${splitSize.length} times below, handing a model anything from ${fmtGb1(splitSize[0].usable_memory_gb)} on the ${esc(hardwareLabel(splitSize[0]))} to ${fmtGb1(splitSize[splitSize.length - 1].usable_memory_gb)} on the ${esc(hardwareLabel(splitSize[splitSize.length - 1]))}. So find your size in the first column, then read down to the machine nearest yours.`
+      : ''
+  } The cheapest machine is shown at each level, and each row opens the calculator on that machine and that model.</p>
 ${stack(`<table class="board">
-<thead><tr><th>Usable</th><th>Installed</th><th>Cheapest machine at that level</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th></tr></thead>
+<thead><tr><th>Memory</th><th>Usable</th><th>Cheapest machine at this size</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th><th></th></tr></thead>
 <tbody>${ladderRows}</tbody>
 </table>`, { fig: 3, labels: { 2: 'Cheapest', 4: 'Strongest' } })}
 ${
     plateau
-      ? `<p>Read the last column before you spend anything. From ${fmtGb1(plateau.from.usable_memory_gb)} of usable memory up to ${fmtGb1(plateau.to.usable_memory_gb)}, the strongest model on this list does not change: it is <a href="/models/${esc(plateau.model.id)}/">${esc(plateau.model.display_name)}</a> the whole way. More memory across that stretch buys more models, more context and more room to work, not a cleverer one.${
+      ? `<p>Read the strongest-model column before you spend anything. From ${fmtGb1(plateau.from.usable_memory_gb)} of usable memory up to ${fmtGb1(plateau.to.usable_memory_gb)}, the strongest model on this list does not change: it is <a href="/models/${esc(plateau.model.id)}/">${esc(plateau.model.display_name)}</a> the whole way. More memory across that stretch buys more models, more context and more room to work, not a cleverer one.${
           plateau.next && plateau.nextHw
             ? ` The next step up is <a href="/models/${esc(plateau.next.id)}/">${esc(plateau.next.display_name)}</a>, and the cheapest machine that holds it is the <a href="/hardware/${esc(plateau.nextHw.id)}/">${esc(hardwareLabel(plateau.nextHw))}</a> at ${fmtUsd(plateau.nextHw.price_usd)}.`
             : ''
@@ -6021,6 +6047,87 @@ function checkTitleLabels() {
   );
 }
 
+/**
+ * The table that answers "what can I run with 32 GB" is keyed on the number the
+ * reader knows before they look anything up, which is the one printed on the box.
+ * It used to be keyed on usable memory, and that split the sizes apart: the three
+ * rungs a 32 GB machine can land on sat at 21, 24 and 31 GB of usable memory with
+ * a 36 GB machine in between them, so a reader with 32 GB met their own size
+ * three times, never together, and had no way to tell which row was theirs.
+ *
+ * Four things hold, and the first is the one the paragraph above the table
+ * claims: every size a machine on sale here comes in has a row, so the sentence
+ * cannot quietly become false when a machine is added. Then that the rows read in
+ * order of that size and keep each size in one unbroken run; that every level of
+ * usable memory among those machines is there exactly once, which is what stops a
+ * machine being dropped rather than merely re-sorted; and that each row ends in a
+ * link opening the calculator on that row's own machine and the strongest model it
+ * holds.
+ */
+function checkMemoryLadder() {
+  const html = meta.find((m) => m.path === '/how-much-memory/')?.html ?? '';
+  const section = html.split('<h2>What can you run with the memory you already have?</h2>')[1];
+  if (!section) throw new Error('/how-much-memory/ no longer asks what the memory you have runs');
+  const body = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1];
+  if (!body) throw new Error('/how-much-memory/ asks what your memory runs and answers with no table');
+
+  const problems: string[] = [];
+  const rows = [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => {
+    const cells = [...r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+    return {
+      installed: Number(cells[0]?.replace(/<[^>]*>/g, '').replace(/[^\d.]/g, '')),
+      usable: Number(cells[1]?.replace(/<[^>]*>/g, '').replace(/[^\d.]/g, '')),
+      hw: cells[2]?.match(/href="\/hardware\/([^/"]+)\//)?.[1] ?? '',
+      model: cells[4]?.match(/href="\/models\/([^/"]+)\//)?.[1] ?? '',
+      // the href is written through esc(), so its separators arrive as &amp;
+      link: (cells[5]?.match(/href="([^"]+)"/)?.[1] ?? '').replace(/&amp;/g, '&'),
+    };
+  });
+
+  const sizes = [...new Set(buyable.map((h) => h.unified_memory_gb))].sort((a, b) => a - b);
+  for (const gb of sizes)
+    if (!rows.some((r) => r.installed === gb))
+      problems.push(`${gb} GB is a size you can buy a machine in here and the table skips it`);
+
+  const runs: number[] = [];
+  for (const r of rows) if (runs[runs.length - 1] !== r.installed) runs.push(r.installed);
+  for (let i = 1; i < runs.length; i++)
+    if (runs[i] <= runs[i - 1])
+      problems.push(`the table reads ${runs[i - 1]} GB and then ${runs[i]} GB, so a reader looking for one size meets it in two places`);
+
+  const levels = [...new Set(buyable.map((h) => h.usable_memory_gb!))].sort((a, b) => a - b);
+  for (const gb of levels) {
+    const at = rows.filter((r) => r.usable === Number(gb.toFixed(1)));
+    if (at.length !== 1) problems.push(`${gb} GB of usable memory has ${at.length} rows where it should have one`);
+  }
+
+  for (const r of rows) {
+    const hw = data.hardware.find((h) => h.id === r.hw);
+    if (!hw) {
+      problems.push(`a row at ${r.installed} GB names no machine of this site's`);
+      continue;
+    }
+    const top = strongestThatFits(hw, CTX);
+    if (!top) {
+      if (r.link) problems.push(`the ${shortHardwareLabel(hw)} row holds no model and offers the calculator anyway`);
+      continue;
+    }
+    const want = calcLink({ hw: hw.id, model: top.id, ctx: CTX }, data);
+    if (r.model !== top.id)
+      problems.push(`the ${shortHardwareLabel(hw)} row names ${r.model || 'nothing'} where ${top.id} is the strongest it holds`);
+    if (r.link !== want)
+      problems.push(`the ${shortHardwareLabel(hw)} row opens the calculator on something other than its own machine and model`);
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what /how-much-memory/ says your own memory runs`);
+  }
+  console.log(
+    `  /how-much-memory/ answers ${sizes.length} memory sizes over ${rows.length} rows, each opening the calculator on the strongest model that size holds`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -6070,6 +6177,7 @@ checkMarkerWords();
 checkSourceLinks();
 checkPageDates();
 checkTitleLabels();
+checkMemoryLadder();
 // Every guard has passed, so the three files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a
