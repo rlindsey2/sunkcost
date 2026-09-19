@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  anchoredHeading, anchorHeadings, headingSlug, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  anchoredHeading, anchorHeadings, headingSlug, sectionLink, SECTIONS, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
   machinesThatHold,
@@ -1551,7 +1551,7 @@ describe('where a page that prices a card says the cards are ranked', () => {
   const line = cardRankingLine(data);
 
   it('counts the cards the ranking itself counts, in words', () => {
-    expect(line).toBe(`All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`);
+    expect(line).toBe(`All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/#every-card-here-side-by-side">ranked by what each one holds</a>.`);
     expect(line).not.toMatch(/\d/);
     expect(line.endsWith('.')).toBe(true);
   });
@@ -1564,7 +1564,7 @@ describe('where a page that prices a card says the cards are ranked', () => {
 
   it('is said once however many cards the page prices', () => {
     for (const machines of [[computers[0], cards[0]], [cards[0], cards[1]], [computers[0], cards[0], cards[1]]])
-      expect(cardScopeNote(machines, data).match(/href="\/best-gpu\/"/g)).toHaveLength(1);
+      expect(cardScopeNote(machines, data).match(/href="\/best-gpu\/(?:#[^"]*)?"/g)).toHaveLength(1);
   });
 
   it('is never said on its own, where the page prices no card at all', () => {
@@ -2306,5 +2306,27 @@ describe('the id a section heading answers to', () => {
       expect(anchorHeadings(`<h2>${heading}</h2>`)).toBe(anchoredHeading(heading));
     // and a heading with no slug in it still round-trips
     expect(anchorHeadings('<h2>···</h2>')).toBe(anchoredHeading('···'));
+  });
+});
+
+describe('a link that names a section, and the address it lands on', () => {
+  it('builds the address out of the heading the page publishes', () => {
+    // the one claim the whole thing rests on: both ends of the link come from the
+    // same words, so a reworded heading moves the link with it
+    for (const heading of ['Machine against machine', 'A million tokens, model by model', 'Every card here, side by side'])
+      expect(anchoredHeading(heading)).toContain(`id="${sectionLink('/x/', heading).split('#')[1]}"`);
+  });
+
+  it('keeps the page in front of the fragment, so the link still reaches the page', () => {
+    expect(sectionLink('/compare/', 'Model against model')).toBe('/compare/#model-against-model');
+    for (const href of Object.values(SECTIONS)) {
+      expect(href).toMatch(/^\/[a-z0-9-]+\/#[a-z0-9][a-z0-9-]*$/);
+      expect(href.split('#')[1]).toBe(headingSlug(href.split('#')[1]));
+    }
+  });
+
+  it('names each section once, because two names for one section is one of them going stale', () => {
+    const named = Object.values(SECTIONS);
+    expect(new Set(named).size).toBe(named.length);
   });
 });

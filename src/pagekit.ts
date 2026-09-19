@@ -519,6 +519,34 @@ export function anchorHeadings(html: string): string {
   });
 }
 
+/**
+ * The address of one section of one page, built from that section's own heading.
+ *
+ * A link that names a section's subject should land on the section rather than
+ * the top of the page it is on. Both ends of such a link are a function of the
+ * same words — the heading's — so the link is written from the heading rather
+ * than from a hand-typed id, the way `anchoredHeading` writes the heading
+ * itself. Reword the heading and the two still agree; move the section to
+ * another page and `checkSectionLinks` in the build stops it, because the id
+ * will not be there to land on.
+ */
+export function sectionLink(path: string, heading: string): string {
+  return `${path}#${headingSlug(heading)}`;
+}
+
+/**
+ * The sections other pages link to by name. Each entry is the heading the build
+ * writes on that page, kept here so a reworded heading is one edit rather than
+ * a hunt through the emitters.
+ */
+export const SECTIONS = {
+  machineMatchUps: sectionLink('/compare/', 'Machine against machine'),
+  modelMatchUps: sectionLink('/compare/', 'Model against model'),
+  cardsSideBySide: sectionLink('/best-gpu/', 'Every card here, side by side'),
+  weightsAndCache: sectionLink('/how-much-memory/', 'Where the cache figure comes from'),
+  millionTokens: sectionLink('/local-llm-vs-api-cost/', 'A million tokens, model by model'),
+} as const;
+
 export function calcLink(state: Partial<State>, data: Dataset): string {
   return `/?${serializeState({ ...defaultState(data), ...state })}`;
 }
@@ -1320,7 +1348,7 @@ export function cardScopeNote(machines: Hardware[], rankedIn?: Dataset): string 
  * what the reader finds on the other end of the link.
  */
 export function cardRankingLine(data: Dataset): string {
-  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`;
+  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="${SECTIONS.cardsSideBySide}">ranked by what each one holds</a>.`;
 }
 
 /**

@@ -18,7 +18,7 @@ import {
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
-  sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
+  SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
@@ -97,7 +97,9 @@ function write(path: string, html: string) {
   } catch (e) {
     throw new Error(`${path} has JSON-LD that does not parse: ${(e as Error).message}`);
   }
-  for (const m of (html.split('<body')[1] ?? '').matchAll(/href="(\/[^"#?]*\/)"/g))
+  // A link that lands on a section is still a link to the page the section is
+  // on, so the fragment comes off before the page is counted as reached.
+  for (const m of (html.split('<body')[1] ?? '').matchAll(/href="(\/[^"#?]*\/)(?:#[^"]*)?"/g))
     if (m[1] !== path) inbound.set(m[1], (inbound.get(m[1]) ?? new Set()).add(path));
   meta.push({
     path,
@@ -1907,7 +1909,7 @@ function headToHeadNote(hw: Hardware): string {
         .map((l) => `<a href="${esc(l.href)}">${esc(l.label)}</a>`)
         .join(' \u00b7 ')}.`,
   );
-  return `<p class="note">${sentences.join(' ')} There are <a href="/compare/">${machineMatchUps} machine match-ups on the site</a>.</p>`;
+  return `<p class="note">${sentences.join(' ')} There are <a href="${SECTIONS.machineMatchUps}">${machineMatchUps} machine match-ups on the site</a>.</p>`;
 }
 
 /**
@@ -2164,7 +2166,7 @@ ${stack(`<table class="board">
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
 <p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
-<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="/best-gpu/">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="/local-llm-vs-api-cost/">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
+<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="${SECTIONS.cardsSideBySide}">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="${SECTIONS.millionTokens}">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
 </article>`;
 
   return pageShell(
@@ -2547,7 +2549,7 @@ ${cheapest
 <p class="note">${esc(note.ratings)}</p>` : ''}
 ${versusLine}
 <h2>${costHeading(m)}</h2>
-<p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="/local-llm-vs-api-cost/">What a million tokens costs each way</a> puts the two prices side by side.</p>
+<p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="${SECTIONS.millionTokens}">What a million tokens costs each way</a> puts the two prices side by side.</p>
 
 ${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>${runnersHeading(m)}</h2>
 ${lengthLine}
@@ -2564,7 +2566,7 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${mi
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
   <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
-  <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="/how-much-memory/">How weights and cache add up</a>.</dd>
+  <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="${SECTIONS.weightsAndCache}">How weights and cache add up</a>.</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
   ${m.sources?.length ? `<dt>Sources</dt><dd>${sourceLinks(m.sources)}</dd>` : ''}
@@ -2785,7 +2787,7 @@ function hardwarePage(hw: Hardware): string {
   const note = splitHardwareNote(hw.notes);
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="/best-gpu/">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
@@ -3372,7 +3374,7 @@ ${extraSection}
 ${machineSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b], data); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
-<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/compare/">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
+<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="${SECTIONS.machineMatchUps}">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
 </article>`;
   return pageShell(
     {
@@ -3969,7 +3971,7 @@ ${stack(`<table class="board">
 <h2>Memory is the gate</h2>
 <p>A card runs a model or it does not, and nothing about the card changes that except how much memory it has. ${
     ceiling ? `${esc(ceiling.display_name)} is ${fmtGb(ceiling.weights_gb)} of weights before a single token of context, and the cache on top grows with every token you keep.` : ''
-  } That sum, and not the price, is what puts a model on a card. <a href="/how-much-memory/">How the two add up</a> is a page of its own.</p>
+  } That sum, and not the price, is what puts a model on a card. <a href="${SECTIONS.weightsAndCache}">How the two add up</a> is a page of its own.</p>
 ${
     missed.length && best && bestRunner
       ? `<p>It is also where these cards stop. ${sentenceCase(numberWord(missed.length))} of the ${scored.length} current models with an index score fit none of the ${numberWord(cards.length)} cards, and ${(() => {
@@ -4356,7 +4358,7 @@ ${machinesSection}
 ${modelSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat.${race?.shortened ? ` The two sections that need one machine to hold both models are at ${raceK}k of context instead, which is the longest on the calculator's list where one does.` : ''} Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
-<p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="/compare/">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
+<p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="${SECTIONS.modelMatchUps}">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
 </article>`;
   return pageShell(
     {
@@ -5664,7 +5666,8 @@ function checkCardRanking() {
     const html = meta.find((m) => m.path === path)?.html;
     if (html == null) return null;
     const body = mainOf(html);
-    return { n: (body.match(/href="\/best-gpu\/"/g) ?? []).length, body };
+    // the ranking is one page whether the link lands on it or on its table
+    return { n: (body.match(/href="\/best-gpu\/(?:#[^"]*)?"/g) ?? []).length, body };
   };
   const check = (path: string, prices: boolean, inNote: boolean) => {
     const got = links(path);
@@ -6280,8 +6283,59 @@ function checkHeadingAnchors() {
   console.log(`  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, none repeated on its page`);
 }
 
+/**
+ * A link that names a section has to land on it. The id it aims at is a
+ * function of that section's own heading, so the two ends of the link are
+ * written from the same words and a reworded heading moves both — but only on
+ * the pages this build writes. A section moved to another page, or a heading
+ * reworded in one place and linked from another, leaves a link that scrolls
+ * nowhere: the reader arrives at the top of the page and has to find the answer
+ * the link promised, which is the thing the link was there to save them.
+ *
+ * Three claims. Every fragment a page links to exists on the page it points at.
+ * Every one of them is the id of a section rather than of something the page
+ * happens to carry, so a link cannot quietly start landing on a table. And the
+ * five sections named in SECTIONS are each linked from somewhere, so a heading
+ * that stops being linked shows up here rather than sitting in the list.
+ */
+function checkSectionLinks() {
+  const problems: string[] = [];
+  const sectionsOn = new Map<string, Set<string>>();
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    sectionsOn.set(
+      path,
+      new Set([...body.matchAll(/<(?:h2|section) id="([^"]+)"/g)].map((m) => m[1])),
+    );
+  }
+  const landed = new Set<string>();
+  let links = 0;
+  for (const { path, html } of meta) {
+    for (const [, href, hash] of mainOf(html).matchAll(/<a href="(\/[^"#]*\/|)#([^"]+)"/g)) {
+      links++;
+      const target = href || path;
+      landed.add(`${href}#${hash}`);
+      const ids = sectionsOn.get(target);
+      if (!ids) {
+        problems.push(`${path} links to ${target}#${hash}, and no page here is written at ${target}`);
+        continue;
+      }
+      if (!ids.has(hash)) problems.push(`${path} links to ${target}#${hash}, where ${target} heads no section with that id`);
+    }
+  }
+  for (const [name, href] of Object.entries(SECTIONS))
+    if (!landed.has(href)) problems.push(`${href} is the section SECTIONS calls ${name}, and no page on this site links to it`);
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(problems.length === 1 ? '1 link into a section lands nowhere' : `${problems.length} links into a section land nowhere`);
+  }
+  const pages = new Set([...landed].map((h) => h.split('#')[0]).filter(Boolean));
+  console.log(`  ${links} links name a section and land on it, across ${landed.size} sections of ${pages.size} other pages`);
+}
+
 checkMeta();
 checkLinks();
+checkSectionLinks();
 checkFooter();
 checkHeadToHeads();
 checkMatchUpSiblings();
