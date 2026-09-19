@@ -5,7 +5,7 @@ import {
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelsInBand, modelVerdict,
+  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict,
   costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, MTOK, nearestCompleteComputer,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
@@ -17,7 +17,7 @@ import {
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
 import { footprintGb, kvCacheGb } from '../src/fit';
-import { modelPairs, sameSiliconPairs } from '../src/versus-card';
+import { modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
@@ -1925,6 +1925,88 @@ describe('the calculator’s assumptions panel, which prints the same fields the
       const v = m.frontier_equivalent?.index_version;
       if (!v) continue;
       expect([m.id, indexVersion(data.defaults.frontier_basis?.name, v)]).toEqual([m.id, '']);
+    }
+  });
+});
+
+describe('what a reader gets for swapping the model they run for the current one', () => {
+  const model = (id: string) => data.models.find((m) => m.id === id)!;
+  const section = (a: string, b: string) => modelGenerationSection(model(a), model(b), data);
+  const words = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const pairs = modelGenerationPairs(data);
+
+  it('opens on which of the two is current, in the words the rule cut them with', () => {
+    // a mixture of experts and a dense model of the same size are not the same swap, and
+    // the sentence has to say which it means: the current Qwen nearest Qwen3 32B in size
+    // is a mixture of experts, so "the current Qwen nearest it in size" would be a
+    // different model from the one on the page
+    expect(words(section('qwen3-32b-q4', 'qwen3.8-27b-q4'))).toContain(
+      'Qwen3 32B is last generation. Qwen3.8 27B is the current dense Qwen model nearest it in size, 27.8B against 32.8B.',
+    );
+    expect(words(section('qwen3-235b-a22b-2507-q4', 'qwen3.8-flash-next-q4'))).toContain(
+      'Qwen3.8 Flash Next is the current Qwen mixture of experts nearest it in size, 180B against 235.1B.',
+    );
+  });
+
+  it('says the size once where both sides are the same size', () => {
+    expect(words(section('mistral-small-3.2-24b-q4', 'devstral-small-2-24b-q4'))).toContain(
+      'the current dense Mistral model of the same size, 24B.',
+    );
+    expect(words(section('mistral-small-3.2-24b-q4', 'devstral-small-2-24b-q4'))).not.toContain('24B against 24B');
+  });
+
+  it('places the two on the index the way the data falls, including where neither side moved', () => {
+    expect(words(section('gemma-3-12b-q4', 'gemma-4-12b-q4'))).toContain(
+      'On the intelligence index it scores 14 where Gemma 3 12B it scores 4.',
+    );
+    // the one pair where the newer model is no smarter: saying it scores higher would be
+    // the easiest sentence to write and the only one the data does not support
+    expect(words(section('qwen3-30b-a3b-2507-q4', 'qwen3-coder-30b-a3b-q4'))).toContain('The intelligence index puts both at 10.');
+  });
+
+  it('says what the swap asks of the machine, in the direction the figures fall', () => {
+    // bigger on disk and lighter in the machine, because the cache is the part that moved
+    const lighter = words(section('qwen3-8b-q4', 'qwen3.5-9b-q4'));
+    expect(lighter).toContain('It asks less of the machine: 6.8 GB at 32k of context against 9.9 GB.');
+    expect(lighter).toContain('The weights are 5.7 GB against 5.0 GB, and the cache at that window is 1.1 GB against 4.8 GB.');
+    // and the pair where the newer model costs memory says so rather than the other way
+    const heavier = words(section('gemma-3-27b-q4', 'gemma-4-31b-q4'));
+    expect(heavier).toContain('It asks more of the machine: 26 GB at 32k of context against 20 GB.');
+    expect(heavier).not.toContain('asks less');
+    // and where nothing moves, neither claim is made
+    const same = words(section('mistral-small-3.2-24b-q4', 'devstral-small-2-24b-q4'));
+    expect(same).toContain('Both ask the same of the machine: 20 GB at 32k of context, the same weights and the same key-value cache.');
+    expect(same).not.toContain('asks more');
+  });
+
+  it('counts the machines each way, and names one to run the newer model on', () => {
+    // the swap that costs machines names both cheapest, since the reader is choosing
+    const costly = words(section('gemma-3-27b-q4', 'gemma-4-31b-q4'));
+    expect(costly).toContain('27 of the 37 machines priced here run it, against 30 for Gemma 3 27B it.');
+    expect(costly).toContain('The cheapest that runs it is the Radeon AI PRO R9700, 32GB at $1,299, card only, where Gemma 3 27B it starts at the Framework Desktop, 32GB at $1,269.');
+    expect(section('gemma-3-27b-q4', 'gemma-4-31b-q4')).toContain('href="/hardware/radeon-ai-pro-r9700-32/"');
+    // and the three ways nothing changes are three sentences, not one with a number in it
+    expect(words(section('qwen3-8b-q4', 'qwen3.5-9b-q4'))).toContain('Every one of the 37 machines priced here runs both, from the Mac mini M6, 16GB at $899.');
+    expect(words(section('qwen3-235b-a22b-2507-q4', 'qwen3.8-flash-next-q4'))).toContain('One of the 37 machines priced here runs either of them, and it is the same one: the Mac Studio M5 Ultra, 256GB at $10,799.');
+    expect(words(section('qwen3-30b-a3b-2507-q4', 'qwen3-coder-30b-a3b-q4'))).toContain('The same 28 of the 37 machines priced here run both, from the Framework Desktop, 32GB at $1,269.');
+  });
+
+  it('gives the two context ceilings their own paragraph, and none where they match', () => {
+    const longer = section('qwen3-32b-q4', 'qwen3.8-27b-q4');
+    expect(words(longer)).toContain('Qwen3.8 27B takes 256k of context where Qwen3 32B stops at 40k');
+    expect(longer.match(/<p>/g)).toHaveLength(2);
+    // both ceilings are 256k here, so there is nothing to say and the page says nothing
+    expect(section('qwen3-235b-a22b-2507-q4', 'qwen3.8-flash-next-q4').match(/<p>/g)).toHaveLength(1);
+  });
+
+  it('reads as finished copy on every pair the rule cuts', () => {
+    expect(pairs.length).toBeGreaterThan(0);
+    for (const [old, now] of pairs) {
+      const w = words(modelGenerationSection(old, now, data));
+      expect([old.id, w]).toEqual([old.id, expect.stringContaining(now.display_name)]);
+      for (const bad of ['undefined', 'NaN', 'null', 'TODO', ' .', '..', ' ,'])
+        expect([old.id, bad, w.includes(bad)]).toEqual([old.id, bad, false]);
+      expect(w.endsWith('.')).toBe(true);
     }
   });
 });

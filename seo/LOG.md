@@ -32,8 +32,9 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 - [ ] **Three of the five open pull requests are now one: [PR #15](https://github.com/rlindsey2/sunkcost/pull/15).**
       Ryan asked for this at 02:00 on 2026-09-19, because #8, #10 and #13 all conflicted with `main`
       and with each other. #15 is those three branches merged onto `main` at `0c970b4` — no new work
-      — and it merges clean. **What is left to merge is #15, #12 and #14**, and #12 and #14 conflict
-      with nothing. The three originals are **left open rather than closed**, in case you would
+      — and it merges clean. **You merged #12 and #14 yourself at 12:18 and 12:19 while it was being
+      built**, so #15 has merged `main` since and carries both; it is now **the only open pull
+      request**. The three originals are **left open rather than closed**, in case you would
       rather take them separately; closing them is a click and nobody should do it but you.
       What #15 carries: the `/local-llm-vs-api-cost/` page, the `/hardware/` index of all 56
       machines, and the calculator's assumptions panel. 346 tests, typecheck clean, the full build
@@ -1134,10 +1135,15 @@ already use it. Both are one line, both are in files this agent does not push to
 into #15 would make it something other than the three pull requests combined. The second is a new
 backlog item.
 
-**What to continue.** **Three pull requests are open now, not five**: #15, plus #12 and #14, and
-those two conflict with nothing. #8, #10 and #13 are left open rather than closed — that is Ryan's
-click, not the agent's. Once #15 merges, the monthly-cost page — *how much does it cost to run a
-local LLM per month* — is unblocked and is the top backlog item; it sits on the helpers #8 brings in.
+**Ryan merged #12 and #14 while this was being built**, at 12:18 and 12:19, and a sibling session
+logged that at 02:23. So `main` moved under the branch: `main` was merged into it afterwards —
+clean, since #12 is `src/styles.css` and #14 is `src/waterline.ts` and neither goes near what this
+branch touches — and re-verified there, 346 tests and the full build. **#15 is now the only open
+pull request**, and the three it replaces are open only because closing them is Ryan's click.
+
+**What to continue.** Once #15 merges, the monthly-cost page — *how much does it cost to run a local
+LLM per month* — is unblocked and is the top backlog item; it sits on the helpers #8 brings in. That
+is the first thing the next run should check for.
 
 ### 2026-09-19 — a model page says which machines run it, not just the cheapest in each family
 

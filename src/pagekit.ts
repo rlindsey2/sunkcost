@@ -1548,6 +1548,98 @@ export function modelVerdict(
   return out.join(' ');
 }
 
+/**
+ * What a reader gets for swapping the model they are running for the current one of its
+ * family. Every other section of a model head-to-head weighs two models a buyer is
+ * choosing between; on a generation pair the reader already has one of them, so the
+ * question is not "which" but "is the newer file worth the download", and the answer is
+ * three figures: what it scores, what it asks of the machine, and whether that changes
+ * what runs it.
+ *
+ * Nothing here is asserted that the data does not carry. The memory figures are the same
+ * weights-plus-cache sum the rest of the site prints, split into its two parts rather
+ * than explained, because the split is the whole of why a newer model of the same size
+ * can need less room. Every claim has a branch for each way the data can fall: a newer
+ * model that scores the same, or lower, or asks for more memory, or loses machines, says
+ * so in its own words.
+ */
+export function modelGenerationSection(old: Model, now: Model, data: Dataset): string {
+  const ctxK = Math.round(data.defaults.context.default_tokens / 1024);
+  const need = (m: Model) => {
+    const v = computeView({ ...defaultState(data), model: m.id }, data);
+    return v.rows.find((r) => r.model.id === m.id)?.fit.needGb ?? null;
+  };
+  const [needOld, needNow] = [need(old), need(now)];
+  const [ro, rn] = [runnersFor(old, data), runnersFor(now, data)];
+  const considered = machinesConsidered(data).length;
+  const [so, sn] = [old.frontier_equivalent?.score ?? null, now.frontier_equivalent?.score ?? null];
+  const params = (m: Model) => `${fmtNum(m.params_b, 1)}B`;
+
+  const score =
+    so == null || sn == null
+      ? ''
+      : sn > so
+        ? ` On the intelligence index it scores ${sn} where ${esc(old.display_name)} scores ${so}.`
+        : sn === so
+          ? ` The intelligence index puts both at ${sn}.`
+          : ` On the intelligence index it scores ${sn}, below ${esc(old.display_name)}'s ${so}.`;
+
+  // the weights are a fixed size and the cache is not, so a model can be larger on disk
+  // and still ask less of the machine at a working context. Both halves are printed
+  // rather than the difference, so nothing asks the reader to subtract two figures.
+  const memory = (() => {
+    if (needOld == null || needNow == null || old.weights_gb == null || now.weights_gb == null) return '';
+    const cache = (m: Model, n: number) => fmtGb(n - m.weights_gb!);
+    const same = fmtGb(needOld) === fmtGb(needNow);
+    const lead = same
+      ? `Both ask the same of the machine: ${fmtGb(needNow)} at ${ctxK}k of context`
+      : needNow < needOld
+        ? `It asks less of the machine: ${fmtGb(needNow)} at ${ctxK}k of context against ${fmtGb(needOld)}`
+        : `It asks more of the machine: ${fmtGb(needNow)} at ${ctxK}k of context against ${fmtGb(needOld)}`;
+    const split = same
+      ? `, the same weights and the same key-value cache.`
+      : `. The weights are ${fmtGb(now.weights_gb)} against ${fmtGb(old.weights_gb)}, and the cache at that window is ${cache(now, needNow)} against ${cache(old, needOld)}.`;
+    return ` ${lead}${split}`;
+  })();
+
+  const machines = (() => {
+    if (!ro.length || !rn.length) return '';
+    const [co, cn] = [ro[0].hw, rn[0].hw];
+    const at = (hw: Hardware) => `the <a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a> at ${priceWithScopeText(hw)}`;
+    // three ways the same fact reads: one machine holds both, every machine does, or
+    // the swap changes the list, and only the last of them is a sentence about numbers
+    if (ro.length === rn.length && co.id === cn.id)
+      return rn.length === 1
+        ? ` One of the ${considered} machines priced here runs either of them, and it is the same one: ${at(cn)}.`
+        : rn.length === considered
+          ? ` Every one of the ${considered} machines priced here runs both, from ${at(cn)}.`
+          : ` The same ${rn.length} of the ${considered} machines priced here run both, from ${at(cn)}.`;
+    const counts = `${rn.length} of the ${considered} machines priced here run it, against ${ro.length} for ${esc(old.display_name)}`;
+    return ` ${counts}${co.id === cn.id ? `, and the cheapest is the same either way: ${at(cn)}.` : `. The cheapest that runs it is ${at(cn)}, where ${esc(old.display_name)} starts at ${at(co)}.`}`;
+  })();
+
+  const window =
+    old.max_context_tokens && now.max_context_tokens && old.max_context_tokens !== now.max_context_tokens
+      ? `${esc(now.display_name)} ${now.max_context_tokens > old.max_context_tokens ? 'takes' : 'stops at'} ${ctxLabel(now.max_context_tokens)} of context where ${esc(old.display_name)} ${now.max_context_tokens > old.max_context_tokens ? `stops at ${ctxLabel(old.max_context_tokens)}` : `takes ${ctxLabel(old.max_context_tokens)}`}, which is a ceiling rather than a setting: what you actually get is whatever the machine has room for.`
+      : '';
+  // What the pairing rule holds equal, said in the words the rest of the site uses for
+  // it. Without the qualifier the sentence would be false rather than merely vague: the
+  // current Qwen nearest Qwen3 32B in size is a mixture of experts, and a page that
+  // called it the nearest current Qwen would be naming the wrong model.
+  const shape =
+    now.active_params_b != null && now.active_params_b < now.params_b
+      ? `the current ${esc(now.family)} mixture of experts`
+      : `the current dense ${esc(now.family)} model`;
+
+  // where the two are the same size to a decimal place, "31.3B against 27.4B" becomes
+  // "24B against 24B", which reads as a mistake rather than as the point
+  const sizes = params(now) === params(old) ? `of the same size, ${params(now)}` : `nearest it in size, ${params(now)} against ${params(old)}`;
+
+  return `<h2>What the newer model changes</h2>
+<p>${esc(old.display_name)} is last generation. ${esc(now.display_name)} is ${shape} ${sizes}.${score}${memory}${machines}</p>
+${window ? `<p>${window}</p>\n` : ''}`;
+}
+
 /* ------------------------------ phone tables ------------------------------ */
 
 /**
