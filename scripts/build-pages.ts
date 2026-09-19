@@ -14,7 +14,7 @@ import {
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
+  machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
@@ -1492,7 +1492,10 @@ function checkFamilyReach() {
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const held = machinesThatHold(m, data, ctx);
     const rows = cheapestPerFamily(runnersFor(m, data)).length;
-    const found = html.match(/<p>((?:The table is the cheapest machine in each family|All \d+ machines on this site run it)[^<]*)<\/p>/);
+    // the paragraph ends with the link to where every machine is priced, which
+    // checkMachineIndex() holds; this guard is about the counting in front of it
+    const para = html.match(/<p>((?:The table is the cheapest machine in each family|All \d+ machines on this site run it)[\s\S]*?)<\/p>/);
+    const found = para && [para[0], para[1].endsWith(machineIndexLine()) ? para[1].slice(0, -machineIndexLine().length).trimEnd() : para[1]];
     if (!rows) {
       if (found) problems.push(`${path} says which machines run it and has no table of machines at all`);
       continue;
@@ -2021,7 +2024,7 @@ function leaderboard(): string {
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>.</p>
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
 ${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
@@ -4245,7 +4248,7 @@ function compareIndex(): string {
 
   const body = `<article class="prose">
 <h1>Every head-to-head: machine against machine, model against model</h1>
-<p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a> or the <a href="/leaderboard/">leaderboard</a>.</p>
+<p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a>, the <a href="/leaderboard/">leaderboard</a> or <a href="/hardware/">every machine in one table</a>.</p>
 ${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
 
 <h2>Machine against machine</h2>
@@ -5343,6 +5346,71 @@ function checkCardScope() {
 }
 
 /**
+ * Where the machine index is linked from, and where it is not. `/hardware/`
+ * prices all 56 machines in one table and is the page a reader wants after
+ * being told how many of them hold their model — and until this guard existed
+ * it was reachable from none of the 261 pages inside their own body. Only the
+ * footer carried it, which every page carries and no page earns.
+ *
+ * Three claims. A model page whose reach line counts the machines links the
+ * index exactly once and in that sentence, so the count and the place it leads
+ * cannot come apart. A model page with no reach line has counted nothing and
+ * links it not at all. And the two indexes that offer the reader somewhere else
+ * to start each name it once, while no other page on the site does — so the
+ * rule stays the rule rather than spreading into every table with a price in it.
+ */
+function checkMachineIndex() {
+  const problems: string[] = [];
+  const want = machineIndexLine();
+  const ctx = data.defaults.context.default_tokens;
+  const ledes = ['/leaderboard/', '/compare/'];
+  const links = (path: string) => {
+    const html = meta.find((m) => m.path === path)?.html;
+    if (html == null) return null;
+    const body = mainOf(html);
+    return { n: (body.match(/href="\/hardware\/"/g) ?? []).length, body };
+  };
+
+  let said = 0;
+  const expected = new Set<string>(ledes);
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    // the page says this only where it has a table to say it under, and the
+    // table counts the machines you can buy where the reach line counts all of
+    // them — so a model held by an unpriced machine alone gets neither
+    const counts = cheapestPerFamily(runnersFor(m, data, { ctx })).length > 0 && familyReach(m, data, ctx).length > 0;
+    const got = links(path);
+    if (got == null) {
+      problems.push(`${path} was not written`);
+      continue;
+    }
+    if (!counts) {
+      if (got.n) problems.push(`${path} counts no machines and sends the reader to the machine index anyway`);
+      continue;
+    }
+    expected.add(path);
+    if (got.n !== 1) problems.push(`${path} counts the machines that hold it and links the index ${got.n} times rather than once`);
+    if (!got.body.includes(want)) problems.push(`${path} counts the machines that hold it and does not say where they are all priced`);
+    else said++;
+  }
+  for (const path of ledes) {
+    const got = links(path);
+    if (got == null || got.n !== 1) problems.push(`${path} offers the reader somewhere else to start and links the machine index ${got?.n ?? 0} times rather than once`);
+    else said++;
+  }
+  for (const m of meta) {
+    if (expected.has(m.path)) continue;
+    const n = (mainOf(m.html).match(/href="\/hardware\/"/g) ?? []).length;
+    if (n) problems.push(`${m.path} links the machine index ${n} times and is not one of the pages the rule covers`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? ' has' : 's have'} the link to the machine index wrong`);
+  }
+  console.log(`  ${said} pages send the reader to all ${data.hardware.length} machines priced in one table, and only those link it`);
+}
+
+/**
  * `/best-gpu/` ranks the graphics cards, and it answers the most commercial
  * question this site takes: which card to buy. It was also the least linked
  * page on the site. Measured on 2026-09-19 across the 259 generated pages, the
@@ -5516,6 +5584,7 @@ checkCounts();
 checkCardPrices();
 checkCardScope();
 checkCardRanking();
+checkMachineIndex();
 checkTables();
 checkPairedColumns();
 checkArticles();

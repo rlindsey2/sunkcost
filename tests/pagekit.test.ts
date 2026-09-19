@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  machineIndexLine,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
@@ -1848,7 +1849,7 @@ describe('the machines a model page’s table has no row for', () => {
   it('says so in a line where every machine on the site runs it', () => {
     const m = model('llama-3.1-8b-q4');
     expect(machinesThatHold(m, data, ctx)).toHaveLength(listed);
-    expect(note(m)).toBe(`All ${listed} machines on this site run it at 32k, not just the eight in the table.`);
+    expect(note(m)).toBe(`All ${listed} machines on this site run it at 32k, not just the eight in the table. ${machineIndexLine()}`);
     expect(note(m, 1)).toContain('not just the one in the table');
   });
 
@@ -1880,6 +1881,43 @@ describe('the machines a model page’s table has no row for', () => {
     // a model page with no table of machines gets no sentence about them; the
     // build guard holds that end, this holds the wording's
     expect(familyReachNote([], listed, 8, ctx)).toBe('');
+  });
+
+  it('ends on where every machine is priced, whichever way it counted them', () => {
+    // both branches: one model every machine holds, one held by some of them
+    const all = model('llama-3.1-8b-q4');
+    const some = model('gemma-3-27b-q4');
+    expect(machinesThatHold(all, data, ctx)).toHaveLength(listed);
+    expect(machinesThatHold(some, data, ctx).length).toBeLessThan(listed);
+    for (const m of [all, some]) {
+      const line = note(m);
+      expect([m.id, line.endsWith(machineIndexLine())]).toEqual([m.id, true]);
+      expect([m.id, line.split('href="/hardware/"').length - 1]).toEqual([m.id, 1]);
+    }
+  });
+
+  it('says it on every model page that counts machines, and on none that counts none', () => {
+    let said = 0;
+    for (const m of data.models) {
+      const line = note(m);
+      if (!line) continue;
+      expect([m.id, line.includes(machineIndexLine())]).toEqual([m.id, true]);
+      said++;
+    }
+    expect(said).toBeGreaterThan(50);
+    // a model nothing here holds counts nothing, so it sends the reader nowhere
+    expect(familyReachNote([], listed, 8, ctx)).not.toContain('/hardware/');
+  });
+
+  it('names the machine index in words that say what is on the other end', () => {
+    const line = machineIndexLine();
+    expect(line).toContain('href="/hardware/"');
+    const anchor = line.match(/<a href="\/hardware\/">([^<]+)<\/a>/)![1];
+    expect(anchor.split(' ').length).toBeGreaterThan(2);
+    expect(anchor.toLowerCase()).toContain('machine');
+    // no maintainer words and no bare pointer
+    expect(anchor.toLowerCase()).not.toMatch(/^(here|this|link|see|more)$/);
+    expect(line.endsWith('.')).toBe(true);
   });
 
   it('accounts for every machine that holds it, family by family', () => {

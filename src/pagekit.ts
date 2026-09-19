@@ -1089,7 +1089,7 @@ export function familyReachNote(reach: FamilyReach[], listed: number, rows: numb
   if (!reach.length) return '';
   const held = reach.reduce((n, r) => n + r.runs, 0);
   if (held === listed)
-    return `All ${listed} machines on this site run it at ${ctxLabel(ctx)}, not just the ${rows === 1 ? 'one' : numberWord(rows)} in the table.`;
+    return `All ${listed} machines on this site run it at ${ctxLabel(ctx)}, not just the ${rows === 1 ? 'one' : numberWord(rows)} in the table. ${machineIndexLine()}`;
   // a family of one has no range to draw a line through, so it goes in by name
   const singles = reach.filter((r) => r.only);
   const whole = reach.filter((r) => !r.only && r.runs === r.total);
@@ -1106,7 +1106,22 @@ export function familyReachNote(reach: FamilyReach[], listed: number, rows: numb
   for (const [gb, rs] of [...floors.entries()].sort((a, b) => a[0] - b[0]))
     clauses.push(`every ${andList(rs.map((r) => familyNoun(r.family)))} with ${gb}GB or more`);
   for (const r of singles) clauses.push(`the ${shortHardwareLabel(r.only!)}`);
-  return `The table is the cheapest machine in each family, not the only one that runs it: ${held} of the ${listed} machines on this site hold it at ${ctxLabel(ctx)}. Within a family only memory decides, so that is ${andList(clauses)}.`;
+  return `The table is the cheapest machine in each family, not the only one that runs it: ${held} of the ${listed} machines on this site hold it at ${ctxLabel(ctx)}. Within a family only memory decides, so that is ${andList(clauses)}. ${machineIndexLine()}`;
+}
+
+/**
+ * Where all the machines are, said on the pages that have just counted them.
+ * A reader told that 37 of the 56 machines here hold their model has been given
+ * a number and nowhere to take it, and the page that answers it — every machine
+ * priced in one table — was reachable from none of the 261 pages inside their
+ * own body. It goes at the end of the reach line rather than anywhere else on
+ * the page because that is the sentence that raises the question, so the two
+ * cannot come apart. It claims no scope of its own — not "here", not "on this
+ * site" — because the sentence it follows has just counted the machines on this
+ * site, and saying that twice running reads as filler.
+ */
+export function machineIndexLine(): string {
+  return '<a href="/hardware/">One table sets every machine against the others</a>: price, the memory its GPU can use, what it holds and how long it takes to pay for itself.';
 }
 
 /**

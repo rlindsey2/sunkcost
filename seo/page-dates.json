@@ -14,7 +14,7 @@
       "changed": "2026-09-19"
     },
     "/compare/": {
-      "hash": "29436342456ac76d",
+      "hash": "450fc6dd2cf48bea",
       "changed": "2026-09-19"
     },
     "/compare/amd-radeon-ai-pro-r9700-32gb-vs-nvidia-geforce-rtx-3060-12gb/": {
@@ -822,83 +822,83 @@
       "changed": "2026-09-19"
     },
     "/leaderboard/": {
-      "hash": "728b46ffa3f3007d",
-      "changed": "2026-09-18"
+      "hash": "b0d165fb54aeba0a",
+      "changed": "2026-09-19"
     },
     "/local-llm-vs-api-cost/": {
       "hash": "08bda2b375d0dedc",
       "changed": "2026-09-19"
     },
     "/models/deepseek-r1-distill-llama-70b-q4/": {
-      "hash": "74330c8e4dde9561",
+      "hash": "5ad3cf2c973d723a",
       "changed": "2026-09-19"
     },
     "/models/deepseek-r1-distill-qwen-32b-q4/": {
-      "hash": "9f1451c20d8da691",
+      "hash": "157f69487dffa331",
       "changed": "2026-09-19"
     },
     "/models/deepseek-v4-flash-ud-q4/": {
-      "hash": "dee7d7b38d7fd164",
+      "hash": "ad340522252e1f00",
       "changed": "2026-09-19"
     },
     "/models/devstral-2-123b-q4/": {
-      "hash": "7482a09cc0b4158f",
+      "hash": "e3c7a89d3b859103",
       "changed": "2026-09-19"
     },
     "/models/devstral-small-2-24b-q4/": {
-      "hash": "bbedfcd28c8e2894",
+      "hash": "6ccdec0d694401d7",
       "changed": "2026-09-19"
     },
     "/models/gemma-3-12b-q4/": {
-      "hash": "50a2f5853fbf98c0",
+      "hash": "6e223a8a52d7ad7f",
       "changed": "2026-09-19"
     },
     "/models/gemma-3-27b-q4/": {
-      "hash": "aa7cc2b0cb6d0b1a",
+      "hash": "44b45ebd3b9a896c",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-12b-q4/": {
-      "hash": "96da530efa801651",
+      "hash": "e80a533e0ebc990b",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-26b-a4b-q4/": {
-      "hash": "283e5a73bcdc6e08",
+      "hash": "590ec67e6d7df9a2",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-31b-q4/": {
-      "hash": "1bd6b20926cb34f0",
+      "hash": "ca75c3ad4d1ea46a",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-e4b-q4/": {
-      "hash": "93548045c7f913d5",
+      "hash": "82f30b1366242f32",
       "changed": "2026-09-19"
     },
     "/models/glm-4.5-air-q4/": {
-      "hash": "5a80d4c893e51780",
+      "hash": "58d69a0b3cc8e0f1",
       "changed": "2026-09-19"
     },
     "/models/glm-4.7-flash-q4/": {
-      "hash": "a7bd512320f1a96b",
+      "hash": "725ce02e2edcc02f",
       "changed": "2026-09-19"
     },
     "/models/glm-5.3-flash-ud-q4/": {
-      "hash": "3102fc3b79298515",
+      "hash": "4413eac70a55df56",
       "changed": "2026-09-19"
     },
     "/models/gpt-oss-120b-mxfp4/": {
-      "hash": "b184ae7a450a1b65",
+      "hash": "02a2577638048c7c",
       "changed": "2026-09-19"
     },
     "/models/gpt-oss-20b-mxfp4/": {
-      "hash": "73c077a42a8b4b3f",
+      "hash": "c5899fd67c9a16c8",
       "changed": "2026-09-19"
     },
     "/models/granite-4.2-30b-q4/": {
-      "hash": "6dd81345686e4144",
+      "hash": "0a0d601288264e24",
       "changed": "2026-09-19"
     },
     "/models/granite-4.2-8b-q4/": {
-      "hash": "faa79f67652b1266",
+      "hash": "8d02035f8f82899a",
       "changed": "2026-09-19"
     },
     "/models/hunyuan-hy3-q4/": {
@@ -906,147 +906,147 @@
       "changed": "2026-09-19"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "3fc06b1285320f5b",
+      "hash": "b85e1dd67372cfd2",
       "changed": "2026-09-19"
     },
     "/models/kat-coder-v2.5-q4/": {
-      "hash": "e2bf345cd5aac054",
+      "hash": "a774f11f466d657a",
       "changed": "2026-09-19"
     },
     "/models/laguna-xs-2.1-q4/": {
-      "hash": "2284d77cfa1282de",
+      "hash": "edb8e5aa6c01d804",
       "changed": "2026-09-19"
     },
     "/models/lfm2.5-2.6b-q4/": {
-      "hash": "c64a143503253441",
+      "hash": "f8e465f4638d2a9f",
       "changed": "2026-09-19"
     },
     "/models/ling-3.0-flash-q4/": {
-      "hash": "310202255eace237",
+      "hash": "d07229a6ae04966f",
       "changed": "2026-09-19"
     },
     "/models/ling-3.0-tiny-q4/": {
-      "hash": "57db07a9356c4a01",
+      "hash": "b738f2d4cc656b2d",
       "changed": "2026-09-19"
     },
     "/models/llama-3.1-8b-q4/": {
-      "hash": "390139b84f796070",
+      "hash": "f3afa5c92d129235",
       "changed": "2026-09-19"
     },
     "/models/llama-3.1-8b-q8/": {
-      "hash": "5d77c78b4b0c3140",
+      "hash": "4c7900be57e60574",
       "changed": "2026-09-19"
     },
     "/models/llama-3.3-70b-q4/": {
-      "hash": "00a11fab62aa247a",
+      "hash": "33227a0f46291893",
       "changed": "2026-09-19"
     },
     "/models/llama-4-scout-q4/": {
-      "hash": "d4ad6cfa4985cf81",
+      "hash": "c357b64445466912",
       "changed": "2026-09-19"
     },
     "/models/minicpm5-2b-q4/": {
-      "hash": "e9eb1d9f773eac0e",
+      "hash": "46d15a9e688f62c9",
       "changed": "2026-09-19"
     },
     "/models/minimax-m2.7-q4/": {
-      "hash": "20f9d0b20c344525",
+      "hash": "e43fe0f587ca4c38",
       "changed": "2026-09-19"
     },
     "/models/ministral-3-14b-q4/": {
-      "hash": "f197643c442b5a04",
+      "hash": "3f77a1190d91010c",
       "changed": "2026-09-19"
     },
     "/models/ministral-3-8b-q4/": {
-      "hash": "6f65f954d77f60ed",
+      "hash": "847bb2dfcf5eb978",
       "changed": "2026-09-19"
     },
     "/models/mistral-small-3.2-24b-q4/": {
-      "hash": "628e6edb77d3fba6",
+      "hash": "e866800c73a38b6c",
       "changed": "2026-09-19"
     },
     "/models/mistral-small-4-119b-q4/": {
-      "hash": "9912be58cf2cbdc4",
+      "hash": "5258bd6cf7ef6048",
       "changed": "2026-09-19"
     },
     "/models/muse-glimmer-30b-q4/": {
-      "hash": "e918c21291df6699",
+      "hash": "9f06561b3e8ec643",
       "changed": "2026-09-19"
     },
     "/models/nemotron-3.5-lightning-30b-q4/": {
-      "hash": "9b42af8c4a9ae035",
+      "hash": "52f0c5aa384e83d6",
       "changed": "2026-09-19"
     },
     "/models/ornith-1.5-35b-a3b-q4/": {
-      "hash": "bde78bc40395b1a4",
+      "hash": "fc4b3366f44f1c6c",
       "changed": "2026-09-19"
     },
     "/models/ornith-1.5-9b-q4/": {
-      "hash": "c515d2e43bbedfe8",
+      "hash": "418c5adae3dcf43a",
       "changed": "2026-09-19"
     },
     "/models/qwen3-14b-q4/": {
-      "hash": "2d428f8925a74961",
+      "hash": "36c3138188aff1c1",
       "changed": "2026-09-19"
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "60c5e13495d31fd4",
+      "hash": "d80e8a18f2498685",
       "changed": "2026-09-19"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
-      "hash": "e504393c1b7dfed0",
+      "hash": "f4d5b27176226de0",
       "changed": "2026-09-19"
     },
     "/models/qwen3-32b-q4/": {
-      "hash": "420addc3d1fd0140",
+      "hash": "48b156b169227f6e",
       "changed": "2026-09-19"
     },
     "/models/qwen3-32b-q8/": {
-      "hash": "ffae68907bb3d882",
+      "hash": "df184ee119bb85eb",
       "changed": "2026-09-19"
     },
     "/models/qwen3-8b-q4/": {
-      "hash": "24927cf433a50d69",
+      "hash": "fd363cbbaf7ae7b0",
       "changed": "2026-09-19"
     },
     "/models/qwen3-coder-30b-a3b-q4/": {
-      "hash": "48517fb538c3c91c",
+      "hash": "f9797c9ac02d7e89",
       "changed": "2026-09-19"
     },
     "/models/qwen3-coder-next-q4/": {
-      "hash": "5cdda2a3b300ba2a",
+      "hash": "069f2612f5a2120a",
       "changed": "2026-09-19"
     },
     "/models/qwen3.5-122b-a10b-ud-q4/": {
-      "hash": "8fb3154476cf41a2",
+      "hash": "44eaa82c23c276f0",
       "changed": "2026-09-19"
     },
     "/models/qwen3.5-4b-q4/": {
-      "hash": "145553cb6a2e1691",
+      "hash": "65c09b033da3d9b4",
       "changed": "2026-09-19"
     },
     "/models/qwen3.5-9b-q4/": {
-      "hash": "ef6602ea539d34ab",
+      "hash": "f01a9c590c937ec1",
       "changed": "2026-09-19"
     },
     "/models/qwen3.6-27b-q4/": {
-      "hash": "e444812d678efa64",
+      "hash": "aff56f970a3d1777",
       "changed": "2026-09-19"
     },
     "/models/qwen3.6-35b-a3b-q4/": {
-      "hash": "646319a840552c9b",
+      "hash": "8c16732c14b4ce5c",
       "changed": "2026-09-19"
     },
     "/models/qwen3.8-27b-q4/": {
-      "hash": "19d2968b7f9fc840",
+      "hash": "b037ca8c8c9c30a5",
       "changed": "2026-09-19"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "0626e823ef9b8926",
+      "hash": "44984572ba908856",
       "changed": "2026-09-19"
     },
     "/models/spark-x2.5-4b-q4/": {
-      "hash": "92f575d96a0b9770",
+      "hash": "97e5899cf9b98583",
       "changed": "2026-09-19"
     }
   }
