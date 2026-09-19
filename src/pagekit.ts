@@ -1034,6 +1034,112 @@ export function machinesShorter(m: Model, data: Dataset): ShorterMachine[] {
   return out;
 }
 
+/** One family of machine, and how far down it this model reaches. */
+export interface FamilyReach {
+  family: string;
+  /** every machine of this family the site lists, current or not */
+  total: number;
+  /** how many of them hold the model at this context */
+  runs: number;
+  /** the smallest memory size in the family that holds it, as the machine's own name gives it */
+  floorGb: number;
+  /** the machine itself, where the family is one machine and has no range to describe */
+  only: Hardware | null;
+}
+
+/** Every machine the site lists that holds this model at this context, priced or not, current or not. */
+export function machinesThatHold(m: Model, data: Dataset, ctx: number): Hardware[] {
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  return data.hardware.filter((hw) => memoryFit(m, hw, ctx, data.defaults.nearly_fits_ratio, kvScale).status === 'fits');
+}
+
+/**
+ * How far down each family a model reaches, counted over every machine the
+ * site lists rather than the priced current ones the table is drawn from.
+ *
+ * A model page's table is one machine per family, so a reader who owns a
+ * larger machine in one of those families was left to guess. They do not have
+ * to: fit here is the weights plus the cache against the memory the GPU can
+ * address, so inside a family the only thing that decides is how much memory
+ * the machine has. What differs between families is the share of it the GPU
+ * gets — about two-thirds on a Mac, nearly all of it on a card — which is why
+ * the line is drawn one family at a time and never across them.
+ *
+ * Families the model reaches nothing in are left out. Everything else is in,
+ * so the families here account for every machine that holds it, which is what
+ * lets checkFamilyReach() hold the sentence to the data on every build.
+ */
+export function familyReach(m: Model, data: Dataset, ctx: number): FamilyReach[] {
+  const held = new Set(machinesThatHold(m, data, ctx).map((hw) => hw.id));
+  const families = new Map<string, Hardware[]>();
+  for (const hw of data.hardware) families.set(hw.family, [...(families.get(hw.family) ?? []), hw]);
+  const out: FamilyReach[] = [];
+  for (const [family, hws] of families) {
+    const runs = hws.filter((hw) => held.has(hw.id));
+    if (!runs.length) continue;
+    out.push({
+      family,
+      total: hws.length,
+      runs: runs.length,
+      floorGb: Math.min(...runs.map((h) => h.unified_memory_gb)),
+      only: hws.length === 1 ? hws[0] : null,
+    });
+  }
+  // the biggest families first, since that is where most readers are
+  return out.sort((a, b) => b.total - a.total || b.runs - a.runs || a.family.localeCompare(b.family));
+}
+
+/** A family as it reads in a sentence about one of its machines: "every Strix Halo box". */
+export function familyNoun(family: string): string {
+  if (family === 'NVIDIA' || family === 'AMD') return `${family} card`;
+  if (family === 'Strix Halo') return 'Strix Halo box';
+  return family;
+}
+
+/** "a, b and c" — the list this site writes by hand everywhere else. */
+export function andList(parts: string[]): string {
+  if (parts.length < 2) return parts[0] ?? '';
+  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+}
+
+export const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
+
+/**
+ * What a model page says under its table of machines. The table names the
+ * cheapest machine in each family, and nothing said which of the others hold
+ * the model too — so a reader who owns the 64GB one of something had to open
+ * its page to find out. Naming them is not the answer here the way it was on
+ * the machine pages: a small model runs on all 56, and 56 names is a list
+ * nobody reads. The rule behind them is one sentence, so this says the rule —
+ * which families hold it outright, and from which memory size up in the ones
+ * that do not. Every machine that holds it is covered by one of these clauses,
+ * which is the claim the guard checks.
+ */
+export function familyReachNote(reach: FamilyReach[], listed: number, rows: number, ctx: number): string {
+  if (!reach.length) return '';
+  const held = reach.reduce((n, r) => n + r.runs, 0);
+  if (held === listed)
+    return `All ${listed} machines on this site run it at ${ctxLabel(ctx)}, not just the ${rows === 1 ? 'one' : numberWord(rows)} in the table.`;
+  // a family of one has no range to draw a line through, so it goes in by name
+  const singles = reach.filter((r) => r.only);
+  const whole = reach.filter((r) => !r.only && r.runs === r.total);
+  const part = reach.filter((r) => !r.only && r.runs < r.total);
+  const clauses: string[] = [];
+  // "at any size" rather than "here": the sentence above this one says "every
+  // machine here" of the table's own rows, and two different heres in a row is
+  // one too many. It also says the thing the floor clauses say, in their words.
+  if (whole.length) clauses.push(`every ${andList(whole.map((r) => familyNoun(r.family)))} at any size`);
+  // one clause per memory size, so two families that draw the line in the same
+  // place read as one phrase rather than two
+  const floors = new Map<number, FamilyReach[]>();
+  for (const r of part) floors.set(r.floorGb, [...(floors.get(r.floorGb) ?? []), r]);
+  for (const [gb, rs] of [...floors.entries()].sort((a, b) => a[0] - b[0]))
+    clauses.push(`every ${andList(rs.map((r) => familyNoun(r.family)))} with ${gb}GB or more`);
+  for (const r of singles) clauses.push(`the ${shortHardwareLabel(r.only!)}`);
+  return `The table is the cheapest machine in each family, not the only one that runs it: ${held} of the ${listed} machines on this site hold it at ${ctxLabel(ctx)}. Within a family only memory decides, so that is ${andList(clauses)}.`;
+}
+
 /**
  * What a machine page says about the models that fit it but sit below its
  * table. The table stops at twelve, so on the largest machines it answered

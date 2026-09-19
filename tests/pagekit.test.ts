@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   brandOf, calcLink, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
-  contextHeadroom, ctxLabel, familyHeading, familyRange, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelsInBand, modelVerdict,
   footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
@@ -1706,5 +1707,96 @@ describe('the models a machine runs that its table has no room for', () => {
     }
     expect(machines).toBeGreaterThan(30);
     expect(pairs).toBeGreaterThan(300);
+  });
+});
+
+describe('the machines a model page’s table has no row for', () => {
+  const ctx = data.defaults.context.default_tokens;
+  const listed = data.hardware.length;
+  const model = (id: string) => data.models.find((m) => m.id === id)!;
+  const note = (m: Model, rows = 8) => familyReachNote(familyReach(m, data, ctx), listed, rows, ctx);
+  const families = new Map<string, Hardware[]>();
+  for (const h of data.hardware) families.set(h.family, [...(families.get(h.family) ?? []), h]);
+
+  it('counts every machine that holds it, not the rows in the table', () => {
+    for (const m of data.models) {
+      const held = machinesThatHold(m, data, ctx);
+      if (!held.length || held.length === listed) continue;
+      expect([m.id, note(m)]).toEqual([m.id, expect.stringContaining(`${held.length} of the ${listed} machines on this site hold it at ${ctxLabel(ctx)}`)]);
+    }
+  });
+
+  it('draws the line at a memory size the machine’s own name gives, and the data agrees with every one', () => {
+    for (const m of data.models) {
+      const held = new Set(machinesThatHold(m, data, ctx).map((h) => h.id));
+      for (const r of familyReach(m, data, ctx)) {
+        const above = (families.get(r.family) ?? []).filter((h) => h.unified_memory_gb >= r.floorGb);
+        // the floor is the whole rule: every machine in the family at or above it
+        // holds the model, and every one below it does not
+        expect([m.id, r.family, above.map((h) => h.id).sort()]).toEqual([m.id, r.family, (families.get(r.family) ?? []).filter((h) => held.has(h.id)).map((h) => h.id).sort()]);
+      }
+    }
+  });
+
+  it('says so in a line where every machine on the site runs it', () => {
+    const m = model('llama-3.1-8b-q4');
+    expect(machinesThatHold(m, data, ctx)).toHaveLength(listed);
+    expect(note(m)).toBe(`All ${listed} machines on this site run it at 32k, not just the eight in the table.`);
+    expect(note(m, 1)).toContain('not just the one in the table');
+  });
+
+  it('leaves the size off a family that holds it whatever the size', () => {
+    const line = note(model('gemma-3-27b-q4'));
+    // every Mac Studio holds it; the smallest Mac mini does not
+    expect(line).toContain('every Mac Studio and Strix Halo box at any size');
+    expect(line).toContain('every Mac mini and MacBook Pro with 32GB or more');
+  });
+
+  it('puts two families that draw the line in the same place in one clause', () => {
+    const line = note(model('glm-4.5-air-q4'));
+    expect(line).toContain('every Mac Studio, Strix Halo box and MacBook Pro with 128GB or more');
+    expect(line).not.toContain('MacBook Pro with 128GB or more and every');
+  });
+
+  it('names a family of one machine rather than describing its range', () => {
+    const line = note(model('glm-4.5-air-q4'));
+    expect(line).toContain('the DGX Spark, 128GB');
+    expect(line).not.toContain('every DGX Spark');
+  });
+
+  it('leaves out a family that holds it nowhere, and says nothing at all where nothing holds it', () => {
+    const m = model('inkling-small-ud-q4');
+    const reached = familyReach(m, data, ctx).map((r) => r.family);
+    expect(reached).toContain('Mac Studio');
+    expect(reached).not.toContain('MacBook Air');
+    expect(note(m)).not.toContain('MacBook Air');
+    // a model page with no table of machines gets no sentence about them; the
+    // build guard holds that end, this holds the wording's
+    expect(familyReachNote([], listed, 8, ctx)).toBe('');
+  });
+
+  it('accounts for every machine that holds it, family by family', () => {
+    let pages = 0;
+    let pairs = 0;
+    for (const m of data.models) {
+      const held = machinesThatHold(m, data, ctx);
+      if (!held.length) continue;
+      pages++;
+      const reach = familyReach(m, data, ctx);
+      expect([m.id, reach.reduce((n, r) => n + r.runs, 0)]).toEqual([m.id, held.length]);
+      pairs += held.length;
+      for (const r of reach) expect([m.id, r.total]).toEqual([m.id, (families.get(r.family) ?? []).length]);
+    }
+    expect(pages).toBe(55);
+    expect(pairs).toBeGreaterThan(1900);
+  });
+
+  it('writes a family the way a sentence about one of its machines would', () => {
+    expect(familyNoun('Strix Halo')).toBe('Strix Halo box');
+    expect(familyNoun('NVIDIA')).toBe('NVIDIA card');
+    expect(familyNoun('Mac mini')).toBe('Mac mini');
+    expect(andList(['a'])).toBe('a');
+    expect(andList(['a', 'b'])).toBe('a and b');
+    expect(andList(['a', 'b', 'c'])).toBe('a, b and c');
   });
 });

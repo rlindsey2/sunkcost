@@ -10,12 +10,12 @@ import {
   appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyHeading, familyRange, generationNames,
-  fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
+  familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardScopeNote, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct, holdHyphens, indefiniteArticle,
   kvWorking,
   longestContext, lowerFirst, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines,
-  meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, otherQuantisations, pageShell,
+  machinesThatHold, meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, numberWord, otherQuantisations, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
   rowFor,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
@@ -1272,6 +1272,108 @@ function checkHiddenModels() {
 }
 
 /**
+ * The model page's table is one machine per family, and the sentence under it
+ * says which of the others hold the model too. That sentence is a claim about
+ * every machine on the site — that inside a family memory alone decides, and
+ * that the line falls at a named size — so it is read back out of the shipped
+ * page here and turned into a set of machines, rather than being recomputed by
+ * the function that wrote it. The set it describes has to be exactly the set
+ * that holds the model: a family left out, a floor a size too low or a size too
+ * high all come back as a difference, named.
+ */
+function checkFamilyReach() {
+  const problems: string[] = [];
+  const ctx = data.defaults.context.default_tokens;
+  const families = new Map<string, Hardware[]>();
+  for (const hw of data.hardware) families.set(hw.family, [...(families.get(hw.family) ?? []), hw]);
+  // the reverse of familyNoun(), built from the data so a new family cannot slip past
+  const byNoun = new Map([...families.keys()].map((f) => [familyNoun(f), f] as const));
+  const nouns = [...byNoun.keys()].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const list = `(?:${nouns.join('|')})(?:(?:, | and )(?:${nouns.join('|')}))*`;
+  let pages = 0;
+  let covered = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const held = machinesThatHold(m, data, ctx);
+    const rows = cheapestPerFamily(runnersFor(m, data)).length;
+    const found = html.match(/<p>((?:The table is the cheapest machine in each family|All \d+ machines on this site run it)[^<]*)<\/p>/);
+    if (!rows) {
+      if (found) problems.push(`${path} says which machines run it and has no table of machines at all`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${path} lists ${rows} machine${rows === 1 ? '' : 's'} and does not say which of the other ${data.hardware.length - rows} run it`);
+      continue;
+    }
+    pages++;
+    const said = found[1];
+    if (held.length === data.hardware.length) {
+      if (!said.startsWith(`All ${data.hardware.length} machines on this site run it at ${ctxLabel(ctx)}`))
+        problems.push(`${path} is held by all ${data.hardware.length} machines at ${ctxLabel(ctx)} and does not say so`);
+      else if (!said.includes(`not just the ${rows === 1 ? 'one' : numberWord(rows)} in the table`))
+        problems.push(`${path} miscounts its own table, which has ${rows} row${rows === 1 ? '' : 's'}`);
+      else covered += held.length;
+      continue;
+    }
+    const counted = said.match(/: (\d+) of the (\d+) machines on this site hold it at (\d+k)\./);
+    if (!counted) {
+      problems.push(`${path} does not count the machines that hold it`);
+      continue;
+    }
+    if (Number(counted[1]) !== held.length || Number(counted[2]) !== data.hardware.length || counted[3] !== ctxLabel(ctx))
+      problems.push(`${path} says ${counted[1]} of ${counted[2]} machines hold it at ${counted[3]}, where ${held.length} of ${data.hardware.length} do at ${ctxLabel(ctx)}`);
+    // every clause turned back into the machines it names
+    const tail = said.split('so that is ')[1]?.replace(/\.$/, '') ?? '';
+    const claimed = new Set<string>();
+    let rest = tail;
+    let ok = true;
+    while (rest.length) {
+      const whole = rest.match(new RegExp(`^every (${list}) at any size`));
+      const floor = rest.match(new RegExp(`^every (${list}) with (\\d+)GB or more`));
+      const one = rest.match(/^the (.+?)(?=, every | and every |, the | and the |$)/);
+      if (whole) {
+        for (const noun of whole[1].split(/, | and /)) for (const hw of families.get(byNoun.get(noun)!) ?? []) claimed.add(hw.id);
+        rest = rest.slice(whole[0].length);
+      } else if (floor) {
+        const gb = Number(floor[2]);
+        for (const noun of floor[1].split(/, | and /))
+          for (const hw of families.get(byNoun.get(noun)!) ?? []) if (hw.unified_memory_gb >= gb) claimed.add(hw.id);
+        rest = rest.slice(floor[0].length);
+      } else if (one) {
+        const hw = data.hardware.find((h) => shortHardwareLabel(h) === one[1]);
+        if (!hw) {
+          problems.push(`${path} names "${one[1]}", which is no machine on this site`);
+          ok = false;
+          break;
+        }
+        claimed.add(hw.id);
+        rest = rest.slice(one[0].length);
+      } else {
+        problems.push(`${path} says "${rest}" of the machines that run it, which is not a claim this guard can read`);
+        ok = false;
+        break;
+      }
+      rest = rest.replace(/^(, | and )/, '');
+    }
+    if (!ok) continue;
+    const want = new Set(held.map((hw) => hw.id));
+    const missing = [...want].filter((id) => !claimed.has(id));
+    const extra = [...claimed].filter((id) => !want.has(id));
+    if (missing.length)
+      problems.push(`${path} leaves out ${missing.length} machine${missing.length === 1 ? '' : 's'} that hold${missing.length === 1 ? 's' : ''} it, ${missing.slice(0, 3).join(', ')}`);
+    if (extra.length)
+      problems.push(`${path} claims ${extra.length} machine${extra.length === 1 ? '' : 's'} that do${extra.length === 1 ? 'es' : ''} not hold it, ${extra.slice(0, 3).join(', ')}`);
+    if (!missing.length && !extra.length) covered += claimed.size;
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} describe the machines that run them wrongly`);
+  }
+  console.log(`  ${pages} model pages say which machines run them, ${covered} machine-and-model pairs covered by a rule the data agrees with`);
+}
+
+/**
  * The leaderboard's "Cheapest machine that runs it" column names a machine and its
  * price, and the price is the way into the calculator on that pair — the same rule the
  * machine and model pages use, where the figure a cell prints is the link. A price that
@@ -1851,6 +1953,16 @@ function modelPage(m: Model): string {
     return `<p>Every machine here runs it, but not to the same length. The ${esc(hardwareLabel(atLength(shortest).hw))} stops at ${ctxLabel(shortest)}; the ${esc(hardwareLabel(atLength(furthest).hw))} takes it to ${ctxLabel(furthest)}${cap}. The weights are the same size on every machine; what differs is the memory left for the key-value cache, which grows with every token you keep.</p>`;
   })();
 
+  // The table is one machine per family, so it answers "what should I buy" and
+  // leaves "does mine run it" to a reader who owns the 64GB one of something.
+  // Inside a family that is memory and nothing else, so the rule fits in a
+  // sentence where fifty names would not. See familyReach().
+  const reachLine = (() => {
+    if (!perFamily.length) return '';
+    const note = familyReachNote(familyReach(m, data, data.defaults.context.default_tokens), data.hardware.length, perFamily.length, data.defaults.context.default_tokens);
+    return note ? `<p>${note}</p>` : '';
+  })();
+
   const fe = m.frontier_equivalent;
   const ce = m.cloud_equivalent;
   const ctx = data.defaults.context.default_tokens;
@@ -1933,6 +2045,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Longest context</th><th>Pay-back</th><th></th></tr></thead>
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
+${reachLine}
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
@@ -2021,8 +2134,6 @@ function relatedRow(h: Hardware): string {
 /** How many of the models in a machine's table its own memory stops, as the page writes it. */
 const memoryCount = (n: number) => (n === 1 ? 'one' : String(n));
 
-const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
-const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 const sentenceCase = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 /**
@@ -4491,6 +4602,7 @@ checkShorterFits();
 checkShorterMachines();
 checkMissedMachines();
 checkHiddenModels();
+checkFamilyReach();
 checkLeaderboardLinks();
 checkBestGpu();
 checkNotes();
