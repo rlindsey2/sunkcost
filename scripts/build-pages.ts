@@ -12,7 +12,7 @@ import {
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
-  cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
+  cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
@@ -2685,7 +2685,7 @@ ${range.length ? `<tr class="is-frontier"><th colspan="5">${esc(familyHeading(hw
 ${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price elsewhere on the list</th></tr>${rivals.map(relatedRow).join('')}` : ''}
 </tbody>
 </table>`, { fig: 4 })}
-<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models.${(() => { const n = cardScopeNote([...range, ...rivals]); return n ? ` ${n}` : ''; })()}</p>` : ''}
+<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models.${(() => { const n = cardScopeNote([...range, ...rivals], hw.price_scope === 'card_only' ? undefined : data); return n ? ` ${n}` : ''; })()}</p>` : ''}
 ${headToHeadNote(hw)}
 
 <h2>The specifics</h2>
@@ -3186,7 +3186,7 @@ ${usageSection}
 ${extraSection}
 ${machineSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
-<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b]); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
+<p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b], data); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
 <p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/compare/">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
 </article>`;
   return pageShell(
@@ -3557,7 +3557,7 @@ ${
       : ''
   }
 
-<p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. The tables by size cover all ${data.models.length} models listed here, superseded ones included and marked, because people still run them. The two tables of what a machine holds count the ${currentModels.length} current ones instead, which is what every machine page and the calculator count. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
+<p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. ${cardRankingLine(data)} The tables by size cover all ${data.models.length} models listed here, superseded ones included and marked, because people still run them. The two tables of what a machine holds count the ${currentModels.length} current ones instead, which is what every machine page and the calculator count. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
 </article>`;
 
   return pageShell(
@@ -4262,7 +4262,7 @@ ${stack(`<table class="board">
 <tbody>${modelRows}</tbody>
 </table>`, { fig: 1, labels: { 3: 'Cheapest' } })}
 
-<p class="note">Every figure here is the one the page behind it prints, at the same defaults: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. A speed that says <i>estimated</i> is worked out from memory bandwidth rather than measured. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. Scores are the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}. Each calculator link opens the machine in its row running the first model named; change any of it once you are there.</p>
+<p class="note">Every figure here is the one the page behind it prints, at the same defaults: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. A speed that says <i>estimated</i> is worked out from memory bandwidth rather than measured. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} Scores are the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}. Each calculator link opens the machine in its row running the first model named; change any of it once you are there.</p>
 </article>`;
 
   return pageShell(
@@ -5343,6 +5343,72 @@ function checkCardScope() {
 }
 
 /**
+ * `/best-gpu/` ranks the graphics cards, and it answers the most commercial
+ * question this site takes: which card to buy. It was also the least linked
+ * page on the site. Measured on 2026-09-19 across the 259 generated pages, the
+ * body of `/leaderboard/` had 200 pages pointing at it, `/compare/` 199,
+ * `/best/` 146 and `/how-much-memory/` 113 — and `/best-gpu/` had eight: one
+ * index and the seven cards' own pages. It is in the footer of every page, so
+ * nothing was orphaned; what was missing is the link a reader would follow
+ * where the question comes up.
+ *
+ * The rule is the caveat the site already says. Wherever a page prices a card
+ * in a table of machines it says the price leaves out the PC around it, and
+ * that sentence now ends with where the cards are ranked, so a page cannot say
+ * the one without the other. A card's own page is the exception and says so in
+ * its opening paragraph instead, which is why nothing links the ranking twice.
+ *
+ * This holds three things: every page that prices a card links the ranking once,
+ * no page that prices none links it at all, and each of the three indexes whose
+ * assumptions raise a card price carries it too.
+ */
+function checkCardRanking() {
+  const problems: string[] = [];
+  const want = cardRankingLine(data);
+  const links = (path: string) => {
+    const html = meta.find((m) => m.path === path)?.html;
+    if (html == null) return null;
+    const body = mainOf(html);
+    return { n: (body.match(/href="\/best-gpu\/"/g) ?? []).length, body };
+  };
+  const check = (path: string, prices: boolean, inNote: boolean) => {
+    const got = links(path);
+    if (got == null) {
+      problems.push(`${path} was not written`);
+      return 0;
+    }
+    if (!prices) {
+      if (got.n) problems.push(`${path} sends the reader to the card ranking where it prices no card`);
+      return 0;
+    }
+    if (got.n !== 1) problems.push(`${path} prices a graphics card and links the ranking ${got.n} times rather than once`);
+    if (inNote && !got.body.includes(want)) problems.push(`${path} prices a graphics card and does not say where the cards are ranked`);
+    if (!inNote && got.body.includes(want)) problems.push(`${path} is a card's own page and repeats in its notes what its first paragraph says`);
+    return 1;
+  };
+
+  let said = 0;
+  for (const [a, b] of hardwarePairs(data)) said += check(hardwareComparePath(a, b), !!cardScopeNote([a, b]), true);
+  for (const h of data.hardware) {
+    const rows = [...familyRange(h, data), ...priceRivals(h, data)];
+    if (!rows.length) continue;
+    said += check(`/hardware/${h.id}/`, !!cardScopeNote(rows), h.price_scope !== 'card_only');
+  }
+  for (const path of ['/best/', '/compare/', '/how-much-memory/']) {
+    const got = links(path);
+    if (got == null || got.n !== 1) problems.push(`${path} raises what a card price leaves out and links the ranking ${got?.n ?? 0} times rather than once`);
+    else said++;
+  }
+  const own = links('/best-gpu/');
+  if (own && own.n) problems.push(`/best-gpu/ links itself ${own.n} times in its own body`);
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? ' has' : 's have'} the link to the card ranking wrong`);
+  }
+  console.log(`  ${said} pages that price a graphics card say where all ${graphicsCards(data).length} of them are ranked, and only those link it`);
+}
+
+/**
  * A link's text is one of the few things on a page that says what is on the other
  * end, to a reader deciding whether to click and to a crawler deciding what the
  * link is worth. "source 1" says neither, and 56 machine pages and 55 model pages
@@ -5449,6 +5515,7 @@ checkFonts();
 checkCounts();
 checkCardPrices();
 checkCardScope();
+checkCardRanking();
 checkTables();
 checkPairedColumns();
 checkArticles();

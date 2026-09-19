@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict,
+  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, MTOK, nearestCompleteComputer,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
@@ -1476,6 +1476,40 @@ describe('what a price on the page buys', () => {
     const note = cardScopeNote([odd, computers[0]]);
     expect(note).not.toContain('<b>');
     expect(note).toContain('&amp;');
+  });
+});
+
+describe('where a page that prices a card says the cards are ranked', () => {
+  const cards = data.hardware.filter((h) => h.price_scope === 'card_only');
+  const computers = data.hardware.filter((h) => h.price_scope !== 'card_only');
+  const line = cardRankingLine(data);
+
+  it('counts the cards the ranking itself counts, in words', () => {
+    expect(line).toBe(`All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`);
+    expect(line).not.toMatch(/\d/);
+    expect(line.endsWith('.')).toBe(true);
+  });
+
+  it('follows the caveat rather than replacing it', () => {
+    const note = cardScopeNote([computers[0], cards[0]], data);
+    expect(note).toBe(`${cardScopeNote([computers[0], cards[0]])} ${line}`);
+    expect(note).toContain(shortHardwareLabel(cards[0]));
+  });
+
+  it('is said once however many cards the page prices', () => {
+    for (const machines of [[computers[0], cards[0]], [cards[0], cards[1]], [computers[0], cards[0], cards[1]]])
+      expect(cardScopeNote(machines, data).match(/href="\/best-gpu\/"/g)).toHaveLength(1);
+  });
+
+  it('is never said on its own, where the page prices no card at all', () => {
+    expect(cardScopeNote([computers[0], computers[1]], data)).toBe('');
+    expect(cardScopeNote([], data)).toBe('');
+  });
+
+  it('is left out where the page is asked for the caveat alone', () => {
+    const note = cardScopeNote([computers[0], cards[0]]);
+    expect(note).not.toContain('/best-gpu/');
+    expect(note).toContain('priced as the card alone');
   });
 });
 

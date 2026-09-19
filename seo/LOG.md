@@ -56,6 +56,13 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       because both end on the same closing lines, so each was taken whole from its own side.
       Verified on the merge: 354 tests, typecheck clean, 261 pages, every guard passing, and
       nothing about what the pull request carries has changed.
+      **Merged `main` once more at `1dcaf6b`, at 04:02 on 2026-09-19, and still merges clean.** The
+      03:31 run of this hourly job pushed `be3484e` to `main` — the links between one head-to-head and
+      another — which broke this branch in the same three files, so that run repaired it rather than
+      leaving it. Two were import-list unions; the third was the interleave at the end of
+      `src/pagekit.ts`, where both sides append and git left the branch's own closing brace outside
+      the marker. Verified on the merge: 362 tests, typecheck clean, 261 pages, every guard passing,
+      and nothing about what the pull request carries has changed.
       **Ryan was notified about the queue at 01:55 on 2026-09-19**, before he asked for this; that
       was the first ping about it and it should not be repeated unless something changes.
 
@@ -1190,6 +1197,24 @@ and the generation-last one together.
 paragraphs were read out of the built HTML rather than from the source and swept for doubled stops,
 stray commas, double spaces and maintainer words: none. Two pages were read whole, a memory-tier pair
 and a model pair. The 143 comparisons take 2026-09-19 in the sitemap; no other page's words changed.
+
+**This push broke PR #15's merge, and repaired it**, since it was this push that broke it. Three
+conflicts, in the three files this change touches. Two are import lists and both sides' names are
+kept. The third is the interleave this log has been predicting since the pull request was built, one
+file further along: both sides append to the end of `src/pagekit.ts`, so git ran the two blocks
+together and left the **closing brace of the branch's last function as common context after the
+marker** — take either side whole and the file still compiles nowhere near what either wrote. Each
+block was taken whole and the brace put back. Verified on the merged tree rather than on a clean
+`git merge-tree`: 362 tests, typecheck clean, 261 pages with every guard passing, both sides' new
+guards among them, and the full `npm run build`. Pushed to `seo/combined-pages` at `1dcaf6b`.
+
+**One thing about the deploys, so the next run does not read it as a fault of its own.** Run 197
+carried both commits of this change and went green at 04:01, so the pages are live. Run 198, on the
+log-only commit after it, sat on its build step for half an hour where 197 did the same build in
+under three minutes: `npm ci` and `npm test` green, then nothing. The tree it builds differs from
+197's by `seo/LOG.md` alone, which no script here reads, so it is the runner rather than the
+repository. This entry's own push cancels it and starts a fresh one, which is how the queue here
+usually clears.
 
 **What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
 is the top open item and still waits on PR #15. Of what can go straight to `main`, the measurement
