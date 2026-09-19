@@ -7,9 +7,19 @@
  * read by someone arriving from a search, and to be indexable, so nothing here
  * may depend on JavaScript running.
  */
+import { calculate } from './calc';
 import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
 import { footprintGb, kvCacheGb } from './fit';
 import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
+// Four helpers that turn the data's own words into a reader's: they live in
+// format.ts because the calculator's assumptions panel prints the same fields
+// and cannot import this module, which is the build's rather than the bundle's.
+// They are re-exported here so the pages that use them keep one import site.
+export {
+  endStop, indexVersion, noteSentences, powerSourceLabel, sourceKind, sourceLinks, sourceName,
+  splitHardwareNote,
+  type HardwareNote,
+} from './format';
 import { fit as memoryFit, kvScaleFor } from './fit';
 import { defaultState, serializeState, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
@@ -364,10 +374,12 @@ export function pageGraph(c: PageChrome, data: Dataset): LdNode[] {
 export const FOOTER_LINKS: { href: string; label: string }[] = [
   { href: '/', label: 'Run the numbers on your own configuration' },
   { href: '/leaderboard/', label: 'All models against the frontier' },
+  { href: '/hardware/', label: 'Every machine, priced' },
   { href: '/best/', label: 'Best buys by usage' },
   { href: '/compare/', label: 'Every head-to-head' },
   { href: '/how-much-memory/', label: 'How much memory you need' },
   { href: '/best-gpu/', label: 'Which graphics card' },
+  { href: '/local-llm-vs-api-cost/', label: 'What a token costs either way' },
 ];
 
 export function footerHtml(): string {
@@ -467,62 +479,6 @@ export function splitCapabilityNote(note: string | null | undefined): { ratings:
     while (text[cut] === ' ') cut++;
   }
   return { ratings: text.slice(0, cut).trim(), about: text.slice(cut).trim() };
-}
-
-/**
- * The same fault as splitCapabilityNote(), one page type along. hw.notes is the
- * one field a machine records everything in, and the machine page printed it
- * whole under "Usable by the GPU". So the memory note on all seven graphics
- * cards opened with the arithmetic behind the bandwidth figure in the row
- * above — which printed bare — and on ten laptops it explained that sustained
- * speed drops once the fans cap out, which is not a fact about memory either.
- *
- * Nothing in the field is wrong. Each sentence is about a different number, and
- * this puts it under the number it is about: bandwidth to the bandwidth row,
- * speed to the note under the speed column, which product this entry is and
- * where you buy it to Availability, memory where it already was.
- *
- * The markers are the subject each sentence names rather than the sentences
- * themselves, so a machine added tomorrow is read by what its note talks about.
- * checkHardwareNotes() holds the result: every sentence lands somewhere, lands
- * once, and lands under a row the page actually prints.
- */
-const NOTE_SUBJECTS: { key: 'bandwidth' | 'availability' | 'speed'; marker: RegExp }[] = [
-  { key: 'bandwidth', marker: /\bbandwidth\b/i },
-  { key: 'availability', marker: /\bnot this entry\b|\bin stock\b/i },
-  { key: 'speed', marker: /\btokens\/sec\b|\bon decode\b/i },
-];
-
-export type HardwareNote = { memory: string; bandwidth: string; availability: string; speed: string };
-
-/** The sentences of a note, kept whole and in order, so joining them gives the note back. */
-export function noteSentences(note: string | null | undefined): string[] {
-  const text = (note ?? '').trim();
-  return text ? text.split(/(?<=\.)\s+(?=[A-Z0-9(`~])/).map((s) => s.trim()).filter(Boolean) : [];
-}
-
-export function splitHardwareNote(note: string | null | undefined): HardwareNote {
-  const out: HardwareNote = { memory: '', bandwidth: '', availability: '', speed: '' };
-  for (const sentence of noteSentences(note)) {
-    const subject = NOTE_SUBJECTS.find((s) => s.marker.test(sentence))?.key ?? 'memory';
-    // "Bandwidth: 22.4 Gbps × 256-bit bus ÷ 8 = 716.8 GB/s" carried its own label
-    // because it used to sit under the memory figure. Under the bandwidth row the
-    // label is the row's name, so it goes.
-    const text = subject === 'bandwidth' ? sentence.replace(/^Bandwidth:\s*/, '') : sentence;
-    out[subject] = out[subject] ? `${out[subject]} ${text}` : text;
-  }
-  return out;
-}
-
-/**
- * A sentence that ends in a note out of the data ends where the note does. The
- * architecture notes all carry their own full stop, so a template adding one
- * printed "on all 80 layers.." on 41 model pages — a typo the data never had
- * and the template could not see.
- */
-export function endStop(text: string): string {
-  const t = text.trim();
-  return !t || /[.!?]$/.test(t) ? t : `${t}.`;
 }
 
 export function tierScale(m: Model, data: Dataset): string {
@@ -650,6 +606,19 @@ export function familyHeading(hw: Hardware): string {
   if (hw.family === 'NVIDIA' || hw.family === 'AMD') return `Other ${hw.family} cards`;
   if (hw.family === 'Strix Halo') return 'Other Strix Halo machines';
   return `The rest of the ${hw.family} range`;
+}
+
+/**
+ * What a group of machines is called where the group is the subject: a family
+ * name on its own reads as a product ("NVIDIA", "AMD") where the row above it is
+ * a heading over six cards. The machine index groups its table with these and the
+ * share card names its rows with them, so the two say the same thing.
+ */
+export function familyGroup(family: string): string {
+  if (family === 'NVIDIA' || family === 'AMD') return `${family} graphics cards`;
+  if (family === 'Strix Halo') return 'Strix Halo boxes';
+  if (family === 'DGX Spark') return 'NVIDIA DGX Spark';
+  return family;
 }
 
 /** The same model at another quantisation: a different download, a different memory bill. */
@@ -1271,138 +1240,6 @@ export function powerWithSource(hw: Hardware): string {
   return `${hw.load_watts} W${hw.load_watts_status === 'stand_in' ? `<span class="c-quant">${holdHyphens('stand-in')}</span>` : ''}`;
 }
 
-/** Where a power figure came from, in words rather than in the data's own key. */
-export function powerSourceLabel(hw: Hardware): string {
-  switch (hw.load_watts_status) {
-    case 'stand_in':
-      return 'stand-in';
-    case 'third_party_measured':
-      return 'measured by a third party';
-    case 'entered':
-      return 'entered by you';
-    default:
-      return 'published';
-  }
-}
-
-/**
- * Publishers, by the host that serves them. A source link used to read "source 1",
- * which tells a reader deciding whether to click, and a crawler deciding what the
- * link is worth, nothing at all about what is on the other end. The name of the
- * site does. Nothing here is a claim about the page behind the link: it is the
- * name of whoever publishes it, and a host with no entry keeps its own domain.
- */
-const SOURCE_PUBLISHERS: Record<string, string> = {
-  'www.apple.com': 'Apple',
-  'support.apple.com': 'Apple Support',
-  'appleinsider.com': 'AppleInsider',
-  'daringfireball.net': 'Daring Fireball',
-  'lowendmac.com': 'Low End Mac',
-  'frame.work': 'Framework',
-  'community.frame.work': 'Framework Community',
-  'www.nvidia.com': 'NVIDIA',
-  'nvidianews.nvidia.com': 'NVIDIA Newsroom',
-  'marketplace.nvidia.com': 'NVIDIA Marketplace',
-  'forums.developer.nvidia.com': 'NVIDIA Developer Forums',
-  'www.techpowerup.com': 'TechPowerUp',
-  'www.amd.com': 'AMD',
-  'www.asus.com': 'ASUS',
-  'www.xfxforce.com': 'XFX',
-  'wccftech.com': 'Wccftech',
-  'www.tomshardware.com': "Tom's Hardware",
-  'www.servethehome.com': 'ServeTheHome',
-  'www.storagereview.com': 'StorageReview',
-  'www.pugetsystems.com': 'Puget Systems',
-  'www.newegg.com': 'Newegg',
-  'www.staples.com': 'Staples',
-  'www.corsair.com': 'Corsair',
-  'www.gmktec.com': 'GMKtec',
-  'www.bee-link.com': 'Beelink',
-  'store.minisforum.com': 'Minisforum',
-  'blog.kubesimplify.com': 'Kubesimplify',
-  'llm-tracker.info': 'llm-tracker',
-  'artificialanalysis.ai': 'Artificial Analysis',
-  'www.eia.gov': 'US EIA',
-  'epoch.ai': 'Epoch AI',
-};
-
-/**
- * Two hosts where the publisher is not the answer: every model on this site cites
- * Hugging Face and half the machines cite GitHub, so "Hugging Face" twice in a row
- * is the numbered list again in other words. On both, the repository is the name of
- * the thing — bartowski/Qwen_Qwen3-8B-GGUF says which weights the size came from,
- * and ggml-org/llama.cpp says which runtime.
- */
-const REPO_HOSTS = new Set(['huggingface.co', 'github.com']);
-
-/**
- * What kind of page a URL says it is, in its own words. Only used to tell two
- * links to the same publisher apart, and only where the path says so outright:
- * where it does not, the link keeps the bare name rather than being given a
- * description nobody can check.
- */
-const SOURCE_KINDS: { marker: RegExp; word: string }[] = [
-  { marker: /\/configuration\//i, word: 'configurator' },
-  { marker: /\/(specs|techspec)/i, word: 'specs' },
-  { marker: /\/newsroom\//i, word: 'newsroom' },
-  { marker: /\/news\//i, word: 'news' },
-  { marker: /\/issues\//i, word: 'issue' },
-  { marker: /\/discussions\//i, word: 'discussion' },
-  { marker: /\/blog\//i, word: 'blog' },
-  { marker: /\/raw\/[^/]+\/config\.json$/i, word: 'config' },
-  { marker: /\/compare\//i, word: 'comparison' },
-  { marker: /\/labs\/articles\//i, word: 'review' },
-  { marker: /\/review\//i, word: 'review' },
-  { marker: /-review\/?$/i, word: 'review' },
-  { marker: /\/(shop|p)\//i, word: 'store' },
-];
-
-function sourceUrl(url: string): { host: string; path: string } {
-  try {
-    const u = new URL(url);
-    return { host: u.hostname, path: u.pathname };
-  } catch {
-    return { host: url, path: '' };
-  }
-}
-
-/** Who is on the other end of a source link, as the link's own words. */
-export function sourceName(url: string): string {
-  const { host, path } = sourceUrl(url);
-  if (REPO_HOSTS.has(host)) {
-    const seg = path.split('/').filter(Boolean);
-    if (seg.length >= 2) return `${seg[0]}/${seg[1]}`;
-  }
-  return SOURCE_PUBLISHERS[host] ?? host.replace(/^www\./, '');
-}
-
-/** The word that tells two links to the same publisher apart, or nothing. */
-export function sourceKind(url: string): string | null {
-  const { host, path } = sourceUrl(url);
-  // A file in a repository is named by the file: two links into llama.cpp are a
-  // discussion and a header, and the header's own name is what says which.
-  if (host === 'github.com' && path.includes('/blob/')) return path.split('/').pop() ?? null;
-  return SOURCE_KINDS.find((k) => k.marker.test(path))?.word ?? null;
-}
-
-/**
- * The Sources line under a machine or a model. Where one publisher is cited twice
- * the links carry what their own URLs say they are; where the URL says nothing,
- * the name stands on its own twice, which is still more than a number was.
- */
-export function sourceLinks(urls: string[]): string {
-  const names = urls.map(sourceName);
-  const seen = new Map<string, number>();
-  for (const n of names) seen.set(n, (seen.get(n) ?? 0) + 1);
-  return urls
-    .map((url, i) => {
-      const kind = (seen.get(names[i]) ?? 0) > 1 ? sourceKind(url) : null;
-      const text = kind ? `${names[i]} (${kind})` : names[i];
-      return `<a href="${esc(url)}" rel="noopener">${esc(text)}</a>`;
-    })
-    .join(', ');
-}
-
 /**
  * A speed as the page prints it. Anything said about two speeds is worked out
  * from these rather than from the full precision behind them, so that a reader
@@ -1911,6 +1748,106 @@ export function stack(html: string, opts: { fig: number; labels?: Record<number,
     throw new Error(`stack(): columns ${pair[0]} and ${pair[1]} were asked to share a line and no row gave them one`);
   }
   return stacked;
+}
+
+/* ------------------------ what a token costs either way ------------------------ */
+
+/** The unit both sides of this site are priced in: a million tokens, input and output together. */
+export const MTOK = 1_000_000;
+
+export interface TokenCost {
+  /** what a million tokens of this mix costs from the hosted API */
+  rented: number;
+  /** the electricity the same million costs to generate */
+  generated: number;
+  /** what each million saves once the machine is bought */
+  gap: number;
+  /** how many tokens that gap has to cover before the machine is paid for; null where it never is */
+  breakevenTokens: number | null;
+  /** input tokens per output token these figures are priced at */
+  inputRatio: number;
+  tokensPerSec: number;
+}
+
+/**
+ * A million tokens, rented and generated, on one machine and one model.
+ *
+ * It is the same `calculate()` the calculator runs, with a day's use set to a
+ * million tokens: the day's cost it hands back is then the price of a million,
+ * on both sides, and the page cannot drift away from what the calculator says.
+ */
+export function tokenCost(m: Model, hw: Hardware, tokensPerSec: number, data: Dataset, inputRatio?: number): TokenCost | null {
+  const ce = m.cloud_equivalent;
+  if (hw.price_usd == null || hw.load_watts == null) return null;
+  if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) return null;
+  const st = defaultState(data);
+  const ratio = inputRatio ?? st.ratio;
+  const c = calculate({
+    devicePriceUsd: hw.price_usd,
+    dailyTokens: MTOK,
+    inputRatio: ratio,
+    inputPricePerMtok: ce.input_price_per_mtok,
+    outputPricePerMtok: ce.output_price_per_mtok,
+    localTokensPerSec: tokensPerSec,
+    cloudTokensPerSec: st.cloudTps,
+    loadWatts: hw.load_watts,
+    pricePerKwh: st.kwh,
+    typicalTaskOutputTokens: data.defaults.typical_task_output_tokens,
+    apiDeclinePerYear: st.decline,
+  });
+  return {
+    rented: c.cloudCostPerDay,
+    generated: c.localCostPerDay,
+    gap: c.dailySaving,
+    breakevenTokens: c.breakevenTokens,
+    inputRatio: ratio,
+    tokensPerSec,
+  };
+}
+
+/** The machine the calculator opens on, which is the one the token prices are quoted against. */
+export function costMachine(data: Dataset): Hardware {
+  const id = defaultState(data).hw;
+  return data.hardware.find((h) => h.id === id) ?? data.hardware[0];
+}
+
+export interface ModelCost {
+  row: ModelRow;
+  cost: TokenCost;
+}
+
+/**
+ * Every model a machine holds at the default context, priced both ways, cheapest
+ * to pay the machine back first. The page and its share card are both cut from
+ * this, so the two cannot disagree about the order or the figures.
+ */
+export function tokenCosts(hw: Hardware, data: Dataset): ModelCost[] {
+  const view = computeView({ ...defaultState(data), hw: hw.id }, data);
+  const out: ModelCost[] = [];
+  for (const row of view.rows) {
+    if (row.fit.status !== 'fits' || (row.model.generation ?? 'current') === 'legacy') continue;
+    if (row.throughput.tokensPerSec == null) continue;
+    const cost = tokenCost(row.model, hw, row.throughput.tokensPerSec, data);
+    if (cost) out.push({ row, cost });
+  }
+  return out.sort(
+    (a, b) =>
+      (a.cost.breakevenTokens ?? Infinity) - (b.cost.breakevenTokens ?? Infinity) ||
+      a.row.model.display_name.localeCompare(b.row.model.display_name),
+  );
+}
+
+/**
+ * A price for a million tokens. These run from a fifth of a cent to a couple of
+ * dollars, and `fmtUsd` rounds the small end to $0.00, so anything under a dollar
+ * is set in cents — which is how the verdict line already writes a daily saving.
+ */
+export function fmtPerMtok(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v >= 1) return fmtUsd(v);
+  const cents = v * 100;
+  if (cents === 0) return 'nothing';
+  return `${cents >= 1 ? cents.toFixed(1) : cents.toFixed(2)}c`;
 }
 
 /* ----------- the other match-ups the two on a head-to-head are in ----------- */

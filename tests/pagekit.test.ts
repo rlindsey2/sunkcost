@@ -5,15 +5,20 @@ import {
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection,
-  modelsInBand, modelVerdict, numberWord,
-  footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
-  powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
+  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
+  costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, MTOK, nearestCompleteComputer,
+  otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
+  priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
+import {
+  indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
+  sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
+} from '../src/format';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
+import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
 import type { Dataset, Hardware, Model } from '../src/types';
@@ -1363,6 +1368,72 @@ describe('the graphics cards, as a list of their own', () => {
   });
 });
 
+describe('what a million tokens costs', () => {
+  const st = defaultState(data);
+  const machine = costMachine(data);
+  const view = computeView({ ...st, hw: machine.id }, data);
+  const model = view.model!;
+  const tps = rowFor(view, model)!.throughput.tokensPerSec!;
+
+  it('prices both sides from the figures the page prints beside them', () => {
+    const cost = tokenCost(model, machine, tps, data)!;
+    const ce = model.cloud_equivalent;
+    const out = MTOK / (st.ratio + 1);
+    const input = MTOK - out;
+    // the API bills the context you send as well as the answer you get
+    expect(cost.rented).toBeCloseTo((input / MTOK) * ce.input_price_per_mtok! + (out / MTOK) * ce.output_price_per_mtok!, 9);
+    // at home you pay for the watts the machine draws while it writes the answer
+    expect(cost.generated).toBeCloseTo((out / tps / 3600) * (machine.load_watts! / 1000) * st.kwh, 9);
+    expect(cost.gap).toBeCloseTo(cost.rented - cost.generated, 9);
+    // the gap is what one million saves, so the count is the price divided by it, in millions
+    expect(cost.breakevenTokens).toBeCloseTo((machine.price_usd! / cost.gap) * MTOK, -1);
+  });
+
+  it('counts break-even in tokens, which does not move with how much you use it', () => {
+    // The page rests on this: the saving on each million is a constant at today's
+    // prices held flat, so the count that covers the machine is the same at every
+    // level of use and only the date changes. Switch the API decline on and it is
+    // no longer true, which is why the build checks it as well.
+    let checked = 0;
+    for (const { row, cost } of tokenCosts(machine, data)) {
+      const counts = bestUsageLevels(data).map(
+        (l) => computeView({ ...st, hw: machine.id, model: row.model.id, usage: l.usage }, data).calc?.breakevenTokens ?? null,
+      );
+      for (const c of counts) {
+        if (cost.breakevenTokens == null) expect(c).toBeNull();
+        else expect(c!).toBeCloseTo(cost.breakevenTokens, 0);
+      }
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it('prices every model the machine holds, cheapest to pay it back first', () => {
+    const costs = tokenCosts(machine, data);
+    const held = fitsOf(computeView({ ...st, hw: machine.id }, data)).filter((r) => r.model.generation !== 'legacy');
+    expect(costs.length).toBe(held.length);
+    for (const c of costs) {
+      expect(c.row.fit.status).toBe('fits');
+      expect(c.cost.rented).toBeGreaterThanOrEqual(0);
+      expect(c.cost.generated).toBeGreaterThan(0);
+    }
+    const order = costs.map((c) => c.cost.breakevenTokens ?? Infinity);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('writes a sub-dollar price in cents rather than rounding it to nothing', () => {
+    expect(fmtPerMtok(1.773)).toBe('$1.77');
+    expect(fmtPerMtok(0.456)).toBe('45.6c');
+    expect(fmtPerMtok(0.0173)).toBe('1.7c');
+    expect(fmtPerMtok(0.0021)).toBe('0.21c');
+    expect(fmtPerMtok(0)).toBe('nothing');
+    for (const { cost } of tokenCosts(machine, data)) {
+      expect(fmtPerMtok(cost.generated)).not.toBe('$0.00');
+      expect(fmtPerMtok(cost.generated)).not.toBe('0.00c');
+    }
+  });
+});
+
 describe('what a price on the page buys', () => {
   const cards = data.hardware.filter((h) => h.price_scope === 'card_only');
   const computers = data.hardware.filter((h) => h.price_scope !== 'card_only');
@@ -1448,6 +1519,7 @@ describe('the way back to the indexes', () => {
     for (const { href } of FOOTER_LINKS) expect(foot.match(new RegExp(`href="${href}"`, 'g'))).toHaveLength(1);
     expect(foot.match(/<a /g)).toHaveLength(FOOTER_LINKS.length);
     expect(FOOTER_LINKS.map((l) => l.href)).toContain('/compare/');
+    expect(FOOTER_LINKS.map((l) => l.href)).toContain('/hardware/');
   });
 
   it('sends the reader to a page rather than to a redirect', () => {
@@ -1833,6 +1905,61 @@ describe('the machines a model page’s table has no row for', () => {
     expect(andList(['a'])).toBe('a');
     expect(andList(['a', 'b'])).toBe('a and b');
     expect(andList(['a', 'b', 'c'])).toBe('a, b and c');
+  });
+});
+
+describe('the calculator’s assumptions panel, which prints the same fields the pages do', () => {
+  const panel = readFileSync(new URL('../src/render.ts', import.meta.url), 'utf8');
+
+  it('shares one implementation with the generated pages rather than keeping a second copy', () => {
+    // pagekit is the build’s module and the bundle cannot import it, so the four
+    // helpers both need live in format.ts. These are the same functions, not copies.
+    expect(powerSourceLabel).toBe(fmtPowerSourceLabel);
+    expect(splitHardwareNote).toBe(fmtSplitHardwareNote);
+    expect(sourceLinks).toBe(fmtSourceLinks);
+    expect(sourceName).toBe(fmtSourceName);
+  });
+
+  it('names a source link after whoever publishes it, the way every page does', () => {
+    expect(panel).toContain('sourceLinks(hw.sources)');
+    expect(panel).not.toMatch(/>source\$\{/);
+  });
+
+  it('says where a power figure came from in words, not in the data’s own key', () => {
+    expect(panel).toContain('powerSourceLabel(hw)');
+    expect(panel).not.toMatch(/load_watts_status[^\n]*replace\(\/_\/g/);
+  });
+
+  it('sends each sentence of a machine’s note to the figure it is about', () => {
+    expect(panel).toContain('splitHardwareNote(hw.notes)');
+    expect(panel).not.toMatch(/esc\(hw\.notes/);
+  });
+
+  it('has a row for every figure those sentences are sent to', () => {
+    for (const row of ['Usable memory', 'Memory bandwidth', 'Local speed', 'Hardware price']) {
+      expect([row, panel.includes(`<dt>${row}</dt>`) || panel.includes(`>${row}</dt>`)]).toEqual([row, true]);
+    }
+  });
+  it('names no link after nothing, which is the rule every generated page is held to', () => {
+    // the same list checkSourceLinks() refuses: a link called "source" says nothing
+    // about what is on the other end, to a reader or to a crawler.
+    const named = [...panel.matchAll(/>([^<>]{0,40})<\/a>/g)].map((m) => m[1].trim().toLowerCase());
+    expect(named.length).toBeGreaterThan(5);
+    for (const n of named) {
+      expect([n, /^(source|sources|here|this|link|read more|click here)$/.test(n)]).toEqual([n, false]);
+    }
+  });
+
+  it('prints the index version once, not once from each field that carries it', () => {
+    expect(indexVersion('Artificial Analysis Intelligence Index v4.3', 'v4.3')).toBe('');
+    expect(indexVersion('Artificial Analysis Intelligence Index', 'v4.3')).toBe('v4.3');
+    expect(indexVersion('Artificial Analysis Intelligence Index v4.3', null)).toBe('');
+    // the shape the data is in today, on every model that carries a version
+    for (const m of data.models) {
+      const v = m.frontier_equivalent?.index_version;
+      if (!v) continue;
+      expect([m.id, indexVersion(data.defaults.frontier_basis?.name, v)]).toEqual([m.id, '']);
+    }
   });
 });
 

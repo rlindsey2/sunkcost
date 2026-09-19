@@ -1,5 +1,5 @@
 import { computeView, formatUsageShort, hardwareLabel, modelLabel, ratioLabel, usageLabel, type ModelRow, type View } from './compute';
-import { esc, fmtDuration, fmtGb, fmtHours, fmtInt, fmtNum, fmtSeconds, fmtTokens, fmtUsd } from './format';
+import { endStop, esc, indexVersion, fmtDuration, fmtGb, fmtHours, fmtInt, fmtNum, fmtSeconds, fmtTokens, fmtUsd, powerSourceLabel, sourceLinks, sourceName, splitHardwareNote } from './format';
 import { bandwidthCeilingTps, kvCacheGb, kvScaleFor } from './fit';
 import { CUSTOM_HW, serializeState, type State } from './state';
 import { CAPABILITY_KEYS, CAPABILITY_LABELS, type Dataset, type Hardware, type Model, type Rating } from './types';
@@ -446,7 +446,7 @@ function renderSmarts(state: State, data: Dataset, view: View) {
   el.innerHTML = `<div class="smarts-head"><h3>How smart is ${esc(m.display_name)}, really?</h3>${frontierScale(m, data, true)}</div>
     ${line}
     <p class="note dim numberline-key">Scale: Anthropic's Claude models (Haiku, Sonnet, Opus, Fable) and OpenAI's GPT-5.6 models (Luna, Terra, Sol).</p>
-    <p class="note">${t ? esc(t.plain) + ' ' : ''}${fe?.basis ? `${esc(fe.basis)}${fe.url ? ` (<a href="${esc(fe.url)}" rel="noopener">source</a>)` : ''}. ` : ''}${d.frontier_basis?.url ? `Hosted models on the same index: <a href="${esc(d.frontier_basis.url)}" rel="noopener">${esc(d.frontier_basis.name ?? 'leaderboard')}</a>${fe?.index_version ? ` ${esc(fe.index_version)}` : ''}. ` : ''}${fe?.estimated ? `<b>${esc(d.frontier_basis?.estimated_note ?? '')}</b> ` : ''}Cloud equivalent for pricing: ${esc(m.cloud_equivalent.name)}${m.cloud_equivalent.is_exact_match ? '' : ' (nearest hosted model, not the same one)'}.</p>`;
+    <p class="note">${t ? esc(t.plain) + ' ' : ''}${fe?.basis ? `${esc(fe.basis)}${fe.url ? ` (<a href="${esc(fe.url)}" rel="noopener">${esc(m.display_name)} on ${esc(sourceName(fe.url))}</a>)` : ''}. ` : ''}${d.frontier_basis?.url ? `Hosted models on the same index: <a href="${esc(d.frontier_basis.url)}" rel="noopener">${esc(d.frontier_basis.name ?? 'leaderboard')}</a>${indexVersion(d.frontier_basis.name, fe?.index_version) ? ` ${esc(indexVersion(d.frontier_basis.name, fe?.index_version))}` : ''}. ` : ''}${fe?.estimated ? `<b>${esc(d.frontier_basis?.estimated_note ?? '')}</b> ` : ''}Cloud equivalent for pricing: ${esc(m.cloud_equivalent.name)}${m.cloud_equivalent.is_exact_match ? '' : ' (nearest hosted model, not the same one)'}.</p>`;
   layoutNumberLine();
   void state;
 }
@@ -515,6 +515,16 @@ function renderMath(state: State, data: Dataset, view: View) {
   const tps = t.tokensPerSec!;
   const be = c.breakevenDays;
   const usage = view.capacity.effective;
+  // Each sentence of the machine's note under the figure it is about, the way the
+  // machine pages print it, rather than all four under the memory figure.
+  const note = splitHardwareNote(hw.notes);
+  // Where the price and the speed figures came from. The machine's own notes about
+  // which product this is and how fast it runs are sentences after them, so what
+  // each one follows has to end like one.
+  const basis = `${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}`;
+  const priceLine = view.priceIsCustom
+    ? `${fmtUsd(view.price)} — <b>the price you entered</b>. ${hw.id === CUSTOM_HW ? 'Your own machine.' : hw.price_usd == null ? 'No list price is recorded for this configuration.' : `The list price in hardware.json is ${fmtUsd(hw.price_usd)}${hw.sources?.length ? ` (${sourceLinks(hw.sources)})` : ''}.`}`
+    : `${fmtUsd(view.price)} — hardware.json, <code>${esc(hw.id)}</code>${hw.sources?.length ? ` · ${sourceLinks(hw.sources)}` : ''}`;
   el.innerHTML = `
 <pre class="formula">${state.sub != null
     ? `cloud_cost_per_day  = $${state.sub} × 12 / 365.25     (your monthly bill; token prices not used)
@@ -536,24 +546,19 @@ breakeven_days      = the T where saved_by(T) = ${fmtUsd(view.price)} → ${be =
     : `breakeven_days      = ${fmtUsd(view.price)} / ${fmtUsd(c.dailySaving, { cents: true })} = ${be === null ? 'never (saving ≤ 0)' : `${fmtInt(be)} days (${fmtDuration(be)})`}`}
 breakeven_tokens    = ${be === null ? '—' : `${fmtInt(be)} × ${fmtInt(usage)} = ${fmtTokens(c.breakevenTokens)} tokens`}</pre>
 <dl class="sources">
-  <dt>Hardware price</dt><dd>${view.priceIsCustom
-    ? `${fmtUsd(view.price)} — <b>the price you entered</b>. ${hw.id === CUSTOM_HW ? 'Your own machine.' : hw.price_usd == null ? 'No list price is recorded for this configuration.' : `The list price in hardware.json is ${fmtUsd(hw.price_usd)}${hw.sources?.length ? ` (${links(hw.sources)})` : ''}.`}`
-    : `${fmtUsd(view.price)} — hardware.json, <code>${esc(hw.id)}</code>${hw.sources?.length ? ` · ${links(hw.sources)}` : ''}`}</dd>
-  <dt>Power under load</dt><dd>${hw.id === CUSTOM_HW ? `${hw.load_watts} W, <b>entered by you</b>.` : `${hw.load_watts} W, <b>${esc((hw.load_watts_status ?? 'published').replace(/_/g, ' '))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}`}</dd>
-  <dt>Usable memory</dt><dd>${hw.id === CUSTOM_HW ? `${hw.usable_memory_gb} GB, entered by you.` : `${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(hw.notes ?? '')}`}</dd>
-  <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${t.sourceUrl ? `<a href="${esc(t.sourceUrl)}" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}${t.detail ? ` · ${esc(t.detail)}` : ''}</dd>
+  <dt>Hardware price</dt><dd>${note.availability ? `${endStop(priceLine)} ${esc(note.availability)}` : priceLine}</dd>
+  <dt>Power under load</dt><dd>${hw.id === CUSTOM_HW ? `${hw.load_watts} W, <b>entered by you</b>.` : `${hw.load_watts} W, <b>${esc(powerSourceLabel(hw))}</b> — hardware.json. ${esc(hw.load_watts_note ?? '')}`}</dd>
+  <dt>Usable memory</dt><dd>${hw.id === CUSTOM_HW ? `${hw.usable_memory_gb} GB, entered by you.` : `${hw.usable_memory_gb} GB of ${hw.unified_memory_gb} GB. ${esc(note.memory)}`}</dd>
+  ${hw.memory_bandwidth_gbs ? `<dt>Memory bandwidth</dt><dd>${hw.memory_bandwidth_gbs} GB/s${hw.id === CUSTOM_HW ? ', entered by you.' : `, hardware.json.${note.bandwidth ? ` ${esc(note.bandwidth)}` : ''}`}</dd>` : ''}
+  <dt>Local speed</dt><dd>${fmtNum(tps, 1)} tok/s, <b>${t.measurement}</b>. ${note.speed ? `${endStop(basis)} ${esc(note.speed)}` : basis}</dd>
   <dt>Daily ceiling</dt><dd>${fmtNum(tps, 1)} tok/s × 86,400 s = ${fmtTokens(view.capacity.maxOutputPerDay)} <b>output</b> tokens a day, generating without a break; × (${state.ratio} + 1) = ${fmtTokens(view.capacity.maxTokensPerDay)} once the input at ${esc(ratioLabel(state.ratio))} is counted.${view.capacity.capped ? ` Your ${fmtTokens(view.capacity.requested)} exceeds this, so ${fmtTokens(usage)} is used.` : ''} ${esc(data.defaults.capacity_note ?? '')}</dd>
   <dt>${state.sub != null ? 'What you pay instead' : 'API price'}</dt><dd>${state.sub != null ? `$${state.sub} a month, entered by you. For reference, the per-token price is ` : ''}${ce.stand_in ? `${esc(ce.note ?? '')} ${esc(ce.name)}` : `${esc(ce.name)}${ce.is_exact_match ? '' : ' (nearest hosted equivalent, not the same model)'}`}: $${ce.input_price_per_mtok} in / $${ce.output_price_per_mtok} out per million tokens — ${ce.source_url ? `<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>` : esc(ce.source)}${ce.checked ? `, checked ${esc(ce.checked)}` : ''}.</dd>
   <dt>Electricity</dt><dd>$${state.kwh}/kWh. ${esc(data.defaults.electricity.source)}</dd>
-  ${c.apiDeclinePerYear > 0 ? `<dt>Falling API prices</dt><dd>Assuming ${Math.round(c.apiDeclinePerYear * 100)}% a year. ${esc(data.defaults.api_decline.source)}${data.defaults.api_decline.source_url ? ` <a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">Source</a>.` : ''}${c.bestPosition ? ` The saving peaks ${fmtDuration(c.bestPosition.days)} in; after that the API is cheaper than the electricity and the position sinks.` : ''}</dd>` : ''}
+  ${c.apiDeclinePerYear > 0 ? `<dt>Falling API prices</dt><dd>Assuming ${Math.round(c.apiDeclinePerYear * 100)}% a year. ${esc(data.defaults.api_decline.source)}${data.defaults.api_decline.source_url ? ` <a href="${esc(data.defaults.api_decline.source_url)}" rel="noopener">${esc(sourceName(data.defaults.api_decline.source_url))}</a>.` : ''}${c.bestPosition ? ` The saving peaks ${fmtDuration(c.bestPosition.days)} in; after that the API is cheaper than the electricity and the position sinks.` : ''}</dd>` : ''}
   <dt>Token split</dt><dd>${fmtInt(usage)} tokens a day at ${esc(ratioLabel(state.ratio))} → ${fmtInt(c.dailyInputTokens)} input, ${fmtInt(c.dailyOutputTokens)} output.</dd>
   <dt>Memory fit</dt><dd>${fmtGb(m.weights_gb)} weights + ${fmtGb(kvCacheGb(m, state.ctx, kvScaleFor(state.kv, data.defaults)))} KV cache at ${fmtCtx(state.ctx)} context ≤ ${hw.usable_memory_gb} GB usable. KV cache = 2 × ${m.architecture?.n_kv_heads} KV heads × ${m.architecture?.head_dim} head dim × ${(data.defaults.kv_cache?.types ?? []).find((t) => t.id === state.kv)?.bytes_per_value ?? 2} bytes (${esc((data.defaults.kv_cache?.types ?? []).find((t) => t.id === state.kv)?.label ?? '16-bit')} cache) × cached tokens per layer, over ${m.architecture?.n_layers} layers${m.architecture?.note ? `. ${esc(m.architecture.note)}` : ''}.</dd>
 </dl>
 <p class="note">Left out, all of which favour local slightly less than shown: prompt-processing time and its electricity, idle power when the machine is on but not generating, and API prompt caching, which cuts the input price on repeated context. Left out in local’s favour: resale value, and the other jobs the machine does.</p>`;
-}
-
-function links(urls: string[]): string {
-  return urls.map((u, i) => `<a href="${esc(u)}" rel="noopener">source${urls.length > 1 ? ` ${i + 1}` : ''}</a>`).join(', ');
 }
 
 function renderSmallPrint(state: State, data: Dataset, view: View) {
