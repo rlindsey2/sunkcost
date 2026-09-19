@@ -2101,13 +2101,17 @@ function leaderboard(): string {
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
 <p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
-${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
+${gap != null ? `<h2>How far behind the frontier open models are</h2>
+<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
+<h2>Every model here, ranked</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${hostedHeading}${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' }, pair: [3, 4] })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
-${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
+${unplaced.length ? `<h2>Models the index has not scored yet</h2>
+<p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
+<h2>How to read the scores</h2>
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
@@ -4662,12 +4666,16 @@ function hardwareIndex(): string {
   const body = `<article class="prose">
 <h1>Every machine that runs local models, priced</h1>
 <p class="lede">All ${data.hardware.length} configurations this site prices, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
-${plateau && quickest && slowest ? `<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
+<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<h2>How long each machine takes to pay for itself</h2>
 <p>Pay-back runs the other way, because the strongest model a machine holds is also the slowest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. Nothing here pays for itself inside a decade at that usage. What changes the answer is using the machine much harder, or running a smaller model on it, and <a href="/best/">best buys by usage</a> ranks both.${launchLine([quickest])}</p>` : ''}
+<h2>Every machine here, side by side</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 5, labels: { 2: 'Usable', 3: 'Models', 4: 'Strongest model' } })}
+<h2>The assumptions behind the table</h2>
 <p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
 </article>`;
 
@@ -6271,6 +6279,53 @@ function checkSubjectHeadings() {
  * anywhere were set by hand instead, those guards would start missing sections
  * that are really there and this one says so first.
  */
+/**
+ * Every page on this site is cut into sections, and no section is the page over
+ * again.
+ *
+ * A page with no `<h2>` on it is a page nothing can link into, a page no search
+ * result can offer a jump into, and a page a reader has to read from the top to
+ * find the part they came for. It is also the state `/hardware/` and
+ * `/leaderboard/` were in for weeks without anyone noticing: 56 machines and 55
+ * models under one heading each, while every other index on the site headed five
+ * sections or more. The floor is one section, and the print says what the
+ * thinnest page actually heads, so the next index written as one slab is caught
+ * by the build rather than by the next person to measure it.
+ *
+ * The second claim is what stops the floor being met with a heading that says
+ * nothing: a section headed in the page's own title is the page labelling itself
+ * inside itself, which buys the reader nothing and a jump line a repeated line.
+ */
+function checkPageSections() {
+  const problems: string[] = [];
+  const words = (h: string) => unesc(h.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  let fewest = { path: '', sections: Infinity };
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const h1 = words(body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '');
+    const sections = [...body.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => words(m[1]));
+    if (!sections.length) {
+      problems.push(`${path} heads no sections at all, so nothing can link into it and a reader has to start at the top`);
+      continue;
+    }
+    if (sections.length < fewest.sections) fewest = { path, sections: sections.length };
+    for (const heading of sections)
+      if (heading.toLowerCase() === h1.toLowerCase())
+        problems.push(`${path} heads a section "${heading}", which is the page's own title said twice`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 page does not cut itself into sections a reader can land on'
+        : `${problems.length} pages do not cut themselves into sections a reader can land on`,
+    );
+  }
+  console.log(
+    `  ${meta.length} pages head at least one section, the fewest being ${fewest.sections} on ${fewest.path}; none of them heads a section in the page's own title`,
+  );
+}
+
 function checkHeadingAnchors() {
   const problems: string[] = [];
   let headings = 0;
@@ -6435,6 +6490,7 @@ checkCardRanking();
 checkMachineIndex();
 checkMachineLedes();
 checkSubjectHeadings();
+checkPageSections();
 checkHeadingAnchors();
 checkJumpLines();
 checkSpeedBasis();

@@ -774,7 +774,7 @@
       "changed": "2026-09-19"
     },
     "/hardware/": {
-      "hash": "0c735cef0424408c",
+      "hash": "73d23cadc67aacaf",
       "changed": "2026-09-19"
     },
     "/hardware/beelink-gtr9-pro-128/": {
@@ -1006,7 +1006,7 @@
       "changed": "2026-09-19"
     },
     "/leaderboard/": {
-      "hash": "b0d165fb54aeba0a",
+      "hash": "1de2f222916489db",
       "changed": "2026-09-19"
     },
     "/local-llm-vs-api-cost/": {
