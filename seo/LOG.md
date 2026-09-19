@@ -1606,8 +1606,10 @@ that wastes the reader's click; it is not worth a single changed word today.
 
 **Verified**: 403 tests, typecheck clean, 307 pages with every guard passing, and the full
 `npm run build` end to end including `build:og`, `build:share` and `build:functions`.
-**Pushed as `1165130`.** The live site was not read back: this environment's egress proxy blocks
-`sunkcost.ai`, so everything above is from the built output.
+**Pushed as `1165130`.** Run 244 was cancelled a minute later by the push of this entry, as usual,
+and **deploy run 245 went green at 20:45 on 2026-09-19** on `7114721`, carrying both. The live site
+was not read back: this environment's egress proxy blocks `sunkcost.ai`, so everything above is
+from the built output.
 
 **Both open pull requests still merge clean**, checked against the new `main`. PR #16 was merged for
 real in a throwaway worktree and built there rather than trusted to `git merge-tree`: no conflict,
