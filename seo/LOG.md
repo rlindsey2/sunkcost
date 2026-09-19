@@ -229,8 +229,16 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       label outside the card's text column**, where it was 68,747 ticks, 10,488 KB and every card.
       Nothing is left here.
 
-- [ ] Merge (or close) **[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, the calculator's
-      assumptions panel. Opened 2026-09-18. It fixes three things the generated pages fixed weeks
+- [x] Merge (or close) **[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, the calculator's
+      assumptions panel. **Merged 05:19 on 2026-09-19**, inside PR #15 with PR #8 and PR #10; deploy
+      run 202 finished green at 05:22 on `a5caf81`, so all three are live. Verified on merged `main`
+      rather than assumed: 367 tests, typecheck clean, 261 pages with every guard passing, and the
+      panel read out of the built bundle in Chromium — a card's four sources named after their
+      publishers, its bandwidth sum under the new Memory bandwidth row, its availability sentence
+      under the price and `stand-in` spelled as a word. One thing seen while checking it, which is
+      the same note PR #7 left and is not a fault: `build:pages` alone fails `checkOgCards()` on a
+      stale local `public/og/`, naming the eight cards the combined branch added; `build:og` first
+      clears it, and the deploy draws them every time, so it cannot reach CI. Opened 2026-09-18. It fixes three things the generated pages fixed weeks
       ago and the panel kept: a power figure printed as the data's own key (*140 W, stand in*), the
       whole of `hw.notes` under Usable memory so a graphics card explained its bandwidth arithmetic
       under its memory, and source links named *source 1, source 2, source 3* — the last place on
