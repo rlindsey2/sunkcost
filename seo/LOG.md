@@ -29,25 +29,25 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       can name — never inventing one, and stopping where a figure is missing — say so and the rule
       can be lifted for this the way it was lifted for the usage slider in PR #6.
 
-- [ ] **Five pull requests are open and nothing has merged since PR #11 at 11:01 on 2026-09-18.**
-      None of them is broken and none is waiting on the agent: all five were built and read here
-      before they were opened, and the three that were re-checked against `main` still merge clean.
-      What they are waiting on is you. **[#8](https://github.com/rlindsey2/sunkcost/pull/8)**, the
-      *local LLM vs API cost* page, and **[#10](https://github.com/rlindsey2/sunkcost/pull/10)**,
-      the `/hardware/` index of all 56 machines, are the two that unblock page work — the
-      monthly-cost page has been the top backlog item for four runs and sits on #8's helpers, so
-      every run since has spent its hour on something smaller. **[#12](https://github.com/rlindsey2/sunkcost/pull/12)**
-      (the top bar on a phone), **[#13](https://github.com/rlindsey2/sunkcost/pull/13)** (the
-      assumptions panel) and **[#14](https://github.com/rlindsey2/sunkcost/pull/14)** (the
-      waterline's time axis, which is the one a visitor can hit today) are the calculator's own
-      head, which is why they are pull requests rather than pushes.
-      Two things are worth knowing before you decide. **#8 and #10 conflict with `main` and with
-      each other**, in the four files every new page type touches — `scripts/build-og.ts`,
-      `scripts/build-pages.ts`, `src/list-card.ts`, `src/pagekit.ts` — and the resolution has been
-      the same union every time; the longer they sit, the more repairs they need, and PR #1 needed
-      fourteen. **#12, #13 and #14 conflict with nothing**, so those three can go in whenever you
-      have five minutes. **Ryan was notified at 01:55 on 2026-09-19**; this is the first ping about
-      the queue, so it should not be repeated unless something changes.
+- [ ] **Three of the five open pull requests are now one: [PR #15](https://github.com/rlindsey2/sunkcost/pull/15).**
+      Ryan asked for this at 02:00 on 2026-09-19, because #8, #10 and #13 all conflicted with `main`
+      and with each other. #15 is those three branches merged onto `main` at `0c970b4` — no new work
+      — and it merges clean. **What is left to merge is #15, #12 and #14**, and #12 and #14 conflict
+      with nothing. The three originals are **left open rather than closed**, in case you would
+      rather take them separately; closing them is a click and nobody should do it but you.
+      What #15 carries: the `/local-llm-vs-api-cost/` page, the `/hardware/` index of all 56
+      machines, and the calculator's assumptions panel. 346 tests, typecheck clean, the full build
+      with `build:functions`, 255 pages, both new pages read rendered out of `dist/`, and the
+      calculator itself rendered in Chromium to read the panel.
+      **The part of it worth a second look** is in the pull request too: in
+      `scripts/build-pages.ts` and `src/list-card.ts` the two page branches add their builder in the
+      same place, so git interleaved them into one broken function — one function's opening, the
+      other's body, a single shared `return`. A union compiles to nothing sensible and silently
+      drops the first function's tail. Each side's block was taken whole from its own branch
+      instead. That is the shape to expect the next time two page branches meet, and it is not what
+      the old "every resolution is a union" note predicts.
+      **Ryan was notified about the queue at 01:55 on 2026-09-19**, before he asked for this; that
+      was the first ping about it and it should not be repeated unless something changes.
 
 - [ ] **Two one-line data faults, both surfaced on 2026-09-18 by naming the source links, and both
       in files the agent must not edit.**
@@ -1067,12 +1067,77 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       to review a palette edit. One line to delete, and it should ride with the next pull request that
       touches that file.
 
+- [ ] **Two one-line faults in the calculator's assumptions panel, found by reading it rendered on
+      2026-09-19 while checking PR #15's merge.** Neither is PR #15's to fix and both were
+      deliberately left out of it, so that branch is the three pull requests and nothing else.
+      The first is the `TODO:` in `electricity.source`, which is already on Ryan's side of this file
+      and is `data/*.json`. The second is new: the **Memory fit** line ends in a doubled full stop
+      wherever a model's `architecture.note` is set — *"only 16 full-attention layers hold a growing
+      KV cache.."* — because the note ends in a stop and `src/render.ts` adds another. `endStop()`
+      exists for exactly this and the generated pages already use it; the same line on a model page
+      is correct. It is `src/render.ts`, so it is a pull request rather than a push, and it is small
+      enough to ride with the next one that touches that file rather than justify a branch.
+
 - [ ] The 7 head-to-head titles still over 60 characters are all pairs of long machine or model
       names (worst: MacBook Air M5 (15-inch), 16GB vs MacBook Pro M5 Pro (16-inch), 64GB, at 68).
       Shortening them further means dropping a memory size or a screen size, which are the things
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — three pull requests become one, merged against today's main
+
+**Why this run.** Ryan asked, at 02:00, after the ping about the queue: PRs #8, #10 and #13 all
+conflicted with `main` and with each other, so combine them into one pull request. Opened as
+**[PR #15](https://github.com/rlindsey2/sunkcost/pull/15)**, branch `seo/combined-pages`, built
+from `main` at `0c970b4`. No new work: the three branches, merged, resolved and verified.
+
+**Ten conflicts across eight files, and eight of them were the union this log has predicted since
+PR #7.** Both footer links in `index.html`, both cards in `build-og.ts`, both describe blocks in the
+two test files, main's ledger in `page-dates.json` and then rewritten by the build.
+
+**The other two are the find, and they break the union rule.** In `scripts/build-pages.ts` and
+`src/list-card.ts` the two page branches add their builder in *the same place*, so git did not give
+two blocks to choose between: it **interleaved them into one function** — `hardwareIndexCard()`'s
+opening, `tokenCostCard()`'s body, one shared `return`, with the first function's tail swallowed as
+common context. A union of the marked hunks compiles to nothing sensible and **silently drops the
+tail of the first function**, which is what happened on the first attempt: `tsc` caught it at 21
+errors in `src/list-card.ts`. Reapplying the branch's own diff with `git apply -3` gave cleaner
+blocks and the same fault one level down, because the closing `});` of each block is common text.
+What worked is not a resolution at all: **take each side's function whole from its own branch and
+splice both in**, then hand-merge the import lists. `hardwareIndex()`, `tokenCostPage()`,
+`hardwareIndexCard()` and `tokenCostCard()` are each byte-for-byte their branch's version.
+
+**`src/pagekit.ts` merged without a conflict**, which was the one to expect trouble from: PR #13
+moves eight functions out of it into `src/format.ts`, and both other branches and this morning's
+`familyReach()` all add to it. The re-export block at the top of pagekit is why — nothing that
+imported those eight had to change, so the three sets of additions never met.
+
+| | |
+| --- | --- |
+| tests | 346, all passing (315 on main + 31 from the three branches) |
+| pages built | 255, every guard passing |
+| typecheck | clean |
+| full `npm run build` | end to end, `build:functions` included |
+
+**Read rather than assumed.** Both new pages read rendered out of `dist/` — `/hardware/` at 490
+words, `/local-llm-vs-api-cost/` at 995. And the calculator itself was rendered in **Chromium
+against the built bundle** (`--headless --dump-dom` over a local server on `dist/`, no Playwright in
+this environment), because PR #13 is the calculator's own head and nothing in the test suite renders
+it: the power label reads *stand-in*, `hw.notes` is split by subject across four rows, the Memory
+bandwidth row is there with its source, and both new footer links are present.
+
+**Two faults that reading it turned up, both left out on purpose.** The `TODO:` under Electricity,
+which is `data/defaults.json` and already on Ryan's side of this file; and a **doubled full stop at
+the end of the Memory fit line**, which is new — `endStop()` exists for it and the generated pages
+already use it. Both are one line, both are in files this agent does not push to, and folding either
+into #15 would make it something other than the three pull requests combined. The second is a new
+backlog item.
+
+**What to continue.** **Three pull requests are open now, not five**: #15, plus #12 and #14, and
+those two conflict with nothing. #8, #10 and #13 are left open rather than closed — that is Ryan's
+click, not the agent's. Once #15 merges, the monthly-cost page — *how much does it cost to run a
+local LLM per month* — is unblocked and is the top backlog item; it sits on the helpers #8 brings in.
 
 ### 2026-09-19 — a model page says which machines run it, not just the cheapest in each family
 
