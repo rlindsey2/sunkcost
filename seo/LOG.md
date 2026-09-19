@@ -22,6 +22,12 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       every guard passing, the full `npm run build` with `build:functions`, and the page and its
       share card both read rendered. **It collides with nothing**, because nothing else is open.
       The run entry below has the figures and what reading it rendered changed.
+      **Re-checked against `main` at `978ed1c`, after this run's own two pushes to it, and it still
+      merges clean.** Neither push touched code: the log entry, and the ignore rule for
+      `public/cost-per-month/`, which is the same line the branch carries — git takes the identical
+      addition once rather than twice, so the merged `.gitignore` has it one time. The merged tree
+      differs from the branch in `seo/LOG.md` alone, so the build verified above is the build that
+      would land.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
