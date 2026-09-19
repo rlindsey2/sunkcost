@@ -1618,8 +1618,9 @@ back — so build twice before reading the sitemap, or the guard's own count say
 Ryan's side of this file, 307 pages with every guard passing, the full `npm run build` end to end
 including `build:og`, `build:share` and `build:functions`, and the page read rendered out of `dist/`
 rather than from the source — 5,909 words, the jump line above the first section, and the four
-headings in the order the line names them. **Pushed as `a97e551`**; deploy run 241 was still in flight when
-this entry was written, and gets a line of its own once it lands. The live site was not read back: this
+headings in the order the line names them. **Pushed as `a97e551`**; run 241 was cancelled a minute later by
+the push of this entry, as usual, and **deploy run 242 went green at 19:46 on 2026-09-19** on
+`da8e03b`, carrying both, so the page is live. The live site was not read back: this
 environment's egress proxy blocks `sunkcost.ai`, so everything above is from the built output.
 
 **Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree and
