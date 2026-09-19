@@ -60,6 +60,14 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `seo/page-dates.json` rebuilt rather than chosen, which is the rule that already stood on this
       pull request. Verified on the merged tree: 406 tests, typecheck clean, 308 pages with every
       guard passing. GitHub reports it `clean`. Nothing about the page changed.
+      **It conflicted a third time at 17:51 on 2026-09-19 and is merged clean again**, as `a81e913`.
+      Same file, same import line: `main`'s jump-line rule and this branch's monthly-cost helpers,
+      with `MTOK` sitting on a different line on each side. Both kept by hand, `MTOK` kept once, and
+      `seo/page-dates.json` rebuilt rather than chosen. Verified on the merged tree: 413 tests,
+      typecheck clean, 308 pages with every guard passing. GitHub reports it `clean`. Nothing about
+      the page changed, but one thing about it is new and worth knowing before you merge:
+      `/cost-per-month/` heads four sections and names no machine or model twice, so `main`'s new
+      rule gives it a jump line of its own in the merged tree, without a line of this branch moving.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
@@ -623,25 +631,38 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       entry below has the figures, the four breaks and the three links the cut deliberately leaves
       pointing at the top of a page.
 
-- [ ] **The other half: 1,172 sections still have nothing pointing at them, and the *Jump to* line
-      is what would change that.** `/best/` carries one, above its five usage bands, and it is still
-      the only page on the site that does. A reader from a search lands mid-page and a search result
-      can offer a jump into a section only where the page itself offers one. **What the run of
-      2026-09-19 found before leaving this half alone**, so it is not re-derived: a jump line built
-      from the headings themselves reads as keyword stuffing on the two biggest page types, because
-      yesterday's run made every heading name its own subject. A model page would open *Jump to: How
-      good is Gemma 4 31B, really? · What Gemma 4 31B costs either way · Machines that run Gemma 4
-      31B · The specifics* — the model named three times in one line. The machine pages are the same
-      shape and carry only three sections besides. **Where it reads clean is the 190 head-to-heads**,
-      whose four headings name the pair once between them (*Side by side on Gemma 4 12B · How much
-      use it takes to pay back · What the extra memory buys · The assumptions behind both columns*),
-      and the three long indexes: `/how-much-memory/` at seven sections, four of them a pick-one
-      ladder by model size, `/best-gpu/` at five and `/local-llm-vs-api-cost/` at five.
-      **The two things to settle**: where the line goes, given the site's own rule that the answer
-      comes first — under the lede would push the answer block down, so above the first `<h2>` is
-      the likelier place — and whether the cut is written as a rule the build can hold or as a flag
-      per page type. `scripts/build-pages.ts` either way, so it is a push. `checkSectionLinks()` is
-      already there and would cover the new links the day they are written.
+- [x] **The other half: 1,172 sections had nothing pointing at them, and the *Jump to* line was what
+      would change that.** Done 2026-09-19, pushed as `479b982`. 148 pages offer 610 jumps into their
+      own sections where `/best/` alone offered five, and 565 sections are left with nothing pointing
+      at them against 1,167. Both things the item said to settle are settled and written into the
+      code: the line goes **above the first `<h2>`**, not under the lede, because on a head-to-head
+      the lede, the table and the calculator links are the answer and a contents line in front of
+      them pushes it down; and the cut is **a rule the build holds**, four sections or more and at
+      most one heading repeating a name the page's own `h1` carries, rather than a list of page types
+      somebody has to remember to keep current. The run entry below has the figures, the five breaks
+      that proved `checkJumpLines()` and the two that proved the tests.
+      **What it turns away, so none of it reads as a gap:** the 55 model pages and 19 machine pages
+      by the name count, 37 machine pages and 45 head-to-heads by the four-section floor, `/compare/`
+      at two sections, and `/best/`, which keeps the shortened line it wrote for itself because each
+      of its headings carries a second clause.
+
+- [ ] **`/hardware/` and `/leaderboard/` head no sections at all**, measured 2026-09-19 while the
+      jump lines were being cut. They are two of the site's four top-level indexes — 56 machines on
+      one, 55 models on the other — and each is linked from the footer of all 306 other pages, but
+      each is a single table under an `h1` with not one `h2` on it. So nothing can link
+      into either by section, a search result cannot offer a jump into one, and neither can carry a
+      jump line however many rows it grows to. Every other index on the site heads five sections or
+      more.
+      **The two things to settle before a line of it is written.** The first is what the sections
+      are, and it has to be the reader's own question rather than a heading over an alphabetical cut:
+      on `/hardware/` the candidates are the shape of the thing you are buying (a laptop, a small
+      desktop, a workstation, a card that needs a PC around it) or what it holds, since memory is
+      what the whole site says decides it; on `/leaderboard/` it is the size bands `SIZE_BANDS`
+      already names. The second is whether one sorted table becomes several, which changes what the
+      page is — a reader comparing 56 machines on price wants one table they can read down, and
+      cutting it into four is a worse page with better headings. A table that stays whole with
+      section headings above named groups of rows is the likelier answer, and it is `<tbody>` per
+      group rather than a new page type, so it stays a push.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1494,6 +1515,103 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a way into the sections of the pages worth one
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the other half of the section links: 1,177 sections
+could be linked to, and `/best/` was still the only page on the site that offered its own reader a
+way in. The item left two things to settle before a line was written, and both are settled below.
+
+**Where the line goes.** Above the first `<h2>`, and above whatever wraps it. Not under the lede,
+which the item guessed at: on a head-to-head the answer is the lede, the comparison table and the two
+prefilled calculator links, and a contents line in front of that pushes the answer down the page.
+Above the first section is where the reader has finished the answer and started looking for the rest
+of it.
+
+**The cut is a rule the build takes for itself, not a flag per page type**, and it is two counts:
+**four sections or more, and at most one heading repeating a name the page's own `h1` already
+carries.** The second count is the whole of it. Where a page is about one machine or one model every
+heading names it, so a line built from those headings prints the reader's own search term back at
+them three times in a row, which is what the item meant when it called the model pages keyword
+stuffing. Where the headings name different things, the same line is a contents page. The names come
+from `data/*.json` as the pages print them, so the rule is keyed on this site's own vocabulary rather
+than on a page type somebody remembered to list.
+
+| | before | after |
+| --- | --- | --- |
+| pages offering a way into their own sections | 1 | 148 |
+| jumps, one a section | 5 | 610 |
+| distinct lines across those pages | 1 | 28 |
+| sections with nothing pointing at them | 1,167 of 1,177 | 565 |
+| words a visitor reads that changed elsewhere | — | 0 |
+
+**What the rule turns away, so none of it reads as a gap.** The 55 model pages head four sections
+each and name the model in three of them. 19 of the 56 machine pages head four and name the machine
+in two; the other 37 head three. 45 head-to-heads head three sections, because no model fits both
+machines and the *Side by side on* section is not written — a contents line for what is already on
+the screen. `/compare/` heads two. `/hardware/` and `/leaderboard/` head **none at all**, which is
+the one thing this measurement turned up that is worth its own backlog item, below. And `/best/`
+keeps the line it wrote for itself: its five headings each carry a second clause after a `·`, so the
+generic line would read as ten items rather than five, and *50k/day · 200k/day · 1M/day · 4M/day ·
+20M/day* is better than anything a rule would build from those words.
+
+**How the lines read.** 46 characters at the shortest, which is `/best/`'s own, and 283 at the
+longest, which is `/how-much-memory/`: *Where the cache figure comes from · How much memory for a 7B
+or 8B model? · How much memory for a 14B to 32B model? · How much memory for a 70B model? · How much
+memory for a 100B model or larger? · Context is the part people miss · What can you run with the
+memory you already have?* Four of those seven share their opening words, and it was read rendered
+before it was kept: the repetition is the ladder, and the part that differs is the part the reader is
+looking for. A head-to-head's is 139 to 174 characters. No link text carries an entity or a stray
+separator; all 148 were read out of the built pages.
+
+**The guard.** `checkJumpLines()` holds three claims. The first is the rule itself, both ways round —
+a page that should carry a line and does not, and a page that carries one and should not, each stop
+the build, so the day a fourth section is written onto a machine page the build says what that does
+rather than leaving it to whoever next reads the page. The second is that the line covers the page:
+one jump a section, in the order the page puts them in, each landing on an id the page really heads.
+The third is that it sits above the first section it points into. The build prints *`148 pages offer
+610 jumps into their own sections, one a section; 159 pages carry none, each under 4 sections or
+naming its own subject in more than one`*.
+
+**Five breaks, each run and each caught.** Drop the last section from the line → *`/compare/mac-mini-m5-pro-24gb-vs-mac-studio-m5-max-128gb/` jumps into 3 of the 4 sections it
+heads*, on 147 pages. Reverse the order → *`/how-much-memory/` lists
+`#how-much-memory-for-a-14b-to-32b-model` after `#how-much-memory-for-a-70b-model`, where the page
+itself has them the other way round*. Put the line after the first heading → *puts its jump links
+below the first section they point into*. Loosen the name count from one to three → *`/models/qwen3-14b-q4/` offers jump links whose words name How good is Qwen3 14B, really? and 2 more
+headings carrying the same name*, on 67 pages. Raise the floor from four sections to five → *heads 4
+sections and offers no way into them*, on 132. Two of the four new tests were proved the same way:
+loosening the name count fails *leaves a page alone where more than one heading names what the h1
+already names*, and ignoring the `<section>` wrapper fails *puts the line above the first section,
+and outside whatever wraps it*.
+
+**Nothing else on any page moved.** The site was built from `main` at `6b27303` in a worktree and
+from this change, and all 307 pages compared: **147 differ by the new line alone, 160 are identical,
+and `sitemap.xml` is the same byte for byte.** No page is re-dated, because every page on this site
+already carried today's date from this morning's runs; 147 hashes move in `seo/page-dates.json` and
+no date does.
+
+**Verified**: 403 tests (399 plus four new), typecheck clean, `npm run validate` with the two null
+prices already on Ryan's side of this file, 307 pages with every guard passing, and the full
+`npm run build` end to end including `build:og`, `build:share` and `build:functions`.
+
+**Pushed as `479b982`, and deploy run 236 went green at 17:49 on 2026-09-19**, so the jump lines are
+live. The live site was not read back: this environment's egress proxy blocks `sunkcost.ai`, so
+everything above is from the built output.
+
+**PR #16 conflicted on this push and is merged clean again, as `a81e913`.** Same file, same line, the
+third time in a day: `main`'s `JUMP_MIN_SECTIONS` and that branch's monthly-cost helpers both
+extended the import list at the head of `scripts/build-pages.ts`, and `MTOK` sat on a different line
+on each side. Both kept by hand, `MTOK` kept once, and `seo/page-dates.json` rebuilt rather than
+chosen. Verified on the merged tree: 413 tests, typecheck clean, 308 pages with every guard passing.
+**One thing worth knowing before merging it**: `/cost-per-month/` heads four sections and names no
+machine or model twice, so it picks up a jump line of its own in the merged tree — 149 pages, 614
+jumps — without a line of that branch changing. GitHub reports it `clean`. **PR #17 merges clean and
+was merged for real rather than assumed**: 405 tests, 307 pages, every guard passing.
+
+**What to continue.** The backlog's top open item is now the two indexes that head no sections at
+all, `/hardware/` and `/leaderboard/`, measured here and written up below. The per-memory-size pages
+are still the biggest open item and still want the two open pull requests settled first.
 
 ### 2026-09-19 — the links that name a section now land on it
 
