@@ -82,6 +82,26 @@ export function shortHardwareLabel(h: Hardware): string {
 }
 
 /**
+ * The screen size in a laptop's name tells a reader which of two machines this
+ * is, and only where both are priced here. Where only one size of a chip is
+ * sold, those ten characters separate nothing, and in a title they cost the
+ * second machine's memory size, which is the figure the page is about. So a
+ * title may drop the bracket where nothing else here answers to the name
+ * without it, and must keep it where something does. Every other label on the
+ * site, and the page's own heading, keeps the full name.
+ */
+export function titleHardwareLabel(h: Hardware, fleet: Hardware[]): string {
+  const label = shortHardwareLabel(h);
+  const bare = withoutBracket(label);
+  if (bare === label) return label;
+  return fleet.some((o) => o.id !== h.id && withoutBracket(shortHardwareLabel(o)) === bare) ? label : bare;
+}
+
+export function withoutBracket(label: string): string {
+  return label.replace(/ \([^()]*\)/g, '');
+}
+
+/**
  * The part that decides how fast a machine runs a model. `chip_variant` writes the CPU
  * and the GPU either side of a middle dot where a machine has both, so the GPU is the
  * last segment of it; where the field names one thing, that one thing is the answer.
@@ -440,6 +460,65 @@ ${footerHtml()}
 </body>
 </html>
 `;
+}
+
+/**
+ * The id a section heading answers to, so a link can land on the section rather
+ * than on the top of the page.
+ *
+ * Two things want one. Another site linking to what a machine runs should be able
+ * to send a reader to that table, not to a page they then have to scan; and a
+ * search engine can only offer a jump straight into a section of a result if the
+ * section has somewhere to jump to.
+ *
+ * The slug reads the heading the way a person does: markup dropped, entities put
+ * back, accents folded, everything else that is not a letter or a digit becoming
+ * a hyphen. A heading with no letters or digits in it gets no slug, and
+ * `anchorHeadings` leaves it as it found it.
+ */
+export function headingSlug(heading: string): string {
+  return heading
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * One section heading as it is published. The build writes headings without an
+ * id and `anchorHeadings` puts them in, so this is also how a guard asks for the
+ * heading it wants: the slug is a function of the heading's own words, so the
+ * two cannot drift apart.
+ */
+export function anchoredHeading(heading: string): string {
+  const slug = headingSlug(heading);
+  return slug ? `<h2 id="${slug}">${heading}</h2>` : `<h2>${heading}</h2>`;
+}
+
+/**
+ * Every section heading in a page body, given the id a link can land on.
+ *
+ * Only a bare `<h2>` is touched, so a heading that already carries attributes —
+ * and an id of its own — keeps them. Where two headings on one page would slug
+ * the same, the second and any after it take a number, because an id that is not
+ * unique on the page is an id a browser cannot honour.
+ */
+export function anchorHeadings(html: string): string {
+  const used = new Map<string, number>();
+  return html.replace(/<h2>([\s\S]*?)<\/h2>/g, (whole, inner: string) => {
+    const slug = headingSlug(inner);
+    if (!slug) return whole;
+    const n = (used.get(slug) ?? 0) + 1;
+    used.set(slug, n);
+    return `<h2 id="${n === 1 ? slug : `${slug}-${n}`}">${inner}</h2>`;
+  });
 }
 
 export function calcLink(state: Partial<State>, data: Dataset): string {
@@ -1263,16 +1342,31 @@ export function powerWithSource(hw: Hardware): string {
  * dividing one figure on the page by another gets the third figure on the page.
  */
 export function shownTps(row: ModelRow | null | undefined): number | null {
-  const tps = row?.throughput.tokensPerSec;
+  return roundTps(row?.throughput.tokensPerSec);
+}
+
+function roundTps(tps: number | null | undefined): number | null {
   if (tps == null) return null;
   return tps < 10 ? Math.round(tps * 10) / 10 : Math.round(tps);
 }
 
 /** A speed, always with how it was arrived at, the way every other page shows one. */
 export function speedWithBasis(row: ModelRow | null | undefined): string {
-  const tps = shownTps(row);
+  return speedFrom(row?.throughput);
+}
+
+/**
+ * The same, for the places that hold a speed without the row it came from — an
+ * answer block naming the fastest machine, say. A speed on this site never
+ * prints without saying whether anybody measured it: of the 1,425 pairs where a
+ * machine here holds a model and has a speed for it, 1,397 are worked out from
+ * memory bandwidth, so a bare figure is almost always an estimate reading as a
+ * measurement.
+ */
+export function speedFrom(tp: { tokensPerSec: number | null; measurement: string } | null | undefined): string {
+  const tps = roundTps(tp?.tokensPerSec);
   if (tps == null) return '<span class="dim">unknown</span>';
-  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(row!.throughput.measurement)}</span>`;
+  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(tp!.measurement)}</span>`;
 }
 
 /** How a pair of speeds was arrived at, as a clause to hang off a sentence. */
@@ -1359,7 +1453,11 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
     else if (da === null || db === null) {
       const [payer, days] = da === null ? [lb, db!] : [la, da!];
       out.push(`At ${usage} tokens a day the ${payer} pays for itself in ${fmtDuration(days)}${sameModel ? '' : ', on its own strongest model'}; the other never does.`);
-    } else if (da === db) {
+    } else if (fmtDuration(da) === fmtDuration(db)) {
+      // two machines at the same price on the same model can come out days apart over
+      // decades, and "sooner, in 17 years against 17 years" is a sentence that argues
+      // with the table under it. Where the two figures print the same, they are the same
+      // answer at the precision this site gives, and the page says so.
       out.push(`Both pay for themselves in ${fmtDuration(da)} at ${usage} tokens a day${onEachOwn}.`);
     } else {
       out.push(`The ${da < db ? la : lb} pays for itself sooner, in ${fmtDuration(Math.min(da, db))} against ${fmtDuration(Math.max(da, db))} at ${usage} tokens a day${onEachOwn}.`);
@@ -2005,7 +2103,7 @@ export function machineMatchUpsLine(self: string, groups: MatchUpGroup[]): strin
  * model being written about: a rung of the leaderboard above or below it, or the
  * model of its own family a generation away.
  */
-export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current';
+export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current' | 'same-memory';
 
 export interface ModelMatchUp {
   href: string;
@@ -2013,7 +2111,9 @@ export interface ModelMatchUp {
   name: string;
   /**
    * where the other model sits, or — for a generation pair, where neither is above
-   * the other on anything a reader can see — which side of it this model is.
+   * the other on anything a reader can see — which side of it this model is. A
+   * memory neighbour is the third case and symmetrical: the two need the same
+   * memory, so both sides say the same thing about each other.
    */
   side: ModelMatchUpSide;
   /** the family both sides share, which only the generation pairs name */
@@ -2021,15 +2121,19 @@ export interface ModelMatchUp {
 }
 
 /**
- * One model's other match-ups, as a sentence about that model. A model is in at
- * most three, so all of them fit and none is left for an index to carry. Each
- * arrives with the reason it exists, because "vs" on its own says nothing about
- * why these two are on a page together.
+ * One model's other match-ups, as a sentence about that model. Each arrives with
+ * the reason it exists, because "vs" on its own says nothing about why these two
+ * are on a page together.
+ *
+ * The memory neighbours go in a sentence of their own. A model can have three of
+ * them, and they all carry the same reason, so strung through the first sentence
+ * they would say "which needs much the same memory" three times.
  */
 export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
   if (!items.length) return '';
   const order: ModelMatchUpSide[] = ['above', 'below', 'is-older', 'is-current'];
-  const sorted = [...items].sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
+  const memory = items.filter((i) => i.side === 'same-memory');
+  const sorted = items.filter((i) => i.side !== 'same-memory').sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
   const hasAbove = sorted.some((i) => i.side === 'above');
   const phrases = sorted.map((i) => {
     const link = `<a href="${esc(i.href)}">${esc(i.name)}</a>`;
@@ -2045,9 +2149,12 @@ export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
       ? `${link}, the ${which} ${esc(i.family)} nearest it in size`
       : `${link}, the ${which} model of its family nearest it in size`;
   });
-  const list =
-    phrases.length === 1
-      ? phrases[0]
-      : `${phrases.slice(0, -1).join(', ')} and ${phrases[phrases.length - 1]}`;
-  return `${esc(self)} is also head to head with ${list}.`;
+  const join = (xs: string[]) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  const memLinks = memory.map((i) => `<a href="${esc(i.href)}">${esc(i.name)}</a>`);
+  const needs = memory.length === 1 ? 'needs' : 'need';
+  if (!phrases.length) return `${esc(self)} is also head to head with ${join(memLinks)}, which ${needs} much the same memory.`;
+  const first = `${esc(self)} is also head to head with ${join(phrases)}.`;
+  if (!memory.length) return first;
+  const more = memory.length === 1 ? 'One more model needs' : `${numberWord(memory.length)} more models need`;
+  return `${first} ${more[0].toUpperCase()}${more.slice(1)} much the same memory: ${join(memLinks)}.`;
 }

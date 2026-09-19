@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   chipStepPairs, clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
   generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
-  MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard, rankedModels,
+  memoryNeighbourPairs, MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard,
+  rankedModels,
   versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
+  PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
+import { footprintGb, kvScaleFor } from '../src/fit';
 import {
   appleChip, chipStepNames, discontinuedOn, generationNames, gpuCores, gpuPart, machineVerdict, runnersFor,
   sameSilicon, shortHardwareLabel,
@@ -139,7 +142,7 @@ describe('the pairs the cards and the pages cut', () => {
     for (const f of files) expect(f).toMatch(/^\/og\/[a-z0-9-]+\.png$/);
   });
 
-  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, every entry-level chip with the one above it, once each', () => {
+  it('pairs every flagship with every other, every card with every other card, every memory tier of one machine with every other, every box with the cheapest box of the same hardware, every discontinued machine with its successor, every entry-level chip with the one above it, every machine with the nearest price outside its family, once each', () => {
     const pairs = hardwarePairs(data);
     const key = (a: Hardware, b: Hardware) => [a.id, b.id].sort().join('|');
     const keys = pairs.map(([a, b]) => key(a, b));
@@ -152,10 +155,11 @@ describe('the pairs the cards and the pages cut', () => {
     const twins = sameSiliconPairs(data);
     const gens = generationPairs(data);
     const steps = chipStepPairs(data);
+    const money = priceNeighbourPairs(data);
     const want = new Set<string>();
     for (const xs of [flagships, cards])
       for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) want.add(key(xs[i], xs[j]));
-    for (const [a, b] of [...tiers, ...twins, ...gens, ...steps]) want.add(key(a, b));
+    for (const [a, b] of [...tiers, ...twins, ...gens, ...steps, ...money]) want.add(key(a, b));
     expect(new Set(keys)).toEqual(want);
 
     // a card is priced as the part, not as a computer, and the flagship grid on its own
@@ -171,9 +175,9 @@ describe('the pairs the cards and the pages cut', () => {
     // two of the flagships are themselves cards, so one pair is in both grids and is
     // written once: the union is the page set, not the sum
     expect(pairs.length).toBe(want.size);
-    // and the four later rules are appended after both grids, in the order they run, for
+    // and the five later rules are appended after both grids, in the order they run, for
     // the same reason: a pair keeps the address it has always had
-    const later = [...tiers, ...twins, ...gens, ...steps];
+    const later = [...tiers, ...twins, ...gens, ...steps, ...money];
     const tail = pairs.slice(-later.length).map(([a, b]) => key(a, b));
     expect(tail).toEqual(later.map(([a, b]) => key(a, b)));
   });
@@ -447,9 +451,11 @@ describe('the pairs the cards and the pages cut', () => {
     const ladder = new Set<string>();
     for (let i = 0; i + 1 < ranked.length; i++) ladder.add(key(ranked[i], ranked[i + 1]));
     // the ladder is cut first and a pair is written once, so the pages are the union of
-    // the two rules rather than the sum: one generation pair is also a rung of the ladder
+    // the three rules rather than the sum: one generation pair is also a rung of the
+    // ladder, and so are four memory neighbours
     const pairs = modelPairs(data);
-    expect(pairs.length).toBe(new Set([...ladder, ...gens.map(([a, b]) => key(a, b))]).size);
+    const mem = memoryNeighbourPairs(data);
+    expect(pairs.length).toBe(new Set([...ladder, ...gens.map(([a, b]) => key(a, b)), ...mem.map(([a, b]) => key(a, b))]).size);
     expect(pairs.slice(0, ranked.length - 1).map(([a, b]) => key(a, b))).toEqual([...ladder]);
     for (const [a, b] of pairs) {
       expect(a.display_name).not.toBe(b.display_name);
@@ -589,5 +595,143 @@ describe('the head-to-heads at the foot of a machine page', () => {
     }
     expect(older).toBe(generationPairs(data).length);
     expect(newer).toBe(generationPairs(data).length);
+  });
+});
+
+describe('machines of different families at about the same price', () => {
+  const pairs = priceNeighbourPairs(data);
+  const sold = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
+  const nearest = (h: Hardware) =>
+    sold
+      .filter((o) => o.family !== h.family)
+      .sort(
+        (x, y) =>
+          Math.abs(x.price_usd! - h.price_usd!) - Math.abs(y.price_usd! - h.price_usd!) ||
+          x.id.localeCompare(y.id),
+      )[0];
+
+  it('cuts pairs at all', () => {
+    expect(pairs.length).toBeGreaterThan(0);
+  });
+
+  it('takes two machines on sale from different families, cheaper side first', () => {
+    for (const [lo, hi] of pairs) {
+      expect(lo.family).not.toBe(hi.family);
+      expect(lo.price_usd).not.toBeNull();
+      expect(hi.price_usd).not.toBeNull();
+      expect(lo.generation ?? 'current').toBe('current');
+      expect(hi.generation ?? 'current').toBe('current');
+      expect(lo.price_usd!).toBeLessThanOrEqual(hi.price_usd!);
+    }
+  });
+
+  it('keeps the two prices within the gap that makes them the same money', () => {
+    for (const [lo, hi] of pairs) {
+      const spread = (hi.price_usd! - lo.price_usd!) / lo.price_usd!;
+      expect(spread).toBeLessThanOrEqual(PRICE_NEIGHBOUR_GAP);
+    }
+  });
+
+  it('pairs each machine with its own nearest price outside its family, not with any machine in a band', () => {
+    for (const [lo, hi] of pairs) {
+      // the rule is one pair per machine, its own nearest, so at least one side of every
+      // pair has to name the other as the closest price it can reach outside its family
+      expect([nearest(lo)?.id, nearest(hi)?.id]).toContain(lo.id === nearest(hi)?.id ? lo.id : hi.id);
+      expect(nearest(lo)?.id === hi.id || nearest(hi)?.id === lo.id).toBe(true);
+    }
+  });
+
+  it('writes each pair once', () => {
+    const keys = pairs.map(([a, b]) => [a.id, b.id].sort().join('|'));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('is asked the same question either way round, and says no to a pair it did not cut', () => {
+    for (const [lo, hi] of pairs) {
+      expect(priceNeighbours(lo, hi, data)).toBe(true);
+      expect(priceNeighbours(hi, lo, data)).toBe(true);
+    }
+    const [a, b] = memoryTierPairs(data)[0];
+    expect(priceNeighbours(a, b, data)).toBe(false);
+  });
+
+  it('leaves every pair the older rules cut at the address it already had', () => {
+    const all = hardwarePairs(data);
+    const keys = new Set(pairs.map(([a, b]) => [a.id, b.id].sort().join('|')));
+    const older = all.filter(([a, b]) => !keys.has([a.id, b.id].sort().join('|')));
+    // the rule is appended last, so nothing it adds may sit before a pair another rule cut
+    const firstNew = all.findIndex(([a, b]) => keys.has([a.id, b.id].sort().join('|')));
+    expect(firstNew).toBe(older.length);
+    expect(all.length).toBe(older.length + pairs.length);
+  });
+});
+
+describe('models of different families that need about the same memory', () => {
+  const pairs = memoryNeighbourPairs(data);
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const nearest = (m: Model) =>
+    ranked
+      .filter((o) => o.family !== m.family)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+
+  it('cuts pairs at all', () => {
+    expect(pairs.length).toBeGreaterThan(0);
+  });
+
+  it('takes two scored models from different families, the stronger one first', () => {
+    for (const [a, b] of pairs) {
+      expect(a.family).not.toBe(b.family);
+      expect(ranked.map((m) => m.id)).toContain(a.id);
+      expect(ranked.map((m) => m.id)).toContain(b.id);
+      const [sa, sb] = [a.frontier_equivalent!.score!, b.frontier_equivalent!.score!];
+      expect(sa).toBeGreaterThanOrEqual(sb);
+      // where the index cannot order them, the smaller of the two goes first
+      if (sa === sb) expect(need(a)).toBeLessThanOrEqual(need(b));
+    }
+  });
+
+  it('keeps the two within the gap that makes them the same decision', () => {
+    for (const [a, b] of pairs) {
+      expect(Math.abs(need(a) - need(b)) / Math.min(need(a), need(b))).toBeLessThanOrEqual(MODEL_MEMORY_GAP);
+    }
+  });
+
+  it('measures what a machine is asked for, weights and cache together', () => {
+    // the pair the weights alone would never reach: 19.6 GB against 25.48 GB is 30%
+    // apart, and at 32k of context the two are within a percent of each other, because
+    // the cache is where the difference goes
+    const cachey = pairs.filter(([a, b]) => {
+      if (a.weights_gb == null || b.weights_gb == null) return false;
+      return Math.abs(a.weights_gb - b.weights_gb) / Math.min(a.weights_gb, b.weights_gb) > MODEL_MEMORY_GAP;
+    });
+    expect(cachey.length).toBeGreaterThan(0);
+    for (const [a, b] of cachey) expect(Math.abs(need(a) - need(b)) / Math.min(need(a), need(b))).toBeLessThanOrEqual(MODEL_MEMORY_GAP);
+  });
+
+  it('pairs each model with its own nearest outside its family, not with every model in a band', () => {
+    for (const [a, b] of pairs) expect(nearest(a)?.id === b.id || nearest(b)?.id === a.id).toBe(true);
+  });
+
+  it('writes each pair once', () => {
+    const keys = pairs.map(([a, b]) => [a.id, b.id].sort().join('|'));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('leaves every pair the older rules cut at the address it already had', () => {
+    const all = modelPairs(data);
+    const key = (a: Model, b: Model) => [a.id, b.id].sort().join('|');
+    const mine = new Set(pairs.map(([a, b]) => key(a, b)));
+    const older = new Set<string>();
+    for (let i = 0; i + 1 < rankedModels(data).length; i++) older.add(key(rankedModels(data)[i], rankedModels(data)[i + 1]));
+    for (const [a, b] of modelGenerationPairs(data)) older.add(key(a, b));
+    // the rule is appended last, so nothing it adds sits before a pair another rule cut,
+    // and the pairs both it and an older rule reach are written once, at the older address
+    const shared = [...mine].filter((k) => older.has(k));
+    expect(shared.length).toBeGreaterThan(0);
+    expect(all.length).toBe(older.size + mine.size - shared.length);
+    expect(all.slice(0, older.size).every(([a, b]) => older.has(key(a, b)))).toBe(true);
   });
 });

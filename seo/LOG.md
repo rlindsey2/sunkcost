@@ -11,6 +11,28 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 
 ## Ryan's side (needs the site owner)
 
+- [ ] **Merge (or close) [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), the home page's
+      missing heading.** Opened 2026-09-19. The root URL is the only page on this site with no `h1`:
+      all 261 generated pages have exactly one, `index.html` has five `h2`s under nothing, and the
+      only static prose inside its `<main>` is 142 words of form labels. The sentence already in the
+      top bar becomes the heading, and below 900px, where the bar has no room to paint it, it is
+      clipped rather than removed, so a phone and a crawler both still get it. It is a pull request
+      rather than a push only because it is the calculator's own head, which is the standing rule.
+      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`.
+      Verified on `main` at `b659506`: 372 tests, typecheck clean, the full `npm run build` with
+      `build:functions`, 261 pages with every guard passing, the four breaks that proved the two new
+      tests, and the page read rendered at 390, 900 and 1,280px. Measured at thirteen widths from 320
+      to 1440px, nothing on the page moves by a pixel. It also takes the duplicated `--ok-text` line
+      the backlog had parked for the next pull request touching `src/styles.css`.
+      **It collides with PR #16, in one file and one line, and the resolution is a rebuild rather
+      than a choice.** Both branches edit `index.html`, so both rewrite the `"/"` hash in
+      `seo/page-dates.json`, and neither value is right for the merged tree: it hashes to
+      `d47470180e0b4932` where this branch says `c4dbfa4065262b1f` and PR #16 says `eb2f546c5e896018`.
+      Take either side of that one line, run `npm run build:pages`, commit what it writes. Committing
+      either hash as it stands costs the home page its sitemap `lastmod` in silence. Really merged
+      here rather than assumed: 382 tests, typecheck clean, 262 pages with every guard passing. The
+      note is on both pull requests too, so whichever you merge second says what to do.
+
 - [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
       `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
       does it cost to run a local LLM per month*, which is the shape every bill it would replace is
@@ -22,12 +44,16 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       every guard passing, the full `npm run build` with `build:functions`, and the page and its
       share card both read rendered. **It collides with nothing**, because nothing else is open.
       The run entry below has the figures and what reading it rendered changed.
-      **Re-checked against `main` at `978ed1c`, after this run's own two pushes to it, and it still
-      merges clean.** Neither push touched code: the log entry, and the ignore rule for
-      `public/cost-per-month/`, which is the same line the branch carries — git takes the identical
-      addition once rather than twice, so the merged `.gitignore` has it one time. The merged tree
-      differs from the branch in `seo/LOG.md` alone, so the build verified above is the build that
-      would land.
+      **It conflicted with `main` at 06:50 on 2026-09-19 and is merged clean again**, as `2c7e5e2`
+      on its own branch. The 07:0x run's push added `machineIndexLine` to the same import line this
+      branch had already extended with the monthly-cost helpers, so git offered one line where two
+      additions belong — the shape the log has warned about twice. Both were kept by hand, which is
+      the whole of the merge commit, and nothing else on either side moved. Verified on the merged
+      tree rather than assumed: 380 tests, typecheck clean, the full `npm run build` with
+      `build:functions`, and 262 pages with every guard passing, including this branch's
+      `/cost-per-month/` and main's new machine-index link on 56 pages. `git merge-tree` against
+      `main` at `76246da` now reports no conflict. Nothing about the page changed; it is the same
+      pull request, still waiting on you.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
@@ -527,6 +553,117 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **Every heading on the 56 machine pages and the 55 model pages called the page's own subject
+      "it".** Done 2026-09-19, pushed as `f2e2d2d`. *What it runs*, *Machines that run it*, *How good
+      is it, really?* — 284 headings across 111 pages and not one named a machine or a model. The
+      `h1` above them does, so a reader from the top was never lost; a reader from a search result
+      lands on the heading that matched what they typed, and a pronoun there answers a question about
+      nothing. All 284 name their subject now. The 146 left are the spec list and the shorter-window
+      sections, which are about the page's own furniture and carry no pronoun either. No figure,
+      table, link or count changed. The run entry below has the rule, the guard and the six breaks
+      that proved it.
+
+- [x] **The site held the answer to "what can I run with 32 GB" and asked it under a heading that
+      reads as a statement.** Done 2026-09-19. `/how-much-memory/` asks four questions in its own
+      headings and every one of them starts from the model — *How much memory for a 70B model?* The
+      reader with a machine already on the desk starts from the other end, and the memory ladder has
+      answered that since it was built. It was headed *Installed memory is not usable memory* and
+      keyed on usable memory, so the three rungs a 32 GB machine can land on sat at 21, 24 and 31 GB
+      with a 36 GB machine in between: a reader with 32 GB met their own size three times, never
+      together, with nothing to say which row was theirs. Keyed on the number printed on the box now,
+      with the heading asking the question and each of the 13 rows opening the calculator. No figure,
+      machine or count changed. The run entry below has the six breaks that proved the guard and the
+      one thing the re-sort would have broken silently.
+
+- [ ] **The question now has a heading and still has no page of its own.** *What can I run with
+      16 GB*, *what LLM fits in 24 GB of VRAM*, *is 32 GB enough for a local model* are three
+      different searches, and one table under one heading on `/how-much-memory/` answers all three at
+      once. Each is a page's worth of answer on its own: the models that fit at that size, what each
+      one leaves for context, the cheapest machine that gets there, and what the next size up buys
+      that this one does not. Every figure is already computed — `fitCount()`, `strongestThatFits()`,
+      `longestContext()` and the pay-back helpers — so nothing would need inventing.
+      **Two things to settle before a line of it is written.** The first is what stops it being nine
+      near-copies: a page per size is nine pages whose model tables nest inside one another, and the
+      honest cut is probably *what this size adds over the one below*, which is the only part that
+      differs. The second is that a size is not a machine — 32 GB hands a model 21 GB on one machine
+      here and 31 GB on another — so a page titled by a size has to carry that split in its first
+      paragraph or it is a page that misleads at the top.
+      It is a new page type and a top-level page, so it is a pull request and one `<a>` in
+      `index.html`, which is the standing rule. Worth doing when the two open pull requests are
+      settled rather than queued behind them.
+
+- [ ] **One page on this site can be linked to by section, and no heading anywhere can.** Measured
+      2026-09-19 over all 307 generated pages: exactly one anchor inside `<main>` on the whole site,
+      and it is `/best/`, whose five usage bands are `id="u-50k"` and so on. Not one of the 430
+      headings on the machine and model pages carries an `id`, and nor does any other heading here.
+      Two things that costs, both small: another site linking to *what the Framework Desktop, 128GB
+      runs* has to link the whole page, and Google can offer no jump link into a section from a
+      search result — the feature the headings renamed this morning would feed. The change is a slug
+      on each `<h2>` in `scripts/build-pages.ts`, so it is a push rather than a pull request.
+      **The reason it is written down rather than done** is the sitemap. An `id` changes no word a
+      visitor reads, and `seo/page-dates.json` fingerprints the markup, so adding them re-dates all
+      307 pages as having changed on the day a maintainer added an attribute, which is exactly the
+      claim that ledger was built to stop. Worth doing on a day those pages have changed anyway, or
+      folded into a change that earns the date on its own.
+
+- [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
+      second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
+      the count as a warning for days; nobody had read it. Nine of the ten carried a MacBook, and
+      every one spent ten characters on a screen size that separates nothing: this site prices one
+      MacBook Pro M5 Pro and one M5 Max, both 16-inch. A title may now leave the bracket out where
+      no other machine here answers to the name without it, and must keep it where one does — which
+      it is, for the two MacBook Air M5s at 16GB. 304 of 307 titles fit now. The page's heading, its
+      description and every other label on the site keep the full name, and no page body changed.
+      The run entry below has the figures, the four breaks that proved the guard, the hole the first
+      version of it had, and the two that proved the tests.
+
+- [ ] **Three titles are still longer than a search result shows, and none of them can be cut
+      honestly.** Measured 2026-09-19, after the item above took the other ten.
+      `/compare/nemotron-3-5-lightning-30b-q4-vs-qwen3-235b-a22b-2507-q4/` is 63 characters and
+      `/compare/deepseek-r1-distill-qwen-32b-q4-vs-deepseek-r1-distill-llama-70b-q4/` is 61: both
+      are model pairs, and *Qwen3 235B-A22B Instruct 2507* and *DeepSeek-R1-Distill-Llama-70B* are
+      what their publishers call them, so a shorter form would be a name nobody uses. Worth
+      revisiting only if `data/models.json` ever carries a short name a publisher itself uses; the
+      agent must not invent one. The third,
+      `/compare/macbook-air-m5-15-inch-16gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/` at 62, is the
+      one pair where the screen size is load-bearing — two Airs at 16GB — against a chip name that
+      is already as short as NVIDIA writes it. Nothing to do on any of the three. Written down so
+      the next run reads the build's *3 titles over 60 characters* as considered rather than as a
+      gap.
+
+- [x] **The two rules cutting the model head-to-heads both asked what a model is, and neither
+      asked what to run in the memory you already have.** Done 2026-09-19. Each model against the
+      next one down the index, and each last-generation model against what replaced it, are both
+      questions about the model. The reader with a machine already on the desk starts from the
+      other one: 19.7 GB at 32k of context is Gemma 3 27B or Devstral Small 2 24B, and nothing here
+      put those two side by side. Third rule now: each model against the model from another family
+      nearest it in the memory it needs, stronger side first, within a tenth. 78 model match-ups
+      where there were 53, 307 pages where there were 282. The run entry below has the figures, the
+      five breaks that proved the guard and the three that proved the tests.
+      **What it deliberately does not add, so the next run does not read it as a gap:** the pages
+      carry no new section. The comparison template already prints what each model needs at 32k in
+      its own row, and where both models fit the same machines it already says, under *Memory is
+      not what separates them*, that the choice is what each is good at rather than what you have
+      to buy. A paragraph repeating that is the filler this backlog exists to avoid. What is new is
+      the sentence naming the others, on the model pages and under each head-to-head.
+
+- [ ] **The memory cap is a round number too, and on this data it decides nothing.** A tenth, the
+      same figure the price-neighbour rule uses, and the same story: the widest pair it keeps is
+      8.7% apart and the nearest one it turns away is 12.7%, so anything between those two cuts the
+      same 29 pairs. The pair it excludes today is Gemma 4 E4B against Ling 3.0 tiny, 5.8 GB against
+      6.4 GB, which is a real question for anyone with 8 GB to spend it in. Worth revisiting when a
+      figure in `data/models.json` moves and the gap between 8.7% and 12.7% closes. Written down
+      2026-09-19 so the next run does not read the number as considered.
+
+- [ ] **The 25 new head-to-heads are the shortest real pages on the site**, 686 to 852 words against
+      a site median of 1,024, and the reason is the rule that cut them. Two models that need the
+      same memory run on the same machines, so the *Machines that run one and not the other* table
+      is a sentence on 21 of them instead of a table of six. Nothing is missing from them: the
+      comparison table, the like-for-like race, pay-back at five levels and the prefilled calculator
+      links are all there. Measured 2026-09-19 and left alone, because the thing that would lengthen
+      them is words rather than answers. Worth a look only if one of them starts ranking and reads
+      thin next to what it is ranking against.
+
 - [ ] **Standing, daily: the model watch.** `seo/MODEL-WATCH.md` holds the procedure, the last
       date it ran and the ledger of candidates. This never gets ticked; it comes round again
       tomorrow. Set up 2026-09-18 at Ryan's request, with `npm run model-watch`, five guards in
@@ -534,6 +671,99 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       **The open question it raises is Ryan's**, and it is on his side of this file: the watch can
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
+
+- [x] **A machine page printed 661 speeds and said of none of them whether anybody measured it.**
+      Done 2026-09-19, and the count that settled how much it mattered is the one nobody had taken:
+      of those 661 figures **exactly one is a measurement**, 103 tok/s for gpt-oss-20b on the GeForce
+      RTX 4080. Every row says *measured* or *estimated* now, the note under each table says what the
+      mark means in that machine's own split, and two answer blocks that had the same omission one
+      heading higher — the machine page's *Best model it runs* and the model page's *Fastest of the
+      ones listed*, 110 rows — say it too. `checkSpeedBasis()` keeps it that way across all 261 pages.
+      The run entry below has the figures and the five breaks that proved the guard.
+      **Two things it deliberately leaves alone, so the next run does not read them as gaps.** Prose
+      is not policed: `/local-llm-vs-api-cost/` and the comparison ledes say their basis in their own
+      words, and a pattern matching sentences would be writing for the guard rather than the reader.
+      And the calculator was already right — `src/render.ts` tags every row of its model list
+      *measured*, *estimated* or *yours*, and the assumptions panel names the basis and its source.
+      The original item follows.
+      Found
+      2026-09-19 while giving those pages an opening paragraph of their own. The "What it runs" table
+      on all 56 machine pages prints a `tok/s` figure per row, 661 of them, bare. `/hardware/` prints
+      56 speeds through `speedWithBasis()` and marks every one *measured* or *estimated*; the
+      leaderboard and the head-to-heads mark theirs too. The machine pages, which are where a reader
+      actually lands, mark none. It matters more than the count suggests: across all 1,425
+      machine-and-model pairs this site computes, **1,397 are estimated from memory bandwidth and 28
+      are measured**, so an unmarked figure is almost always the estimate. `speedWithBasis()` is
+      already exported from `src/pagekit.ts` and already used by the index, so the change is that
+      helper in place of the bare cell, plus a line in the note under the table saying what the mark
+      means, which the index's own note already words. It is `scripts/build-pages.ts`, so it is a
+      push rather than a pull request. This is a trust fix rather than a traffic one, and it is the
+      same fault the stand-in power figure had on the comparison pages two days ago.
+
+- [ ] **The price-neighbour rule has a round number in it, and one day it will bite.** The cap
+      is a tenth. On the data as it stands that is not a judgement call at all: the widest pair it
+      keeps is 8.8% apart and the nearest one it turns away is 15.5%, so nothing sits on the line
+      and moving the cap anywhere between those two changes nothing. The pair it excludes today is
+      the Mac mini M6, 24GB against the Framework Desktop, 32GB, $1,099 against $1,269, which is a
+      real question a buyer asks and the only one the rule turns away. Worth revisiting when a price
+      in `data/hardware.json` moves and the gap between 8.8% and 15.5% closes: at that point the cap
+      is deciding something and should be set by what it is deciding, not by being round. Written
+      down 2026-09-19 so the next run does not read the number as considered.
+
+- [ ] **21 new pages share 45 words, and it is the rule's own explanation.** The sentence *"Every
+      other head-to-head on this site holds a piece of the hardware equal and asks what the price
+      gap buys"* is identical on all 21 price-neighbour pages, because it is the same fact on all
+      21. At 45 words against 858 to 1,180 it is under 5% of each page, and the two sentences around
+      it carry that pair's own prices, its own makers and its own card caveat, which is the split
+      the machine-lede item settled on in the morning. Measured and left alone deliberately; written
+      down so a future similarity sweep recognises it rather than re-finding it.
+
+- [ ] **The home page carries 142 words, and every one of them is a form label.** Measured
+      2026-09-19 over the static markup inside `<main>` on `index.html`: *Tokens a day*, *Context
+      window you want*, *Copy link*, *Assumptions you can change*, and the privacy note. The thinnest
+      generated page on the site is 603 words and the median machine page is 1,024. The missing `h1`
+      is fixed in [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), which gives the page a
+      sentence saying what it is for; this item is the bigger half, and it is a design question
+      rather than an SEO one, so it is not the agent's to decide alone.
+      **What the site has that the home page does not say.** Every one of the four index pages answers
+      its question in prose above the interface. The calculator answers the same question better than
+      any of them, but only after a reader moves three controls, and only in figures a crawler reads
+      as a snapshot of one machine and one model. The candidate the data supports without inventing
+      anything: a short static answer under the machine sentence, in the site's own numbers — what the
+      cheapest machine here pays back at, what the dearest does not, and the one sentence this site
+      exists to say, which is that it is willing to answer never. Every figure in it would come from
+      the same helpers the generated pages already use.
+      **The question to settle before writing a line of it** is whether prose belongs on the front of
+      a tool at all. The design note in the README is explicit that the machine is a sentence and
+      everything hangs off it, and a paragraph above the fold is the first thing that would push the
+      water down the page. Worth Ryan's opinion before it is built, not after.
+
+- [x] **Fifty of the 56 machine pages opened with a paragraph that belonged to another machine.**
+      Done 2026-09-19. The first paragraph answered memory and nothing else, and memory is the one
+      figure a $1,299 mini PC and a $4,999 Mac Studio can share, so there were 18 distinct opening
+      paragraphs for 56 pages and ten pages opened with the same words. It carries this machine's
+      own price and its own pay-back now, both of which the answer block below it and the meta
+      description had been printing all along. 56 distinct paragraphs, none repeated. The run entry
+      below has the figures, the three breaks that proved the guard and the fourth that an existing
+      guard caught on its own.
+      **What the same measurement says about the pages as wholes, so nobody measures it again.**
+      Pairwise 5-word-shingle similarity inside `<main>`, by page type: comparisons median 0.115 and
+      worst 0.745, models median 0.278 and worst 0.701, machines median 0.289 and worst 0.864, the
+      seven indexes below 0.02 against each other. The worst pairs are all two memory sizes of one
+      machine or two members of one model family, where the pages genuinely differ only in the
+      figures, and no page is a copy of another. There is no duplicate-content problem here at the
+      level of whole pages, and rewriting a template to push a similarity number down would be
+      writing for a measurement rather than for a reader. The paragraph was the part worth fixing
+      and it is fixed.
+
+- [ ] **Nobody had measured how deep the site is, and it is two clicks. Nothing to do.** Measured
+      2026-09-19, breadth-first from `/` over the built site: **262 of 262 pages are within two
+      clicks of the home page**, 7 at depth 1 and 254 at depth 2, none unreached. Counting only links
+      inside `<main>`, so the shared footer flatters nothing, gives the same three numbers, which
+      means the depth does not depend on the footer at all. There is no deep corner here, no crawl
+      budget problem, and no work. Written down so the next run does not take the measurement again,
+      and so that a page type that ever lands at depth 3 or more is recognised as new rather than
+      normal.
 
 - [x] **The page that answers "which graphics card" was the least linked page on the site.** Done
       2026-09-19. Counting links inside `<main>`, so the shared footer flatters nothing, `/best-gpu/`
@@ -547,7 +777,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       head-to-heads, which do raise it in a lede already five sentences deep in figures about two
       models. On both, a sentence about graphics cards answers a question the page does not ask.
 
-- [ ] **Nobody has looked at what the internal links are made of.** There are 7,336 of them inside
+- [x] **Nobody has looked at what the internal links are made of.** Done 2026-09-19, and the item's
+      own guess was right about the words and wrong about where the fault would be. **The anchor text
+      is clean**: 7,540 internal links inside `<main>` across the 261 pages, and not one of them is
+      named *here*, *this*, *read more*, a bare number or nothing at all. A machine or model page is
+      reached by its own name, which is what a searcher types for it; an index is reached by what it
+      answers — `/best/` by "the quickest pay-back at each level of use", `/compare/` by "every other
+      match-up", `/best-gpu/` by "ranked by what each one holds". Most destinations carry two to five
+      distinct phrases, and the five reached by exactly one are five models whose name is the only
+      thing anyone would call them. **Nothing was rewritten, because nothing needed it.**
+      What the measurement did turn up is the run's work, and it was not in the words: **`/hardware/`
+      had no inbound link inside `<main>` at all**, on any of the 261 pages. See the entry below.
+      The original wording follows.
+      There are 7,336 of them inside
       `<main>` across the 259 pages, and six runs have spent themselves on where links point without
       once measuring the words they are written in. The questions worth answering: does the anchor
       text say what is at the other end in words a searcher would type, or does it say the name of
@@ -556,6 +798,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       links this site has are in sentences rather than in lists, so the answer may well be that they
       are already fine, and rewriting a sentence to fit a keyword is the thing this backlog exists to
       avoid.
+
+- [ ] **The two Q8 model pages are now the least-linked real pages on the site**, on 2 inbound pages
+      each inside `<main>`, where the median page has 13 and `/leaderboard/` has 200. They are
+      `/models/llama-3.1-8b-q8/` and `/models/qwen3-32b-q8/`, the only two models this site lists at
+      a second precision, and both are reached from their own Q4 page's *also listed here at Q8*
+      clause and from one comparison. That is not obviously wrong — a second quantisation of a model
+      is a footnote to it, and the Q4 page is the page a searcher wants. The question to settle
+      before writing anything is whether anybody searches the precision rather than the model, which
+      is a Search Console question this agent cannot answer and Ryan can. Worth one look, and worth
+      leaving alone if the answer is no.
+      The `/` row in the same measurement reads zero and is not a fault: the home page is linked from
+      the wordmark, the breadcrumb and the footer on all 261 pages, none of which is inside `<main>`.
+      Measured 2026-09-19; written down so the next run does not chase it.
 
 - [x] **No head-to-head on the site linked another head-to-head.** Done 2026-09-19. The 143
       comparisons were the deepest pages here, median 3 links in and always the same three:
@@ -1172,7 +1427,12 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       starts at 320, so nothing is wrong today. It is written down so the next run that sweeps the
       home page knows what the floor is and does not read it as a new fault.
 
-- [ ] **`src/styles.css:98` declares `--ok-text`, `--warn-text` and `--bad-text` twice in a row**, with
+- [x] **`src/styles.css:98` declares `--ok-text`, `--warn-text` and `--bad-text` twice in a row.**
+      Done 2026-09-19, exactly as this item asked: it rode with the next pull request to touch that
+      file, [PR #17](https://github.com/rlindsey2/sunkcost/pull/17). One line deleted, identical
+      values, the second declaration was winning already, so nothing renders differently. The
+      original wording follows.
+      With
       identical values and the wrong indentation on the first of the pair, inside the
       `prefers-color-scheme: dark` block. It changes nothing — the second wins and says the same thing —
       so it is untidy rather than broken. Found 2026-09-18 while reading the file for PR #12 and
@@ -1197,6 +1457,792 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — every heading on 111 pages called the page's subject "it"
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Every open item on it is waiting on Ryan, or is a measurement written
+down so nobody takes it twice, which is where the seven runs before this one found it too. Both open
+pull requests were checked first and **both still merge clean into `main`**, #16 and #17, so there
+was no repair to do. The work came from the same place as the run before it: a question with real
+search volume that this site answers, asked on the page in words nobody types.
+
+**What the headings said.** A machine page and a model page are each about one thing, and every
+heading on them referred to it as *it*: **What it runs**, **Other machines to weigh against it**,
+**How good is it, really?**, **What it costs either way**, **Machines that run it**, **The machines
+that miss it, and what they run**, **It fits at 16k of context**. 284 headings across 111 pages, and
+not one of them named a machine or a model.
+
+**Why that is worth an hour.** The `h1` above them does name the subject, so a reader coming down
+the page is never lost and the grammar is right. A reader from a search result does not come down
+the page. They land on the heading that matched what they typed — *what can a 3090 run*, *is Qwen3
+32B any good*, *what hardware do I need for Gemma 4 12B* — and a heading with a pronoun in it is the
+answer to a question about nothing. It is the same fault as a title cut before the memory size: the
+page holds the answer and the part a searcher sees does not say so.
+
+| | before | after |
+| --- | --- | --- |
+| headings naming their subject | 0 of 430 | 284 of 430 |
+| headings calling it "it" | 284 | 0 |
+| figures, tables, links or counts changed | — | 0 |
+
+**What keeps its wording, and why that is not an oversight.** The other 146 are `The specifics`,
+which heads the spec list, and 35 shorter-window sections — *Four more machines, at a shorter
+window*. Both are about the page's own furniture rather than about the machine or the model, neither
+is the answer to anything anybody searches for, and neither carries a pronoun. The rule is one line:
+**a heading that answers a question somebody asks in the subject's own name names it.** Nothing on
+the comparison pages changed either — their `h1` and their *Side by side on …* headings already name
+both sides.
+
+**How a machine is named.** `shortHardwareLabel()`, which is what the tables and every other page
+call it: *What the Framework Desktop, 128GB runs*, not the `hardwareLabel()` the `h1` and the
+breadcrumb use, which would put *Strix Halo* three times down one page. The longest heading the rule
+produces is 69 characters, on the Corsair AI Workstation 300, 128GB; a heading is not a title, so
+nothing is cut.
+
+**The guard.** `checkSubjectHeadings()` holds two claims. The first is the rule itself: **no heading
+on these 111 pages refers to the page's subject as "it"**, with the subject's own name stripped out
+of the heading before the pronoun is looked for — because two models here are called *Gemma 4 31B
+it* and *Gemma 3 12B it*, where *it* is what Google calls an instruction-tuned build, and a guard
+that did not know that would refuse a page for printing the model's real name. The second is that a
+heading of a naming shape names **this** page's subject: the fault it catches is a builder handed
+the neighbour's machine, which reads as a fact and is the one mistake a reader could not spot. The
+build prints *`111 machine and model pages name their subject in 284 headings; none of the headings
+on them calls it "it"`*.
+
+**Six breaks, each run and each caught.** Put `What it runs` back → *`/hardware/mac-mini-m6-32/`
+heads a section "What it runs", which calls Mac mini M6, 32GB "it"*, on all 56. Put `How good is it,
+really?` back → the same on all 55, and the shape claim as well. Head every machine's table with the
+first machine in the data → *`/hardware/mac-mini-m5-pro-24/` heads a section "What the Mac mini M6,
+16GB runs", which names Mac mini M6, 16GB where the page is about Mac mini M5 Pro, 24GB*, on 55.
+Head every model's machines with the first model → the same, on 52. Add a pronoun after the name,
+which is where stripping the name could have hidden one → *"What Qwen3 8B costs either way, and what
+it saves", which calls Qwen3 8B "it"*. And `It fits at 16k of context` back on the one page that
+carries it → caught by both claims.
+
+**No new test.** The change adds no helper to `src/pagekit.ts` — it is seven heading strings and the
+guards that read them back — so the guard is the test, and it runs on every build and every deploy.
+393 tests unchanged, typecheck clean, the full `npm run build` including `build:og`, `build:share`
+and `build:functions`, 307 pages with every guard passing, and both a machine page and a model page
+read rendered out of `dist/`.
+
+**What the sitemap did, because it is the thing to watch here.** 111 hashes move in
+`seo/page-dates.json` and **no date moves**: every one of those pages had already changed today, on
+the runs before this one. The words a visitor reads did change, so a new date would have been
+earned; there was none to take.
+
+**Pushed as `f2e2d2d`, with the log as `9314210` and this line as `b80f109`. Deploy run 228 went
+green at 14:49 on 2026-09-19**, so the headings are live. Runs 226 and 227 were each cancelled by
+the next push a minute later, which is the usual shape here and is why the green one is three
+numbers along from the code commit.
+Both open pull requests were **really merged into the new `main` in
+worktrees and built there**, rather than trusted to a clean `git merge-tree`, because #16 edits
+`scripts/build-pages.ts` too: #16 gives 403 tests, 308 pages and this run's guard passing at 284
+headings; #17 gives 395 tests and 307 pages. Both are still waiting on Ryan.
+
+**What to continue.** The backlog is where the last seven runs left it. The item this run adds is
+the thing the measurement turned up and deliberately did not take: **no heading on this site has an
+`id`**, so no section here can be linked to and no search result can offer a jump link into one. It
+is a push rather than a pull request, and the reason it is written down rather than done is the
+sitemap: it changes no word a visitor reads and would re-date all 307 pages.
+
+### 2026-09-19 — the memory table answered a question nobody asks in the words it is asked in
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Every open item on it is waiting on Ryan or is a note written down so
+nobody re-finds it, which is where the six runs before this one found it too. Both open pull
+requests were checked first and **both still merge clean into `main`**, #16 and #17, so there was no
+repair to do. The site's mechanics were swept for anything the guards do not already hold — no
+dangling internal link among the 307 pages, no duplicate or missing title or description, no
+description over 155 characters — and all of it was clean. The work came from the other side: the
+one question with real search volume that this site holds the answer to and does not ask.
+
+**The question.** `/how-much-memory/` asks four of them in its own headings — *How much memory for a
+7B or 8B model?* and the same for 14B to 32B, 70B and 100B and over — and every one of them starts
+from the model. The reader with a machine already on the desk starts from the other end: *what can I
+run with 16 GB*, *what LLM fits in 24 GB of VRAM*, *is 32 GB enough*. The site has had that answer
+since the memory ladder was built. It was under a heading that reads as a statement, *Installed
+memory is not usable memory*, and it was keyed on the figure the reader cannot know yet.
+
+**What being keyed on usable memory did to it.** The table's first column was usable memory and its
+rows ran up that, so the three rungs a 32 GB machine can land on sat at 21 GB, 24 GB and 31 GB —
+with a 36 GB machine in between two of them. A reader with 32 GB met their own size three times,
+never together, and had nothing in the table to tell them which row was theirs. The same split cut
+96 GB and 128 GB in two. Keyed on the number printed on the box, every size reads as one block and
+the usable figure sits beside it as the answer to *and how much of that do I actually get*.
+
+| | before | after |
+| --- | --- | --- |
+| first column | usable memory | the size on the box |
+| sizes broken into more than one run | 32 GB, 96 GB, 128 GB | none |
+| rows opening the calculator | 0 of 13 | 13 of 13 |
+| machines, levels or figures changed | — | 0 |
+
+**Nothing about the data moved.** Same 13 rows, same machines, same counts, same models; the rows
+are sorted differently, two columns swap places, and a thirteenth link column is added of the kind
+every other table on this site already carries. The heading now asks the question and the paragraph
+under it answers it in the first sentence, then keeps the sentence the old heading was making —
+the number on the box is not the number a model gets — and says where that bites hardest, which it
+reads out of the data rather than asserting: *32 GB appears 3 times below, handing a model anything
+from 21 GB on the Mac mini M6, 32GB to 31 GB on the AMD Radeon AI PRO R9700, 32GB.*
+
+**One thing the re-sort would have broken silently.** `strongestPlateau()` reads the ladder in order
+and reports its finding as a stretch of *usable* memory — *from 21 GB up to 119.5 GB the strongest
+model does not change*. Sorted by the size on the box that stretch is no longer a stretch, so the
+plateau keeps the usable-sorted ladder and only the table re-sorts. The paragraph under the table
+also pointed at *the last column*, which is now the link, so it names the strongest-model column
+instead.
+
+**The guard.** `checkMemoryLadder()` holds four things, and the first is the claim the new paragraph
+makes: every size a machine on sale here comes in has a row, so *every size a machine on sale here
+comes in is below* cannot quietly go false when a machine is added. Then that the rows read up the
+size on the box with each size in one unbroken run; that every level of usable memory among those
+machines is there exactly once, which is what catches a machine dropped rather than merely
+re-sorted; and that each row's link opens the calculator on that row's own machine and the strongest
+model it holds. The build prints *`/how-much-memory/` answers 9 memory sizes over 13 rows, each
+opening the calculator on the strongest model that size holds*.
+
+**Six breaks, each run and each caught.** Sort the table by usable memory again → *the table reads
+36 GB and then 32 GB, so a reader looking for one size meets it in two places*, which is the fault
+this run fixed. Drop the 36 GB rung from the table → *36 GB is a size you can buy a machine in here
+and the table skips it*, and *27 GB of usable memory has 0 rows where it should have one*. Drop a
+usable level from the ladder itself → the second of those alone, naming 24 GB. Point every row's
+link at the first current model → *the Mac mini M6, 16GB row opens the calculator on something other
+than its own machine and model*, on all 13. Name that model in the strongest column → *the Mac mini
+M6, 16GB row names qwen3-coder-30b-a3b-q4 where gemma-4-12b-q4 is the strongest it holds*. Rename
+the heading → *`/how-much-memory/` no longer asks what the memory you have runs*.
+
+**No new test.** The change adds no helper to `src/pagekit.ts` — it is a sort, a column order and a
+link inside one page builder — so the guard is the test, and it runs on every build and every
+deploy. 393 tests unchanged, typecheck clean, the full `npm run build` with `build:functions`,
+307 pages with every guard passing, and the page read rendered out of `dist/`.
+
+**Pushed as `3fff055`, with the log as `22f6413`. Deploy run 224 went green at 13:53 on
+2026-09-19**, so the page is live. Both open pull requests were re-checked against the new `main`
+afterwards and **both still merge clean**, #16 and #17, although #16 touches `scripts/build-pages.ts`
+too.
+
+**What to continue.** The backlog is where the last six runs left it: every open item is Ryan's, or
+is a measurement written down so nobody takes it twice. The item this run adds is the other half of
+what it found — the inverse question now has a heading on `/how-much-memory/`, and it has no page of
+its own, which is a bigger piece of work and a pull request rather than a push.
+
+### 2026-09-19 — ten search results were cut before the second machine's memory size
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Every open item on it is waiting on Ryan, or is a note written down so
+nobody re-finds it, which is where the five runs before this one found it too. Both open pull
+requests were checked first and **both still merge clean into `main`**, #16 and #17, so there was no
+repair to do. The work came out of the one number this build has printed for days and nobody had
+read: `checkMeta()` ends with a warning, and it said **13 titles over 60 characters**.
+
+**What the 13 were.** Ten machine head-to-heads, two model head-to-heads and one that turned out to
+be neither — the count is bytes in a shell and UTF-8, so the `·` in the brand suffix reads as two.
+The real list is 13 and the guard had it right. On the ten, the title is two machine names joined by
+*vs*, and the second name's memory size is the last thing in it: **MacBook Air M5 (15-inch), 16GB vs
+MacBook Pro M5 Pro (16-inch), 64GB** is 68 characters, so a search result showed the reader
+everything except the figure the page turns on. Nine of the ten carry a MacBook, and every one of
+them spends ten characters on a bracket.
+
+**The bracket separates two machines only where this site prices both.** `data/hardware.json` holds
+one MacBook Pro M5 Pro, the 16-inch, in three memory sizes, and one MacBook Pro M5 Max, also 16-inch.
+It holds **two MacBook Air M5s at 16GB**, a 13-inch and a 15-inch, and there the bracket is the whole
+of the difference. So the rule is not *drop the screen size*: it is that a title may leave it out
+where no other machine here answers to the name without it, and must keep it where one does.
+`titleHardwareLabel()` in `src/pagekit.ts` does exactly that against the whole fleet, and it is used
+nowhere but the title. The page's `<h1>`, its meta description, its tables and every other label on
+the site keep the full name, which is the same split `shortHardwareLabel` was written for.
+
+| | before | after |
+| --- | --- | --- |
+| titles inside 60 characters | 294 of 307 | 304 of 307 |
+| head-to-heads that drop a redundant screen size | 0 | 10 |
+| page bodies changed | — | 0 |
+
+**Nothing a visitor reads on the page moved.** The only bytes that changed on those ten pages are the
+`<title>`, the `og:title` and the `twitter:title`, which is why ten hashes move in
+`seo/page-dates.json` and no dates do — every one of those pages had already changed today.
+
+**Three are still long, and all three are honest.** `/compare/nemotron-3-5-lightning-30b-q4-vs-qwen3-235b-a22b-2507-q4/`
+at 63 and `/compare/deepseek-r1-distill-qwen-32b-q4-vs-deepseek-r1-distill-llama-70b-q4/` at 61 are
+model pairs: *Qwen3 235B-A22B Instruct 2507* and *DeepSeek-R1-Distill-Llama-70B* are the names their
+publishers use, and cutting a word off either would be naming a model something nobody calls it.
+The third is `/compare/macbook-air-m5-15-inch-16gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/` at 62,
+where the bracket is the thing that tells the two Airs apart and the other side is a chip name.
+Backlog item added rather than forced.
+
+**The guard, and the version of it that had a hole.** `checkTitleLabels()` holds three things: no
+title anywhere names a machine by a name a second machine answers to; a bracket is dropped only where
+keeping it would have put the title over the limit; and a head-to-head still over the limit is one
+where neither name had a bracket left to lose. The first version asked those questions through
+`titleHardwareLabel()` and `withoutBracket()`, the same helpers the builder uses, so **a rule that
+stopped shortening anything at all would have passed it**: with `withoutBracket()` neutered, nothing
+is loseable, so nothing is over length with something to lose. It now cuts the bare name itself with
+its own regex over `data/hardware.json`, and that same break fails it at 10 pages, naming them.
+
+**Four breaks, each run and each caught.** Remove the two shortened rungs from the title ladder →
+*10 page titles … longer than a search result shows*. Make `titleHardwareLabel()` return the bare
+name always → *4 page titles name a machine by a name that is not its own*, naming both Airs on both
+their pages. Neuter `withoutBracket()` → the 10 again, each named with the screen size it still
+carries. Put the shortened rungs first, so a title shortens where the full names would have fit →
+*`/compare/mac-mini-m5-pro-24gb-vs-macbook-pro-m5-pro-16-inch-64gb/` drops a screen size to reach 49
+characters where the full names fit in 59*.
+
+**Five tests, and two breaks proved them.** The strongest is that `titleHardwareLabel()` over the
+whole fleet still gives 56 distinct names for 56 machines. One test adds a hypothetical 14-inch M5
+Pro to the fleet and asserts the 16-inch gets its bracket back, so the rule is held to the fleet it
+is given rather than to today's data. Returning the bare name always fails 3 of the 5; never dropping
+fails 2.
+
+**Verified on `main` at `7ce0dcd` and pushed as `a0ec560`:** 393 tests where it was 388, typecheck
+clean, the full `npm run build` including `build:og`, `build:pages`, `build:share` and
+`build:functions`, 307 pages with every guard passing, the four breaks above, and the changed heads
+read out of `dist/` — title short, description and `<h1>` full. 305 of 308 titles in `dist/` fit 60
+characters, the extra page being `/` which the sitemap counts and `meta` does not.
+
+**What to continue.** Nothing here is half-done. The backlog's top open items are all notes or
+Ryan's; the next run that wants work of its own could look at what the site does with
+`/hardware/` and `/leaderboard/` naming each other, which is the oldest open question on the list.
+
+### 2026-09-19 — the site compared models by what they are and never by what they ask of a machine
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is waiting on Ryan or is a note written down so nobody re-finds it,
+which is where the four runs before this one found it too. Both open pull requests were checked
+before anything else and **both still merge clean into `main`**, #16 and #17, so there was no repair
+to do. The entry below this one said where to look: the machine head-to-heads had six rules and the
+model ones had two, and nobody had asked whether models have a question the two rules miss.
+
+**What it found, by reading the two rules rather than the pages.** Both of them ask what a model
+**is**. The ladder sets each model against the next one down the intelligence index, which is the
+choice you face once you know what your machine holds. The generation rule sets each
+last-generation model against what replaced it, which is the choice you face once you are already
+running one. Neither asks the question a reader with a machine already on the desk starts from,
+which is what to run in the memory they have. **19.7 GB at 32k of context is Gemma 3 27B or Devstral
+Small 2 24B**; 20 GB is GLM-4.7-Flash or the same Devstral; 9.8 GB is Ministral 3 8B or Gemma 3 12B.
+Not one of those pairs had a page, because two models of the same size are rarely near each other on
+the index: GLM-4.7-Flash scores 15 and Devstral Small 2 24B scores 8, and twenty-one models sit between them
+on the index.
+
+**The rule.** `memoryNeighbourPairs()`: each model against the model from another family nearest it
+in the memory it needs, stronger side first, where the two are within a tenth of each other. The
+families have to differ, because two models from one maker at the same size are the quantisations
+and generations the rules above already cut. One pair per model, its own nearest, rather than every
+pair inside a band, for the reason the price rule gives: a band writes a grid of near-identical
+pages around the crowded sizes and leaves the smallest and largest models with none.
+
+**Memory is the footprint, not the weights, and that is the part worth keeping.** The figure is
+`footprintGb()` at the context this site assumes, weights and cache together, which is the same
+number the fit is worked out from and the same number the page prints in its *Needs at 32k* row.
+Weights alone would have missed the pairs where the cache is the difference: **Gemma 4 31B and
+Nemotron 3.5 Lightning are 30% apart in weights and within a percent of each other at 32k**: 19.6 GB
+of weights and 6.21 GB of cache against 25.48 GB and 0.20 GB. A test holds that, so a future change
+to the rule cannot quietly go back to comparing weights.
+
+| | before | after |
+| --- | --- | --- |
+| model head-to-heads | 53 | 78 |
+| head-to-heads of every kind | 165 | 190 |
+| pages on the site | 282 | 307 |
+
+**The cap.** A tenth, and on this data it decides nothing: the widest pair it keeps is 8.7% apart
+and the nearest one it turns away is 12.7%, so no pair is kept or dropped by a hair. Written into
+the backlog as a note, the way the price cap was.
+
+**Four pairs were already pages, and they keep the words they had.** The ladder and this rule both
+write the stronger model first, so a pair both reach has one address, not two. The ladder is cut
+first and keeps it: DeepSeek-R1-Distill-Llama-70B against Llama 3.3 70B is still *above it on the
+leaderboard* rather than *needs much the same memory*, which is what a reader arriving from the
+leaderboard is looking at.
+
+**The pages get no new section, and that is deliberate.** The template already prints what each
+model needs at 32k in its own row, and where both models fit the same machines it already says,
+under *Memory is not what separates them*, that the choice between them is what each is good at,
+how fast it runs and what the same work costs on an API. A paragraph saying that again is filler.
+What the pages did gain is real and reads on the page: GLM-4.7-Flash against Devstral Small 2 24B
+opens *"Both take the same machine to start... GLM-4.7-Flash is about 4.1× quicker: 40 tok/s against
+9.7"*, which is the whole answer to a question the site could not be asked before.
+
+**The sentence that is new, and why it is a sentence of its own.** A model can be in three of these
+pairs, and they all carry the same reason, so strung through the existing line they would say *which
+needs much the same memory* three times. The model pages say *"Three more models need much the same
+memory at 32k of context: vs Qwen3.6 27B, vs Devstral Small 2 24B, vs Mistral Small 3.2 24B
+Instruct"*, and the note under each head-to-head says the same for each of its two sides. Where a
+model page has no rung and no generation pair left to name, the memory neighbours carry the sentence
+instead of following one.
+
+**The guard, and the version of it that was not a guard at all.** `checkMemoryNeighbours()` recuts
+the rule from `data/models.json` rather than reading the list the pages were built from: every pair
+two scored models of different families, stronger first, inside the cap, one of the two the other's
+genuine nearest outside its own family, and both footprints printed on the page, because that figure
+is the claim. **The first version of the other direction passed a deliberate break**: it asked only
+that a page saying *much the same memory* link a pair the rule cut, and `/compare/` links every
+comparison on the site, so the index could have said it about anything. It now holds a list of the
+pages the rule reaches — a model in one of these pairs, or a head-to-head one of whose sides is in
+one — and the same break fails it, naming `/compare/`. It prints `29 head-to-heads between models of
+different families within 10% of each other in the memory they need at 32k`.
+
+**Five breaks proved the guard**, exit 1 each time: the family condition dropped (7 problems, two
+kinds, naming the Qwen pairs it invented); the pairs written weaker side first (29 pages); the
+reason dropped from the sibling sentence, caught by `checkMatchUpSiblings()` rather than by the new
+guard; the `much the same memory` phrase put in `/compare/`'s lede; and both places a page prints
+what each model needs removed together, which is the one that showed the check is not satisfied by
+the table alone. **Three more proved the tests**: the family condition dropped, the rule measured on
+weights instead of footprint, and the rule appended before the ladder instead of last.
+
+**Verified.** 388 tests (9 new), typecheck clean, the full `npm run build` end to end with
+`build:functions`, 307 pages with every guard passing, and the new share cards drawn and covered by
+the existing card tests. All 29 pages swept out of `dist/`: 686 to 852 words, every one in the
+sitemap, every one with its card, and none carrying a maintainer word or an em dash. Three read
+rendered — two 27B models on one $1,269 machine, a mixture of experts against a dense model at the
+same 20 GB, and the pair at the top of the range where no machine holds both at 32k and the page
+moves the race to 16k.
+
+**Pushed to `main` as `ef1d700`**, deploy run 220.
+
+**Both open pull requests were re-checked against this push, really merged and built rather than
+trusted to a clean `git merge-tree`.** PR #16 (`seo/cost-per-month`) merges clean: 398 tests,
+typecheck clean, 308 pages with every guard passing. PR #17 (`seo/home-h1`) merges clean: 390 tests,
+typecheck clean, 307 pages. Neither needs an extra commit. The two still do not merge into each
+other, and that resolution is unchanged, because nothing in this push touches `index.html`.
+
+**What to continue.** Nothing here is half-finished. The two new backlog items are notes rather than
+work: the cap is a round number that decides nothing today, and these are the shortest pages on the
+site for a reason the rule explains. The model side now has three rules to the machine side's six,
+and the next question of the same kind is probably not another pairing rule but the indexes: the
+site has a page ranking machines, a page ranking cards and a page ranking models, and nothing that
+answers "what runs in 32 GB", which is the question these 25 pages answer one pair at a time.
+
+### 2026-09-19 — the site compared machines by hardware and never by money
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is waiting on Ryan, already written down as "leave it", or a "worth one
+look" its own wording expects to end in nothing, which is where the three runs before this one found
+it too. Both open pull requests were checked before anything else and **both still merge clean into
+`main`**, #17 at `6c81367` and #16 at `2c7e5e2`, so there was no repair to do. So this run went
+looking, the way the entry below said the next one would have to.
+
+**What it found, by reading the rules rather than the pages.** Six rules cut the 144 head-to-heads
+this site had, and **every one of them holds a piece of the hardware equal and asks what the price
+gap buys**: the same chip at two memory sizes, the same silicon in two boxes, the same box a
+generation apart, one box's entry chip against the one above it, the grid of family flagships, the
+grid of cards. Not one of them asks the question a buyer starts from, which is what a given amount
+of money buys. $1,299 is a Mac mini M6 with 32 GB **or** a Radeon AI PRO R9700 with 32 GB, $4,699 is
+a DGX Spark and $4,700 a Corsair AI Workstation 300 with the same 128 GB, and nothing on this site
+put either pair side by side. A cross-family pair existed only between the eight family flagships,
+which is the median-priced machine of each range, so the prices in those 28 pairs are as far apart
+as the ranges are.
+
+**The rule.** `priceNeighbourPairs()`: each machine against the machine from another family nearest
+it in price, cheaper side first, where the two are within a tenth of each other. Discontinued and
+unpriced machines are out, because the price is the whole of the comparison. One pair per machine,
+its own nearest, rather than every pair inside a price band — a band writes a grid of near-identical
+pages around the crowded prices and leaves the cheap and dear ends with none. The families have to
+differ, because two machines from one maker at the same price are the memory tiers and chip steps the
+older rules already cut.
+
+| | before | after |
+| --- | --- | --- |
+| machine head-to-heads | 90 | 111 |
+| head-to-heads of every kind | 144 | 165 |
+| pages on the site | 261 | 282 |
+
+**The 21 pages, and why none of them is thin.** 858 to 1,180 words each, against a site median of
+1,024, every one in the sitemap and linked from `/compare/`, every one carrying the full comparison
+table, the like-for-like on the strongest model both hold, pay-back at five levels of use and the
+prefilled calculator links that go with them. The template was already proven on cross-family and
+card-against-computer pairs, because the flagship grid makes both shapes, so nothing here is a page
+type the site has not shipped.
+
+**The section they carry, and what it deliberately does not say.** `sameMoneySection()` is one
+paragraph, because the rest of the page already prices what each machine holds, how fast it runs it
+and how long it takes to pay back, and a section that repeats a figure is filler. It says the two
+prices and the gap, names the two makers from `brandOf()` — eleven of the 21 are two Apple machines,
+so a sentence about different makers would be wrong on half of them — and then says the one thing
+nothing else on the page says: that the row which usually carries the answer is the row these two
+agree on. Where one side is a graphics card it adds that its price is the card alone, which is what
+stops the two figures being the same money at all. Three pages are that shape.
+
+**One wording fault came with the new pages and is fixed for the whole site.** Two machines at the
+same price on the same model can come out days apart over decades, and days do not survive the
+rounding the pages print at, so `machineVerdict()` opened three pages with *"pays for itself sooner,
+in 17 years against 17 years at 500k tokens a day"* — a sentence arguing with the table under it,
+which prints both as 17 years. It compares the printed durations now, not the raw days, and says
+*"Both pay for themselves in 17 years"* where they match. The branch existed for an exact tie; it
+just never fired, because two machines are rarely equal to the day.
+
+**Two guards.** `checkPriceNeighbours()` recuts the rule from `data/hardware.json` rather than reading
+the list the pages were built from: every pair two current priced machines of different families,
+cheaper first, inside the cap, and one of the two's genuine nearest price outside its own family. It
+holds the other direction as well — no page that is not such a pair may carry the section — and where
+one side is a card it holds the section to saying what that price buys. It prints `21 head-to-heads
+between machines of different families within 10% of each other in price, 3 of them pricing a card
+against a whole computer`. `checkPayBackReads()` holds the lede across all 165 comparisons.
+
+**Seven breaks proved the guards**, exit 1 each time: the section dropped (named the first of 21);
+the section printed on every pair (*says two machines cost the same money and is not a pair the rule
+cut*); the cap widened to 25% (*is 15% apart in price*, plus a pair with no page and a page with no
+pair); the card caveat removed, with the older `checkCardPrices()` silenced so the new claim had to
+be the one that fired (3 pages, *calls a card's price the same money as a whole computer*); the pairs
+written dearer side first (21 pages); and the pay-back fix undone (3 pages, naming the figure printed
+on both sides). **Four more proved the eight new tests**: the family test dropped, the cap removed,
+the rule appended before the others instead of last, and the lede fix undone.
+
+**Verified.** 380 tests (8 new), typecheck clean, the full `npm run build` end to end with
+`build:functions`, 282 pages with every guard passing, and the new share cards drawn and checked by
+the existing card tests, which cover every pair `hardwarePairs()` returns. Six of the 21 pages read
+rendered out of `dist/` — a card against a computer, two machines at the same price to the dollar,
+two at $1 apart, two at the far ends of the memory range — and all 21 swept for maintainer words and
+em dashes, of which there are none.
+
+**Pushed to `main` as `9d035bb`**, deploy run 218, green at 11:05 and published.
+
+**Both open pull requests were re-checked against this push, really merged and built rather than
+trusted to a clean `git merge-tree`.** PR #16 (`seo/cost-per-month`) merges clean: 390 tests,
+typecheck clean, 283 pages with every guard passing, and `/cost-per-month/` passes both new guards as
+it stands. PR #17 (`seo/home-h1`) merges clean: 382 tests, typecheck clean, 282 pages. Neither merge
+leaves `seo/page-dates.json` dirty after a rebuild, so neither needs the extra commit the top of this
+file warns about for the other collision. **The two still do not merge cleanly into each other** —
+`git merge-tree pr16 pr17` still reports the conflict — and that resolution is unchanged, because
+nothing in this push touches `index.html`.
+
+**What to continue.** Nothing here is half-finished. The two new backlog items are both "written down
+so nobody re-finds it" rather than work: the cap is a round number that decides nothing today, and
+the 45 words the 21 pages share are the rule's own explanation. Every other open item is still
+waiting on Ryan, so the next run should expect to go looking with a measurement of its own again.
+The model side is the obvious place left: the machine head-to-heads now have six rules and the model
+ones have two, and nobody has asked whether models have a question the two rules miss the way the
+machines did.
+
+### 2026-09-19 — a machine page printed 661 speeds and named the source of one
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. The top open item was the one the 09:0x run found while rewriting the machine ledes: the
+"What it runs" table on all 56 machine pages prints a `tok/s` figure a row and marks none of them
+measured or estimated, where `/hardware/` marks all 56 of its own and the head-to-heads mark theirs.
+Both open pull requests were checked before anything else and **both still merge clean into `main`**,
+#17 at `6c81367` and #16 at `2c7e5e2`, so there was no repair to do.
+
+**How bad it was, counted rather than assumed.** 661 speeds across the 56 tables, and **exactly one
+of them is a measurement** — 103 tok/s for gpt-oss-20b on the GeForce RTX 4080. The other 660 are
+worked out from the machine's memory bandwidth. Across every pair the site computes, 1,425 where a
+machine here holds a model and has a speed for it, 1,397 are estimates and 28 are measured. So a bare
+figure on a machine page read as a measurement 660 times out of 661, on the page a reader lands on.
+
+**The fix.** The speed cell is `speedWithBasis()` now, the helper `/hardware/` has always used, so
+every row says *measured* or *estimated* beside the number. Two answer blocks went with it, because
+they were the same omission one heading higher: the machine page's *Best model it runs* and the model
+page's *Fastest of the ones listed*, 110 rows between them, 4 of them measured. `/best/` marked an
+estimate and left a measurement bare, which reads as an oversight rather than a claim; it uses the
+same helper now, and since all 45 of its rows are estimates today, nothing on that page changed.
+**No figure moves anywhere**: the mark is `throughput.measurement`, the field the data already
+carries, and the numbers are the ones the pages already printed.
+
+**The sentence that makes the mark mean something.** A mark nobody explains is decoration, so the
+note under each table now says which, in that machine's own split. On the 55 where nothing in the
+table is measured: *"Each speed says how it was arrived at, and every one here is estimated from this
+machine's 1200 GB/s of memory bandwidth rather than taken from a published benchmark."* On the RTX
+4080, the only machine with both: *"one of the 12 here is measured, from a published benchmark run on
+this machine, and the rest are estimated from its 716.8 GB/s of memory bandwidth."*
+
+**One wording change that reading it rendered forced.** The model page's answer row first came out as
+*"182 tok/s estimated at 32k context"*, where *estimated at 32k* reads as the context the estimate was
+taken at rather than as the mark. It is *"at 32k context, 182 tok/s estimated"* now, so the mark ends
+the phrase the way it does everywhere else on the site.
+
+**The helper.** `speedWithBasis()` took a `ModelRow`, and an answer block holds a speed without the
+row it came from, so the body of it is `speedFrom(throughput)` now and `speedWithBasis()` is one line
+on top of that. The rounding the two share moved into one place rather than being written out twice.
+
+**The guard.** `checkSpeedBasis()` holds three claims: no table cell on any of the 261 pages prints a
+`tok/s` figure without saying how it was arrived at; no answer row on a machine or model page does
+either; and every machine page with a table says what the mark means. It prints `2052 speeds in
+tables and 110 in answer blocks say whether they were measured or estimated; 56 machine pages say
+what the mark means`. Prose is deliberately left alone — `/local-llm-vs-api-cost/` and the comparison
+ledes say their basis in their own words, and a pattern should not try to police a sentence.
+
+**Verified:** 372 tests, typecheck clean, the full `npm run build` including `build:functions`, and
+261 pages with every guard passing. **Five breaks proved the guard**, exit 1 each time: the machine
+table cell put back bare (661 speeds, naming five machines), the machine answer row (56), the model
+answer row (54), `/best/`'s cell (45), and the explaining sentence removed (56, naming the machines).
+Two new tests cover `speedFrom`: that it agrees with `speedWithBasis` on a row it can be given both
+ways, and that it rounds to a decimal below ten the way the pages print it. Read rendered out of
+`dist/` on an all-estimated machine, the one mixed machine, a discontinued card and a machine with no
+published price, plus two model pages and `/best/`.
+
+**One thing checked while here, so nobody chases it: the calculator is already right.** `src/render.ts`
+tags every row of its model list *measured*, *estimated* or *yours* beside the speed, and the
+assumptions panel names the basis and its source. The generated pages were the only place a speed
+printed bare.
+
+**Pushed to `main` as `e9c2b15`**, deploy run 216, green at 09:50 and published.
+
+**Both open pull requests were re-checked against this push, really merged rather than trusted to a
+clean `git merge-tree`.** PR #16 (`seo/cost-per-month`) merges clean: 382 tests, typecheck clean, 262
+pages with every guard passing, and `/cost-per-month/` passes the new guard as it stands. PR #17
+(`seo/home-h1`) merges clean: 374 tests, typecheck clean, 261 pages. The import list in
+`scripts/build-pages.ts` was the collision to expect — this run extended the line PR #16 has already
+extended twice — and this time the two additions landed on different lines of the block, so git had
+nothing to resolve. The two still do not merge cleanly into **each other**; that resolution is
+unchanged and is written at the top of this file and on both pull requests.
+
+**What to continue.** Nothing here is half-finished. Every remaining open item on the backlog is
+waiting on somebody else: the home page's 142 words is a design question for Ryan, the Q8 pages want
+Search Console, and the model watch's candidate wants figures only he can sign off. So the next run
+should expect to go looking with a measurement of its own, the way the last three did.
+
+### 2026-09-19 — fifty machine pages opened with somebody else's paragraph
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is still waiting on Ryan, already written down as "leave it", or a
+"worth one look" its own wording expects to end in nothing, which is where the 07:5x run found it
+too. Both open pull requests were checked before anything else and **both still merge clean into
+`main`**, #17 at `6c81367` and #16 at `2c7e5e2`, so there was no repair to do. So this run took a
+measurement nobody here had taken, and it found something on the second look rather than the first.
+
+**The measurement.** Pairwise similarity between every generated page, as the Jaccard overlap of
+5-word shingles over the rendered text inside `<main>`, within each page type. Near-duplicate pages
+are the classic risk for a site that builds 261 pages from four templates, and nobody had checked.
+The numbers: comparisons median 0.115 and worst 0.745, models median 0.278 and worst 0.701, machines
+median 0.289 and worst 0.878, and the seven indexes under 0.02 against each other. The worst pairs
+are two memory sizes of one machine, or two models of one family. **As whole pages that is fine**,
+and the answer to this measurement on its own is to leave it alone: the pages differ in every figure
+that matters, and rewriting a template to push a similarity number down is writing for a measurement
+rather than for a reader. It is written down in the backlog above so nobody takes it again. For the
+record, this run's own change barely moves it: the worst machine pair goes from 0.878 to 0.864,
+because the paragraph it rewrites is fifty words of a thousand-word page. The paragraph is not where
+that number lives, which is exactly why the number could not see the fault.
+
+**The fault, which was in the one paragraph the number could not see.** Reading the worst pair rather
+than trusting its score: `/hardware/mac-mini-m5-pro-48/` and `/hardware/mac-mini-m5-pro-64/` open with
+the same sentence, and so do 48 other pages. Counted exactly, over the first paragraph of all 56
+machine pages: **18 distinct opening paragraphs, and 50 of the 56 pages opened with one that was
+character-identical, figures and all, to another page's.** Ten pages shared a single sentence; nine
+shared another; six shared a third. A $1,299 Framework Desktop and a $4,999 Mac Studio both said
+*"33 of the 39 open models on this site fit in its 96 GB of usable memory, the strongest being
+Qwen3.8 27B. Whether that saves you money is a different question, and the answer is usually no."*
+
+The reason is in what the paragraph answered. It answered memory, and memory is the one figure two
+machines thousands of dollars apart can share. Price, speed and pay-back are what separate them, and
+all three were on the page already, in the answer block directly below and in the description a
+search engine prints, which has carried this machine's own pay-back since it was written. The one
+sentence Google is most likely to quote was the one sentence that did not.
+
+**The fix.** The second sentence of the paragraph now gives the machine's own answer instead of a
+general one: *"Whether that saves you money is a different question: at $3,449 and 500k tokens a day,
+it pays back in 45 years."* Both figures come from the same `hwVerdict` and `hw.price_usd` the page
+already prints two lines down, so no figure is new and none was invented. **56 distinct paragraphs
+where there were 18, none repeated.** The 2 machines with no published price keep the sentence they
+had, because there is no pay-back to name; that is 54 pages changed, and `seo/page-dates.json` moved
+on exactly those 54 and on nothing else, no model page, no comparison, no index.
+
+**Two things the wording had to get right.** A discontinued machine says *"at its $1,999 launch
+price"* rather than *"at $1,999"*, because it is not a price anyone can pay today, and the answer row
+below it already says so. And a graphics card's paragraph now says *"the card alone"* where it said
+*"the card on its own"*: that is the phrase the rest of this site uses for it, and it is
+what `checkCardPrices()` looks for beside a card price. That guard is how the fault was found, which
+is the point of it. The first build after adding a price to the card pages' paragraph stopped at
+*"7 card prices are printed as if they bought a whole computer"*, exit 1, before anything was pushed.
+
+**The guard.** `checkMachineLedes()` holds three claims: every machine page opens with a paragraph,
+a machine whose pay-back can be computed names that pay-back and its own price in it, and no two
+machines open with the same words. It prints `56 machine pages open with a paragraph no other machine
+repeats, 54 of them naming that machine's own price and pay-back`.
+
+**Verified:** 370 tests, typecheck clean, the full `npm run build` including `build:functions`, and
+261 pages with every guard passing. **Three breaks proved the guard**, exit 1 each time: the general
+sentence put back (146 problems, being 54 pages missing a pay-back, 54 missing a price and 38
+opening with another machine's words), the price alone dropped from the sentence (55), and the
+opening paragraph stripped of its `lede` class (56). Read rendered out of `dist/` on nine machines
+covering every branch: priced and current, discontinued, card-only, card-only and discontinued, and
+both machines with no price. No doubled stop, no double space, no stray space before a stop on any
+of the 56.
+
+**Pushed to `main` as `b5aae1f`**, deploy run 214.
+
+**What to continue.** Nothing here is half-finished. The top of the backlog is the new item this run
+found while doing it: the machine pages print 661 speed figures and mark none of them measured or
+estimated, where `/hardware/` marks all 56 of its own, and 1,397 of the 1,425 pairs behind those
+figures are estimates. It is one helper that already exists, on pages that already import it.
+PR #17 and PR #16 are both still waiting on Ryan, both still merge clean into `main` as of this run,
+and they still do not merge cleanly into each other; the resolution for that is a rebuild rather
+than a choice and it is written on both of them and at the top of this file.
+
+### 2026-09-19 — the page all 261 others link back to had no heading at all
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is either waiting on Ryan (the Q8 question wants Search Console, the
+three unpaired machines want prices, the submissions page wants an export), already written down as
+"leave it" (the home page's date, the 307px floor, the seven long titles), or a "worth one look"
+that its own wording expects to end in nothing. So this run went looking with a measurement instead,
+and the first one it took found something.
+
+**The measurement that found nothing, written down so nobody takes it again.** Crawl depth from `/`,
+breadth-first over the built site, following every internal link: **262 of 262 pages are within two
+clicks of the home page**, 7 at depth 1 and 254 at depth 2, with nothing unreached. Counting only
+links inside `<main>`, so the shared footer flatters nothing, gives exactly the same three numbers.
+There is no deep corner of this site and no crawl-budget problem to fix.
+
+**The fault.** The home page is the only page on this site with no `h1`. Measured in Chromium on the
+built site at thirteen widths from 320 to 1440px: `document.querySelectorAll('h1')` comes back empty
+at every one of them. All 261 generated pages have exactly one; `index.html` has five `h2`s under
+nothing, and the app bundle emits no `h1` either, so it is not a rendering timing question.
+
+It is worse than a missing tag, because of what else the page does not have. **The static prose
+inside `<main>` on the home page is 142 words, and every word of it is a form label** — *Tokens a
+day*, *Context window you want*, *Copy link*, *Assumptions you can change*. The thinnest generated
+page on the site is 603 words and the median machine page is 1,024. So the URL that every one of the
+other 261 pages links back to from its wordmark, its breadcrumb and its footer, and the one that
+ranks for what this site is and what it does, had no sentence in its markup saying so.
+
+**The fix, as [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), and the one thing in it that
+needed deciding.** The sentence was already written and already on the page: `.topbar-line` in the
+bar reads *"If you buy a machine to run local models, how long until it pays for itself, and what can
+it actually do?"*, which is the product statement and the question every generated page is an
+instance of. It is the `h1` now. What needed deciding is the phone: PR #12 hid that line below 900px
+because the bar has no room for it, and `display: none` on a phone means Google does not get the
+heading, since indexing reads the mobile page. So below 900px it is **clipped** rather than removed,
+with the declarations `.sr-only` already uses for this page's other screen-reader headings. The words
+are in the document at every width and painted only where they fit.
+
+**Nothing moves, and that was measured rather than asserted.** The same thirteen widths before and
+after, reading the box of the top bar, the brand, the tagline, the "Data checked" stamp, the theme
+button and the machine sentence below: **44 rows differ out of 572, and all 44 are the change
+itself** — the `h1` appearing at thirteen widths, and `.topbar-line` going from `display: none` to a
+1×1 clipped box at the nine widths under 900px. Every other box is identical to the pixel and no
+width overflows where none did. The painted line keeps 13px, weight 400 and the same muted colour,
+which is what the `margin: 0` and `font-weight: 400` on `.topbar-line` are for: without them the UA
+stylesheet would make an `h1` bold with a 0.67em margin. Read rendered at 390, 900 and 1280px, not
+just as HTML.
+
+**Verified:** 372 tests (2 new), typecheck clean, and the full `npm run build` including
+`build:functions`, 261 pages with every guard passing. **Four breaks proved the two tests**, exit 1
+each time: the `h1` put back to a `<p>` (*expected [] to have a length of 1*), a second `h1` added to
+the page, `display: none` restored in the phone rule, and the clip rule dropped.
+
+**It also takes the one line the backlog parked for it.** `src/styles.css` declared `--ok-text`,
+`--warn-text` and `--bad-text` twice in a row in the dark-mode block, identical values with the first
+misindented, and the item said it should ride with the next pull request touching that file. It does.
+The second declaration won, so nothing renders differently. The other parked one-liner, the doubled
+full stop in the Memory fit line, is `src/render.ts` and is untouched here — a reviewer reading a
+pull request about a heading should not have to review that too, and it is still open below.
+
+**The collision with PR #16 is the one on this repository that a union resolves wrongly, and it is
+worth knowing before either is merged.** They conflict in one file and one line. Both branches edit
+`index.html` — PR #16 adds a footer entry, this one changes the tagline's tag — so both rewrite the
+`"/"` hash in `seo/page-dates.json`, and **neither value is right for the merged tree**. Measured by
+really merging the two in a worktree rather than trusting `git merge-tree`: the merged home page
+hashes to `d47470180e0b4932`, where this branch records `c4dbfa4065262b1f` and PR #16 records
+`eb2f546c5e896018`. Taking either side and committing it costs the home page its sitemap date in
+silence: the build then says *"1 changed since the record was last written and go out without one"*
+and writes `<url><loc>https://sunkcost.ai/</loc></url>` with no `<lastmod>` at all, which is the
+record doing exactly what it was built to do. **Resolve that line either way, run
+`npm run build:pages`, commit what it writes.** Nothing else needs attention: `index.html` and
+`tests/pagekit.test.ts` auto-merge, and the merged tree was verified here at 382 tests, typecheck
+clean and 262 pages with every guard passing. The note is on the pull request as well as here.
+
+**What it deliberately does not do, so the next run does not read it as a gap.** It does not make the
+heading visually prominent. Between 900 and about 1,100px the bar ellipsises the sentence, as it has
+since it was a `<p>`; the whole of it is in the DOM either way, so a crawler reads all of it and only
+the painting is cut. A heading that reads as a heading — above the machine sentence rather than in
+the bar — is a design decision about the calculator's front door, not a markup one, and it belongs to
+Ryan. It is a backlog item below, with the 142-word measurement that makes the case.
+
+**One thing about this environment, so the next run does not lose the same five minutes.** A fresh
+container checks out `origin/main` as a detached HEAD, and the local branch called `main` is **not**
+it: here it sat at `94aa957`, the seed commit, 40 commits of pre-rewrite history that `origin/main`
+does not contain. `git checkout main` therefore silently swaps `seo/LOG.md` for a two-day-old copy
+with no backlog in it, and `git reset --hard` is refused by the sandbox. Branch from `origin/main`
+by name — `git checkout -b <name> origin/main` — and push with `git push origin HEAD:main`.
+**And one habit worth keeping:** proving a test by breaking it with `sed` and undoing it with
+`git checkout <file>` throws away any uncommitted work in that file. It cost this run its own edits
+once, harmlessly, because the tests were already written. Commit first, or keep a copy.
+
+**What to continue.** Nothing here is half-finished. PR #17 and PR #16 are both waiting on Ryan, and
+the next run should check that both still merge, remembering that these two do not merge cleanly into
+each other and that the resolution above is a rebuild rather than a choice. The top of the backlog is
+the standing model watch; after that, the new item on what the home page says when nothing is
+selected is the one with the most behind it.
+
+### 2026-09-19 — the page that answers "which machine" was linked from nowhere but the footer
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Its top open item is the one nobody had done: measure what the internal links are made of
+before touching one. Measured first, wrote second, and the measurement chose the work.
+
+**What the words turned out to be, which is the item's own answer.** 7,540 internal links inside
+`<main>` across the 261 pages. No generic anchor anywhere — not one *here*, *this*, *read more*, bare
+number or empty link. Machines and models are linked by their names, which is what someone searching
+for a Mac mini M6 types; the indexes are linked by what they answer. Most destinations carry two to
+five distinct phrases. **So nothing was rewritten**, and rewriting a good sentence to fit a keyword is
+the thing that backlog item existed to prevent.
+
+**What the same measurement found instead, and it is the whole run.** Counting inbound links inside
+`<main>`, so the shared footer flatters nothing, **`/hardware/` had none**. Not a thin count — zero,
+on all 261 pages, where `/leaderboard/` had 200 inbound pages, `/compare/` 200, `/best/` 150,
+`/how-much-memory/` 114 and `/best-gpu/` 91. It is the site's machine index: 1,720 words, all 56
+machines with price, usable memory, how many models each holds and how long that pair takes to pay
+for itself, and the page a search for *local LLM hardware* should land on. It links three of its
+siblings in its own lede and none of them named it back. The one link every page carried was the
+footer's, which every page carries and no page earns.
+
+**Where the link goes, and why there.** Not a rule about tables with prices in them, which would have
+put it on 250 pages. It goes in the one sentence that asks the question: a model page's reach line
+already says *the table is the cheapest machine in each family, not the only one that runs it: 44 of
+the 56 machines on this site hold it at 32k* — a number, and until now nowhere to take it. That
+sentence now ends with where all 56 are priced. 54 model pages carry it. `/leaderboard/` and
+`/compare/` each name it in the list of places to start they already had. **56 pages in, from none**,
+by three distinct phrases.
+
+| | before | after |
+| --- | --- | --- |
+| pages linking `/hardware/` inside `<main>` | 0 | 56 |
+| model pages that count machines and say where they are priced | 0 | 54 |
+| distinct anchor phrases for it | 0 | 3 |
+| generic anchors anywhere on the site | 0 | 0 |
+
+**One thing changed by reading it rendered rather than as HTML.** The first wording was *Every machine
+here is priced in one table*, which lands directly after *All 56 machines on this site run it at 32k*
+— two scopes in two sentences, and `familyReachNote` already carries a comment about not saying
+*here* twice running. It claims no scope of its own now: *One table sets every machine against the
+others: price, the memory its GPU can use, what it holds and how long it takes to pay for itself.*
+The second wording also drops a claim the first one made and the data does not support — two of the
+56 machines have no price yet, so *every machine is priced* was not true.
+
+**Five breaks proved the guard.** `checkMachineIndex()` holds three claims. Drop the link from the
+sentence and 54 pages fail with *counts the machines that hold it and links the index 0 times rather
+than once*. Put one in a note the rule does not cover and it fails naming that page — it caught
+`/hardware/` linking itself. Take it off `/leaderboard/` and that page fails by name. Link it twice on
+a model page and the count fails. And reword the sentence on the page while keeping the link, which is
+the drift a link-only check would miss, and it fails with *does not say where they are all priced*.
+
+**And three breaks proved the tests.** A bare *here* as the anchor, one branch of the note forgetting
+the sentence, and the sentence said twice each fail one of the three new tests in
+`tests/pagekit.test.ts`. 370 tests where there were 367.
+
+**One existing guard had to be taught to read past it.** `checkFamilyReach()` matched the reach
+paragraph with `[^<]*`, which a sentence containing an `<a>` ends. It takes the paragraph whole now and
+strips the known sentence off the end before parsing the counting in front of it, so the two guards
+hold one claim each rather than one holding half of both.
+
+**Verified on `main`, not assumed.** 370 tests, typecheck clean, the full `npm run build` including
+`build:functions`, 261 pages with every guard passing, the paragraphs read rendered out of `public/`,
+and the date ledger checked entry by entry: 56 fingerprints moved and they are exactly the 54 model
+pages plus `/leaderboard/` and `/compare/`, no entry lost a date, 262 entries in and out. Pushed as
+`76246da`; **deploy run 210 went green at 06:54**, so it is live.
+
+**It broke PR #16 and PR #16 is fixed.** The push added `machineIndexLine` to the same import line
+that branch had already extended, which is the third time this log has recorded git offering one line
+where two additions belong. Both kept by hand, pushed to `seo/cost-per-month` as `2c7e5e2`, verified
+on the merged tree — 380 tests, typecheck clean, the full build, 262 pages, every guard passing, both
+features working together — and `git merge-tree` against `main` now reports no conflict. Nothing about
+the page changed. **Check for this whenever a run pushes code to `main` while a pull request is open;
+the import list is where it always lands.**
+
+**What to continue.** The backlog's next open item is the two Q8 model pages, which the same
+measurement turned up on 2 inbound pages each and which is a question for Ryan rather than a page to
+write. After that the open items are Ryan's or waiting on data. A run with nothing better should
+measure something the way this one did — the find was in the measurement, not in the item.
 
 ### 2026-09-19 — what a month of it costs, which is the question nobody here had answered
 

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  anchoredHeading, anchorHeadings, headingSlug, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
   machinesThatHold,
@@ -11,15 +11,15 @@ import {
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, nearestCompleteComputer, SPREAD_MONTHS,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
-  runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
+  runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
+  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import {
   indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
 import { footprintGb, kvCacheGb } from '../src/fit';
-import { modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
+import { hardwarePairs, modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
@@ -403,6 +403,43 @@ describe('the calculator’s own head', () => {
   });
 });
 
+describe('the name a machine goes by in a title', () => {
+  const bare = (h: Hardware) => shortHardwareLabel(h).replace(/ \([^()]*\)/g, '');
+  const brackets = data.hardware.filter((h) => bare(h) !== shortHardwareLabel(h));
+
+  it('keeps the screen size where a second machine answers to the name without it', () => {
+    const airs = data.hardware.filter((h) => bare(h) === 'MacBook Air M5, 16GB');
+    expect(airs.length).toBe(2);
+    for (const air of airs) expect(titleHardwareLabel(air, data.hardware)).toBe(shortHardwareLabel(air));
+  });
+
+  it('drops it where only one machine here does', () => {
+    const only = brackets.filter((h) => data.hardware.filter((o) => bare(o) === bare(h)).length === 1);
+    expect(only.length).toBeGreaterThan(0);
+    for (const h of only) {
+      expect(titleHardwareLabel(h, data.hardware)).toBe(bare(h));
+      expect(titleHardwareLabel(h, data.hardware)).not.toContain('(');
+    }
+  });
+
+  it('leaves a name with no screen size in it alone', () => {
+    for (const h of data.hardware.filter((h) => bare(h) === shortHardwareLabel(h)))
+      expect(titleHardwareLabel(h, data.hardware)).toBe(shortHardwareLabel(h));
+  });
+
+  it('still names one machine, whichever way it goes', () => {
+    const names = data.hardware.map((h) => titleHardwareLabel(h, data.hardware));
+    expect(new Set(names).size).toBe(data.hardware.length);
+  });
+
+  it('keeps the screen size once a second size of the same machine is priced', () => {
+    const pro = hw('macbook-pro-16-m5-pro-64');
+    expect(titleHardwareLabel(pro, data.hardware)).toBe('MacBook Pro M5 Pro, 64GB');
+    const fourteen = { ...pro, id: 'macbook-pro-14-m5-pro-64', chip: 'M5 Pro (14-inch)' } as Hardware;
+    expect(titleHardwareLabel(pro, [...data.hardware, fourteen])).toBe(shortHardwareLabel(pro));
+  });
+});
+
 describe('machine head-to-heads', () => {
   const view = (id: string) => computeView({ ...defaultState(data), hw: id }, data);
   // one pair whose columns hold different models, one whose columns hold the same one,
@@ -439,6 +476,20 @@ describe('machine head-to-heads', () => {
     const [va] = differ.map(view);
     expect(speedWithBasis(fitsOf(va)[0])).toMatch(/tok\/s <span class="dim">(measured|estimated)<\/span>/);
     expect(speedWithBasis(undefined)).toBe('<span class="dim">unknown</span>');
+  });
+
+  it('says the same where the speed is held without the row it came from', () => {
+    const [va] = differ.map(view);
+    const row = fitsOf(va)[0];
+    expect(speedFrom(row.throughput)).toBe(speedWithBasis(row));
+    expect(speedFrom(null)).toBe('<span class="dim">unknown</span>');
+    expect(speedFrom({ tokensPerSec: null, measurement: 'estimated' })).toBe('<span class="dim">unknown</span>');
+  });
+
+  it('rounds a speed the way the page prints it, to a decimal below ten', () => {
+    expect(speedFrom({ tokensPerSec: 8.44, measurement: 'measured' })).toBe('8.4 tok/s <span class="dim">measured</span>');
+    expect(speedFrom({ tokensPerSec: 24.6, measurement: 'estimated' })).toBe('25 tok/s <span class="dim">estimated</span>');
+    expect(speedFrom({ tokensPerSec: 9.97, measurement: 'measured' })).toBe('10 tok/s <span class="dim">measured</span>');
   });
 
   it('says when a price is for the card alone', () => {
@@ -512,6 +563,20 @@ describe('machine head-to-heads', () => {
       const sameModel = fitsOf(va)[0].model.id === fitsOf(vb)[0].model.id;
       expect(/own strongest model/.test(verdict)).toBe(!sameModel);
     }
+  });
+
+  it('never calls a pay-back sooner than a figure it prints as equal to it', () => {
+    // two machines at the same price can come out days apart over decades, and days do
+    // not survive the rounding these pages print at. Where both sides print the same
+    // figure the lede has to say both, or it argues with the table under it.
+    let both = 0;
+    for (const [a, b] of hardwarePairs(data)) {
+      const verdict = machineVerdict(a, b, view(a.id), view(b.id), data);
+      const m = verdict.match(/pays for itself sooner, in (.+?) against (.+?) at /);
+      if (m) expect(m[1]).not.toBe(m[2]);
+      if (/Both pay for themselves in/.test(verdict)) both++;
+    }
+    expect(both).toBeGreaterThan(0);
   });
 
   it('counts the models each machine holds the way the table does', () => {
@@ -2226,6 +2291,36 @@ describe('the other match-ups the two on a head-to-head are in', () => {
     );
   });
 
+  it('gives the models that need the same memory a sentence of their own, and says the reason once', () => {
+    const three = words(
+      modelMatchUpsLine('Gemma 3 27B it', [
+        { href: '/compare/a-vs-g/', name: 'Qwen3 8B', side: 'above', family: 'Gemma' },
+        { href: '/compare/g-vs-b/', name: 'Ministral 3 8B', side: 'below', family: 'Gemma' },
+        { href: '/compare/c-vs-g/', name: 'Qwen3.6 27B', side: 'same-memory' },
+        { href: '/compare/d-vs-g/', name: 'Devstral Small 2 24B', side: 'same-memory' },
+      ]),
+    );
+    expect(three).toBe(
+      'Gemma 3 27B it is also head to head with Qwen3 8B above it on the leaderboard and Ministral 3 8B below it. Two more models need much the same memory: Qwen3.6 27B and Devstral Small 2 24B.',
+    );
+    // one of them is one model, not two
+    expect(
+      words(
+        modelMatchUpsLine('gpt-oss-20b', [
+          { href: '/compare/a-vs-g/', name: 'Qwen3-Coder Next', side: 'above' },
+          { href: '/compare/g-vs-m/', name: 'Ministral 3 14B', side: 'same-memory' },
+        ]),
+      ),
+    ).toBe(
+      'gpt-oss-20b is also head to head with Qwen3-Coder Next above it on the leaderboard. One more model needs much the same memory: Ministral 3 14B.',
+    );
+    // and where the page itself is the rung of the leaderboard, the memory neighbours are
+    // all that is left to say, so they carry the sentence rather than follow one
+    expect(
+      words(modelMatchUpsLine('GLM-4.7-Flash', [{ href: '/compare/g-vs-q/', name: 'Qwen3-Coder 30B-A3B', side: 'same-memory' }])),
+    ).toBe('GLM-4.7-Flash is also head to head with Qwen3-Coder 30B-A3B, which needs much the same memory.');
+  });
+
   it('reads as finished copy: no doubled stop, no stray comma, nothing left blank', () => {
     const lines = [
       machineMatchUpsLine('Mac Studio M5 Max, 128GB', groups),
@@ -2233,6 +2328,11 @@ describe('the other match-ups the two on a head-to-head are in', () => {
         { href: '/compare/q-vs-r/', name: 'Qwen3 32B', side: 'is-current', family: 'Qwen' },
         { href: '/compare/s-vs-q/', name: 'Inkling Small', side: 'below', family: 'Qwen' },
       ]),
+      modelMatchUpsLine('Gemma 3 27B it', [
+        { href: '/compare/a-vs-g/', name: 'Qwen3 8B', side: 'above' },
+        { href: '/compare/c-vs-g/', name: 'Qwen3.6 27B', side: 'same-memory' },
+      ]),
+      modelMatchUpsLine('Gemma 3 27B it', [{ href: '/compare/c-vs-g/', name: 'Qwen3.6 27B', side: 'same-memory' }]),
     ];
     for (const line of lines) {
       const w = words(line);
@@ -2240,5 +2340,45 @@ describe('the other match-ups the two on a head-to-head are in', () => {
         expect([bad, w.includes(bad)]).toEqual([bad, false]);
       expect(w.endsWith('.')).toBe(true);
     }
+  });
+});
+
+describe('the id a section heading answers to', () => {
+  it('slugs a heading the way a reader reads it: markup out, entities back, one hyphen between words', () => {
+    expect(headingSlug('What the Framework Desktop, 128GB runs')).toBe('what-the-framework-desktop-128gb-runs');
+    expect(headingSlug('How good is Qwen3 8B, really?')).toBe('how-good-is-qwen3-8b-really');
+    // the heading on /best/ carries a span and a middle dot, and neither is a word
+    expect(headingSlug('50,000 tokens a day <span class="dim">· heavy use</span>')).toBe('50-000-tokens-a-day-heavy-use');
+    // the build escapes before this sees it, so an ampersand arrives as an entity
+    expect(headingSlug('Weights &amp; cache')).toBe('weights-cache');
+    expect(headingSlug('The M5 Max&#39;s memory')).toBe('the-m5-max-s-memory');
+    // no leading or trailing hyphen, whatever the punctuation around the words
+    expect(headingSlug('  "The specifics" — at last!  ')).toBe('the-specifics-at-last');
+    // a heading with no letters or digits has no slug, and the caller leaves it alone
+    expect(headingSlug('· — ·')).toBe('');
+  });
+
+  it('gives every bare heading an id, and never the same id twice on one page', () => {
+    expect(anchorHeadings('<h2>The specifics</h2>')).toBe('<h2 id="the-specifics">The specifics</h2>');
+    // the same words twice on one page: the second takes a number, because a browser
+    // honours the first id and ignores the rest
+    expect(anchorHeadings('<h2>The specifics</h2><p>a</p><h2>The specifics</h2>')).toBe(
+      '<h2 id="the-specifics">The specifics</h2><p>a</p><h2 id="the-specifics-2">The specifics</h2>',
+    );
+    // a heading that already carries an id keeps it
+    expect(anchorHeadings('<h2 id="u-50k">50,000 a day</h2>')).toBe('<h2 id="u-50k">50,000 a day</h2>');
+    // and one with no word in it is left as it was found
+    expect(anchorHeadings('<h2>· ·</h2>')).toBe('<h2>· ·</h2>');
+    // nothing but an h2 is touched
+    expect(anchorHeadings('<h1>Top</h1><h3>Under</h3>')).toBe('<h1>Top</h1><h3>Under</h3>');
+  });
+
+  it('writes the heading a guard asks for in the form the page publishes it', () => {
+    // this is the whole of the contract the build's guards rest on: ask for a heading
+    // by its words and get back the markup anchorHeadings produced from those words
+    for (const heading of ['The specifics', 'What the Mac mini M6, 16GB runs', 'How good is Gemma 4 31B it, really?'])
+      expect(anchorHeadings(`<h2>${heading}</h2>`)).toBe(anchoredHeading(heading));
+    // and a heading with no slug in it still round-trips
+    expect(anchorHeadings('<h2>···</h2>')).toBe(anchoredHeading('···'));
   });
 });
