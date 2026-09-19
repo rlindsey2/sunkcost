@@ -702,15 +702,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       Both section headings are named in `SECTIONS` and linked from other pages by name, so neither
       can be reworded without `checkSectionLinks` saying so, which is the guard doing its job.
 
-- [ ] **Two sections on one page can carry the same words and the build says nothing.** Found
-      2026-09-19 while breaking the guards on `/compare/`: `checkHeadingAnchors()` prints *none
-      repeated on its page*, and that is true of the **ids** rather than of the headings —
-      `anchorHeadings` gives a repeated slug a `-2` suffix, so a page with two sections headed the
-      same words builds clean, and its jump line then offers the reader the same words twice
-      pointing at two different places. No page on the site does this today; the whole of the work
-      is a claim in that guard and a break to prove it, and it is `scripts/build-pages.ts`, so it is
-      a push. Small, and the sort of thing that is cheap now and confusing the day a template
-      repeats a heading.
+- [x] **Two sections on one page could carry the same words and the build said nothing.** Done
+      2026-09-19, pushed as `1165130`. The guard holds the words now as well as the addresses, and
+      its print says which of the two it is holding. The item's own account of the fault was right
+      and understated the proof: the old build was run with a repeated heading on `/compare/` before
+      the claim went in, and it did not merely pass — it shipped `id="machine-against-machine-2"`
+      and a jump line reading *Machine against machine · Model against model · Machine against
+      machine*, which is the reader being offered the same words twice. No page output changed: all
+      307 pages and the sitemap are byte-for-byte what they were, compared build against build, and
+      no hash moved in `seo/page-dates.json`. The run entry below has the four breaks.
+      **What it deliberately leaves in place, so nobody reads it as a leftover.** `anchorHeadings`
+      still numbers a repeated slug, and the guard still accepts a `-2` or `-3` id. Neither is dead
+      code being tidy: the numbering is what keeps an id unique for a browser if one ever slips
+      through, and accepting it is what makes the build fail with the one message that names the
+      real fault — the words — rather than with two, the second of which is about a slug.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1563,6 +1568,66 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the guard that checked the addresses and printed a claim about the words
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which is a new page
+type and a top-level page, so it is a third pull request against `index.html` behind two Ryan has
+not settled; the item itself says to do it when those are settled rather than queued behind them.
+The one below it was this, and the previous run had found it while breaking a different guard.
+
+**What was wrong, measured rather than reasoned about.** `checkHeadingAnchors()` ended its print
+with *none repeated on its page*, which reads as a claim about headings and was a claim about ids.
+`anchorHeadings` numbers a slug it has already used, so the two are not the same thing. The old
+build was run with one repeated heading added to `/compare/` to see what it actually did, and it
+did not merely pass the guard:
+
+| | with the heading repeated |
+| --- | --- |
+| the old build | passes, 1,188 headings, 307 pages written |
+| the id it shipped | `id="machine-against-machine-2"` |
+| the line above the sections | *Jump to: Does any machine here hold every model? · Machine against machine · Model against model · **Machine against machine** · The assumptions behind both tables* |
+| the new build | exit 1, *`/compare/` heads two sections "Machine against machine", so a jump into them offers the reader the same words twice* |
+
+**Four breaks, each run.** Repeat a heading word for word → caught, exit 1. Repeat it with markup in
+the middle, `Machine <span class="dim">against</span> machine` → caught, and the message prints the
+words a reader sees rather than the markup, which is what the `words()` helper is for. Repeat it
+differing only by a question mark → caught, because a mark is not a word and the two slug the same.
+And the negative control, the one that says the guard is about repetition rather than about the
+count: head a fifth section *Machine against a graphics card* → **the build passes**, 1,188
+headings, 307 pages.
+
+**Nothing a visitor reads changed, and this was checked rather than assumed.** The site was built
+from `main` and from the change and every file compared: `diff -rq` over `public/` reports no
+difference at all, in any of the 307 pages or the sitemap, and `seo/page-dates.json` is untouched,
+so no page's `lastmod` moves. A guard is worth what it prevents and this one prevents a jump line
+that wastes the reader's click; it is not worth a single changed word today.
+
+**Verified**: 403 tests, typecheck clean, 307 pages with every guard passing, and the full
+`npm run build` end to end including `build:og`, `build:share` and `build:functions`.
+**Pushed as `1165130`.** The live site was not read back: this environment's egress proxy blocks
+`sunkcost.ai`, so everything above is from the built output.
+
+**Both open pull requests still merge clean**, checked against the new `main`. PR #16 was merged for
+real in a throwaway worktree and built there rather than trusted to `git merge-tree`: no conflict,
+413 tests, typecheck clean, 308 pages with every guard passing, and the new claim holds over
+`/cost-per-month/`'s own four headings as well — 1,191 section headings against 1,187. It touches
+`scripts/build-pages.ts` in 255 lines and not one of them is in this function, which is why the
+import line that has caught it three times did not catch it a fourth. PR #17 touches `index.html`
+and `src/styles.css`, which this change goes nowhere near; `git merge-tree` reports it clean.
+
+**One thing about this environment, worth the next run knowing.** The first `git push` was rejected
+as non-fast-forward with no sibling session anywhere near it: the clone starts on a **detached
+HEAD**, so the commit went onto no branch and `git push origin main` pushed the stale local `main`
+at `d8314dc`. The standing rule about a rejected push is to fetch and check for a sibling's work
+first, and that was done — `git log HEAD..origin/main` was empty, which is the tell. The fix is
+`git branch -f main HEAD && git checkout main`, and nothing was forced.
+
+**What to continue.** The backlog's top open item is still the per-memory-size pages, a pull request
+that wants Ryan's two settled first. Below it, the three over-long titles and the memory cap are
+both written up as considered rather than open work, so the next real item is whichever of the
+smaller ones reads best on the day.
 
 ### 2026-09-19 — the index of 189 match-ups says what is on it
 
