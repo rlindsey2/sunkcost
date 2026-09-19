@@ -650,7 +650,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       at two sections, and `/best/`, which keeps the shortened line it wrote for itself because each
       of its headings carries a second clause.
 
-- [ ] **`/hardware/` and `/leaderboard/` head no sections at all**, measured 2026-09-19 while the
+- [x] **`/hardware/` and `/leaderboard/` head no sections at all.** Done 2026-09-19, pushed as
+      `c6c4753`. Each heads four sections now, both tables stay whole, and both pages picked up
+      anchors and a jump line from the rules already in the build — 1,185 section headings on the
+      site where there were 1,177, and 150 pages offering a way into their own sections where there
+      were 148. **The item's own guess was the one answer the markup forbids**: an `h2` cannot sit
+      inside a `<table>`, so sections over groups of rows means several tables, and a reader
+      comparing 56 machines on price wants one table to read down. The sections are the argument
+      each page already makes instead, and nothing was written for the occasion. `checkPageSections()`
+      now holds that every page heads at least one section and none heads a section in its own
+      title; the run entry below has the figures and the two breaks that proved it. What it leaves,
+      because it is a smaller version of the same thing: `/compare/` is now the thinnest page on the
+      site at two sections, which is the item below. The original follows.
+      Measured 2026-09-19 while the
       jump lines were being cut. They are two of the site's four top-level indexes — 56 machines on
       one, 55 models on the other — and each is linked from the footer of all 306 other pages, but
       each is a single table under an `h1` with not one `h2` on it. So nothing can link
@@ -667,6 +679,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       cutting it into four is a worse page with better headings. A table that stays whole with
       section headings above named groups of rows is the likelier answer, and it is `<tbody>` per
       group rather than a new page type, so it stays a push.
+
+- [ ] **`/compare/` heads two sections and is now the thinnest page on the site**, measured
+      2026-09-19 after the two indexes above were cut. 111 machine match-ups sit under *Machine
+      against machine* and 78 model match-ups under *Model against model*, which is an honest cut
+      of what the page holds — but two sections is below the floor a jump line wants, and the page
+      says nothing of its own before it starts listing the way `/hardware/`, `/leaderboard/` and
+      `/compare/`'s own siblings do. **What to settle before a line is written**: whether the page
+      has a third thing to say that is not filler. The candidates are what the rules cutting the
+      match-ups actually are — each machine against the family flagships and the cards, each model
+      against the next one down, the model it replaced and the model nearest it in memory — which
+      is the one question a reader of an index of 189 pairs has that the table does not answer.
+      Both section headings are named in `SECTIONS` and linked from other pages by name, so neither
+      can be reworded without `checkSectionLinks` saying so, which is the guard doing its job.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1519,6 +1544,87 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the two indexes that headed nothing
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item was the two top-level indexes that headed no sections
+at all: `/hardware/`, 56 machines, and `/leaderboard/`, 55 models, each a single table under one `h1`
+while every other index on the site headed five sections or more. Both are linked from the footer of
+all 306 other pages, so they were the two pages on this site nothing could link into and no search
+result could offer a jump into.
+
+**The two things the item said to settle, settled the other way round.** The item guessed the
+sections would be groups of rows — machine shape on one, `SIZE_BANDS` on the other — and that is the
+one answer the markup forbids: an `h2` cannot sit inside a `<table>`, so headings over groups of rows
+means several tables, and a reader comparing 56 machines on price wants one table they can read down.
+Both tables stay whole and unchanged. **The sections are the argument each page already makes**: the
+two paragraphs `/hardware/` opens with are its answer about what a dearer machine buys and how long
+one takes to pay back, the leaderboard's is the gap to the frontier, and the notes under each table
+are a section in their own right, the way the head-to-heads have headed *The assumptions behind both
+columns* for weeks. Nothing was written for the occasion; eight headings were put over prose, tables
+and notes that were already there.
+
+| | before | after |
+| --- | --- | --- |
+| pages heading no sections | 2 | 0 |
+| section headings on the site | 1,177 | 1,185 |
+| pages offering a way into their own sections | 148 | 150 |
+| jumps, one a section | 610 | 618 |
+| pages whose words changed | — | 2 of 307 |
+| dates moved in `seo/page-dates.json` | — | 0 |
+
+**How they read.** `/hardware/`: *Does a dearer machine run a better model?* · *How long each machine
+takes to pay for itself* · *Every machine here, side by side* · *The assumptions behind the table*.
+`/leaderboard/`: *How far behind the frontier open models are* · *Every model here, ranked* · *Models
+the index has not scored yet* · *How to read the scores*. Four sections each is exactly the floor
+`JUMP_MIN_SECTIONS` sets, and neither page names a machine or a model in a heading, so both picked up
+a jump line from the rule written yesterday without a line of that rule changing.
+
+**One sentence changed, and one deliberately did not.** The leaderboard's note under its own new
+heading read *5 more open models on this site have no index score yet, so they are not in the table*,
+which says what the heading above it had just said; it reads *are not in the table above* now. The
+one left alone is *The short version:*, which opens the first paragraph of `/compare/`, `/hardware/`
+and `/leaderboard/` alike. Under a question heading it is a beat before the answer, but it is the
+site's own voice on all three indexes, and stripping it from two of them would have made the third
+read as an oversight.
+
+**The guard.** `checkPageSections()` holds two claims: every page heads at least one section, and no
+page heads a section in its own title. The first is the state these two pages were in for weeks with
+nobody noticing, and it now stops a build; the print names the thinnest page on the site, so the
+floor is a number somebody reads rather than one nobody measures — *`307 pages head at least one
+section, the fewest being 2 on /compare/`*. The second stops the floor being met with a heading that
+labels the page inside itself, which would buy the reader nothing and the jump line a repeated line.
+
+**Two breaks, each run and each caught.** Strip the leaderboard's four headings → *`/leaderboard/`
+heads no sections at all, so nothing can link into it and a reader has to start at the top*, exit 1.
+Head the machine table *Every machine that runs local models, priced*, which is that page's own `h1` →
+*`/hardware/` heads a section "Every machine that runs local models, priced", which is the page's own
+title said twice*. The first break also printed *1 page do not cut themselves*, which is fixed: the
+message is written both ways round now, the way `checkSectionLinks` writes its own.
+
+**Nothing else on the site moved.** Two page hashes change in `seo/page-dates.json` and no date does,
+because both pages already carried today's; `sitemap.xml` is unchanged, and the other 305 pages are
+byte-for-byte what they were.
+
+**Verified**: 403 tests, typecheck clean, `npm run validate` with the two null prices already on
+Ryan's side of this file, 307 pages with every guard passing, the full `npm run build` end to end
+including `build:og`, `build:share` and `build:functions`, and both pages read rendered out of
+`dist/` rather than from the source. **Pushed as `c6c4753`, and deploy run 239 went green at 18:51
+on 2026-09-19**, so both pages are live. The live site was not read back: this environment's egress
+proxy blocks `sunkcost.ai`, so everything above is from the built output.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a worktree and built
+there rather than trusted to `git merge-tree`: no conflict, 413 tests, typecheck clean, 308 pages
+with every guard passing, and `/cost-per-month/` picks up the new guard and its own jump line in the
+merged tree — 151 pages, 622 jumps. PR #17 touches `index.html` and `src/styles.css`, which this
+change goes nowhere near; `git merge-tree` reports it clean and it was not built again, since
+yesterday's entry already built it against the jump lines.
+
+**What to continue.** The backlog's top open item is the per-memory-size pages, which is a pull
+request and still wants the two open ones settled first. Below it, `/compare/` is now the thinnest
+page on the site at two sections, which is the same shape as this item one size down and is written
+up in the backlog.
 
 ### 2026-09-19 — a way into the sections of the pages worth one
 
