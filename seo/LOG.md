@@ -22,12 +22,16 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       every guard passing, the full `npm run build` with `build:functions`, and the page and its
       share card both read rendered. **It collides with nothing**, because nothing else is open.
       The run entry below has the figures and what reading it rendered changed.
-      **Re-checked against `main` at `978ed1c`, after this run's own two pushes to it, and it still
-      merges clean.** Neither push touched code: the log entry, and the ignore rule for
-      `public/cost-per-month/`, which is the same line the branch carries — git takes the identical
-      addition once rather than twice, so the merged `.gitignore` has it one time. The merged tree
-      differs from the branch in `seo/LOG.md` alone, so the build verified above is the build that
-      would land.
+      **It conflicted with `main` at 06:50 on 2026-09-19 and is merged clean again**, as `2c7e5e2`
+      on its own branch. The 07:0x run's push added `machineIndexLine` to the same import line this
+      branch had already extended with the monthly-cost helpers, so git offered one line where two
+      additions belong — the shape the log has warned about twice. Both were kept by hand, which is
+      the whole of the merge commit, and nothing else on either side moved. Verified on the merged
+      tree rather than assumed: 380 tests, typecheck clean, the full `npm run build` with
+      `build:functions`, and 262 pages with every guard passing, including this branch's
+      `/cost-per-month/` and main's new machine-index link on 56 pages. `git merge-tree` against
+      `main` at `76246da` now reports no conflict. Nothing about the page changed; it is the same
+      pull request, still waiting on you.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
@@ -547,7 +551,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       head-to-heads, which do raise it in a lede already five sentences deep in figures about two
       models. On both, a sentence about graphics cards answers a question the page does not ask.
 
-- [ ] **Nobody has looked at what the internal links are made of.** There are 7,336 of them inside
+- [x] **Nobody has looked at what the internal links are made of.** Done 2026-09-19, and the item's
+      own guess was right about the words and wrong about where the fault would be. **The anchor text
+      is clean**: 7,540 internal links inside `<main>` across the 261 pages, and not one of them is
+      named *here*, *this*, *read more*, a bare number or nothing at all. A machine or model page is
+      reached by its own name, which is what a searcher types for it; an index is reached by what it
+      answers — `/best/` by "the quickest pay-back at each level of use", `/compare/` by "every other
+      match-up", `/best-gpu/` by "ranked by what each one holds". Most destinations carry two to five
+      distinct phrases, and the five reached by exactly one are five models whose name is the only
+      thing anyone would call them. **Nothing was rewritten, because nothing needed it.**
+      What the measurement did turn up is the run's work, and it was not in the words: **`/hardware/`
+      had no inbound link inside `<main>` at all**, on any of the 261 pages. See the entry below.
+      The original wording follows.
+      There are 7,336 of them inside
       `<main>` across the 259 pages, and six runs have spent themselves on where links point without
       once measuring the words they are written in. The questions worth answering: does the anchor
       text say what is at the other end in words a searcher would type, or does it say the name of
@@ -556,6 +572,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       links this site has are in sentences rather than in lists, so the answer may well be that they
       are already fine, and rewriting a sentence to fit a keyword is the thing this backlog exists to
       avoid.
+
+- [ ] **The two Q8 model pages are now the least-linked real pages on the site**, on 2 inbound pages
+      each inside `<main>`, where the median page has 13 and `/leaderboard/` has 200. They are
+      `/models/llama-3.1-8b-q8/` and `/models/qwen3-32b-q8/`, the only two models this site lists at
+      a second precision, and both are reached from their own Q4 page's *also listed here at Q8*
+      clause and from one comparison. That is not obviously wrong — a second quantisation of a model
+      is a footnote to it, and the Q4 page is the page a searcher wants. The question to settle
+      before writing anything is whether anybody searches the precision rather than the model, which
+      is a Search Console question this agent cannot answer and Ryan can. Worth one look, and worth
+      leaving alone if the answer is no.
+      The `/` row in the same measurement reads zero and is not a fault: the home page is linked from
+      the wordmark, the breadcrumb and the footer on all 261 pages, none of which is inside `<main>`.
+      Measured 2026-09-19; written down so the next run does not chase it.
 
 - [x] **No head-to-head on the site linked another head-to-head.** Done 2026-09-19. The 143
       comparisons were the deepest pages here, median 3 links in and always the same three:
@@ -1197,6 +1226,86 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the page that answers "which machine" was linked from nowhere but the footer
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Its top open item is the one nobody had done: measure what the internal links are made of
+before touching one. Measured first, wrote second, and the measurement chose the work.
+
+**What the words turned out to be, which is the item's own answer.** 7,540 internal links inside
+`<main>` across the 261 pages. No generic anchor anywhere — not one *here*, *this*, *read more*, bare
+number or empty link. Machines and models are linked by their names, which is what someone searching
+for a Mac mini M6 types; the indexes are linked by what they answer. Most destinations carry two to
+five distinct phrases. **So nothing was rewritten**, and rewriting a good sentence to fit a keyword is
+the thing that backlog item existed to prevent.
+
+**What the same measurement found instead, and it is the whole run.** Counting inbound links inside
+`<main>`, so the shared footer flatters nothing, **`/hardware/` had none**. Not a thin count — zero,
+on all 261 pages, where `/leaderboard/` had 200 inbound pages, `/compare/` 200, `/best/` 150,
+`/how-much-memory/` 114 and `/best-gpu/` 91. It is the site's machine index: 1,720 words, all 56
+machines with price, usable memory, how many models each holds and how long that pair takes to pay
+for itself, and the page a search for *local LLM hardware* should land on. It links three of its
+siblings in its own lede and none of them named it back. The one link every page carried was the
+footer's, which every page carries and no page earns.
+
+**Where the link goes, and why there.** Not a rule about tables with prices in them, which would have
+put it on 250 pages. It goes in the one sentence that asks the question: a model page's reach line
+already says *the table is the cheapest machine in each family, not the only one that runs it: 44 of
+the 56 machines on this site hold it at 32k* — a number, and until now nowhere to take it. That
+sentence now ends with where all 56 are priced. 54 model pages carry it. `/leaderboard/` and
+`/compare/` each name it in the list of places to start they already had. **56 pages in, from none**,
+by three distinct phrases.
+
+| | before | after |
+| --- | --- | --- |
+| pages linking `/hardware/` inside `<main>` | 0 | 56 |
+| model pages that count machines and say where they are priced | 0 | 54 |
+| distinct anchor phrases for it | 0 | 3 |
+| generic anchors anywhere on the site | 0 | 0 |
+
+**One thing changed by reading it rendered rather than as HTML.** The first wording was *Every machine
+here is priced in one table*, which lands directly after *All 56 machines on this site run it at 32k*
+— two scopes in two sentences, and `familyReachNote` already carries a comment about not saying
+*here* twice running. It claims no scope of its own now: *One table sets every machine against the
+others: price, the memory its GPU can use, what it holds and how long it takes to pay for itself.*
+The second wording also drops a claim the first one made and the data does not support — two of the
+56 machines have no price yet, so *every machine is priced* was not true.
+
+**Five breaks proved the guard.** `checkMachineIndex()` holds three claims. Drop the link from the
+sentence and 54 pages fail with *counts the machines that hold it and links the index 0 times rather
+than once*. Put one in a note the rule does not cover and it fails naming that page — it caught
+`/hardware/` linking itself. Take it off `/leaderboard/` and that page fails by name. Link it twice on
+a model page and the count fails. And reword the sentence on the page while keeping the link, which is
+the drift a link-only check would miss, and it fails with *does not say where they are all priced*.
+
+**And three breaks proved the tests.** A bare *here* as the anchor, one branch of the note forgetting
+the sentence, and the sentence said twice each fail one of the three new tests in
+`tests/pagekit.test.ts`. 370 tests where there were 367.
+
+**One existing guard had to be taught to read past it.** `checkFamilyReach()` matched the reach
+paragraph with `[^<]*`, which a sentence containing an `<a>` ends. It takes the paragraph whole now and
+strips the known sentence off the end before parsing the counting in front of it, so the two guards
+hold one claim each rather than one holding half of both.
+
+**Verified on `main`, not assumed.** 370 tests, typecheck clean, the full `npm run build` including
+`build:functions`, 261 pages with every guard passing, the paragraphs read rendered out of `public/`,
+and the date ledger checked entry by entry: 56 fingerprints moved and they are exactly the 54 model
+pages plus `/leaderboard/` and `/compare/`, no entry lost a date, 262 entries in and out. Pushed as
+`76246da`; **deploy run 210 went green at 06:54**, so it is live.
+
+**It broke PR #16 and PR #16 is fixed.** The push added `machineIndexLine` to the same import line
+that branch had already extended, which is the third time this log has recorded git offering one line
+where two additions belong. Both kept by hand, pushed to `seo/cost-per-month` as `2c7e5e2`, verified
+on the merged tree — 380 tests, typecheck clean, the full build, 262 pages, every guard passing, both
+features working together — and `git merge-tree` against `main` now reports no conflict. Nothing about
+the page changed. **Check for this whenever a run pushes code to `main` while a pull request is open;
+the import list is where it always lands.**
+
+**What to continue.** The backlog's next open item is the two Q8 model pages, which the same
+measurement turned up on 2 inbound pages each and which is a question for Ryan rather than a page to
+write. After that the open items are Ryan's or waiting on data. A run with nothing better should
+measure something the way this one did — the find was in the measurement, not in the item.
 
 ### 2026-09-19 — what a month of it costs, which is the question nobody here had answered
 
