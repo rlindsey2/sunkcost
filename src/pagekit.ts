@@ -1834,3 +1834,92 @@ export function fmtPerMtok(v: number | null | undefined): string {
   if (cents === 0) return 'nothing';
   return `${cents >= 1 ? cents.toFixed(1) : cents.toFixed(2)}c`;
 }
+
+/* ----------- the other match-ups the two on a head-to-head are in ----------- */
+
+/**
+ * A head-to-head is the one page type here that answers its question and then
+ * sends the reader to an index. Every machine and model page names the match-ups
+ * it is in; a match-up named none, so the 143 of them were the deepest pages on
+ * the site and the only route between two of them was back through `/compare/`.
+ * The reader who has just read one is the likeliest person on the site to want
+ * another: picking between two machines is rarely picking between only two.
+ *
+ * The links are the ones the two sides' own pages already carry, grouped the same
+ * way and cut by the same rules, so this adds a route rather than a claim.
+ */
+export interface MatchUpGroup {
+  /** the noun after "head to head with", e.g. "another card" */
+  lead: string;
+  links: { href: string; label: string }[];
+}
+
+const matchUpLinks = (links: MatchUpGroup['links']): string =>
+  links.map((l) => `<a href="${esc(l.href)}">${esc(l.label)}</a>`).join(' · ');
+
+/**
+ * One machine's other match-ups, as a sentence about that machine. Written in the
+ * same words its own page uses for the same list, because it is the same list.
+ */
+export function machineMatchUpsLine(self: string, groups: MatchUpGroup[]): string {
+  if (!groups.length) return '';
+  return groups
+    .map((g, i) =>
+      i === 0
+        ? `The ${esc(self)} is also head to head with ${g.lead}: ${matchUpLinks(g.links)}.`
+        : `With ${g.lead}: ${matchUpLinks(g.links)}.`,
+    )
+    .join(' ');
+}
+
+/**
+ * Which of the two rules put a model in a match-up, from the point of view of the
+ * model being written about: a rung of the leaderboard above or below it, or the
+ * model of its own family a generation away.
+ */
+export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current';
+
+export interface ModelMatchUp {
+  href: string;
+  /** the other model in that match-up */
+  name: string;
+  /**
+   * where the other model sits, or — for a generation pair, where neither is above
+   * the other on anything a reader can see — which side of it this model is.
+   */
+  side: ModelMatchUpSide;
+  /** the family both sides share, which only the generation pairs name */
+  family?: string;
+}
+
+/**
+ * One model's other match-ups, as a sentence about that model. A model is in at
+ * most three, so all of them fit and none is left for an index to carry. Each
+ * arrives with the reason it exists, because "vs" on its own says nothing about
+ * why these two are on a page together.
+ */
+export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
+  if (!items.length) return '';
+  const order: ModelMatchUpSide[] = ['above', 'below', 'is-older', 'is-current'];
+  const sorted = [...items].sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
+  const hasAbove = sorted.some((i) => i.side === 'above');
+  const phrases = sorted.map((i) => {
+    const link = `<a href="${esc(i.href)}">${esc(i.name)}</a>`;
+    if (i.side === 'above') return `${link} above it on the leaderboard`;
+    // "on the leaderboard" is said once: with the rung above already named, the
+    // rung below is the same list and the second mention only lengthens the line
+    if (i.side === 'below') return `${link}${hasAbove ? ' below it' : ' below it on the leaderboard'}`;
+    const which = i.side === 'is-older' ? 'current' : 'last-generation';
+    // every generation pair is two models of one family, and the family is the
+    // shortest way to say what the other model is; without one, the sentence says
+    // the same thing the long way rather than leaving a gap where a name goes
+    return i.family
+      ? `${link}, the ${which} ${esc(i.family)} nearest it in size`
+      : `${link}, the ${which} model of its family nearest it in size`;
+  });
+  const list =
+    phrases.length === 1
+      ? phrases[0]
+      : `${phrases.slice(0, -1).join(', ')} and ${phrases[phrases.length - 1]}`;
+  return `${esc(self)} is also head to head with ${list}.`;
+}

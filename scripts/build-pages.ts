@@ -14,7 +14,7 @@ import {
   footerHtml, gbRange,
   cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelVerdict, MTOK,
+  machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
@@ -231,6 +231,129 @@ function checkHeadToHeads() {
   const fewest = Math.min(...[...sides.keys()].map((p) => inbound.get(p)!.size));
   console.log(`  ${sides.size} head-to-heads, each linked from both sides and from at least ${fewest} pages in all`);
   console.log(`  ${grouped} machine pages list theirs by the question each one answers, in up to ${widest} groups`);
+}
+
+/**
+ * The other match-ups, on the head-to-head itself. The links are written by
+ * machineSiblingNote() and modelSiblingNote(); this reads them back off the shipped
+ * page and cuts the same lists again from the data, so a rule that stops reaching a
+ * pair takes the note with it rather than leaving a page quietly short of a link.
+ *
+ * Three things have to hold on every one of the 143 comparisons. Each side names
+ * every other match-up it is in, and names it once: a missing one is the dead end
+ * this note exists to end, and a doubled one is a reader following the same link
+ * twice. Neither side names the page the reader is already on. And every link says
+ * what that pair's own page says it should — the third machine's name, or the memory
+ * size where the name would be the page's own headline twice over.
+ */
+function checkMatchUpSiblings() {
+  const problems: string[] = [];
+  const notesOn = (path: string) =>
+    (meta.find((p) => p.path === path)?.html.match(/<main[\s\S]*<\/main>/)?.[0] ?? '')
+      .match(/<p class="note">[\s\S]*?<\/p>/g)
+      ?.filter((n) => n.includes('is also head to head')) ?? [];
+
+  /** one comparison, and what each of its two sides should name at the foot of it */
+  type Side = { subject: string; want: Map<string, string> };
+  const check = (path: string, sides: Side[]): number => {
+    const notes = notesOn(path);
+    const want = new Map(sides.flatMap((s) => [...s.want]));
+    if (!want.size) {
+      if (notes.length) problems.push(`${path} names other match-ups where neither side is in one`);
+      return 0;
+    }
+    if (!notes.length) {
+      problems.push(`${path} is beside ${want.size} other match-up${want.size === 1 ? '' : 's'} and names none of them`);
+      return 0;
+    }
+    for (const side of sides)
+      if (side.want.size && !notes.some((n) => n.includes(`${esc(side.subject)} is also head to head with `)))
+        problems.push(`${path} does not say which other match-ups ${side.subject} is in`);
+    const said = notes.flatMap((n) => [...n.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map((m) => [m[1], m[2]] as const));
+    for (const [href, label] of said) {
+      if (href === path) { problems.push(`${path} links itself in its own other match-ups`); continue; }
+      const wanted = want.get(href);
+      if (wanted == null) problems.push(`${path} names ${href}, which is not a match-up either side is in`);
+      else if (label !== esc(wanted)) problems.push(`${path} calls ${href} "${label}" where that pair is "${wanted}"`);
+    }
+    for (const href of want.keys()) {
+      const times = said.filter(([h]) => h === href).length;
+      if (times !== 1) problems.push(`${path} names ${href} ${times} times, where every other match-up is named once`);
+    }
+    return said.length;
+  };
+
+  const hwPairs = hardwarePairs(data);
+  let links = 0;
+  let widest = 0;
+  let noted = 0;
+  let alone = 0;
+  for (const [a, b] of hwPairs) {
+    const path = hardwareComparePath(a, b);
+    const sides = [a, b].map((self) => {
+      const want = new Map<string, string>();
+      for (const [x, y] of hwPairs) {
+        if (x.id !== self.id && y.id !== self.id) continue;
+        const href = hardwareComparePath(x, y);
+        if (href === path) continue;
+        const other = x.id === self.id ? y : x;
+        // what that link should say: two memory tiers, or two chips in one box, are the
+        // same machine twice, so the size is the whole of the difference and the name
+        // would be the page's own headline said again
+        const same = memoryTierNames(self, other) ?? memoryTierNames(other, self) ?? chipStepNames(self, other) ?? chipStepNames(other, self);
+        want.set(href, same ? `${other.unified_memory_gb}GB` : shortHardwareLabel(other));
+      }
+      return { subject: shortHardwareLabel(self), want };
+    });
+    const n = check(path, sides);
+    links += n;
+    widest = Math.max(widest, n);
+    if (sides.some((s) => s.want.size)) noted++;
+    else alone++;
+  }
+
+  const mPairs = modelPairs(data);
+  // recut from the rule rather than read off the map the pages were built from: a pair
+  // both rules reach keeps the ladder's address, and it is the address that decides
+  // which of the two things the page says about it
+  const generations = new Set(modelGenerationPairs(data).map(([old, now]) => modelComparePath(old, now)));
+  for (const [a, b] of mPairs) {
+    const path = modelComparePath(a, b);
+    const reasons: string[] = [];
+    const sides = [a, b].map((self) => {
+      const want = new Map<string, string>();
+      for (const [x, y] of mPairs) {
+        if (x.id !== self.id && y.id !== self.id) continue;
+        const href = modelComparePath(x, y);
+        if (href === path) continue;
+        const other = x.id === self.id ? y : x;
+        want.set(href, other.display_name);
+        // and the clause that says why those two are on a page together. The ladder is
+        // always written from the higher model to the lower, so the pair's own order
+        // says which side of this one the other model sits.
+        reasons.push(
+          generations.has(href)
+            ? `${esc(other.display_name)}</a>, the ${x.id === self.id ? 'current' : 'last-generation'} ${esc(self.family ?? '')} nearest it in size`
+            : `${esc(other.display_name)}</a>${x.id === self.id ? ' below it' : ' above it on the leaderboard'}`,
+        );
+      }
+      return { subject: self.display_name, want };
+    });
+    const n = check(path, sides);
+    links += n;
+    widest = Math.max(widest, n);
+    const notes = notesOn(path).join(' ');
+    for (const reason of reasons)
+      if (!notes.includes(reason)) problems.push(`${path} does not say why one of its other match-ups exists: ${reason.replace(/<[^>]*>/g, '')}`);
+    if (sides.some((s) => s.want.size)) noted++;
+    else alone++;
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} do not name the other match-ups their two sides are in`);
+  }
+  console.log(`  ${noted} head-to-heads name the ${links} others their two sides are in, up to ${widest} on a page; ${alone} set${alone === 1 ? 's' : ''} two machines that are in no other`);
 }
 
 /**
@@ -1747,6 +1870,27 @@ function headToHeadNote(hw: Hardware): string {
   return `<p class="note">${sentences.join(' ')} There are <a href="/compare/">${machineMatchUps} machine match-ups on the site</a>.</p>`;
 }
 
+/**
+ * The same list, on the head-to-head itself. A comparison page used to name the two
+ * machines it is about and no third one, so the reader who has just decided between
+ * two boxes — the likeliest person on the site to be weighing a third — was sent back
+ * to the index of all 90 to find it. Each side's other match-ups are named here in the
+ * words its own page uses, grouped by the question each one answers, and the pair the
+ * reader is already on is left out of both lists.
+ */
+function machineSiblingNote(a: Hardware, b: Hardware): string {
+  const self = hardwareComparePath(a, b);
+  const line = (hw: Hardware) =>
+    machineMatchUpsLine(
+      shortHardwareLabel(hw),
+      headToHeadGroups(hw, (headToHeads.get(hw.id) ?? []).filter((p) => p.href !== self)),
+    );
+  const lines = [line(a), line(b)].filter(Boolean);
+  // a paragraph each: two graphics cards have been set against the same five cards,
+  // so run together the two lists read as one that says everything twice
+  return lines.map((l) => `<p class="note">${l}</p>`).join('\n');
+}
+
 // The same thing for models, and here the two rules have to be told apart. A ladder pair
 // is always [higher, lower] on the index, so each model knows whether the one it is set
 // against is the rung above it or the rung below. A generation pair is always [older,
@@ -1777,6 +1921,25 @@ for (const [a, b] of modelPairs(data)) {
       ];
   const selves = gen ? [gen[0], gen[1]] : [a, b];
   selves.forEach((self, i) => modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), sides[i]]));
+}
+
+/**
+ * The model side of the same thing. A model is in at most three match-ups, so both
+ * sides' others fit in one sentence each and nothing is left for an index to carry.
+ * Each link arrives with the rule that made it, because two model names either side
+ * of "vs" say nothing about why the two are on a page together.
+ */
+function modelSiblingNote(a: Model, b: Model): string {
+  const self = modelComparePath(a, b);
+  const line = (m: Model) =>
+    modelMatchUpsLine(
+      m.display_name,
+      (modelHeadToHeads.get(m.id) ?? [])
+        .filter((v) => v.href !== self)
+        .map((v) => ({ href: v.href, name: v.other.display_name, side: v.side, family: m.family })),
+    );
+  const lines = [line(a), line(b)].filter(Boolean);
+  return lines.length ? `<p class="note">${lines.join(' ')}</p>` : '';
 }
 
 /* ------------------------------ leaderboard ------------------------------ */
@@ -3021,6 +3184,7 @@ ${step ? chipStepSection(...(chipStepNames(a, b) ? [a, b, step, va, fa, fb, ctxK
 ${likeForLike}
 ${usageSection}
 ${extraSection}
+${machineSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b]); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
 <p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/compare/">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
@@ -3959,6 +4123,7 @@ ${capRows}
 ${generation ? modelGenerationSection(generation[0], generation[1], data) : ''}${sideBySide}
 ${usageSection}
 ${machinesSection}
+${modelSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat.${race?.shortened ? ` The two sections that need one machine to hold both models are at ${raceK}k of context instead, which is the longest on the calculator's list where one does.` : ''} Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
 <p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="/compare/">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
@@ -5277,6 +5442,7 @@ checkMeta();
 checkLinks();
 checkFooter();
 checkHeadToHeads();
+checkMatchUpSiblings();
 checkCanonicals();
 checkOgCards();
 checkFonts();
