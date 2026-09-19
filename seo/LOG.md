@@ -553,6 +553,39 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **The two rules cutting the model head-to-heads both asked what a model is, and neither
+      asked what to run in the memory you already have.** Done 2026-09-19. Each model against the
+      next one down the index, and each last-generation model against what replaced it, are both
+      questions about the model. The reader with a machine already on the desk starts from the
+      other one: 19.7 GB at 32k of context is Gemma 3 27B or Devstral Small 2 24B, and nothing here
+      put those two side by side. Third rule now: each model against the model from another family
+      nearest it in the memory it needs, stronger side first, within a tenth. 78 model match-ups
+      where there were 53, 307 pages where there were 282. The run entry below has the figures, the
+      five breaks that proved the guard and the three that proved the tests.
+      **What it deliberately does not add, so the next run does not read it as a gap:** the pages
+      carry no new section. The comparison template already prints what each model needs at 32k in
+      its own row, and where both models fit the same machines it already says, under *Memory is
+      not what separates them*, that the choice is what each is good at rather than what you have
+      to buy. A paragraph repeating that is the filler this backlog exists to avoid. What is new is
+      the sentence naming the others, on the model pages and under each head-to-head.
+
+- [ ] **The memory cap is a round number too, and on this data it decides nothing.** A tenth, the
+      same figure the price-neighbour rule uses, and the same story: the widest pair it keeps is
+      8.7% apart and the nearest one it turns away is 12.7%, so anything between those two cuts the
+      same 29 pairs. The pair it excludes today is Gemma 4 E4B against Ling 3.0 tiny, 5.8 GB against
+      6.4 GB, which is a real question for anyone with 8 GB to spend it in. Worth revisiting when a
+      figure in `data/models.json` moves and the gap between 8.7% and 12.7% closes. Written down
+      2026-09-19 so the next run does not read the number as considered.
+
+- [ ] **The 25 new head-to-heads are the shortest real pages on the site**, 686 to 852 words against
+      a site median of 1,024, and the reason is the rule that cut them. Two models that need the
+      same memory run on the same machines, so the *Machines that run one and not the other* table
+      is a sentence on 21 of them instead of a table of six. Nothing is missing from them: the
+      comparison table, the like-for-like race, pay-back at five levels and the prefilled calculator
+      links are all there. Measured 2026-09-19 and left alone, because the thing that would lengthen
+      them is words rather than answers. Worth a look only if one of them starts ranking and reads
+      thin next to what it is ranking against.
+
 - [ ] **Standing, daily: the model watch.** `seo/MODEL-WATCH.md` holds the procedure, the last
       date it ran and the ledger of candidates. This never gets ticked; it comes round again
       tomorrow. Set up 2026-09-18 at Ryan's request, with `npm run model-watch`, five guards in
@@ -1346,6 +1379,115 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the site compared models by what they are and never by what they ask of a machine
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is waiting on Ryan or is a note written down so nobody re-finds it,
+which is where the four runs before this one found it too. Both open pull requests were checked
+before anything else and **both still merge clean into `main`**, #16 and #17, so there was no repair
+to do. The entry below this one said where to look: the machine head-to-heads had six rules and the
+model ones had two, and nobody had asked whether models have a question the two rules miss.
+
+**What it found, by reading the two rules rather than the pages.** Both of them ask what a model
+**is**. The ladder sets each model against the next one down the intelligence index, which is the
+choice you face once you know what your machine holds. The generation rule sets each
+last-generation model against what replaced it, which is the choice you face once you are already
+running one. Neither asks the question a reader with a machine already on the desk starts from,
+which is what to run in the memory they have. **19.7 GB at 32k of context is Gemma 3 27B or Devstral
+Small 2 24B**; 20 GB is GLM-4.7-Flash or the same Devstral; 9.8 GB is Ministral 3 8B or Gemma 3 12B.
+Not one of those pairs had a page, because two models of the same size are rarely near each other on
+the index: GLM-4.7-Flash scores 15 and Devstral Small 2 24B scores 8, and twenty-one models sit between them
+on the index.
+
+**The rule.** `memoryNeighbourPairs()`: each model against the model from another family nearest it
+in the memory it needs, stronger side first, where the two are within a tenth of each other. The
+families have to differ, because two models from one maker at the same size are the quantisations
+and generations the rules above already cut. One pair per model, its own nearest, rather than every
+pair inside a band, for the reason the price rule gives: a band writes a grid of near-identical
+pages around the crowded sizes and leaves the smallest and largest models with none.
+
+**Memory is the footprint, not the weights, and that is the part worth keeping.** The figure is
+`footprintGb()` at the context this site assumes, weights and cache together, which is the same
+number the fit is worked out from and the same number the page prints in its *Needs at 32k* row.
+Weights alone would have missed the pairs where the cache is the difference: **Gemma 4 31B and
+Nemotron 3.5 Lightning are 30% apart in weights and within a percent of each other at 32k**: 19.6 GB
+of weights and 6.21 GB of cache against 25.48 GB and 0.20 GB. A test holds that, so a future change
+to the rule cannot quietly go back to comparing weights.
+
+| | before | after |
+| --- | --- | --- |
+| model head-to-heads | 53 | 78 |
+| head-to-heads of every kind | 165 | 190 |
+| pages on the site | 282 | 307 |
+
+**The cap.** A tenth, and on this data it decides nothing: the widest pair it keeps is 8.7% apart
+and the nearest one it turns away is 12.7%, so no pair is kept or dropped by a hair. Written into
+the backlog as a note, the way the price cap was.
+
+**Four pairs were already pages, and they keep the words they had.** The ladder and this rule both
+write the stronger model first, so a pair both reach has one address, not two. The ladder is cut
+first and keeps it: DeepSeek-R1-Distill-Llama-70B against Llama 3.3 70B is still *above it on the
+leaderboard* rather than *needs much the same memory*, which is what a reader arriving from the
+leaderboard is looking at.
+
+**The pages get no new section, and that is deliberate.** The template already prints what each
+model needs at 32k in its own row, and where both models fit the same machines it already says,
+under *Memory is not what separates them*, that the choice between them is what each is good at,
+how fast it runs and what the same work costs on an API. A paragraph saying that again is filler.
+What the pages did gain is real and reads on the page: GLM-4.7-Flash against Devstral Small 2 24B
+opens *"Both take the same machine to start... GLM-4.7-Flash is about 4.1× quicker: 40 tok/s against
+9.7"*, which is the whole answer to a question the site could not be asked before.
+
+**The sentence that is new, and why it is a sentence of its own.** A model can be in three of these
+pairs, and they all carry the same reason, so strung through the existing line they would say *which
+needs much the same memory* three times. The model pages say *"Three more models need much the same
+memory at 32k of context: vs Qwen3.6 27B, vs Devstral Small 2 24B, vs Mistral Small 3.2 24B
+Instruct"*, and the note under each head-to-head says the same for each of its two sides. Where a
+model page has no rung and no generation pair left to name, the memory neighbours carry the sentence
+instead of following one.
+
+**The guard, and the version of it that was not a guard at all.** `checkMemoryNeighbours()` recuts
+the rule from `data/models.json` rather than reading the list the pages were built from: every pair
+two scored models of different families, stronger first, inside the cap, one of the two the other's
+genuine nearest outside its own family, and both footprints printed on the page, because that figure
+is the claim. **The first version of the other direction passed a deliberate break**: it asked only
+that a page saying *much the same memory* link a pair the rule cut, and `/compare/` links every
+comparison on the site, so the index could have said it about anything. It now holds a list of the
+pages the rule reaches — a model in one of these pairs, or a head-to-head one of whose sides is in
+one — and the same break fails it, naming `/compare/`. It prints `29 head-to-heads between models of
+different families within 10% of each other in the memory they need at 32k`.
+
+**Five breaks proved the guard**, exit 1 each time: the family condition dropped (7 problems, two
+kinds, naming the Qwen pairs it invented); the pairs written weaker side first (29 pages); the
+reason dropped from the sibling sentence, caught by `checkMatchUpSiblings()` rather than by the new
+guard; the `much the same memory` phrase put in `/compare/`'s lede; and both places a page prints
+what each model needs removed together, which is the one that showed the check is not satisfied by
+the table alone. **Three more proved the tests**: the family condition dropped, the rule measured on
+weights instead of footprint, and the rule appended before the ladder instead of last.
+
+**Verified.** 388 tests (9 new), typecheck clean, the full `npm run build` end to end with
+`build:functions`, 307 pages with every guard passing, and the new share cards drawn and covered by
+the existing card tests. All 29 pages swept out of `dist/`: 686 to 852 words, every one in the
+sitemap, every one with its card, and none carrying a maintainer word or an em dash. Three read
+rendered — two 27B models on one $1,269 machine, a mixture of experts against a dense model at the
+same 20 GB, and the pair at the top of the range where no machine holds both at 32k and the page
+moves the race to 16k.
+
+**Pushed to `main` as `ef1d700`**, deploy run 220.
+
+**Both open pull requests were re-checked against this push, really merged and built rather than
+trusted to a clean `git merge-tree`.** PR #16 (`seo/cost-per-month`) merges clean: 398 tests,
+typecheck clean, 308 pages with every guard passing. PR #17 (`seo/home-h1`) merges clean: 390 tests,
+typecheck clean, 307 pages. Neither needs an extra commit. The two still do not merge into each
+other, and that resolution is unchanged, because nothing in this push touches `index.html`.
+
+**What to continue.** Nothing here is half-finished. The two new backlog items are notes rather than
+work: the cap is a round number that decides nothing today, and these are the shortest pages on the
+site for a reason the rule explains. The model side now has three rules to the machine side's six,
+and the next question of the same kind is probably not another pairing rule but the indexes: the
+site has a page ranking machines, a page ranking cards and a page ranking models, and nothing that
+answers "what runs in 32 GB", which is the question these 25 pages answer one pair at a time.
 
 ### 2026-09-19 — the site compared machines by hardware and never by money
 
