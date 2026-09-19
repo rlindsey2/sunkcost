@@ -400,6 +400,28 @@ describe('the calculator’s own head', () => {
     expect(page!.description).toBe(home.match(/<meta name="description" content="([^"]+)"/)![1]);
     expect(home).toContain(`<link rel="canonical" href="${site}/" />`);
   });
+
+  it('opens with one heading, the question the page answers', () => {
+    const h1s = [...home.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)].map((m) => m[1].trim());
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]).toBe(
+      'If you buy a machine to run local models, how long until it pays for itself, and what can it actually do?',
+    );
+    // the same shape every generated page has: one h1, and the h2s under it
+    expect(home.match(/<h2\b/g)!.length).toBeGreaterThan(0);
+    expect(home.indexOf('<h1')).toBeLessThan(home.indexOf('<h2'));
+  });
+
+  it('keeps that heading in the document at the widths that cannot paint it', () => {
+    // the bar has no room for the sentence on a phone, so it is clipped rather
+    // than removed: a heading a narrow reader never gets is a heading Google never gets
+    const css = read('src/styles.css');
+    for (const rule of [...css.matchAll(/\.topbar-line\s*\{([^}]*)\}/g)].map((m) => m[1])) {
+      expect(rule).not.toMatch(/display:\s*none/);
+      expect(rule).not.toMatch(/visibility:\s*hidden/);
+    }
+    expect(css).toMatch(/\.topbar-line\s*\{[^}]*clip:\s*rect\(0 0 0 0\)/);
+  });
 });
 
 describe('machine head-to-heads', () => {
