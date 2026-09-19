@@ -63,6 +63,17 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `src/pagekit.ts`, where both sides append and git left the branch's own closing brace outside
       the marker. Verified on the merge: 362 tests, typecheck clean, 261 pages, every guard passing,
       and nothing about what the pull request carries has changed.
+      **Merged `main` once more at `f298ef5`, at 04:52 on 2026-09-19, and still merges clean.** The
+      04:31 run of this hourly job pushed `471fc47` to `main` — the link to the card ranking on every
+      page that prices a card — which broke this branch in two files, so that run repaired it rather
+      than leaving it. Both were import-list unions, and nothing hit the interleave the last two
+      repairs did, because neither side appends to the end of a file. Verified on the merge: 367
+      tests, typecheck clean, 261 pages, every guard passing, and the full build. **One thing it
+      turned up is not the merge's to fix and is worth knowing before you merge:** this branch's
+      `/hardware/` index says graphics cards are priced as the card alone and does not link the
+      ranking, so it would land as the one page on the site outside that new rule. The guard cannot
+      catch it, because `/hardware/` does not exist on `main` for it to name. One
+      `${cardRankingLine(data)}` in that page's note settles it.
       **Ryan was notified about the queue at 01:55 on 2026-09-19**, before he asked for this; that
       was the first ping about it and it should not be repeated unless something changes.
 
@@ -500,6 +511,28 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       **The open question it raises is Ryan's**, and it is on his side of this file: the watch can
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
+
+- [x] **The page that answers "which graphics card" was the least linked page on the site.** Done
+      2026-09-19. Counting links inside `<main>`, so the shared footer flatters nothing, `/best-gpu/`
+      had 8 inbound pages where `/leaderboard/` had 200, `/compare/` 199, `/best/` 146 and
+      `/how-much-memory/` 113. It is linked from 90 now, by the rule the site already had: wherever a
+      page prices a graphics card in a table of machines it says the price leaves out the PC around
+      it, and that sentence now ends with where the cards are ranked. The run entry below has the
+      figures, the five breaks that proved the guard and the three that proved the tests.
+      **What it deliberately leaves alone, so the next run does not read it as a gap:** the 55 model
+      pages, which mark a card price on a row rather than raising the caveat, and 11 model
+      head-to-heads, which do raise it in a lede already five sentences deep in figures about two
+      models. On both, a sentence about graphics cards answers a question the page does not ask.
+
+- [ ] **Nobody has looked at what the internal links are made of.** There are 7,336 of them inside
+      `<main>` across the 259 pages, and six runs have spent themselves on where links point without
+      once measuring the words they are written in. The questions worth answering: does the anchor
+      text say what is at the other end in words a searcher would type, or does it say the name of
+      the page; how many distinct phrases does a page get linked by; and is any page reached over and
+      over by one phrase that is not the phrase people search. Measure before writing anything — the
+      links this site has are in sentences rather than in lists, so the answer may well be that they
+      are already fine, and rewriting a sentence to fit a keyword is the thing this backlog exists to
+      avoid.
 
 - [x] **No head-to-head on the site linked another head-to-head.** Done 2026-09-19. The 143
       comparisons were the deepest pages here, median 3 links in and always the same three:
@@ -1131,6 +1164,103 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the page that answers "which graphics card" was the least linked page on the site
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch is done and the backlog was
+the job. Its top item is still the monthly-cost page and still waits on PR #15, so the work had to go
+straight to `main`, and the last entry said what to measure: repeat the inbound-link count on the
+other page types. The finding was not in the page types it named. Counting links inside `<main>` over
+all 259 pages, so the footer every page shares does not flatter anything: `/leaderboard/` has 200
+pages pointing at it, `/compare/` 199, `/best/` 146, `/how-much-memory/` 113 — and **`/best-gpu/` had
+eight**, `/best/` and the seven cards' own pages. It is in the footer, so nothing was orphaned. What
+was missing is the link at the moment the question comes up, on the page that carries the most
+commercial search this site takes. Pushed as **`471fc47`**.
+
+**The rule is the caveat the site already says.** Wherever a page prices a graphics card in a table
+of machines, it says the price leaves out the PC around it. That sentence now ends with where the
+cards are ranked: *All seven cards here are ranked by what each one holds.* It is one sentence in
+`cardScopeNote()`, so a page cannot say the caveat without it, and the count comes from
+`graphicsCards()` — the same list `/best-gpu/` itself cuts — so the number cannot drift from what
+the reader finds at the other end. A card's own page is the exception and says it in its opening
+paragraph instead, which is why nothing on the site links the ranking twice.
+
+| | before | after |
+| --- | --- | --- |
+| pages linking `/best-gpu/` in their body | 8 | 90 |
+| machine head-to-heads that price a card | 0 of 33 | 33 |
+| machine pages that price a card | 7 of 54 | 54 |
+| indexes whose assumptions price a card | 1 of 3 | 3 |
+
+**What it deliberately leaves alone, so the next run does not read it as a gap.** Two page types
+print a card price and get no link. **The 55 model pages** put a card in their machines table with
+`, card only` beside the figure, which is a marker on a row rather than the caveat, and the page's
+subject is the model. **Eleven model head-to-heads** do say the caveat, in their lede, because the
+cheapest machine that runs one of the two models is a bare card — but that lede is already five
+sentences of figures about two models, and a sentence about seven graphics cards in the middle of it
+answers a question that page does not ask. Both would be link plumbing rather than an answer, and
+the guard is written from the pairing rules rather than from a search for the words, so neither can
+drift into the set by accident.
+
+**Five breaks proved the guard.** `checkCardRanking()` does not read the note builders' output back
+as text: it recomputes, for every machine pair and every machine page, whether that page prices a
+card, and holds the link to that. The ranking sentence dropped from the caveat fails with *prices a
+graphics card and links the ranking 0 times rather than once* and *does not say where the cards are
+ranked*; the exception dropped, so a card's own page gets it in both places, fails with *links the
+ranking 2 times rather than once* and *repeats in its notes what its first paragraph says*; the
+sentence said where no card is priced fails with *sends the reader to the card ranking where it
+prices no card*; `/compare/` losing its copy fails with *links the ranking 0
+times rather than once*; and `/best-gpu/` pointed at itself fails with *links itself 1 times in its
+own body*. Exit code 1 in each case.
+
+**And three breaks proved the tests.** The five new ones in `tests/pagekit.test.ts` hold the sentence
+itself: the count printed as a digit rather than a word fails the first, the ranking put before the
+caveat rather than after fails the second, and the ranking said where the page prices no card fails
+the fourth.
+
+**Verified.** 347 tests (5 new), `tsc --noEmit` clean, and the full `npm run build` end to end with
+`build:functions` included: 259 pages, every guard passing, 1,894 share cards. The pages that moved
+were counted against the date ledger rather than assumed: **82**, and exactly the 82 the rule names —
+47 machine pages, 33 machine head-to-heads, `/compare/` and `/how-much-memory/`. No model page, no
+model head-to-head and no card's own page changed a word. All 82 note paragraphs were read out of the
+built HTML and swept for doubled stops, stray commas, double spaces, a digit where the word belongs
+and maintainer words: none. Five were read rendered, one of each shape the sentence follows. Deploy
+run 200 went green at 04:51 on `471fc47`, so all 82 are live.
+
+**The push was rejected, and the standing note about sibling sessions is not the reason.** This log
+says a run whose push is refused should assume another session, fetch and verify rather than force.
+This one was neither a sibling nor a race. The checkout this job starts from arrives with **`HEAD`
+detached** at whatever `origin/main` was, and a local `main` branch left behind at `94aa957`, the
+seed commit from 2026-09-16, 122 commits back. So `git push -u origin main` pushes that stale
+branch rather than the commit that was just made, and git says *a pushed branch tip is behind its
+remote counterpart*, which reads exactly like losing a race to another session. `git branch -vv`
+settles it in one line and `git push origin HEAD:main` is the push. Worth the five minutes it costs
+the next run that reads the rejection as a collision.
+
+**This push broke PR #15's merge, and repaired it**, since it was this push that broke it. Two
+conflicts, both in files this change touches and both the import-list union this log has come to
+expect: `scripts/build-pages.ts` wants the branch's `costMachine`, `fmtPerMtok`, `MTOK`,
+`tokenCost` and `tokenCosts` and this side's `cardRankingLine`, and `tests/pagekit.test.ts` the same
+with `numberWord`. Each side's names were kept. Nothing this time hit the interleave the last two
+repairs did, because neither change appends to the end of a file. Verified on the merged tree rather
+than on a clean `git merge-tree`: 367 tests, typecheck clean, 261 pages with every guard passing —
+this run's among them, saying 90 — and the full `npm run build` with `build:functions`. Pushed to
+`seo/combined-pages` at **`f298ef5`**.
+
+**One thing on that branch is not the merge's to fix, and whoever merges it should know.** PR #15's
+`/hardware/` index prices all 56 machines and closes with *Graphics cards are priced as the card
+alone*, and it does not link the ranking — so merging the branch lands the one page on the site
+outside the rule this run wrote. `checkCardRanking()` cannot catch it, because `/hardware/` does not
+exist on `main` for the guard to name. One `${cardRankingLine(data)}` in that page's note settles
+it. It was left alone deliberately: a merge repair puts a branch back the way its author wrote it,
+and adding a sentence to someone else's page is not that.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is the top open item and still waits on PR #15. Of what goes straight to `main`, the measurement
+worth taking next is the one nobody here has taken: **the words the internal links are made of**.
+There are 7,336 of them inside `<main>` and no run has looked at whether the anchor text says what is
+at the other end in the words a searcher would type, or whether a page is reached over and over by
+its own name where the question would do better.
 
 ### 2026-09-19 — a head-to-head that names the other head-to-heads its two sides are in
 
