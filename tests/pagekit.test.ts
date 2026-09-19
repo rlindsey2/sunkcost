@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  anchoredHeading, anchorHeadings, headingSlug, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
   machinesThatHold,
@@ -2266,5 +2266,45 @@ describe('the other match-ups the two on a head-to-head are in', () => {
         expect([bad, w.includes(bad)]).toEqual([bad, false]);
       expect(w.endsWith('.')).toBe(true);
     }
+  });
+});
+
+describe('the id a section heading answers to', () => {
+  it('slugs a heading the way a reader reads it: markup out, entities back, one hyphen between words', () => {
+    expect(headingSlug('What the Framework Desktop, 128GB runs')).toBe('what-the-framework-desktop-128gb-runs');
+    expect(headingSlug('How good is Qwen3 8B, really?')).toBe('how-good-is-qwen3-8b-really');
+    // the heading on /best/ carries a span and a middle dot, and neither is a word
+    expect(headingSlug('50,000 tokens a day <span class="dim">· heavy use</span>')).toBe('50-000-tokens-a-day-heavy-use');
+    // the build escapes before this sees it, so an ampersand arrives as an entity
+    expect(headingSlug('Weights &amp; cache')).toBe('weights-cache');
+    expect(headingSlug('The M5 Max&#39;s memory')).toBe('the-m5-max-s-memory');
+    // no leading or trailing hyphen, whatever the punctuation around the words
+    expect(headingSlug('  "The specifics" — at last!  ')).toBe('the-specifics-at-last');
+    // a heading with no letters or digits has no slug, and the caller leaves it alone
+    expect(headingSlug('· — ·')).toBe('');
+  });
+
+  it('gives every bare heading an id, and never the same id twice on one page', () => {
+    expect(anchorHeadings('<h2>The specifics</h2>')).toBe('<h2 id="the-specifics">The specifics</h2>');
+    // the same words twice on one page: the second takes a number, because a browser
+    // honours the first id and ignores the rest
+    expect(anchorHeadings('<h2>The specifics</h2><p>a</p><h2>The specifics</h2>')).toBe(
+      '<h2 id="the-specifics">The specifics</h2><p>a</p><h2 id="the-specifics-2">The specifics</h2>',
+    );
+    // a heading that already carries an id keeps it
+    expect(anchorHeadings('<h2 id="u-50k">50,000 a day</h2>')).toBe('<h2 id="u-50k">50,000 a day</h2>');
+    // and one with no word in it is left as it was found
+    expect(anchorHeadings('<h2>· ·</h2>')).toBe('<h2>· ·</h2>');
+    // nothing but an h2 is touched
+    expect(anchorHeadings('<h1>Top</h1><h3>Under</h3>')).toBe('<h1>Top</h1><h3>Under</h3>');
+  });
+
+  it('writes the heading a guard asks for in the form the page publishes it', () => {
+    // this is the whole of the contract the build's guards rest on: ask for a heading
+    // by its words and get back the markup anchorHeadings produced from those words
+    for (const heading of ['The specifics', 'What the Mac mini M6, 16GB runs', 'How good is Gemma 4 31B it, really?'])
+      expect(anchorHeadings(`<h2>${heading}</h2>`)).toBe(anchoredHeading(heading));
+    // and a heading with no slug in it still round-trips
+    expect(anchorHeadings('<h2>···</h2>')).toBe(anchoredHeading('···'));
   });
 });

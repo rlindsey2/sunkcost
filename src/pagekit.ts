@@ -460,6 +460,65 @@ ${footerHtml()}
 `;
 }
 
+/**
+ * The id a section heading answers to, so a link can land on the section rather
+ * than on the top of the page.
+ *
+ * Two things want one. Another site linking to what a machine runs should be able
+ * to send a reader to that table, not to a page they then have to scan; and a
+ * search engine can only offer a jump straight into a section of a result if the
+ * section has somewhere to jump to.
+ *
+ * The slug reads the heading the way a person does: markup dropped, entities put
+ * back, accents folded, everything else that is not a letter or a digit becoming
+ * a hyphen. A heading with no letters or digits in it gets no slug, and
+ * `anchorHeadings` leaves it as it found it.
+ */
+export function headingSlug(heading: string): string {
+  return heading
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * One section heading as it is published. The build writes headings without an
+ * id and `anchorHeadings` puts them in, so this is also how a guard asks for the
+ * heading it wants: the slug is a function of the heading's own words, so the
+ * two cannot drift apart.
+ */
+export function anchoredHeading(heading: string): string {
+  const slug = headingSlug(heading);
+  return slug ? `<h2 id="${slug}">${heading}</h2>` : `<h2>${heading}</h2>`;
+}
+
+/**
+ * Every section heading in a page body, given the id a link can land on.
+ *
+ * Only a bare `<h2>` is touched, so a heading that already carries attributes —
+ * and an id of its own — keeps them. Where two headings on one page would slug
+ * the same, the second and any after it take a number, because an id that is not
+ * unique on the page is an id a browser cannot honour.
+ */
+export function anchorHeadings(html: string): string {
+  const used = new Map<string, number>();
+  return html.replace(/<h2>([\s\S]*?)<\/h2>/g, (whole, inner: string) => {
+    const slug = headingSlug(inner);
+    if (!slug) return whole;
+    const n = (used.get(slug) ?? 0) + 1;
+    used.set(slug, n);
+    return `<h2 id="${n === 1 ? slug : `${slug}-${n}`}">${inner}</h2>`;
+  });
+}
+
 export function calcLink(state: Partial<State>, data: Dataset): string {
   return `/?${serializeState({ ...defaultState(data), ...state })}`;
 }

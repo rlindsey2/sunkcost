@@ -7,13 +7,13 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  anchoredHeading, anchorHeadings, appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -60,7 +60,25 @@ const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
   s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
+/**
+ * A section heading whose text begins this way, whatever id it was given. The
+ * guards that know a heading whole ask for it through `anchoredHeading`; these
+ * are the ones that know only its opening words, because the rest is a machine
+ * name or a number the guard is about to read out of the match.
+ */
+const headingLike = (start: string) => new RegExp(`<h2\\b[^>]*>${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+
+/** the page with its body's headings anchored, and its header and footer untouched */
+function anchorBody(html: string): string {
+  const body = mainOf(html);
+  return body === html ? html : html.replace(body, () => anchorHeadings(body));
+}
+
 function write(path: string, html: string) {
+  // Every section heading leaves here with the id a link can land on, so the file
+  // on disk, the fingerprint the sitemap dates and the markup every guard below
+  // reads are one and the same page. See anchorHeadings in src/pagekit.ts.
+  html = anchorBody(html);
   const dir = new URL(`.${path}`, outRoot);
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
@@ -710,7 +728,7 @@ function checkPayback() {
   const problems: string[] = [];
   const check = (path: string, heading: string, exempt = false) => {
     const html = meta.find((m) => m.path === path)?.html ?? '';
-    const section = html.split(`<h2>${heading}</h2>`)[1]?.split('<h2>')[0];
+    const section = html.split(anchoredHeading(heading))[1]?.split('<h2')[0];
     if (!section) {
       if (!exempt) problems.push(`${path} does not say how much use it takes to pay back`);
       return 0;
@@ -727,7 +745,7 @@ function checkPayback() {
   for (const [a, b] of modelPairs(data)) {
     const path = modelComparePath(a, b);
     // no machine runs both, so there is no machine for either of them to pay for
-    const noShared = !(meta.find((m) => m.path === path)?.html ?? '').includes('<h2>Side by side on the ');
+    const noShared = !headingLike('Side by side on the ').test(meta.find((m) => m.path === path)?.html ?? '');
     priced += check(path, 'How much use it takes to pay for the machine', noShared);
   }
   if (problems.length) {
@@ -764,18 +782,18 @@ function checkMeetingPoint() {
     if (!meeting) {
       // nothing here holds both at any context the calculator offers, so there is no
       // race to run and the page says only what each model needs
-      if (html.includes('<h2>Side by side on the ')) problems.push(`${path} runs a side-by-side race on a machine that holds both at no context`);
+      if (headingLike('Side by side on the ').test(html)) problems.push(`${path} runs a side-by-side race on a machine that holds both at no context`);
       continue;
     }
     met++;
     const k = Math.round(meeting.ctx / 1024);
-    if (!html.includes(`<h2>Side by side on the ${esc(shortHardwareLabel(meeting.shared.hw))} at ${k}k of context</h2>`))
+    if (!html.includes(anchoredHeading(`Side by side on the ${esc(shortHardwareLabel(meeting.shared.hw))} at ${k}k of context`)))
       problems.push(`${path} meets at ${k}k on the ${shortHardwareLabel(meeting.shared.hw)} and its heading does not say so`);
     if (!html.includes(`are at ${k}k of context instead`))
       problems.push(`${path} runs its race at ${k}k and the assumptions still claim ${Math.round(data.defaults.context.default_tokens / 1024)}k`);
     // a link that opens the calculator at the default context would land the reader on
     // the configuration the page has just said does not fit
-    const sections = html.split('<h2>Side by side on the ')[1]?.split('<h2>Machines that run one')[0] ?? '';
+    const sections = html.split(headingLike('Side by side on the '))[1]?.split(headingLike('Machines that run one'))[0] ?? '';
     const links = [...sections.matchAll(/href="\/\?([^"]+)"/g)].map((m) => unesc(m[1]));
     if (!links.length) problems.push(`${path} runs its race at ${k}k with no link into the calculator`);
     for (const q of links)
@@ -812,15 +830,15 @@ function checkHeadroom() {
     const path = hardwareComparePath(a, b);
     const html = meta.find((m) => m.path === path)?.html ?? '';
     const rows = contextHeadroom(va.rows.map((r) => r.model), a, b, data);
-    const section = html.split('<h2>The same models, not to the same length</h2>')[1]?.split('<h2>')[0] ?? '';
+    const section = html.split(anchoredHeading('The same models, not to the same length'))[1]?.split('<h2')[0] ?? '';
     if (!rows.length) {
       flat++;
       if (section) problems.push(`${path} holds both machines to the same length everywhere and still claims a difference`);
       // a same-silicon pair says it under its own heading, where the equal memory is
       // one line of a longer answer rather than the whole of the finding
       const saidIt = sameSilicon(a, b)
-        ? html.includes('<h2>The same machine inside</h2>')
-        : html.includes('<h2>Memory is not what separates them</h2>');
+        ? html.includes(anchoredHeading('The same machine inside'))
+        : html.includes(anchoredHeading('Memory is not what separates them'));
       if (!saidIt) problems.push(`${path} does not say that memory separates the two machines nowhere`);
       if (!html.includes('there is no model one holds and the other does not')) problems.push(`${path} does not say the two machines hold the same models at every context`);
       continue;
@@ -1169,7 +1187,7 @@ function checkShorterMachines() {
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const runners = runnersFor(m, data);
     const want = runners.length ? machinesShorter(m, data) : [];
-    const found = html.match(/<h2>(\w+) more machines?, at a shorter window<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const found = html.match(/<h2\b[^>]*>(\w+) more machines?, at a shorter window<\/h2>([\s\S]*?)(?=<h2\b|<\/article>)/);
     // the answer box only promises a cheaper machine where the cheapest of these
     // undercuts the cheapest machine the page's own table names
     const undercuts =
@@ -1342,7 +1360,7 @@ function checkShorterFits() {
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const view = computeView({ ...defaultState(data), hw: hw.id }, data);
     const want = fitsShorter(hw, view.rows.map((r) => r.model), data);
-    const found = html.match(/<h2>(\w+) more, at a shorter window<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const found = html.match(/<h2\b[^>]*>(\w+) more, at a shorter window<\/h2>([\s\S]*?)(?=<h2\b|<\/article>)/);
     const claimed = html.includes(`more if you keep the window shorter than ${ctxLabel(ctx)}`);
     if (!want.length) {
       if (found) problems.push(`${path} names models it holds at a shorter window, and there are none`);
@@ -1392,7 +1410,7 @@ function checkShorterFits() {
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const runners = runnersFor(m, data);
-    const heading = [...html.matchAll(/<h2>[^<]* fits at (\d+k) of context<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/g)][0] ?? null;
+    const heading = [...html.matchAll(/<h2\b[^>]*>[^<]* fits at (\d+k) of context<\/h2>([\s\S]*?)(?=<h2\b|<\/article>)/g)][0] ?? null;
     if (runners.length) {
       if (heading) problems.push(`${path} says the window is what stops it, and machines here run it at ${ctxLabel(ctx)}`);
       continue;
@@ -1608,7 +1626,7 @@ function checkFamilyReach() {
  */
 function checkModelGenerations() {
   const problems: string[] = [];
-  const heading = '<h2>What the newer model changes</h2>';
+  const heading = anchoredHeading('What the newer model changes');
   const pairs = modelGenerationPairs(data);
   const considered = machinesConsidered(data).length;
   const isMoe = (m: Model) => m.active_params_b != null && m.active_params_b < m.params_b;
@@ -2196,8 +2214,8 @@ const shorterRunHeading = (m: Model, runCtx: number) => `${esc(m.display_name)} 
 
 /** The section a heading opens, up to the next one. */
 function sectionUnder(html: string, heading: string): string | null {
-  const after = html.split(`<h2>${heading}</h2>`)[1];
-  return after == null ? null : after.split('<h2>')[0];
+  const after = html.split(anchoredHeading(heading))[1];
+  return after == null ? null : after.split('<h2')[0];
 }
 
 /* ------------------------------ model pages ------------------------------ */
@@ -5318,7 +5336,7 @@ function dd(page: string, label: string): string | null {
 
 /** The notes under the machine's own "What it runs" table, where the speed column is. */
 function speedNotes(page: string): string | null {
-  const after = page.split(/<h2>What the [^<]+ runs<\/h2>/)[1]?.split('<h2>')[0];
+  const after = page.split(/<h2\b[^>]*>What the [^<]+ runs<\/h2>/)[1]?.split('<h2')[0];
   return after == null ? null : [...after.matchAll(/<p class="note">([\s\S]*?)<\/p>/g)].map((m) => m[1]).join(' ');
 }
 
@@ -5447,7 +5465,7 @@ function checkBestGpu() {
   const problems: string[] = [];
 
   // the side-by-side table is the page's list of cards: every card in it, nothing else
-  const table = html.split('<h2>Every card here, side by side</h2>')[1]?.split('<h2>')[0] ?? '';
+  const table = html.split(anchoredHeading('Every card here, side by side'))[1]?.split('<h2')[0] ?? '';
   const listed = new Set([...table.matchAll(/\/hardware\/([a-z0-9.-]+)\//g)].map((m) => m[1]));
   for (const c of cards) if (!listed.has(c.id)) problems.push(`the table of cards leaves out the ${shortHardwareLabel(c)}`);
   for (const id of listed)
@@ -5484,7 +5502,7 @@ function checkBestGpu() {
   }
 
   // pay-back is priced at every level the calculator names, or not at all
-  const pay = html.split('<h2>How much use it takes for a card to pay for itself</h2>')[1]?.split('<h2>')[0] ?? '';
+  const pay = html.split(anchoredHeading('How much use it takes for a card to pay for itself'))[1]?.split('<h2')[0] ?? '';
   const levels = bestUsageLevels(data);
   const payRows = (pay.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>/g) ?? []).length;
   if (payRows !== cards.length) problems.push(`pay-back is priced for ${payRows} cards, not ${cards.length}`);
@@ -5863,7 +5881,7 @@ function checkSpeedBasis() {
   for (const hw of data.hardware) {
     const path = `/hardware/${hw.id}/`;
     const html = meta.find((m) => m.path === path)?.html;
-    if (html == null || !html.includes(`<h2>${runsHeading(hw)}</h2>`)) continue;
+    if (html == null || !html.includes(anchoredHeading(runsHeading(hw)))) continue;
     if (!(speedNotes(html) ?? '').includes('Each speed says how it was arrived at')) {
       problems.push(`the ${shortHardwareLabel(hw)} page marks its speeds and never says what the mark means`);
       continue;
@@ -5890,7 +5908,7 @@ function checkSpeedBasis() {
  */
 function checkPriceNeighbours() {
   const problems: string[] = [];
-  const heading = '<h2>The same money, two different machines</h2>';
+  const heading = anchoredHeading('The same money, two different machines');
   const sold = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
   const nearest = (h: Hardware) =>
     sold
@@ -6102,7 +6120,7 @@ function checkTitleLabels() {
  */
 function checkMemoryLadder() {
   const html = meta.find((m) => m.path === '/how-much-memory/')?.html ?? '';
-  const section = html.split('<h2>What can you run with the memory you already have?</h2>')[1];
+  const section = html.split(anchoredHeading('What can you run with the memory you already have?'))[1];
   if (!section) throw new Error('/how-much-memory/ no longer asks what the memory you have runs');
   const body = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1];
   if (!body) throw new Error('/how-much-memory/ asks what your memory runs and answers with no table');
@@ -6199,7 +6217,7 @@ function checkSubjectHeadings() {
   let named = 0;
   for (const { path, name } of subjects) {
     const html = meta.find((p) => p.path === path)?.html ?? '';
-    const headings = [...html.matchAll(/<h2>([\s\S]*?)<\/h2>/g)].map((h) => h[1]);
+    const headings = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((h) => h[1]);
     if (!headings.length) problems.push(`${path} has no headings at all`);
     for (const heading of headings) {
       if (/\bits?\b/i.test(heading.split(name).join(' ')))
@@ -6220,6 +6238,48 @@ function checkSubjectHeadings() {
   );
 }
 
+/**
+ * Every section on this site can be linked to, and no two sections on one page
+ * answer to the same link.
+ *
+ * A heading with no id is a section another site has to send a reader to the top
+ * of, and a section a search engine cannot offer a jump link into. Two headings
+ * sharing one id is worse than neither having one: the browser honours the first
+ * and silently ignores the second, so a link that looks right lands wrong.
+ *
+ * It also holds the one thing the guards above depend on, which is that a slug is
+ * a function of the heading's own words. They ask for a heading through
+ * `anchoredHeading`, which slugs the text the same way the build did; if an id
+ * anywhere were set by hand instead, those guards would start missing sections
+ * that are really there and this one says so first.
+ */
+function checkHeadingAnchors() {
+  const problems: string[] = [];
+  let headings = 0;
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const seen = new Set<string>();
+    for (const [, id, text] of body.matchAll(/<h2(?:\s+id="([^"]*)")?[^>]*>([\s\S]*?)<\/h2>/g)) {
+      headings++;
+      if (!id) {
+        problems.push(`${path} heads a section "${text.slice(0, 60)}" with no id, so nothing can link to it`);
+        continue;
+      }
+      if (seen.has(id)) problems.push(`${path} gives two sections the same id, "${id}", so a link to it lands on the first`);
+      seen.add(id);
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) problems.push(`${path} gives a section the id "${id}", which is not a slug`);
+      const expected = headingSlug(text);
+      if (id !== expected && id !== `${expected}-2` && id !== `${expected}-3`)
+        problems.push(`${path} gives "${text.slice(0, 40)}" the id "${id}" where its own words slug to "${expected}"`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} section heading${problems.length === 1 ? '' : 's'} cannot be linked to`);
+  }
+  console.log(`  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, none repeated on its page`);
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -6235,6 +6295,7 @@ checkCardRanking();
 checkMachineIndex();
 checkMachineLedes();
 checkSubjectHeadings();
+checkHeadingAnchors();
 checkSpeedBasis();
 checkTables();
 checkPairedColumns();
