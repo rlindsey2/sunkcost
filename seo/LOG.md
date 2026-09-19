@@ -11,6 +11,24 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 
 ## Ryan's side (needs the site owner)
 
+- [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
+      `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
+      does it cost to run a local LLM per month*, which is the shape every bill it would replace is
+      written in and the one question this site could not answer. It is a pull request rather than a
+      push for two reasons that are the standing rules here: it is a new page type, and a page at the
+      top level of this site has to be in `FOOTER_LINKS`, which means one `<a>` in `index.html`.
+      No data figure is touched and neither are `src/calc.ts`, `src/compute.ts` or `src/fit.ts`.
+      Verified before opening, on `main` at `c17c916`: 377 tests, typecheck clean, 262 pages with
+      every guard passing, the full `npm run build` with `build:functions`, and the page and its
+      share card both read rendered. **It collides with nothing**, because nothing else is open.
+      The run entry below has the figures and what reading it rendered changed.
+      **Re-checked against `main` at `978ed1c`, after this run's own two pushes to it, and it still
+      merges clean.** Neither push touched code: the log entry, and the ignore rule for
+      `public/cost-per-month/`, which is the same line the branch carries — git takes the identical
+      addition once rather than twice, so the merged `.gitignore` has it one time. The merged tree
+      differs from the branch in `seo/LOG.md` alone, so the build verified above is the build that
+      would land.
+
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
       site ranks top of what a graphics card runs — at a stated **5.9 GB** against the 16.46 GB the
@@ -859,8 +877,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       closed for the reason the item gave: `/leaderboard/` already lists every model, so a second
       index of the same 55 would be a duplicate.
 
-- [ ] Question pages for the searches people actually type. **Still the top item, and three of them
-      are now written.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
+- [x] Question pages for the searches people actually type. **Done 2026-09-19: all five candidates
+      are now written or closed, the last of them as
+      [PR #16](https://github.com/rlindsey2/sunkcost/pull/16).** `/cost-per-month/` answers *how much
+      does it cost to run a local LLM per month* — the search this item turned up on 2026-09-18 and
+      did not write — with the electricity, the machine divided over the months you keep it, and the
+      level of use where the rental bill passes it. The run entry below has the figures, the five
+      breaks that proved the guard and the three that proved the tests.
+      **What it deliberately leaves out, so the next run does not read it as a gap:** no subscription
+      price. Nothing in `data/*.json` carries one, so the page names none and prices none; it gives
+      the figure a reader sets their own bill against. A page that printed "$20 a month" would be
+      inventing the only number on it that is not the site's own.
+      The item as it stood, kept for the reasoning. **Three of them were written.** `/how-much-memory/` merged 2026-09-17; **"best GPU for local LLMs" went out
       as [PR #7](https://github.com/rlindsey2/sunkcost/pull/7)** and **"local LLM vs API cost" as
       [PR #8](https://github.com/rlindsey2/sunkcost/pull/8)**, both on 2026-09-18 and each in a
       single run, because the first page had already paid for the page type and the share-card
@@ -1169,6 +1197,79 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — what a month of it costs, which is the question nobody here had answered
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Its top item is the question pages, and the last entry said what to take: the monthly-cost
+page, unblocked by PR #8's merge. Opened as **[PR #16](https://github.com/rlindsey2/sunkcost/pull/16)**
+rather than pushed, because it is a new page type and because a page at the top level of this site
+has to be in `FOOTER_LINKS`, which means `index.html`.
+
+**The question the last entry said to settle first, settled.** A monthly bill is the token page's
+arithmetic divided by twelve, so a second page saying that in other words would be the duplicate this
+backlog exists to avoid. It is not that, because the two pages answer opposite halves. The token page
+counts break-even in tokens and argues that the date does not matter; this one is nothing but the
+calendar. And the figure that makes it a page rather than a paragraph is the one the token page has no
+room for: **a machine bought once has no monthly cost until you name the months**, so every monthly
+figure on it is a division said out loud, at one, two and three years.
+
+**What the data answered, which is the page.** The electricity is $0.26 a month at 500k tokens a day
+on the machine the calculator opens on, and across the 30 current machines that hold the model it runs
+between $0.25 and $0.65 — a spread of 40 cents. Divide those machines' prices over two years and the
+same month runs from $53.45 to $750. So the page's own heading is *the power is not the cost, the
+machine is*, and the sentence under the table is the proof rather than the assertion: the RTX PRO 6000
+Blackwell draws 600 W and spends $0.35 a month where the Mac mini M6 draws 65 W and spends $0.43,
+because a faster machine is finished sooner. The line a reader wants is `monthlyCrossing()`: the rental
+bill passes what the machine costs a month at **10.9M tokens a day** over two years, 21.8M over one and
+7.27M over three.
+
+**Subscriptions, without inventing a price.** The calculator has taken a monthly bill since `sub` was
+added and no generated page had ever used it. The page names no subscription and prices none — nothing
+in `data/*.json` carries one — it gives the figure a reader sets their own bill against, and says the
+two things the calculator's own small print says: the bill buys the lab's model, and the falling-price
+assumption is off in that mode.
+
+| | figure |
+| --- | --- |
+| electricity, 500k tokens a day | $0.26 a month |
+| the same month, rented | $6.94 |
+| the machine, over one / two / three years | $292 / $146 / $97.46 a month |
+| where the rental bill passes two years of the machine | 10.9M tokens a day |
+| electricity across the 30 machines that run the model | $0.25 to $0.65 |
+| those machines over two years | $53.45 to $750 |
+
+**Five breaks proved the guard.** `checkMonthlyCost()` recomputes the lot rather than reading the page
+back: both sides of the month at every level of use, the price over every span, the crossing, and the
+spread across the machines. The crossing sentence dropped fails with *does not print 10.9M tokens a day,
+where the rental bill passes what the machine costs a month*; the rented column dropped fails on all
+five levels; the dearest machine dropped fails with *leaves out the NVIDIA RTX PRO 6000 Blackwell, 96GB*;
+the stand-in power marker dropped fails; and the three-year column dropped fails with *does not print
+$36.51, what the Mac mini M6, 32GB costs a month over 36 months*. **That last one is worth keeping.**
+The first version of the guard passed it — it held the three spans for the headline machine only, which
+the answer box prints, so the table could have lost a whole column silently. It holds all 30 machines
+over all three spans now. A guard written from the page's prose misses what the page's tables carry.
+
+**And three breaks proved the tests.** The month read as a day, `monthlyOwned` forgetting the power, and
+the crossing bisection run the wrong way each fail one of the six new tests in `tests/pagekit.test.ts`.
+
+**One thing changed by reading it rendered rather than as HTML.** At 390px the machine table stacks, and
+`stack({ fig: 4 })` put the two-year figure unlabelled on the first line beside three labelled spans, so
+a phone showed `$53.45` with no way to know which span it was. The price takes that place now: it reads
+as a price beside a machine name, and every monthly figure keeps its span. Desktop is unchanged.
+
+**Verified.** 377 tests (10 new), typecheck clean, `npm run validate` clean but for the two null prices
+already on this file, and the full `npm run build` end to end with `build:functions`: 262 pages, every
+guard passing, 257 OG cards drawn, 1,894 share pages. The page reads 1,218 words, title 47 characters,
+description 152, and it is in the sitemap. Read rendered in Chromium at 1280px and 390px, and the share
+card read as a PNG — the card's note was shortened after the width guard in `tests/list-card.test.ts`
+caught it ending in an ellipsis.
+
+**Continue next: the anchor-text audit**, which is the top open item now and has never been done —
+7,336 links inside `<main>` across the pages and nobody has measured the words they are written in. The
+item says to measure before writing anything, and that stands: this site's links are in sentences, so
+the answer may be that they are already fine.
+
 
 ### 2026-09-19 — PR #8 merged, and nothing is open behind it
 
