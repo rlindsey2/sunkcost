@@ -1234,15 +1234,30 @@ export function priceWithScopeText(hw: Hardware): string {
  * and a page where both sides are cards should not send the reader looking for
  * which one it means.
  */
-export function cardScopeNote(machines: Hardware[]): string {
+export function cardScopeNote(machines: Hardware[], rankedIn?: Dataset): string {
   const all = [...new Map(machines.map((h) => [h.id, h])).values()];
   const cards = all.filter((h) => h.price_scope === 'card_only');
   if (!cards.length) return '';
-  if (cards.length === 1)
-    return `The ${esc(shortHardwareLabel(cards[0]))} is priced as the card alone, so add the PC around it before comparing it with a complete computer.`;
-  if (cards.length === all.length && all.length === 2)
-    return 'Both are priced as the card alone, so neither figure includes the PC to put it in.';
-  return 'Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.';
+  const caveat =
+    cards.length === 1
+      ? `The ${esc(shortHardwareLabel(cards[0]))} is priced as the card alone, so add the PC around it before comparing it with a complete computer.`
+      : cards.length === all.length && all.length === 2
+        ? 'Both are priced as the card alone, so neither figure includes the PC to put it in.'
+        : 'Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer.';
+  return rankedIn ? `${caveat} ${cardRankingLine(rankedIn)}` : caveat;
+}
+
+/**
+ * Where the cards are ranked, said on the pages that price one. A reader told
+ * that a card's price leaves out the PC is being warned about cards, and the
+ * next thing they need is whether it is the right card — which is one page on
+ * this site and was reachable from eight of the 259. The sentence goes wherever
+ * the caveat goes, so the two cannot come apart, and it counts the cards from
+ * the same list the ranking page itself cuts, so the number cannot drift from
+ * what the reader finds on the other end of the link.
+ */
+export function cardRankingLine(data: Dataset): string {
+  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`;
 }
 
 /**
