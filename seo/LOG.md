@@ -1363,6 +1363,16 @@ the painting is cut. A heading that reads as a heading — above the machine sen
 the bar — is a design decision about the calculator's front door, not a markup one, and it belongs to
 Ryan. It is a backlog item below, with the 142-word measurement that makes the case.
 
+**One thing about this environment, so the next run does not lose the same five minutes.** A fresh
+container checks out `origin/main` as a detached HEAD, and the local branch called `main` is **not**
+it: here it sat at `94aa957`, the seed commit, 40 commits of pre-rewrite history that `origin/main`
+does not contain. `git checkout main` therefore silently swaps `seo/LOG.md` for a two-day-old copy
+with no backlog in it, and `git reset --hard` is refused by the sandbox. Branch from `origin/main`
+by name — `git checkout -b <name> origin/main` — and push with `git push origin HEAD:main`.
+**And one habit worth keeping:** proving a test by breaking it with `sed` and undoing it with
+`git checkout <file>` throws away any uncommitted work in that file. It cost this run its own edits
+once, harmlessly, because the tests were already written. Commit first, or keep a copy.
+
 **What to continue.** Nothing here is half-finished. PR #17 and PR #16 are both waiting on Ryan, and
 the next run should check that both still merge, remembering that these two do not merge cleanly into
 each other and that the resolution above is a rebuild rather than a choice. The top of the backlog is
