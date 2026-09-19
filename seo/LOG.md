@@ -181,7 +181,7 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       merge rather than trusting a clean `git merge-tree` — which is the standing lesson here, and
       is precisely what the red `main` above shows the cost of skipping.
 
-- [ ] Merge (or close) **[PR #14](https://github.com/rlindsey2/sunkcost/pull/14)**, the waterline's
+- [x] Merge (or close) **[PR #14](https://github.com/rlindsey2/sunkcost/pull/14)**, the waterline's
       time axis. Opened 2026-09-18. It is the one open pull request that fixes something a visitor
       can hit today: the axis labelled every hundredth year past a 600-year horizon, so three share
       cards are 6 to 10 MB of stacked text and the calculator puts up to 68,747 SVG text nodes into
@@ -193,6 +193,13 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       for the two null prices that are already on your side of this file. It collides with nothing —
       `src/waterline.ts` is in no other open branch. Note that no workflow runs on `pull_request`
       here, so GitHub shows no checks on it at all; the figures above are from this environment.
+      **Merged 2026-09-19 at 02:19**, half an hour after it was opened, on the same deploy as PR #12:
+      run 190 on `3ccf04b` went green at 02:22 and published, so both are live. PR #12's own run 189
+      was cancelled by that push a minute later, as usual. Merged `main` was checked here rather than
+      assumed: **326 tests**, typecheck clean, the full build with `build:functions`, 253 pages, and
+      the 1,894 cards re-measured off merged `main` — **worst axis 5 ticks, biggest card 6 KB, and no
+      label outside the card's text column**, where it was 68,747 ticks, 10,488 KB and every card.
+      Nothing is left here.
 
 - [ ] Merge (or close) **[PR #13](https://github.com/rlindsey2/sunkcost/pull/13)**, the calculator's
       assumptions panel. Opened 2026-09-18. It fixes three things the generated pages fixed weeks
@@ -203,7 +210,7 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       **It collides with nothing**: really merged into PR #8, PR #10 and PR #12 in worktrees, all
       three green, and the 253 generated pages come out byte-for-byte identical to `main`'s.
 
-- [ ] Merge (or close) **[PR #12](https://github.com/rlindsey2/sunkcost/pull/12)**, three lines of
+- [x] Merge (or close) **[PR #12](https://github.com/rlindsey2/sunkcost/pull/12)**, three lines of
       `src/styles.css` that fix the calculator's top bar. **It collides with nothing**: PR #8 and
       PR #10 touch nine files between them and neither goes near `src/styles.css`, and no test spans
       that file and anything they do touch, which is the clause PR #9 got wrong. Opened 2026-09-18.
@@ -213,6 +220,11 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       to 899px; and the theme button drew a sun and a moon at once in the default light state, which
       is what a first visit and a crawler both get. 274 tests, typecheck clean, the full build, and
       0 elements past the window at 26 widths where three were.
+      **Merged 2026-09-19 at 02:18**, and deploy run 190 carried it: its own run 189 was cancelled by
+      the PR #14 merge a minute later, and 190 went green at 02:22 on `3ccf04b`, which has both. One
+      thing this unblocks: the `--ok-text` duplication in `src/styles.css` was left for "the next pull
+      request that touches that file", and there is no longer one open, so it now wants a home of its
+      own or the next run that opens a branch against the calculator's styles.
 
 - [x] **Merging PR #10 puts 23 KB of build output into `main`, and PR #8 will not clean it up.**
       Done 2026-09-18 at 19:11 and 19:25, on both sides, and the item was one step behind what had
