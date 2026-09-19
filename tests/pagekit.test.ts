@@ -7,7 +7,7 @@ import {
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection,
   modelsInBand, modelVerdict,
-  footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
+  footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
@@ -1879,6 +1879,92 @@ describe('what a reader gets for swapping the model they run for the current one
       expect([old.id, w]).toEqual([old.id, expect.stringContaining(now.display_name)]);
       for (const bad of ['undefined', 'NaN', 'null', 'TODO', ' .', '..', ' ,'])
         expect([old.id, bad, w.includes(bad)]).toEqual([old.id, bad, false]);
+      expect(w.endsWith('.')).toBe(true);
+    }
+  });
+});
+
+describe('the other match-ups the two on a head-to-head are in', () => {
+  const groups = [
+    { lead: 'another card', links: [{ href: '/compare/a-vs-c/', label: 'GeForce RTX 5090, 32GB' }] },
+    { lead: 'a complete computer', links: [{ href: '/compare/a-vs-d/', label: 'DGX Spark, 128GB' }] },
+  ];
+  const words = (html: string) => html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+  it('names the machine the list belongs to, then the question each pair answers', () => {
+    expect(words(machineMatchUpsLine('RTX PRO 6000 Blackwell, 96GB', groups))).toBe(
+      'The RTX PRO 6000 Blackwell, 96GB is also head to head with another card: GeForce RTX 5090, 32GB. With a complete computer: DGX Spark, 128GB.',
+    );
+    expect(machineMatchUpsLine('RTX PRO 6000 Blackwell, 96GB', groups)).toContain('<a href="/compare/a-vs-d/">DGX Spark, 128GB</a>');
+  });
+
+  it('says nothing where a machine is in no other match-up', () => {
+    expect(machineMatchUpsLine('Mac mini M6, 16GB', [])).toBe('');
+    expect(modelMatchUpsLine('Gemma 4 12B', [])).toBe('');
+  });
+
+  it('escapes a name that could close the link it sits in', () => {
+    const line = machineMatchUpsLine('Mac & mini', [{ lead: 'another computer', links: [{ href: '/compare/x/?a=1&b=2', label: '<b>' }] }]);
+    expect(line).toContain('Mac &amp; mini');
+    expect(line).toContain('href="/compare/x/?a=1&amp;b=2"');
+    expect(line).not.toContain('<b>');
+  });
+
+  it('gives a model match-up the rule that made it, not just the other name', () => {
+    expect(
+      words(modelMatchUpsLine('Qwen3.8 27B', [{ href: '/compare/q-vs-r/', name: 'Qwen3 32B', side: 'is-current', family: 'Qwen' }])),
+    ).toBe('Qwen3.8 27B is also head to head with Qwen3 32B, the last-generation Qwen nearest it in size.');
+    expect(
+      words(modelMatchUpsLine('Qwen3 32B', [{ href: '/compare/q-vs-r/', name: 'Qwen3.8 27B', side: 'is-older', family: 'Qwen' }])),
+    ).toBe('Qwen3 32B is also head to head with Qwen3.8 27B, the current Qwen nearest it in size.');
+  });
+
+  it('says the long way round where the data carries no family to name', () => {
+    expect(
+      words(modelMatchUpsLine('Muse Glimmer 30B', [{ href: '/compare/m-vs-n/', name: 'Muse Glimmer 2 30B', side: 'is-older' }])),
+    ).toBe('Muse Glimmer 30B is also head to head with Muse Glimmer 2 30B, the current model of its family nearest it in size.');
+  });
+
+  it('names the leaderboard once where a model has a rung either side of it', () => {
+    const both = words(
+      modelMatchUpsLine('Gemma 4 31B it', [
+        { href: '/compare/g-vs-h/', name: 'Granite 4.2 30B', side: 'below', family: 'Gemma' },
+        { href: '/compare/f-vs-g/', name: 'Qwen3.5 122B-A10B', side: 'above', family: 'Gemma' },
+      ]),
+    );
+    expect(both).toBe(
+      'Gemma 4 31B it is also head to head with Qwen3.5 122B-A10B above it on the leaderboard and Granite 4.2 30B below it.',
+    );
+    // on its own the rung below has to say which list it is below, since nothing else does
+    expect(words(modelMatchUpsLine('Gemma 4 31B it', [{ href: '/compare/g-vs-h/', name: 'Granite 4.2 30B', side: 'below', family: 'Gemma' }]))).toBe(
+      'Gemma 4 31B it is also head to head with Granite 4.2 30B below it on the leaderboard.',
+    );
+  });
+
+  it('puts the rung of the leaderboard before the model a generation away, whichever order they arrive in', () => {
+    const line = words(
+      modelMatchUpsLine('Qwen3.8 27B', [
+        { href: '/compare/q-vs-r/', name: 'Qwen3 32B', side: 'is-current', family: 'Qwen' },
+        { href: '/compare/s-vs-q/', name: 'Inkling Small', side: 'below', family: 'Qwen' },
+      ]),
+    );
+    expect(line).toBe(
+      'Qwen3.8 27B is also head to head with Inkling Small below it on the leaderboard and Qwen3 32B, the last-generation Qwen nearest it in size.',
+    );
+  });
+
+  it('reads as finished copy: no doubled stop, no stray comma, nothing left blank', () => {
+    const lines = [
+      machineMatchUpsLine('Mac Studio M5 Max, 128GB', groups),
+      modelMatchUpsLine('Qwen3.8 27B', [
+        { href: '/compare/q-vs-r/', name: 'Qwen3 32B', side: 'is-current', family: 'Qwen' },
+        { href: '/compare/s-vs-q/', name: 'Inkling Small', side: 'below', family: 'Qwen' },
+      ]),
+    ];
+    for (const line of lines) {
+      const w = words(line);
+      for (const bad of ['undefined', 'NaN', 'null', 'TODO', ' .', '..', ' ,', ',,'])
+        expect([bad, w.includes(bad)]).toEqual([bad, false]);
       expect(w.endsWith('.')).toBe(true);
     }
   });
