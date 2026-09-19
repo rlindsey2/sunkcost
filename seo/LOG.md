@@ -553,6 +553,35 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **The site held the answer to "what can I run with 32 GB" and asked it under a heading that
+      reads as a statement.** Done 2026-09-19. `/how-much-memory/` asks four questions in its own
+      headings and every one of them starts from the model — *How much memory for a 70B model?* The
+      reader with a machine already on the desk starts from the other end, and the memory ladder has
+      answered that since it was built. It was headed *Installed memory is not usable memory* and
+      keyed on usable memory, so the three rungs a 32 GB machine can land on sat at 21, 24 and 31 GB
+      with a 36 GB machine in between: a reader with 32 GB met their own size three times, never
+      together, with nothing to say which row was theirs. Keyed on the number printed on the box now,
+      with the heading asking the question and each of the 13 rows opening the calculator. No figure,
+      machine or count changed. The run entry below has the six breaks that proved the guard and the
+      one thing the re-sort would have broken silently.
+
+- [ ] **The question now has a heading and still has no page of its own.** *What can I run with
+      16 GB*, *what LLM fits in 24 GB of VRAM*, *is 32 GB enough for a local model* are three
+      different searches, and one table under one heading on `/how-much-memory/` answers all three at
+      once. Each is a page's worth of answer on its own: the models that fit at that size, what each
+      one leaves for context, the cheapest machine that gets there, and what the next size up buys
+      that this one does not. Every figure is already computed — `fitCount()`, `strongestThatFits()`,
+      `longestContext()` and the pay-back helpers — so nothing would need inventing.
+      **Two things to settle before a line of it is written.** The first is what stops it being nine
+      near-copies: a page per size is nine pages whose model tables nest inside one another, and the
+      honest cut is probably *what this size adds over the one below*, which is the only part that
+      differs. The second is that a size is not a machine — 32 GB hands a model 21 GB on one machine
+      here and 31 GB on another — so a page titled by a size has to carry that split in its first
+      paragraph or it is a page that misleads at the top.
+      It is a new page type and a top-level page, so it is a pull request and one `<a>` in
+      `index.html`, which is the standing rule. Worth doing when the two open pull requests are
+      settled rather than queued behind them.
+
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
       the count as a warning for days; nobody had read it. Nine of the ten carried a MacBook, and
@@ -1404,6 +1433,82 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the memory table answered a question nobody asks in the words it is asked in
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Every open item on it is waiting on Ryan or is a note written down so
+nobody re-finds it, which is where the six runs before this one found it too. Both open pull
+requests were checked first and **both still merge clean into `main`**, #16 and #17, so there was no
+repair to do. The site's mechanics were swept for anything the guards do not already hold — no
+dangling internal link among the 307 pages, no duplicate or missing title or description, no
+description over 155 characters — and all of it was clean. The work came from the other side: the
+one question with real search volume that this site holds the answer to and does not ask.
+
+**The question.** `/how-much-memory/` asks four of them in its own headings — *How much memory for a
+7B or 8B model?* and the same for 14B to 32B, 70B and 100B and over — and every one of them starts
+from the model. The reader with a machine already on the desk starts from the other end: *what can I
+run with 16 GB*, *what LLM fits in 24 GB of VRAM*, *is 32 GB enough*. The site has had that answer
+since the memory ladder was built. It was under a heading that reads as a statement, *Installed
+memory is not usable memory*, and it was keyed on the figure the reader cannot know yet.
+
+**What being keyed on usable memory did to it.** The table's first column was usable memory and its
+rows ran up that, so the three rungs a 32 GB machine can land on sat at 21 GB, 24 GB and 31 GB —
+with a 36 GB machine in between two of them. A reader with 32 GB met their own size three times,
+never together, and had nothing in the table to tell them which row was theirs. The same split cut
+96 GB and 128 GB in two. Keyed on the number printed on the box, every size reads as one block and
+the usable figure sits beside it as the answer to *and how much of that do I actually get*.
+
+| | before | after |
+| --- | --- | --- |
+| first column | usable memory | the size on the box |
+| sizes broken into more than one run | 32 GB, 96 GB, 128 GB | none |
+| rows opening the calculator | 0 of 13 | 13 of 13 |
+| machines, levels or figures changed | — | 0 |
+
+**Nothing about the data moved.** Same 13 rows, same machines, same counts, same models; the rows
+are sorted differently, two columns swap places, and a thirteenth link column is added of the kind
+every other table on this site already carries. The heading now asks the question and the paragraph
+under it answers it in the first sentence, then keeps the sentence the old heading was making —
+the number on the box is not the number a model gets — and says where that bites hardest, which it
+reads out of the data rather than asserting: *32 GB appears 3 times below, handing a model anything
+from 21 GB on the Mac mini M6, 32GB to 31 GB on the AMD Radeon AI PRO R9700, 32GB.*
+
+**One thing the re-sort would have broken silently.** `strongestPlateau()` reads the ladder in order
+and reports its finding as a stretch of *usable* memory — *from 21 GB up to 119.5 GB the strongest
+model does not change*. Sorted by the size on the box that stretch is no longer a stretch, so the
+plateau keeps the usable-sorted ladder and only the table re-sorts. The paragraph under the table
+also pointed at *the last column*, which is now the link, so it names the strongest-model column
+instead.
+
+**The guard.** `checkMemoryLadder()` holds four things, and the first is the claim the new paragraph
+makes: every size a machine on sale here comes in has a row, so *every size a machine on sale here
+comes in is below* cannot quietly go false when a machine is added. Then that the rows read up the
+size on the box with each size in one unbroken run; that every level of usable memory among those
+machines is there exactly once, which is what catches a machine dropped rather than merely
+re-sorted; and that each row's link opens the calculator on that row's own machine and the strongest
+model it holds. The build prints *`/how-much-memory/` answers 9 memory sizes over 13 rows, each
+opening the calculator on the strongest model that size holds*.
+
+**Six breaks, each run and each caught.** Sort the table by usable memory again → *the table reads
+36 GB and then 32 GB, so a reader looking for one size meets it in two places*, which is the fault
+this run fixed. Drop the 36 GB rung from the table → *36 GB is a size you can buy a machine in here
+and the table skips it*, and *27 GB of usable memory has 0 rows where it should have one*. Drop a
+usable level from the ladder itself → the second of those alone, naming 24 GB. Point every row's
+link at the first current model → *the Mac mini M6, 16GB row opens the calculator on something other
+than its own machine and model*, on all 13. Name that model in the strongest column → *the Mac mini
+M6, 16GB row names qwen3-coder-30b-a3b-q4 where gemma-4-12b-q4 is the strongest it holds*. Rename
+the heading → *`/how-much-memory/` no longer asks what the memory you have runs*.
+
+**No new test.** The change adds no helper to `src/pagekit.ts` — it is a sort, a column order and a
+link inside one page builder — so the guard is the test, and it runs on every build and every
+deploy. 393 tests unchanged, typecheck clean, the full `npm run build` with `build:functions`,
+307 pages with every guard passing, and the page read rendered out of `dist/`.
+
+**What to continue.** The backlog is where the last six runs left it: every open item is Ryan's, or
+is a measurement written down so nobody takes it twice. The item this run adds is the other half of
+what it found — the inverse question now has a heading on `/how-much-memory/`, and it has no page of
+its own, which is a bigger piece of work and a pull request rather than a push.
 
 ### 2026-09-19 — ten search results were cut before the second machine's memory size
 
