@@ -1092,7 +1092,9 @@ five pages it would have shipped wrong.
 **Verified.** 315 tests (7 new), `tsc --noEmit` clean, and the full `npm run build` end to end with
 `build:functions` included. 253 pages, every guard passing, and the section read rendered out of
 `dist/` on the widest case and the narrowest. 50 machine pages changed words today and take
-2026-09-19 in the sitemap, which is the ledger working.
+2026-09-19 in the sitemap, which is the ledger working. **Deploy run 184 went green at 00:57 and
+published**, on `d0f4482`, which carries both commits — run 183, on the code commit alone, was
+cancelled by the log push a minute later, as usual.
 
 **Today's model watch, which found two candidates and ruled out three.** Both candidates are in
 `seo/MODEL-WATCH.md` with their sources and what each still needs, and neither is urgent enough to
