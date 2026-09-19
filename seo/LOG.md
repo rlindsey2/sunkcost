@@ -1505,6 +1505,11 @@ link inside one page builder — so the guard is the test, and it runs on every 
 deploy. 393 tests unchanged, typecheck clean, the full `npm run build` with `build:functions`,
 307 pages with every guard passing, and the page read rendered out of `dist/`.
 
+**Pushed as `3fff055`, with the log as `22f6413`. Deploy run 224 went green at 13:53 on
+2026-09-19**, so the page is live. Both open pull requests were re-checked against the new `main`
+afterwards and **both still merge clean**, #16 and #17, although #16 touches `scripts/build-pages.ts`
+too.
+
 **What to continue.** The backlog is where the last six runs left it: every open item is Ryan's, or
 is a measurement written down so nobody takes it twice. The item this run adds is the other half of
 what it found — the inverse question now has a heading on `/how-much-memory/`, and it has no page of
