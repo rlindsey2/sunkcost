@@ -1208,6 +1208,14 @@ block was taken whole and the brace put back. Verified on the merged tree rather
 `git merge-tree`: 362 tests, typecheck clean, 261 pages with every guard passing, both sides' new
 guards among them, and the full `npm run build`. Pushed to `seo/combined-pages` at `1dcaf6b`.
 
+**One thing about the deploys, so the next run does not read it as a fault of its own.** Run 197
+carried both commits of this change and went green at 04:01, so the pages are live. Run 198, on the
+log-only commit after it, sat on its build step for half an hour where 197 did the same build in
+under three minutes: `npm ci` and `npm test` green, then nothing. The tree it builds differs from
+197's by `seo/LOG.md` alone, which no script here reads, so it is the runner rather than the
+repository. This entry's own push cancels it and starts a fresh one, which is how the queue here
+usually clears.
+
 **What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
 is the top open item and still waits on PR #15. Of what can go straight to `main`, the measurement
 that found this one is worth repeating on the other page types: the leaderboard, `/best/` and
