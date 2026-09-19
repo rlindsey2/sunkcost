@@ -15,7 +15,7 @@ import {
 } from '../src/versus-card';
 import {
   BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, GPU_CARD, gpuCard, HARDWARE_CARD, hardwareIndexCard,
-  LEADERBOARD_CARD, leaderboardCard, MEMORY_CARD, memoryCard,
+  LEADERBOARD_CARD, leaderboardCard, MEMORY_CARD, memoryCard, TOKEN_COST_CARD, tokenCostCard,
 } from '../src/list-card';
 import type { Dataset } from '../src/types';
 
@@ -104,6 +104,7 @@ const list: [string, string][] = [
   [MEMORY_CARD, memoryCard(data, FONT)],
   [GPU_CARD, gpuCard(data, FONT)],
   [HARDWARE_CARD, hardwareIndexCard(data, FONT)],
+  [TOKEN_COST_CARD, tokenCostCard(data, FONT)],
 ];
 for (const [path, svg] of list) writeFileSync(new URL(path.replace('/og/', ''), outDir), toPng(svg));
 

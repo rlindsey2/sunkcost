@@ -10,9 +10,8 @@
 import { esc, fmtDuration, fmtGb, fmtTokens, fmtUsd } from './format';
 import { bestByTier, bestUsageLevels, type Combo } from './best';
 import {
-  bandFit, computeView, familyGroup, fitsOf, fmtGb1, graphicsCards, priceWithScopeText, shortHardwareLabel,
-  SIZE_BANDS,
-  type BandFit,
+  bandFit, computeView, costMachine, familyGroup, fitsOf, fmtGb1, fmtPerMtok, graphicsCards, priceWithScopeText,
+  shortHardwareLabel, SIZE_BANDS, tokenCosts, type BandFit,
 } from './pagekit';
 import { defaultState } from './state';
 import {
@@ -160,6 +159,7 @@ export const COMPARE_CARD = '/og/compare.png';
 export const MEMORY_CARD = '/og/how-much-memory.png';
 export const GPU_CARD = '/og/best-gpu.png';
 export const HARDWARE_CARD = '/og/hardware.png';
+export const TOKEN_COST_CARD = '/og/local-llm-vs-api-cost.png';
 
 /** How many open models the leaderboard card lists under the best hosted one. */
 const LEADERBOARD_ROWS = 5;
@@ -396,6 +396,42 @@ export function hardwareIndexCard(data: Dataset, fontFamily?: string): string {
     metaW: 340,
     valueW: 110,
     note: `${data.hardware.length} configurations across ${families.length} families, at list price`,
+    dataChecked: data.defaults.data_last_checked,
+    fontFamily,
+  });
+}
+
+/** How many models the token-cost card prices under its headline. */
+const TOKEN_COST_ROWS = 5;
+
+/**
+ * What a million tokens costs, rented against generated, on the machine the
+ * calculator opens on. The rows are the page's own first five, in the page's own
+ * order, so a link to it previews as the answer it gives: a rental price in cents,
+ * an electricity bill a fraction of it, and the billions of tokens between them
+ * and a machine that has paid for itself.
+ */
+export function tokenCostCard(data: Dataset, fontFamily?: string): string {
+  const hw = costMachine(data);
+  const priced = tokenCosts(hw, data).filter((c) => c.cost.breakevenTokens != null);
+
+  const rows: ListRow[] = priced.slice(0, TOKEN_COST_ROWS).map((c) => ({
+    name: c.row.model.display_name,
+    sub: `${fmtPerMtok(c.cost.rented)} rented · ${fmtPerMtok(c.cost.generated)} in electricity`,
+    meta: `${Math.round(c.cost.rented / c.cost.generated)}×`,
+    value: fmtTokens(c.cost.breakevenTokens),
+    valueSub: 'tokens',
+  }));
+
+  return listCardSvg({
+    eyebrow: 'Local LLM vs API cost',
+    headline: 'What a million tokens costs, rented and generated',
+    columns: { name: 'Model', meta: 'Cheaper to generate', value: 'Pays the machine back at' },
+    rows,
+    metaX: 620,
+    metaW: 140,
+    valueW: 150,
+    note: `At ${data.defaults.usage.default_input_to_output_ratio}:1 input to output on a ${shortHardwareLabel(hw)} at ${fmtUsd(hw.price_usd)}`,
     dataChecked: data.defaults.data_last_checked,
     fontFamily,
   });

@@ -7,6 +7,7 @@
  * read by someone arriving from a search, and to be indexable, so nothing here
  * may depend on JavaScript running.
  */
+import { calculate } from './calc';
 import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
 import { footprintGb, kvCacheGb } from './fit';
 import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
@@ -369,6 +370,7 @@ export const FOOTER_LINKS: { href: string; label: string }[] = [
   { href: '/compare/', label: 'Every head-to-head' },
   { href: '/how-much-memory/', label: 'How much memory you need' },
   { href: '/best-gpu/', label: 'Which graphics card' },
+  { href: '/local-llm-vs-api-cost/', label: 'What a token costs either way' },
 ];
 
 export function footerHtml(): string {
@@ -1818,4 +1820,104 @@ export function stack(html: string, opts: { fig: number; labels?: Record<number,
     throw new Error(`stack(): columns ${pair[0]} and ${pair[1]} were asked to share a line and no row gave them one`);
   }
   return stacked;
+}
+
+/* ------------------------ what a token costs either way ------------------------ */
+
+/** The unit both sides of this site are priced in: a million tokens, input and output together. */
+export const MTOK = 1_000_000;
+
+export interface TokenCost {
+  /** what a million tokens of this mix costs from the hosted API */
+  rented: number;
+  /** the electricity the same million costs to generate */
+  generated: number;
+  /** what each million saves once the machine is bought */
+  gap: number;
+  /** how many tokens that gap has to cover before the machine is paid for; null where it never is */
+  breakevenTokens: number | null;
+  /** input tokens per output token these figures are priced at */
+  inputRatio: number;
+  tokensPerSec: number;
+}
+
+/**
+ * A million tokens, rented and generated, on one machine and one model.
+ *
+ * It is the same `calculate()` the calculator runs, with a day's use set to a
+ * million tokens: the day's cost it hands back is then the price of a million,
+ * on both sides, and the page cannot drift away from what the calculator says.
+ */
+export function tokenCost(m: Model, hw: Hardware, tokensPerSec: number, data: Dataset, inputRatio?: number): TokenCost | null {
+  const ce = m.cloud_equivalent;
+  if (hw.price_usd == null || hw.load_watts == null) return null;
+  if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) return null;
+  const st = defaultState(data);
+  const ratio = inputRatio ?? st.ratio;
+  const c = calculate({
+    devicePriceUsd: hw.price_usd,
+    dailyTokens: MTOK,
+    inputRatio: ratio,
+    inputPricePerMtok: ce.input_price_per_mtok,
+    outputPricePerMtok: ce.output_price_per_mtok,
+    localTokensPerSec: tokensPerSec,
+    cloudTokensPerSec: st.cloudTps,
+    loadWatts: hw.load_watts,
+    pricePerKwh: st.kwh,
+    typicalTaskOutputTokens: data.defaults.typical_task_output_tokens,
+    apiDeclinePerYear: st.decline,
+  });
+  return {
+    rented: c.cloudCostPerDay,
+    generated: c.localCostPerDay,
+    gap: c.dailySaving,
+    breakevenTokens: c.breakevenTokens,
+    inputRatio: ratio,
+    tokensPerSec,
+  };
+}
+
+/** The machine the calculator opens on, which is the one the token prices are quoted against. */
+export function costMachine(data: Dataset): Hardware {
+  const id = defaultState(data).hw;
+  return data.hardware.find((h) => h.id === id) ?? data.hardware[0];
+}
+
+export interface ModelCost {
+  row: ModelRow;
+  cost: TokenCost;
+}
+
+/**
+ * Every model a machine holds at the default context, priced both ways, cheapest
+ * to pay the machine back first. The page and its share card are both cut from
+ * this, so the two cannot disagree about the order or the figures.
+ */
+export function tokenCosts(hw: Hardware, data: Dataset): ModelCost[] {
+  const view = computeView({ ...defaultState(data), hw: hw.id }, data);
+  const out: ModelCost[] = [];
+  for (const row of view.rows) {
+    if (row.fit.status !== 'fits' || (row.model.generation ?? 'current') === 'legacy') continue;
+    if (row.throughput.tokensPerSec == null) continue;
+    const cost = tokenCost(row.model, hw, row.throughput.tokensPerSec, data);
+    if (cost) out.push({ row, cost });
+  }
+  return out.sort(
+    (a, b) =>
+      (a.cost.breakevenTokens ?? Infinity) - (b.cost.breakevenTokens ?? Infinity) ||
+      a.row.model.display_name.localeCompare(b.row.model.display_name),
+  );
+}
+
+/**
+ * A price for a million tokens. These run from a fifth of a cent to a couple of
+ * dollars, and `fmtUsd` rounds the small end to $0.00, so anything under a dollar
+ * is set in cents — which is how the verdict line already writes a daily saving.
+ */
+export function fmtPerMtok(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v >= 1) return fmtUsd(v);
+  const cents = v * 100;
+  if (cents === 0) return 'nothing';
+  return `${cents >= 1 ? cents.toFixed(1) : cents.toFixed(2)}c`;
 }

@@ -6,13 +6,15 @@ import {
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelsInBand, modelVerdict,
-  footerHtml, FOOTER_LINKS, graphicsCards, nearestCompleteComputer, otherQuantisations, pageGraph, pageShell,
-  powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText, runnersFor,
+  costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, MTOK, nearestCompleteComputer,
+  otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
+  priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
 import { footprintGb, kvCacheGb } from '../src/fit';
 import { modelPairs, sameSiliconPairs } from '../src/versus-card';
+import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
 import type { Dataset, Hardware, Model } from '../src/types';
@@ -1359,6 +1361,72 @@ describe('the graphics cards, as a list of their own', () => {
   it('prices each gigabyte from the figures the page prints beside it', () => {
     for (const c of cards) expect(pricePerUsableGb(c)).toBeCloseTo(c.price_usd! / c.usable_memory_gb!, 6);
     expect(pricePerUsableGb({ ...cards[0], price_usd: null })).toBeNull();
+  });
+});
+
+describe('what a million tokens costs', () => {
+  const st = defaultState(data);
+  const machine = costMachine(data);
+  const view = computeView({ ...st, hw: machine.id }, data);
+  const model = view.model!;
+  const tps = rowFor(view, model)!.throughput.tokensPerSec!;
+
+  it('prices both sides from the figures the page prints beside them', () => {
+    const cost = tokenCost(model, machine, tps, data)!;
+    const ce = model.cloud_equivalent;
+    const out = MTOK / (st.ratio + 1);
+    const input = MTOK - out;
+    // the API bills the context you send as well as the answer you get
+    expect(cost.rented).toBeCloseTo((input / MTOK) * ce.input_price_per_mtok! + (out / MTOK) * ce.output_price_per_mtok!, 9);
+    // at home you pay for the watts the machine draws while it writes the answer
+    expect(cost.generated).toBeCloseTo((out / tps / 3600) * (machine.load_watts! / 1000) * st.kwh, 9);
+    expect(cost.gap).toBeCloseTo(cost.rented - cost.generated, 9);
+    // the gap is what one million saves, so the count is the price divided by it, in millions
+    expect(cost.breakevenTokens).toBeCloseTo((machine.price_usd! / cost.gap) * MTOK, -1);
+  });
+
+  it('counts break-even in tokens, which does not move with how much you use it', () => {
+    // The page rests on this: the saving on each million is a constant at today's
+    // prices held flat, so the count that covers the machine is the same at every
+    // level of use and only the date changes. Switch the API decline on and it is
+    // no longer true, which is why the build checks it as well.
+    let checked = 0;
+    for (const { row, cost } of tokenCosts(machine, data)) {
+      const counts = bestUsageLevels(data).map(
+        (l) => computeView({ ...st, hw: machine.id, model: row.model.id, usage: l.usage }, data).calc?.breakevenTokens ?? null,
+      );
+      for (const c of counts) {
+        if (cost.breakevenTokens == null) expect(c).toBeNull();
+        else expect(c!).toBeCloseTo(cost.breakevenTokens, 0);
+      }
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it('prices every model the machine holds, cheapest to pay it back first', () => {
+    const costs = tokenCosts(machine, data);
+    const held = fitsOf(computeView({ ...st, hw: machine.id }, data)).filter((r) => r.model.generation !== 'legacy');
+    expect(costs.length).toBe(held.length);
+    for (const c of costs) {
+      expect(c.row.fit.status).toBe('fits');
+      expect(c.cost.rented).toBeGreaterThanOrEqual(0);
+      expect(c.cost.generated).toBeGreaterThan(0);
+    }
+    const order = costs.map((c) => c.cost.breakevenTokens ?? Infinity);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('writes a sub-dollar price in cents rather than rounding it to nothing', () => {
+    expect(fmtPerMtok(1.773)).toBe('$1.77');
+    expect(fmtPerMtok(0.456)).toBe('45.6c');
+    expect(fmtPerMtok(0.0173)).toBe('1.7c');
+    expect(fmtPerMtok(0.0021)).toBe('0.21c');
+    expect(fmtPerMtok(0)).toBe('nothing');
+    for (const { cost } of tokenCosts(machine, data)) {
+      expect(fmtPerMtok(cost.generated)).not.toBe('$0.00');
+      expect(fmtPerMtok(cost.generated)).not.toBe('0.00c');
+    }
   });
 });
 
