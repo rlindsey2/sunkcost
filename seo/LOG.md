@@ -581,15 +581,37 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       170 words and six semicolons they are a list, one rule to a line. The run entry below has the
       table of rules, the four breaks and the measurement that says the other 306 pages did not move.
 
-- [ ] **Three other pages explain their own lists in prose, and nothing holds those sentences to the
-      code either.** Found 2026-09-19 while fixing `/compare/`, which had drifted by two rules on one
-      side and one on the other. `/hardware/`, `/leaderboard/` and `/best/` each say in their own
-      words what their table holds and how it is cut — which machines are in it, what the ranking is,
-      what each usage level means — and every one of those sentences is hand-written next to a figure
-      the build recomputes. None is known to be wrong today; the point is that nothing would say so.
-      The cheap version is the shape `checkMatchUpKinds()` just took: name the rule in one place, let
-      the page print it, and let the build fail when the two disagree. Worth doing one page at a time
-      and only where the sentence really is a claim about the data rather than about the reader.
+- [ ] **Two of those three pages are left: `/hardware/` and `/leaderboard/`.** `/best/` is done,
+      pushed as `5627008` on 2026-09-19, and the item's own guess about it was too kind: the sentence
+      was not drifted, it had never been written. The page listed the three quickest models in a
+      class and said neither that number nor that 23 other models pay back behind them. It now prints
+      the cut from `BEST_PER_CLASS` and counts what each class leaves out, and `checkBestCuts()` holds
+      the page to both. The run entry below has the table and the five breaks.
+      The two left are the same shape and still unheld. Found 2026-09-19 while fixing `/compare/`,
+      which had drifted by two rules on one side and one on the other. `/hardware/` and
+      `/leaderboard/` each say in their own words what their table holds and how it is cut — which
+      machines are in it, what the ranking is, where the hosted rows come from — and every one of
+      those sentences is hand-written next to a figure the build recomputes. The cheap version is the
+      shape `checkMatchUpKinds()` and `checkBestCuts()` both took: name the rule in one place, let the
+      page print it, and let the build fail when the two disagree. One page a run, and only where the
+      sentence really is a claim about the data rather than about the reader.
+
+- [ ] **`/hardware/` says the site prices all 56 configurations, and it prices 54.** Measured
+      2026-09-19 while `/best/` was being held to its own list. The lede opens *All 56 configurations
+      this site prices, in one table*, and two machines — the Mac Studio M5 Ultra, 512GB and the
+      Strix Halo Framework Desktop, 192GB — have no published price, so their own rows read *not
+      published · price it yourself*. The table is right and the sentence above it is not, by two.
+      It is one clause and it wants the same treatment as the rest of that page's prose, which is
+      the item above: write the count from the data rather than from `data.hardware.length`, and
+      say what the other two rows are. Nothing about a figure changes.
+
+- [ ] **A class on `/best/` counts the models it leaves out and names none of them.** Left
+      deliberately by the 2026-09-19 run rather than missed, because naming them is a different page:
+      14 models under one class, each wanting its machine and its figure to be worth reading, is the
+      table again rather than a note under it. The lede points at `/leaderboard/`, where every model
+      is ranked with its class beside it, and that may well be the whole answer. Worth weighing once
+      rather than drifting into: the cheapest useful version is probably the next model down in each
+      class by name, which is one link and one figure, not fourteen.
 
 - [x] **Every heading on the 56 machine pages and the 55 model pages called the page's own subject
       "it".** Done 2026-09-19, pushed as `f2e2d2d`. *What it runs*, *Machines that run it*, *How good
@@ -1588,6 +1610,80 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — three rows a class, and the other 23 models were in no row and no count
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which the item itself
+says to leave until Ryan's two pull requests are settled. The one below it is the item the last run
+wrote: `/hardware/`, `/leaderboard/` and `/best/` each explain their own list in prose and nothing
+holds those sentences to the code. This run took `/best/`, and the sentence it was missing was not a
+drifted one. It had never been written.
+
+**What was wrong, measured rather than reasoned about.** `bestByTier()` sorts a class by pay-back,
+keeps one row per model and then takes `perTier = 3`. The page printed those three and said nothing
+about the cut. Behind them, at every one of the five levels of use:
+
+| class | models that pay back | listed | in no row and no count |
+| --- | --- | --- | --- |
+| Sonnet-class | 4 | 3 | 1 |
+| Haiku-class | 11 | 3 | 8 |
+| Below every hosted tier | 17 | 3 | 14 |
+
+**23 of the 32 models that pay back somewhere** were on the page in neither a row nor a figure. A
+reader counting three rows under *Haiku-class* had no way to tell whether that was the whole class
+or the top of it, and the lede's *Each model appears once, on its quickest machine* reads as though
+every model is there. The one line under a table that did count anything counted the wrong thing for
+the job: *Also in this class: 57 never pay back, of 530 pairs that fit* — pairs, beside rows that are
+models, and silent about the models that do pay back and are not shown.
+
+**What it does now.** The cut is `BEST_PER_CLASS`, the lede prints it from there — *Each class lists
+the three that pay back soonest, one row per model, on the machine that pays it back quickest* — and
+each class says how many more models pay back behind its rows. `bestLeftOut()` in `src/pagekit.ts`
+writes both sentences and keeps each figure in the unit it is counted in: models that pay back and
+are not listed, machine-and-model pairs that fit and never do. The lede also points at
+`/leaderboard/`, which is where every model on the site is ranked with its class beside it, and it
+was the only index lede on the site linking nowhere.
+
+**Four breaks and a negative control, each run.** List a fourth model → exit 1, *lists 4 models in
+Sonnet-class at 50k tokens a day, where the cut takes 3 of the 4 that pay back*, 15 of them. Put the
+old lede back → exit 1, *does not say that a class lists 3 models*. Drop the not-listed sentence →
+exit 1, *lists 3 of the 17 models that pay back in Below every hosted tier at 50k tokens a day and
+does not say the other 14 are left out*. Drop the pairs sentence → exit 1, naming the class and the
+sentence. Claim a model is left out where the class lists every one → exit 1, *and every model in it
+that pays back is listed*. And the control that says the guard is about the cut rather than about
+the number three: raise `BEST_PER_CLASS` to 4 → **the build passes**, the lede says *four*, and the
+counts fall from 115 to 100 without a word being edited. Two more breaks proved the four new tests:
+force the plural, and count the two reasons a pair is not a row as one number.
+
+**Nothing else on the site moved, and this was checked rather than assumed.** The site was built from
+`main` in a throwaway worktree and from the change, and all 307 pages compared: `/best/` differs and
+**the other 306 are byte-for-byte identical**, `sitemap.xml` included, `lastmod` and all. One hash
+line moves in `seo/page-dates.json` and no date moves, because the page had already changed today.
+The page is 1,604 words where it was 1,398. Worth knowing for the next run that measures this:
+`publishedDate()` reads the ledger as committed, so the first build after a change drops that one
+page's `lastmod` and the next build restores it. A sitemap diff taken between those two builds is
+reading the ledger, not the page.
+
+**Verified**: 407 tests, typecheck clean, 307 pages with every guard passing, the full `npm run
+build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
+rendered out of `dist/` — the lede, the three class lines at 50k and the two-clause line at 20M,
+where *39 never pay back and 63 can’t produce this much in a day*. **Pushed as `5627008`.**
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree and
+built there rather than trusted to `git merge-tree`, because it is the one that touches
+`scripts/build-pages.ts`: no conflict, **417 tests**, typecheck clean, 308 pages with every guard
+passing, and the new guard holds over the merged tree. PR #17 touches `index.html` and
+`src/styles.css`, which this change goes nowhere near; `git merge-tree` reports it clean.
+
+**One thing about this environment, the same as the last run's.** The clone starts on a **detached
+HEAD**, so a commit goes onto no branch and `git push origin main` would push the stale local `main`.
+`git branch -f main HEAD && git checkout main` first; nothing was forced. Unlike the last run, the
+full build including `build:functions` ran here: the font was found.
+
+**What to continue.** The same item, two pages down: `/hardware/` and `/leaderboard/` still explain
+their own lists in sentences nothing holds. `/hardware/` has the concrete one, new below: its lede
+says the site prices all 56 configurations and two of them have no published price.
 
 ### 2026-09-19 — the index that named five rules where seven cut its list
 
