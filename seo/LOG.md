@@ -561,7 +561,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
 
-- [ ] **A machine page prints 661 speeds and says of none of them whether anybody measured it.** Found
+- [x] **A machine page printed 661 speeds and said of none of them whether anybody measured it.**
+      Done 2026-09-19, and the count that settled how much it mattered is the one nobody had taken:
+      of those 661 figures **exactly one is a measurement**, 103 tok/s for gpt-oss-20b on the GeForce
+      RTX 4080. Every row says *measured* or *estimated* now, the note under each table says what the
+      mark means in that machine's own split, and two answer blocks that had the same omission one
+      heading higher — the machine page's *Best model it runs* and the model page's *Fastest of the
+      ones listed*, 110 rows — say it too. `checkSpeedBasis()` keeps it that way across all 261 pages.
+      The run entry below has the figures and the five breaks that proved the guard.
+      **Two things it deliberately leaves alone, so the next run does not read them as gaps.** Prose
+      is not policed: `/local-llm-vs-api-cost/` and the comparison ledes say their basis in their own
+      words, and a pattern matching sentences would be writing for the guard rather than the reader.
+      And the calculator was already right — `src/render.ts` tags every row of its model list
+      *measured*, *estimated* or *yours*, and the assumptions panel names the basis and its source.
+      The original item follows.
+      Found
       2026-09-19 while giving those pages an opening paragraph of their own. The "What it runs" table
       on all 56 machine pages prints a `tok/s` figure per row, 661 of them, bare. `/hardware/` prints
       56 speeds through `speedWithBasis()` and marks every one *measured* or *estimated*; the
@@ -1314,6 +1328,83 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a machine page printed 661 speeds and named the source of one
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. The top open item was the one the 09:0x run found while rewriting the machine ledes: the
+"What it runs" table on all 56 machine pages prints a `tok/s` figure a row and marks none of them
+measured or estimated, where `/hardware/` marks all 56 of its own and the head-to-heads mark theirs.
+Both open pull requests were checked before anything else and **both still merge clean into `main`**,
+#17 at `6c81367` and #16 at `2c7e5e2`, so there was no repair to do.
+
+**How bad it was, counted rather than assumed.** 661 speeds across the 56 tables, and **exactly one
+of them is a measurement** — 103 tok/s for gpt-oss-20b on the GeForce RTX 4080. The other 660 are
+worked out from the machine's memory bandwidth. Across every pair the site computes, 1,425 where a
+machine here holds a model and has a speed for it, 1,397 are estimates and 28 are measured. So a bare
+figure on a machine page read as a measurement 660 times out of 661, on the page a reader lands on.
+
+**The fix.** The speed cell is `speedWithBasis()` now, the helper `/hardware/` has always used, so
+every row says *measured* or *estimated* beside the number. Two answer blocks went with it, because
+they were the same omission one heading higher: the machine page's *Best model it runs* and the model
+page's *Fastest of the ones listed*, 110 rows between them, 4 of them measured. `/best/` marked an
+estimate and left a measurement bare, which reads as an oversight rather than a claim; it uses the
+same helper now, and since all 45 of its rows are estimates today, nothing on that page changed.
+**No figure moves anywhere**: the mark is `throughput.measurement`, the field the data already
+carries, and the numbers are the ones the pages already printed.
+
+**The sentence that makes the mark mean something.** A mark nobody explains is decoration, so the
+note under each table now says which, in that machine's own split. On the 55 where nothing in the
+table is measured: *"Each speed says how it was arrived at, and every one here is estimated from this
+machine's 1200 GB/s of memory bandwidth rather than taken from a published benchmark."* On the RTX
+4080, the only machine with both: *"one of the 12 here is measured, from a published benchmark run on
+this machine, and the rest are estimated from its 716.8 GB/s of memory bandwidth."*
+
+**One wording change that reading it rendered forced.** The model page's answer row first came out as
+*"182 tok/s estimated at 32k context"*, where *estimated at 32k* reads as the context the estimate was
+taken at rather than as the mark. It is *"at 32k context, 182 tok/s estimated"* now, so the mark ends
+the phrase the way it does everywhere else on the site.
+
+**The helper.** `speedWithBasis()` took a `ModelRow`, and an answer block holds a speed without the
+row it came from, so the body of it is `speedFrom(throughput)` now and `speedWithBasis()` is one line
+on top of that. The rounding the two share moved into one place rather than being written out twice.
+
+**The guard.** `checkSpeedBasis()` holds three claims: no table cell on any of the 261 pages prints a
+`tok/s` figure without saying how it was arrived at; no answer row on a machine or model page does
+either; and every machine page with a table says what the mark means. It prints `2052 speeds in
+tables and 110 in answer blocks say whether they were measured or estimated; 56 machine pages say
+what the mark means`. Prose is deliberately left alone — `/local-llm-vs-api-cost/` and the comparison
+ledes say their basis in their own words, and a pattern should not try to police a sentence.
+
+**Verified:** 372 tests, typecheck clean, the full `npm run build` including `build:functions`, and
+261 pages with every guard passing. **Five breaks proved the guard**, exit 1 each time: the machine
+table cell put back bare (661 speeds, naming five machines), the machine answer row (56), the model
+answer row (54), `/best/`'s cell (45), and the explaining sentence removed (56, naming the machines).
+Two new tests cover `speedFrom`: that it agrees with `speedWithBasis` on a row it can be given both
+ways, and that it rounds to a decimal below ten the way the pages print it. Read rendered out of
+`dist/` on an all-estimated machine, the one mixed machine, a discontinued card and a machine with no
+published price, plus two model pages and `/best/`.
+
+**One thing checked while here, so nobody chases it: the calculator is already right.** `src/render.ts`
+tags every row of its model list *measured*, *estimated* or *yours* beside the speed, and the
+assumptions panel names the basis and its source. The generated pages were the only place a speed
+printed bare.
+
+**Pushed to `main` as `e9c2b15`**, deploy run 216, green at 09:50 and published.
+
+**Both open pull requests were re-checked against this push, really merged rather than trusted to a
+clean `git merge-tree`.** PR #16 (`seo/cost-per-month`) merges clean: 382 tests, typecheck clean, 262
+pages with every guard passing, and `/cost-per-month/` passes the new guard as it stands. PR #17
+(`seo/home-h1`) merges clean: 374 tests, typecheck clean, 261 pages. The import list in
+`scripts/build-pages.ts` was the collision to expect — this run extended the line PR #16 has already
+extended twice — and this time the two additions landed on different lines of the block, so git had
+nothing to resolve. The two still do not merge cleanly into **each other**; that resolution is
+unchanged and is written at the top of this file and on both pull requests.
+
+**What to continue.** Nothing here is half-finished. Every remaining open item on the backlog is
+waiting on somebody else: the home page's 142 words is a design question for Ryan, the Q8 pages want
+Search Console, and the model watch's candidate wants figures only he can sign off. So the next run
+should expect to go looking with a measurement of its own, the way the last three did.
 
 ### 2026-09-19 — fifty machine pages opened with somebody else's paragraph
 
