@@ -2660,7 +2660,7 @@ function hardwarePage(hw: Hardware): string {
   const note = splitHardwareNote(hw.notes);
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="/best-gpu/">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="/best-gpu/">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
@@ -5572,6 +5572,52 @@ function checkPageDates() {
   );
 }
 
+/**
+ * A machine page's first paragraph is the sentence a search engine quotes and
+ * the first thing a reader gets, and it used to answer one question only: how
+ * much memory this machine has and what fits in it. Memory is the one figure
+ * two machines thousands of dollars apart can share, so the paragraph was
+ * character-identical to another page's on 50 of the 56, ten of them opening
+ * with the same words. What separates them is price and pay-back, and both
+ * were already on the page, in the answer block and in the description a
+ * search engine prints, but not in the paragraph above either.
+ *
+ * Three claims: every machine page opens with a paragraph, a machine whose
+ * pay-back can be computed names that pay-back and its own price in it, and no
+ * two machines open with the same words.
+ */
+function checkMachineLedes() {
+  const problems: string[] = [];
+  const seen = new Map<string, string>();
+  let priced = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    if (!paths.includes(path)) continue;
+    const lede = (meta.find((m) => m.path === path)?.html ?? '').match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1];
+    if (lede == null) {
+      problems.push(`the ${shortHardwareLabel(hw)} page opens with no paragraph`);
+      continue;
+    }
+    const view = hwViews.get(hw.id)!;
+    if (view.calc && hw.price_usd != null) {
+      priced += 1;
+      const verdict = lowerFirst(verdictLine(view));
+      if (!lede.includes(verdict))
+        problems.push(`the ${shortHardwareLabel(hw)} opens without the pay-back its own answer block prints, "${verdict}"`);
+      if (!lede.includes(fmtUsd(hw.price_usd)))
+        problems.push(`the ${shortHardwareLabel(hw)} opens without its own price, ${fmtUsd(hw.price_usd)}`);
+    }
+    const twin = seen.get(lede);
+    if (twin) problems.push(`the ${shortHardwareLabel(hw)} opens with the same paragraph as the ${twin}`);
+    else seen.set(lede, shortHardwareLabel(hw));
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} machine page${problems.length === 1 ? '' : 's'} do not open with an answer of their own`);
+  }
+  console.log(`  ${seen.size} machine pages open with a paragraph no other machine repeats, ${priced} of them naming that machine's own price and pay-back`);
+}
+
 checkMeta();
 checkLinks();
 checkFooter();
@@ -5585,6 +5631,7 @@ checkCardPrices();
 checkCardScope();
 checkCardRanking();
 checkMachineIndex();
+checkMachineLedes();
 checkTables();
 checkPairedColumns();
 checkArticles();
