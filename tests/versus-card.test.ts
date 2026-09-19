@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   chipStepPairs, clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
   generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
-  modelComparePath, modelPairs, modelVersusCard, rankedModels, versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
+  MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard, rankedModels,
+  versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
@@ -12,7 +13,7 @@ import {
 } from '../src/pagekit';
 import { defaultState } from '../src/state';
 import { fmtUsd } from '../src/format';
-import type { Dataset, Hardware } from '../src/types';
+import type { Dataset, Hardware, Model } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
 import throughput from '../data/throughput.json';
@@ -441,11 +442,61 @@ describe('the pairs the cards and the pages cut', () => {
 
   it('pairs each scored model with the next one down the leaderboard', () => {
     const ranked = rankedModels(data);
-    expect(modelPairs(data).length).toBe(ranked.length - 1);
-    for (const [a, b] of modelPairs(data)) {
-      expect(a.frontier_equivalent!.score!).toBeGreaterThanOrEqual(b.frontier_equivalent!.score!);
+    const gens = modelGenerationPairs(data);
+    const key = (a: Model, b: Model) => [a.id, b.id].sort().join('|');
+    const ladder = new Set<string>();
+    for (let i = 0; i + 1 < ranked.length; i++) ladder.add(key(ranked[i], ranked[i + 1]));
+    // the ladder is cut first and a pair is written once, so the pages are the union of
+    // the two rules rather than the sum: one generation pair is also a rung of the ladder
+    const pairs = modelPairs(data);
+    expect(pairs.length).toBe(new Set([...ladder, ...gens.map(([a, b]) => key(a, b))]).size);
+    expect(pairs.slice(0, ranked.length - 1).map(([a, b]) => key(a, b))).toEqual([...ladder]);
+    for (const [a, b] of pairs) {
       expect(a.display_name).not.toBe(b.display_name);
+      // a rung of the ladder is always the stronger side first; a generation pair is the
+      // older side first, and the newer one is usually — but not always — the stronger
+      if (!gens.some(([x, y]) => key(x, y) === key(a, b)))
+        expect(a.frontier_equivalent!.score!).toBeGreaterThanOrEqual(b.frontier_equivalent!.score!);
     }
+  });
+
+  it('sets each last-generation model against the current one of its family nearest it in size', () => {
+    const gens = modelGenerationPairs(data);
+    expect(gens.length).toBeGreaterThan(0);
+    const isMoe = (m: Model) => m.active_params_b != null && m.active_params_b < m.params_b;
+    const ranked = rankedModels(data);
+
+    for (const [old, now] of gens) {
+      // the older side first, because that is the model the reader is already running
+      expect(old.generation).toBe('legacy');
+      expect(now.generation ?? 'current').toBe('current');
+      expect(old.family).toBe(now.family);
+      // both sides are on the leaderboard, so a second quantisation of one model never
+      // gets a near-duplicate of its own page
+      expect(ranked.map((m) => m.id)).toContain(old.id);
+      expect(ranked.map((m) => m.id)).toContain(now.id);
+      // the same shape, since a mixture of experts and a dense model of the same size on
+      // disk are not the same swap, and close enough in size to be one at all
+      expect(isMoe(now)).toBe(isMoe(old));
+      expect(Math.max(old.params_b, now.params_b) / Math.min(old.params_b, now.params_b)).toBeLessThanOrEqual(MODEL_GENERATION_SIZE_RATIO);
+      // and nothing current of that family and shape is nearer in size than the model
+      // the pair names, which is the whole of why these two are set against each other
+      const gap = Math.abs(now.params_b - old.params_b);
+      for (const c of ranked)
+        if (c.family === old.family && (c.generation ?? 'current') === 'current' && isMoe(c) === isMoe(old))
+          expect(Math.abs(c.params_b - old.params_b)).toBeGreaterThanOrEqual(gap);
+    }
+
+    // one model per pair on the older side: a model has one current model nearest it,
+    // not several, so no model page carries two of these
+    expect(new Set(gens.map(([old]) => old.id)).size).toBe(gens.length);
+
+    // and the families the rule cannot reach honestly are left alone: DeepSeek's current
+    // model is four times the size of the distils before it, and no page pretends that is
+    // a swap
+    const paired = new Set(gens.map(([old]) => old.id));
+    const legacy = ranked.filter((m) => m.generation === 'legacy');
+    expect(legacy.length).toBeGreaterThan(paired.size);
   });
 
   it('addresses a card from the page it belongs to', () => {

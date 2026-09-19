@@ -377,11 +377,69 @@ export function headToHeadGroups(
   ].filter((g) => g.links.length > 0);
 }
 
-/** Every model pair that has a page: each model against the next one down the leaderboard. */
+/**
+ * How far apart in size two models may be and still be the same decision. Beyond it the
+ * nearest current model in a family is not a swap at all: the only current DeepSeek here
+ * is four times the size of the distils it followed, and nothing that holds one holds the
+ * other.
+ */
+export const MODEL_GENERATION_SIZE_RATIO = 1.5;
+
+/** Whether a model's parameters are all active, or only a fraction of them per token. */
+const isMoe = (m: Model) => m.active_params_b != null && m.active_params_b < m.params_b;
+
+/**
+ * Each last-generation model against the current model of its own family nearest it in
+ * size, older side first. The ladder below pairs a model with the next one down the
+ * index, which is the choice you face once you know what your machine holds. This is the
+ * other question people ask and the index never puts the two sides of it together,
+ * because a year of work separates them on it: the model you are running now against the
+ * one that came after it.
+ *
+ * Two conditions keep the pair a real swap. Both sides are the same shape, dense against
+ * dense or mixture-of-experts against mixture-of-experts, because a 3B-active MoE and a
+ * dense 30B are the same size on disk and nothing else alike. And neither may be more
+ * than half again the size of the other, which is what stops a family whose current model
+ * is in another weight class from making a page nobody's machine could act on.
+ */
+export function modelGenerationPairs(data: Dataset): [Model, Model][] {
+  const ranked = rankedModels(data);
+  const out: [Model, Model][] = [];
+  for (const old of ranked) {
+    if (old.generation !== 'legacy') continue;
+    const now = ranked
+      .filter((c) => c.family === old.family && (c.generation ?? 'current') === 'current' && isMoe(c) === isMoe(old))
+      .sort(
+        (x, y) =>
+          Math.abs(x.params_b - old.params_b) - Math.abs(y.params_b - old.params_b) ||
+          (y.frontier_equivalent?.score ?? 0) - (x.frontier_equivalent?.score ?? 0) ||
+          x.id.localeCompare(y.id),
+      )[0];
+    if (!now) continue;
+    if (Math.max(old.params_b, now.params_b) / Math.min(old.params_b, now.params_b) > MODEL_GENERATION_SIZE_RATIO) continue;
+    out.push([old, now]);
+  }
+  return out;
+}
+
+/**
+ * Every model pair that has a page, in the order the build writes them: each model
+ * against the next one down the leaderboard, then each last-generation model against the
+ * current one of its family nearest it in size. The ladder is cut first, so a pair both
+ * rules reach keeps the address it has always had, and a pair is written once whichever
+ * way round the rules reach it.
+ */
 export function modelPairs(data: Dataset): [Model, Model][] {
   const r = rankedModels(data);
   const out: [Model, Model][] = [];
-  for (let i = 0; i + 1 < r.length; i++) out.push([r[i], r[i + 1]]);
+  const seen = new Set<string>();
+  const add = (a: Model, b: Model) => {
+    if (seen.has(`${a.id}|${b.id}`) || seen.has(`${b.id}|${a.id}`)) return;
+    seen.add(`${a.id}|${b.id}`);
+    out.push([a, b]);
+  };
+  for (let i = 0; i + 1 < r.length; i++) add(r[i], r[i + 1]);
+  for (const [a, b] of modelGenerationPairs(data)) add(a, b);
   return out;
 }
 

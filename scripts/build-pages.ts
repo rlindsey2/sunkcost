@@ -15,7 +15,7 @@ import {
   cardScopeNote, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct, holdHyphens, indefiniteArticle,
   kvWorking,
   longestContext, lowerFirst, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines,
-  machinesThatHold, meetAtShorterContext, modelLabel, modelVerdict, nearestCompleteComputer, numberWord, otherQuantisations, pageShell,
+  machinesThatHold, meetAtShorterContext, modelGenerationSection, modelLabel, modelVerdict, nearestCompleteComputer, numberWord, otherQuantisations, pageShell,
   powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb, priceWithScope, priceWithScopeText,
   rowFor,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
@@ -25,7 +25,7 @@ import {
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
-  modelComparePath, modelPairs, sameSiliconPairs, versusCardPath,
+  MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, sameSiliconPairs, versusCardPath,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, GPU_CARD, LEADERBOARD_CARD, MEMORY_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
@@ -1374,6 +1374,139 @@ function checkFamilyReach() {
 }
 
 /**
+ * The head-to-heads between a model and the current one of its family nearest it in
+ * size. Every other model comparison on this site is two models a reader is choosing
+ * between; these are two a reader already owns one of, so the page carries a section
+ * the others do not and this holds it to the data.
+ *
+ * Six claims, and the reason each is here is that the opposite claim is just as easy to
+ * write. The pair is really one family, one shape and one generation apart, and no
+ * current model of that family and shape is nearer in size than the one the page names,
+ * because "nearest" is the whole of why these two are on a page together. The sizes and
+ * the score are the data's. The memory sentence says less, more or the same in the
+ * direction the figures actually fall — a newer model can be larger on disk and still
+ * ask less of the machine, and it may be the other way round. The machine counts are
+ * recomputed rather than read from the sentence that printed them. And both models'
+ * pages name the match-up in the words that say which side of it they are.
+ */
+function checkModelGenerations() {
+  const problems: string[] = [];
+  const heading = '<h2>What the newer model changes</h2>';
+  const pairs = modelGenerationPairs(data);
+  const considered = machinesConsidered(data).length;
+  const isMoe = (m: Model) => m.active_params_b != null && m.active_params_b < m.params_b;
+  const needAt = (m: Model) => rowFor(computeView({ ...defaultState(data), model: m.id }, data), m)?.fit.needGb ?? null;
+  let lighter = 0;
+  for (const [old, now] of pairs) {
+    const path = modelComparePath(old, now);
+    const html = meta.find((m) => m.path === path)?.html ?? '';
+    if (!html) {
+      problems.push(`${path} is a model generation pair with no page`);
+      continue;
+    }
+    const section = html.split(heading)[1]?.split('<h2')[0] ?? '';
+    if (!section) {
+      problems.push(`${path} is a generation pair and does not say what the newer model changes`);
+      continue;
+    }
+    const text = unesc(section);
+
+    if (old.generation !== 'legacy' || (now.generation ?? 'current') !== 'current' || old.family !== now.family || isMoe(old) !== isMoe(now))
+      problems.push(`${path} is not one family, one shape and one generation apart`);
+    const gap = Math.abs(now.params_b - old.params_b);
+    const nearer = data.models.filter(
+      (c) =>
+        c.family === old.family &&
+        (c.generation ?? 'current') === 'current' &&
+        isMoe(c) === isMoe(old) &&
+        c.frontier_equivalent?.score != null &&
+        Math.abs(c.params_b - old.params_b) < gap,
+    );
+    if (nearer.length)
+      problems.push(`${path} calls ${now.display_name} the current ${old.family} nearest ${old.display_name} in size, where ${nearer[0].display_name} is nearer`);
+    const ratio = Math.max(old.params_b, now.params_b) / Math.min(old.params_b, now.params_b);
+    if (ratio > MODEL_GENERATION_SIZE_RATIO)
+      problems.push(`${path} sets ${fmtNum(old.params_b, 1)}B against ${fmtNum(now.params_b, 1)}B, which is not a swap anybody makes`);
+    const sizes =
+      fmtNum(now.params_b, 1) === fmtNum(old.params_b, 1)
+        ? `of the same size, ${fmtNum(now.params_b, 1)}B`
+        : `nearest it in size, ${fmtNum(now.params_b, 1)}B against ${fmtNum(old.params_b, 1)}B`;
+    if (!text.includes(sizes)) problems.push(`${path} does not say the sizes the data gives: ${sizes}`);
+
+    const [so, sn] = [old.frontier_equivalent?.score ?? null, now.frontier_equivalent?.score ?? null];
+    if (so != null && sn != null) {
+      const claim =
+        sn > so
+          ? `scores ${sn} where ${old.display_name} scores ${so}`
+          : sn === so
+            ? `puts both at ${sn}`
+            : `scores ${sn}, below ${old.display_name}'s ${so}`;
+      if (!text.includes(claim)) problems.push(`${path} does not place the two on the index as the data does: ${claim}`);
+      if (sn <= so && text.includes(`scores ${sn} where`))
+        problems.push(`${path} reads as if ${now.display_name} scores higher, where the data does not say so`);
+    }
+
+    const [needOld, needNow] = [needAt(old), needAt(now)];
+    if (needOld != null && needNow != null) {
+      const same = fmtGb(needOld) === fmtGb(needNow);
+      const asks = same ? 'Both ask the same of the machine' : needNow < needOld ? 'It asks less of the machine' : 'It asks more of the machine';
+      if (!text.includes(asks)) problems.push(`${path} does not say what ${now.display_name} asks of the machine: ${asks}`);
+      for (const wrong of ['It asks less of the machine', 'It asks more of the machine', 'Both ask the same of the machine'].filter((w) => w !== asks))
+        if (text.includes(wrong)) problems.push(`${path} says "${wrong}" where the data has ${fmtGb(needNow)} against ${fmtGb(needOld)}`);
+      if (!text.includes(fmtGb(needNow)) || !text.includes(fmtGb(needOld)))
+        problems.push(`${path} does not print both memory figures, ${fmtGb(needNow)} and ${fmtGb(needOld)}`);
+      if (!same && old.weights_gb != null && now.weights_gb != null) {
+        const cache = (m: Model, n: number) => fmtGb(n - m.weights_gb!);
+        if (!text.includes(`the cache at that window is ${cache(now, needNow)} against ${cache(old, needOld)}`))
+          problems.push(`${path} does not split the difference into weights and cache the way the data does`);
+      }
+      if (needNow < needOld) lighter++;
+    }
+
+    const [ro, rn] = [runnersFor(old, data), runnersFor(now, data)];
+    if (ro.length && rn.length) {
+      const together =
+        rn.length === 1
+          ? `One of the ${considered} machines priced here runs either of them`
+          : rn.length === considered
+            ? `Every one of the ${considered} machines priced here runs both`
+            : `The same ${rn.length} of the ${considered} machines priced here run both`;
+      const counts =
+        ro.length === rn.length && ro[0].hw.id === rn[0].hw.id
+          ? together
+          : `${rn.length} of the ${considered} machines priced here run it, against ${ro.length} for ${old.display_name}`;
+      if (!text.includes(counts)) problems.push(`${path} does not count the machines that run each the way the data does: ${counts}`);
+      if (!section.includes(`href="/hardware/${esc(rn[0].hw.id)}/"`))
+        problems.push(`${path} names no machine to run ${now.display_name} on`);
+    }
+
+    if (old.max_context_tokens && now.max_context_tokens && old.max_context_tokens !== now.max_context_tokens) {
+      if (!text.includes(ctxLabel(now.max_context_tokens)) || !text.includes(ctxLabel(old.max_context_tokens)))
+        problems.push(`${path} does not say the two context ceilings, ${ctxLabel(now.max_context_tokens)} and ${ctxLabel(old.max_context_tokens)}`);
+    }
+
+    // each side's own page, which is where a reader arrives from, says which side it is
+    for (const [self, other, word] of [[old, now, 'current'], [now, old, 'last-generation']] as const) {
+      const page = meta.find((m) => m.path === `/models/${self.id}/`)?.html ?? '';
+      const want = `<a href="${esc(path)}">vs ${esc(other.display_name)}</a>, the ${word} ${esc(self.family)} nearest it in size`;
+      if (!page.includes(want)) problems.push(`/models/${self.id}/ does not name ${path} as the ${word} ${self.family} nearest it in size`);
+    }
+  }
+
+  // and nothing else says it: the section answers a question only these pairs raise
+  const wanted = new Set(pairs.map(([old, now]) => modelComparePath(old, now)));
+  for (const page of meta)
+    if (page.html.includes(heading) && !wanted.has(page.path))
+      problems.push(`${page.path} says what a newer model changes and is not a generation pair`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model generation head-to-head${problems.length === 1 ? '' : 's'} do not hold to the data`);
+  }
+  console.log(`  ${pairs.length} head-to-heads between a model and the current one of its family nearest it in size; ${lighter} of them ask less memory at ${Math.round(data.defaults.context.default_tokens / 1024)}k than the model they follow`);
+}
+
+/**
  * The leaderboard's "Cheapest machine that runs it" column names a machine and its
  * price, and the price is the way into the calculator on that pair — the same rule the
  * machine and model pages use, where the figure a cell prints is the link. A price that
@@ -1542,14 +1675,36 @@ function headToHeadNote(hw: Hardware): string {
   return `<p class="note">${sentences.join(' ')} There are <a href="/compare/">${machineMatchUps} machine match-ups on the site</a>.</p>`;
 }
 
-// The same thing for models. A pair is always [higher, lower] on the index, so
-// each model knows whether the one it is set against is the rung above it or
-// the rung below, and its page can say which.
-const modelHeadToHeads = new Map<string, { href: string; other: Model; side: 'above' | 'below' }[]>();
+// The same thing for models, and here the two rules have to be told apart. A ladder pair
+// is always [higher, lower] on the index, so each model knows whether the one it is set
+// against is the rung above it or the rung below. A generation pair is always [older,
+// current], and neither word describes it: the two are a year apart in the same family,
+// not two rungs of one list, and the page says so in its own words.
+const modelGenerations = new Map<string, [Model, Model]>();
+for (const [old, now] of modelGenerationPairs(data)) modelGenerations.set(modelComparePath(old, now), [old, now]);
+
+type ModelMatchUp = { href: string; other: Model } & (
+  | { kind: 'ladder'; side: 'above' | 'below' }
+  // 'above' and 'below' name where the other model sits; 'is-older' and 'is-current'
+  // name which side of the pair this model is, since neither is above the other on
+  // anything the reader can see.
+  | { kind: 'generation'; side: 'is-older' | 'is-current' }
+);
+const modelHeadToHeads = new Map<string, ModelMatchUp[]>();
 for (const [a, b] of modelPairs(data)) {
   const href = modelComparePath(a, b);
-  for (const [self, other, side] of [[a, b, 'below'], [b, a, 'above']] as const)
-    modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), { href, other, side }]);
+  const gen = modelGenerations.get(href);
+  const sides: ModelMatchUp[] = gen
+    ? [
+        { href, other: gen[1], kind: 'generation', side: 'is-older' },
+        { href, other: gen[0], kind: 'generation', side: 'is-current' },
+      ]
+    : [
+        { href, other: b, kind: 'ladder', side: 'below' },
+        { href, other: a, kind: 'ladder', side: 'above' },
+      ];
+  const selves = gen ? [gen[0], gen[1]] : [a, b];
+  selves.forEach((self, i) => modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), sides[i]]));
 }
 
 /* ------------------------------ leaderboard ------------------------------ */
@@ -1997,17 +2152,26 @@ function modelPage(m: Model): string {
   // Machine pages have carried their match-ups from the start; these were
   // reachable only from the leaderboard's last column.
   const versus = modelHeadToHeads.get(m.id) ?? [];
-  const above = versus.find((v) => v.side === 'above');
-  const below = versus.find((v) => v.side === 'below');
+  const above = versus.find((v) => v.kind === 'ladder' && v.side === 'above');
+  const below = versus.find((v) => v.kind === 'ladder' && v.side === 'below');
   const versusLink = (v: { href: string; other: Model }) => `<a href="${esc(v.href)}">vs ${esc(v.other.display_name)}</a>`;
-  const versusLine =
+  const ladderLine =
     above && below
-      ? `<p class="note">Head to head with its neighbours on the leaderboard: ${versusLink(above)} above it, ${versusLink(below)} below.</p>`
+      ? `Head to head with its neighbours on the leaderboard: ${versusLink(above)} above it, ${versusLink(below)} below.`
       : below
-        ? `<p class="note">Head to head: ${versusLink(below)}, the next model down the leaderboard.</p>`
+        ? `Head to head: ${versusLink(below)}, the next model down the leaderboard.`
         : above
-          ? `<p class="note">Head to head: ${versusLink(above)}, the next model up the leaderboard.</p>`
+          ? `Head to head: ${versusLink(above)}, the next model up the leaderboard.`
           : '';
+  // The other match-up a model can be in, and the leaderboard is the reason it needs its
+  // own sentence: a model and the one that came after it in the same family are a year
+  // apart on the index, so they are never neighbours on it and "above" or "below" would
+  // say nothing about why the two are on a page together.
+  const gen = versus.find((v) => v.kind === 'generation');
+  const genLine = !gen
+    ? ''
+    : `${ladderLine ? 'Also head to head' : 'Head to head'}: ${versusLink(gen)}, the ${gen.side === 'is-older' ? 'current' : 'last-generation'} ${esc(m.family)} nearest it in size.`;
+  const versusLine = ladderLine || genLine ? `<p class="note">${[ladderLine, genLine].filter(Boolean).join(' ')}</p>` : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
 <p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}</p>
@@ -3442,6 +3606,10 @@ ${
 /* ------------------------- model head-to-heads ------------------------- */
 
 function modelComparePage(a: Model, b: Model): string {
+  // The two rules that cut these pairs ask different questions, and only one of them
+  // needs answering in words: on a generation pair the reader already runs one of the
+  // two, so the page owes them what swapping it changes.
+  const generation = modelGenerations.get(modelComparePath(a, b)) ?? null;
   const ra = runnersFor(a, data);
   const rb = runnersFor(b, data);
   const shared = cheapestRunsBoth(a, b, ra, rb);
@@ -3716,7 +3884,7 @@ ${capRows}
 </table>
 <p><a class="cta" href="${esc(ctaA.href)}">Run ${esc(ctaA.text)}</a> · <a href="${esc(ctaB.href)}">or ${esc(ctaB.text)}</a></p>
 <p class="note">Ratings are coarse on purpose: they say what a model is usable for, not where it places to the decimal.</p>
-${sideBySide}
+${generation ? modelGenerationSection(generation[0], generation[1], data) : ''}${sideBySide}
 ${usageSection}
 ${machinesSection}
 <h2>The assumptions behind both columns</h2>
@@ -3851,7 +4019,7 @@ ${stack(`<table class="board">
 </table>`, { fig: 3, labels: { 4: 'Both speeds' } })}
 
 <h2>Model against model</h2>
-<p>Each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds. The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
+<p>Two kinds of match-up: each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds; and each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it. The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Score</th><th>Weights</th><th>Cheapest machine that runs both</th><th></th></tr></thead>
 <tbody>${modelRows}</tbody>
@@ -3895,8 +4063,10 @@ for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
 write('/compare/', compareIndex());
 for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), comparePage(a, b));
 
-// model head-to-heads: each model against the next one down the leaderboard,
-// which is the comparison someone actually has to make
+// model head-to-heads: each model against the next one down the leaderboard, which is
+// the comparison someone choosing has to make, and each last-generation model against
+// the current one of its family nearest it in size, which is the one someone already
+// running it asks
 for (const [a, b] of modelPairs(data)) write(modelComparePath(a, b), modelComparePage(a, b));
 
 // A page's lastmod is the day its own words last changed, read out of
@@ -4603,6 +4773,7 @@ checkShorterMachines();
 checkMissedMachines();
 checkHiddenModels();
 checkFamilyReach();
+checkModelGenerations();
 checkLeaderboardLinks();
 checkBestGpu();
 checkNotes();

@@ -14,8 +14,8 @@
       "changed": null
     },
     "/compare/": {
-      "hash": "0e1b50d5ba95f0b6",
-      "changed": null
+      "hash": "b26208c5ebd08e63",
+      "changed": "2026-09-19"
     },
     "/compare/amd-radeon-ai-pro-r9700-32gb-vs-nvidia-geforce-rtx-3060-12gb/": {
       "hash": "93389863d37ee948",
@@ -64,6 +64,14 @@
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
       "hash": "e211b47513ac2a54",
       "changed": null
+    },
+    "/compare/gemma-3-12b-q4-vs-gemma-4-12b-q4/": {
+      "hash": "aab4a6a26c01e9e8",
+      "changed": "2026-09-19"
+    },
+    "/compare/gemma-3-27b-q4-vs-gemma-4-31b-q4/": {
+      "hash": "917b59a556d4a622",
+      "changed": "2026-09-19"
     },
     "/compare/gemma-3-27b-q4-vs-ministral-3-8b-q4/": {
       "hash": "cde52b1b55b7b327",
@@ -357,6 +365,10 @@
       "hash": "ae76a26284f05173",
       "changed": null
     },
+    "/compare/mistral-small-3-2-24b-q4-vs-devstral-small-2-24b-q4/": {
+      "hash": "2d484a5835373cd7",
+      "changed": "2026-09-19"
+    },
     "/compare/mistral-small-3-2-24b-q4-vs-qwen3-14b-q4/": {
       "hash": "f4d95e78c8307a37",
       "changed": null
@@ -457,13 +469,21 @@
       "hash": "c77891d9c807cabd",
       "changed": null
     },
+    "/compare/qwen3-235b-a22b-2507-q4-vs-qwen3-8-flash-next-q4/": {
+      "hash": "cd516195a1ed8d9d",
+      "changed": "2026-09-19"
+    },
     "/compare/qwen3-30b-a3b-2507-q4-vs-qwen3-coder-30b-a3b-q4/": {
-      "hash": "b9b287608452e9c3",
-      "changed": null
+      "hash": "1175f751e207b4ce",
+      "changed": "2026-09-19"
     },
     "/compare/qwen3-32b-q4-vs-mistral-small-3-2-24b-q4/": {
       "hash": "6088068c58505e27",
       "changed": null
+    },
+    "/compare/qwen3-32b-q4-vs-qwen3-8-27b-q4/": {
+      "hash": "f60482f04067de65",
+      "changed": "2026-09-19"
     },
     "/compare/qwen3-5-122b-a10b-ud-q4-vs-gemma-4-31b-q4/": {
       "hash": "f8205bef9eaf6b1a",
@@ -496,6 +516,10 @@
     "/compare/qwen3-8b-q4-vs-gemma-3-27b-q4/": {
       "hash": "69d3d57f219c8014",
       "changed": null
+    },
+    "/compare/qwen3-8b-q4-vs-qwen3-5-9b-q4/": {
+      "hash": "8476f3d7460dfe0b",
+      "changed": "2026-09-19"
     },
     "/compare/qwen3-coder-30b-a3b-q4-vs-qwen3-coder-next-q4/": {
       "hash": "d885ab0080a82f7b",
@@ -814,19 +838,19 @@
       "changed": "2026-09-19"
     },
     "/models/devstral-small-2-24b-q4/": {
-      "hash": "bb4836d452ee9563",
+      "hash": "9e7a65d5c3d41fad",
       "changed": "2026-09-19"
     },
     "/models/gemma-3-12b-q4/": {
-      "hash": "eccfaec171224c7c",
+      "hash": "c2c7a25522f87147",
       "changed": "2026-09-19"
     },
     "/models/gemma-3-27b-q4/": {
-      "hash": "e0e028798620f117",
+      "hash": "8b2259dd4190f052",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-12b-q4/": {
-      "hash": "36d9be9e44dbf524",
+      "hash": "4a50793b77588f80",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-26b-a4b-q4/": {
@@ -834,7 +858,7 @@
       "changed": "2026-09-19"
     },
     "/models/gemma-4-31b-q4/": {
-      "hash": "5a8663453548a4e2",
+      "hash": "1e08e55e8f082454",
       "changed": "2026-09-19"
     },
     "/models/gemma-4-e4b-q4/": {
@@ -930,7 +954,7 @@
       "changed": "2026-09-19"
     },
     "/models/mistral-small-3.2-24b-q4/": {
-      "hash": "c0467ed2d2b8a2b5",
+      "hash": "7a58b4e937665961",
       "changed": "2026-09-19"
     },
     "/models/mistral-small-4-119b-q4/": {
@@ -958,15 +982,15 @@
       "changed": "2026-09-19"
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "5639aea2427e6b53",
+      "hash": "7324b6f125c9bc5f",
       "changed": "2026-09-19"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
-      "hash": "2b9fc813a4575c3d",
+      "hash": "df51e0338325f437",
       "changed": "2026-09-19"
     },
     "/models/qwen3-32b-q4/": {
-      "hash": "340797a623612037",
+      "hash": "337bbab4ead414a7",
       "changed": "2026-09-19"
     },
     "/models/qwen3-32b-q8/": {
@@ -974,11 +998,11 @@
       "changed": "2026-09-19"
     },
     "/models/qwen3-8b-q4/": {
-      "hash": "8f1aad3e18cc2eae",
+      "hash": "dad57fa2ad69637d",
       "changed": "2026-09-19"
     },
     "/models/qwen3-coder-30b-a3b-q4/": {
-      "hash": "c92e37efb66d8a7e",
+      "hash": "93f73f4e34d3c2b3",
       "changed": "2026-09-19"
     },
     "/models/qwen3-coder-next-q4/": {
@@ -994,7 +1018,7 @@
       "changed": "2026-09-19"
     },
     "/models/qwen3.5-9b-q4/": {
-      "hash": "9bf711ac7616babd",
+      "hash": "b3817924e7a38ca3",
       "changed": "2026-09-19"
     },
     "/models/qwen3.6-27b-q4/": {
@@ -1006,11 +1030,11 @@
       "changed": "2026-09-19"
     },
     "/models/qwen3.8-27b-q4/": {
-      "hash": "fd65926654e732be",
+      "hash": "af7259c4196009e9",
       "changed": "2026-09-19"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "3a386214a03bbc45",
+      "hash": "2efc8819c9fe422f",
       "changed": "2026-09-19"
     },
     "/models/spark-x2.5-4b-q4/": {
