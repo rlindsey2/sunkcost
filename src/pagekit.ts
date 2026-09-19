@@ -521,6 +521,86 @@ export function anchorHeadings(html: string): string {
   });
 }
 
+/**
+ * How many sections a page needs before a line of jumps into them is worth the
+ * row it takes. Below four, the headings are on the screen the reader is
+ * already looking at.
+ */
+export const JUMP_MIN_SECTIONS = 4;
+
+/**
+ * A page body with a line of jumps into its own sections, where it should carry
+ * one.
+ *
+ * A reader from a search result does not arrive at the top of a page. They
+ * arrive at whatever matched what they typed, and then have to work out which of
+ * the sections below holds the rest of the answer. A search engine can offer a
+ * jump straight into a section of a result only where the page itself offers
+ * one. Both want the same line, and until now `/best/` was the only page on this
+ * site that had it.
+ *
+ * It is not worth having everywhere, and the reason is what the headings say.
+ * Where a page is about one machine or one model, every heading names it, so a
+ * line built from those headings prints that name three times in a row: the
+ * reader's own search term sold back to them, which is the keyword stuffing this
+ * site does not do. Where the headings name different things, the same line is a
+ * contents page.
+ *
+ * So the cut is two counts the build takes for itself. Four sections or more,
+ * and at most one heading repeating a name the page's own `h1` already carries.
+ * The head-to-heads pass, because their four headings name the pair once between
+ * them; the machine and model pages do not. A page that writes its own line, the
+ * way `/best/` shortens its usage bands, keeps the one it wrote.
+ *
+ * The line goes above the first section rather than under the lede, because the
+ * top of the page is the answer and a contents line in front of it pushes the
+ * answer down.
+ */
+export function addJumpLine(html: string, names: readonly string[]): string {
+  if (html.includes('Jump to:')) return html;
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+  if (!h1) return html;
+  const sections = [...html.matchAll(/<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => ({ id: m[1], heading: m[2] }));
+  if (sections.length < JUMP_MIN_SECTIONS) return html;
+  const subject = names.filter((n) => n && h1.includes(n));
+  if (sections.filter((s) => subject.some((n) => s.heading.includes(n))).length > 1) return html;
+  const line = `<p class="note">Jump to: ${sections
+    .map((s) => `<a href="#${s.id}">${s.heading.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}</a>`)
+    .join(' · ')}</p>`;
+  // In front of the first section, and in front of whatever wraps it, so the
+  // line belongs to the page rather than to the section it points into.
+  const at = html.search(/(?:<section\b[^>]*>\s*)?<h2 id="/);
+  return at < 0 ? html : `${html.slice(0, at)}${line}\n${html.slice(at)}`;
+}
+
+/**
+ * The address of one section of one page, built from that section's own heading.
+ *
+ * A link that names a section's subject should land on the section rather than
+ * the top of the page it is on. Both ends of such a link are a function of the
+ * same words — the heading's — so the link is written from the heading rather
+ * than from a hand-typed id, the way `anchoredHeading` writes the heading
+ * itself. Reword the heading and the two still agree; move the section to
+ * another page and `checkSectionLinks` in the build stops it, because the id
+ * will not be there to land on.
+ */
+export function sectionLink(path: string, heading: string): string {
+  return `${path}#${headingSlug(heading)}`;
+}
+
+/**
+ * The sections other pages link to by name. Each entry is the heading the build
+ * writes on that page, kept here so a reworded heading is one edit rather than
+ * a hunt through the emitters.
+ */
+export const SECTIONS = {
+  machineMatchUps: sectionLink('/compare/', 'Machine against machine'),
+  modelMatchUps: sectionLink('/compare/', 'Model against model'),
+  cardsSideBySide: sectionLink('/best-gpu/', 'Every card here, side by side'),
+  weightsAndCache: sectionLink('/how-much-memory/', 'Where the cache figure comes from'),
+  millionTokens: sectionLink('/local-llm-vs-api-cost/', 'A million tokens, model by model'),
+} as const;
+
 export function calcLink(state: Partial<State>, data: Dataset): string {
   return `/?${serializeState({ ...defaultState(data), ...state })}`;
 }
@@ -1322,7 +1402,7 @@ export function cardScopeNote(machines: Hardware[], rankedIn?: Dataset): string 
  * what the reader finds on the other end of the link.
  */
 export function cardRankingLine(data: Dataset): string {
-  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`;
+  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="${SECTIONS.cardsSideBySide}">ranked by what each one holds</a>.`;
 }
 
 /**

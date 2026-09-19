@@ -54,6 +54,12 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `/cost-per-month/` and main's new machine-index link on 56 pages. `git merge-tree` against
       `main` at `76246da` now reports no conflict. Nothing about the page changed; it is the same
       pull request, still waiting on you.
+      **It conflicted again at 15:47 on 2026-09-19 and is merged clean again**, as `f1d02ce`. Same
+      file, same line, same shape: `main`'s heading anchors and this branch's monthly-cost helpers
+      both extended the import list at the head of `scripts/build-pages.ts`. Both kept by hand, and
+      `seo/page-dates.json` rebuilt rather than chosen, which is the rule that already stood on this
+      pull request. Verified on the merged tree: 406 tests, typecheck clean, 308 pages with every
+      guard passing. GitHub reports it `clean`. Nothing about the page changed.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
@@ -592,19 +598,50 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       `index.html`, which is the standing rule. Worth doing when the two open pull requests are
       settled rather than queued behind them.
 
-- [ ] **One page on this site can be linked to by section, and no heading anywhere can.** Measured
-      2026-09-19 over all 307 generated pages: exactly one anchor inside `<main>` on the whole site,
-      and it is `/best/`, whose five usage bands are `id="u-50k"` and so on. Not one of the 430
-      headings on the machine and model pages carries an `id`, and nor does any other heading here.
-      Two things that costs, both small: another site linking to *what the Framework Desktop, 128GB
-      runs* has to link the whole page, and Google can offer no jump link into a section from a
-      search result — the feature the headings renamed this morning would feed. The change is a slug
-      on each `<h2>` in `scripts/build-pages.ts`, so it is a push rather than a pull request.
-      **The reason it is written down rather than done** is the sitemap. An `id` changes no word a
-      visitor reads, and `seo/page-dates.json` fingerprints the markup, so adding them re-dates all
-      307 pages as having changed on the day a maintainer added an attribute, which is exactly the
-      claim that ledger was built to stop. Worth doing on a day those pages have changed anyway, or
-      folded into a change that earns the date on its own.
+- [x] **One page on this site could be linked to by section, and no heading anywhere could.**
+      Done 2026-09-19, pushed as `e932be3`. All 1,177 section headings across the 307 pages carry
+      the id their own words slug to, and the five anchors on `/best/` are no longer the only ones
+      on the site. The sitemap objection that parked this item was void on the day it was taken:
+      every one of the 307 pages had already changed today, so 307 hashes moved and **no date
+      moved**. `/best-gpu/`, which had never carried a recorded date at all, gained one.
+      `checkHeadingAnchors()` holds four claims and the run entry below has the four breaks that
+      proved them, plus the measurement that showed no word a visitor reads changed.
+      **What it deliberately leaves for the next run, so nobody reads it as a gap.** The anchors
+      exist and nothing yet points at them; that is the item below. And `h2` is the whole job, not
+      half of it: the 307 pages carry 307 `h1`s, 1,177 `h2`s and **no `h3` at all**, so there is no
+      second level of heading waiting for the same treatment.
+
+- [x] **Half of it is done: the links that name a section now land on it.** Done 2026-09-19,
+      pushed as `09911ca`. 448 links on 303 pages, ten of them in the source. The cut is the link
+      whose own words name one section and where that section is the whole answer, and the measured
+      thing that set it is worth keeping: **not one internal link on this site has a heading for its
+      text.** All 8,930 of them are written as prose, so a rule matching link text against the
+      target's headings would have re-pointed nothing. What the site does have is ten sentences that
+      name a section's subject in their own words, and they were carrying 448 of the links.
+      `sectionLink()` writes the address out of the section's own heading, the way `anchoredHeading()`
+      writes the heading, and `checkSectionLinks()` holds three claims across every page. The run
+      entry below has the figures, the four breaks and the three links the cut deliberately leaves
+      pointing at the top of a page.
+
+- [ ] **The other half: 1,172 sections still have nothing pointing at them, and the *Jump to* line
+      is what would change that.** `/best/` carries one, above its five usage bands, and it is still
+      the only page on the site that does. A reader from a search lands mid-page and a search result
+      can offer a jump into a section only where the page itself offers one. **What the run of
+      2026-09-19 found before leaving this half alone**, so it is not re-derived: a jump line built
+      from the headings themselves reads as keyword stuffing on the two biggest page types, because
+      yesterday's run made every heading name its own subject. A model page would open *Jump to: How
+      good is Gemma 4 31B, really? · What Gemma 4 31B costs either way · Machines that run Gemma 4
+      31B · The specifics* — the model named three times in one line. The machine pages are the same
+      shape and carry only three sections besides. **Where it reads clean is the 190 head-to-heads**,
+      whose four headings name the pair once between them (*Side by side on Gemma 4 12B · How much
+      use it takes to pay back · What the extra memory buys · The assumptions behind both columns*),
+      and the three long indexes: `/how-much-memory/` at seven sections, four of them a pick-one
+      ladder by model size, `/best-gpu/` at five and `/local-llm-vs-api-cost/` at five.
+      **The two things to settle**: where the line goes, given the site's own rule that the answer
+      comes first — under the lede would push the answer block down, so above the first `<h2>` is
+      the likelier place — and whether the cut is written as a rule the build can hold or as a flag
+      per page type. `scripts/build-pages.ts` either way, so it is a push. `checkSectionLinks()` is
+      already there and would cover the new links the day they are written.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1457,6 +1494,209 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the links that name a section now land on it
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the one the 15:0x run wrote down as it finished
+the anchors: 1,177 sections could be linked to and 1,172 had nothing pointing at them. It has two
+halves and this run took the one the item itself said to settle first — which internal links are
+worth re-pointing at a section.
+
+**What settled it was a count, and it came out at zero.** The obvious rule is to re-point a link
+whose text *is* a heading on the page it points at. Measured over all 8,930 internal links inside
+`<main>` on the 307 pages: **not one of them.** This site writes links as prose — *the cards are
+ranked against each other here*, *What a million tokens costs each way* — so a rule keyed on heading
+text would have shipped nothing and looked thorough doing it. What the site does have is ten
+sentences whose own words name a section's subject, and between them they were carrying 448 links to
+the top of a page the reader had already been told the answer was inside.
+
+| | before | after |
+| --- | --- | --- |
+| links that land on the section answering them | 5, all on `/best/`, all same-page | 453 |
+| pages carrying one | 1 | 303 |
+| sections other pages point at | 0 | 5 |
+| internal links whose text is a heading on the target | 0 | 0 |
+| words a visitor reads that changed | — | 0 |
+| pages re-dated | — | 0 |
+
+**The cut, and what it leaves alone.** A link is re-pointed where its own words name one section and
+that section is the whole of the answer. Ten sentences qualify: *What a million tokens costs each
+way* and *what a million tokens costs to rent against generating it* → `#a-million-tokens-model-by-model`;
+*How weights and cache add up* and *How the two add up* → `#where-the-cache-figure-comes-from`;
+*ranked by what each one holds*, *set against the others here* and *the cards are ranked against each
+other here* → `#every-card-here-side-by-side`; *N machine match-ups on the site* and, on the 111
+machine head-to-heads, *every other match-up* → `#machine-against-machine`; and on the 78 model
+head-to-heads the same words → `#model-against-model`, which is the one place the same sentence
+lands somewhere different depending on which page the reader is on.
+**Three sentences that could have been swept in and were not**, because each names two sections
+rather than one: the machine pages' *a page on how that sum works, and what each size needs* is the
+cache section plus the four size sections, the leaderboard's *how much memory each size really takes*
+is the four on their own, and `/hardware/`'s *how much memory you need* is the page. They open the
+page at the top, which is where their answer starts. Re-pointing every link because it is now
+possible is the keyword-stuffing of internal linking, and the item said so before the work began.
+
+**How the two ends of a link are kept together.** `sectionLink(path, heading)` builds the address out
+of the section's own heading, the same way `anchoredHeading()` builds the heading — one function of
+one set of words at both ends, so rewording a heading moves the link with it rather than away from
+it. `SECTIONS` in `src/pagekit.ts` names the five sections other pages link to, so a reworded heading
+is one edit rather than a hunt through the emitters.
+
+**The guard.** `checkSectionLinks()` holds three claims: every fragment a page links to exists on the
+page it points at, every one is the id of a section rather than of something the page happens to
+carry, and every section `SECTIONS` names is linked from somewhere — so a heading that stops being
+linked shows up in the build rather than sitting in the list. It covers `/best/`'s own five same-page
+jump links too, which nothing checked before. The build prints *`453 links name a section and land
+on it, across 10 sections of 4 other pages`*.
+
+**Four breaks, each run and each caught.** Reword `/compare/`'s *Machine against machine* heading and
+leave the link → *`/hardware/mac-mini-m6-16/` links to `/compare/#machine-against-machine`, where
+`/compare/` heads no section with that id*, and the build stops on 164 of them. Aim one at a page nothing writes →
+*`/best/` links to `/best-gpus/#every-card-here-side-by-side`, and no page here is written at
+`/best-gpus/`*. Put one link back to the page it used to point at → *`/compare/#model-against-model`
+is the section SECTIONS calls modelMatchUps, and no page on this site links to it*. Mistype the id
+alone → *`/best/` links to `/best-gpu/#every-card-here-side-by-sides`, where `/best-gpu/` heads no
+section with that id*. Three tests hold the part the build cannot: that `sectionLink` and
+`anchoredHeading` agree on the id for the same heading, that every entry in `SECTIONS` is a path in
+front of a slug, and that no section is named twice.
+
+**One line that changes nothing today and would have mattered one day.** `write()` harvested inbound
+links with a regex that stopped at the first `#`, so a link landing on a section did not count as
+reaching the page — and `checkLinks()` fails the build on a page nothing links to. Measured both
+ways: `/compare/`, `/best-gpu/`, `/how-much-memory/` and `/local-llm-vs-api-cost/` are each linked
+from 306 pages either way, because the footer links all four from every page. So this is a
+correctness fix ahead of the case rather than a rescue, and it is worth saying plainly rather than
+claiming a save.
+
+**How it was checked that no word changed.** The site was built twice, once from `main` at `883c041`
+in a worktree and once from this change, and all 307 pages compared with every tag stripped: **zero
+differences**. 303 of the 307 differ as markup and `sitemap.xml` is identical byte for byte, so not
+one page is re-dated — 606 lines of `seo/page-dates.json` move and every one of them is a hash.
+
+**Verified**: 399 tests (396 plus three new), typecheck clean, `npm run validate` with the two null
+prices that are already on Ryan's side of this file, 307 pages with every guard passing, and the
+full `npm run build` end to end including `build:og`, `build:share` and `build:functions`. All ten
+re-pointed links read back out of the built pages, each landing on the id its target really heads.
+
+**Pushed as `09911ca`. Deploy run 233 was cancelled by the log push a minute later, as usual, and
+run 234 went green at 16:49 on 2026-09-19 on `f993f62`, which carries both commits**, so the section
+links are live. The live site
+was not read back: this environment's egress proxy blocks `sunkcost.ai`, so everything above is from
+the built output.
+
+**Both open pull requests still merge, and really rather than by `git merge-tree`.** #16 and #17 were
+each merged into `main` at `09911ca` in a throwaway worktree and built there: #16 gives 409 tests and
+308 pages, #17 gives 401 tests and 307. One thing #16 picks up that is worth Ryan knowing: its own
+new page carries one of the re-pointed sentences, so `/cost-per-month/`'s hash moves in the merged
+tree. The instruction already on that pull request covers it — merge, run `npm run build:pages`,
+commit what it writes — and it now matters even if #16 is merged on its own rather than beside #17.
+(The local clone was shallow, which makes `git merge-tree` answer *refusing to merge unrelated
+histories* on a pull request branch; `git fetch --unshallow` first. Worth knowing before a future
+run reads that as a conflict.)
+
+**What to continue.** The other half of the same item: the *Jump to* line. The backlog entry above
+now carries what this run measured before leaving it — where it reads clean, where it reads as the
+page's own subject three times in a line, and the two things to settle before a line of it is
+written.
+
+### 2026-09-19 — every section on the site got a link that lands on it
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Both open pull requests were checked first and both still merged clean
+into `main` at `a6c1051`, so there was no repair to do before the work. The item taken is the one
+the run before this one added: **no heading on this site had an `id`**. It had been written down
+rather than done for one reason, and that reason was void today.
+
+**The reason it was parked, and why today was the day.** `seo/page-dates.json` fingerprints the
+markup between `<main>` and `</main>`, so an attribute added to 307 pages re-dates all 307 as having
+changed — which is the exact claim that ledger exists to stop a build from making. The ledger was
+read before a line was written: **all 307 pages already carried `2026-09-19`**, put there by the
+seven runs before this one. So the hashes had somewhere to move to and the dates had nowhere. That
+is what the parked item asked for in as many words: *worth doing on a day those pages have changed
+anyway.*
+
+**What it costs to have no anchors.** Another site linking to *what the Framework Desktop, 128GB
+runs* had to send a reader to the top of the page and let them find it. And a search engine can only
+offer a jump straight into a section of a result where the section has somewhere to jump to — which
+is the feature this morning's run fed when it made every heading name its own subject, and which
+nothing on this site could take up.
+
+| | before | after |
+| --- | --- | --- |
+| anchors inside `<main>`, whole site | 5, all on `/best/` | 1,182 |
+| section headings that can be linked to | 0 of 1,177 | 1,177 |
+| pages with a repeated id anywhere in the document | 0 | 0 |
+| words a visitor reads that changed | — | 0 |
+| pages re-dated | — | 0 |
+
+**Where the change went, which is one place.** `write()` in `scripts/build-pages.ts` is the single
+funnel every page passes through, so `anchorBody()` sits at the top of it and the file on disk, the
+fingerprint the sitemap dates and the markup all 40-odd guards read are one and the same page. No
+heading emitter was touched: there are 45 of them and each would have been a chance to get one
+wrong. The header and footer are left alone, because `mainOf()` draws the same line the ledger does.
+
+**The one idea the whole change rests on.** A slug is a function of the heading's own words, so
+`anchoredHeading('The specifics')` reconstructs exactly what the build published. That is how 20
+guards that matched `<h2>The specifics</h2>` as a literal string keep matching without learning
+anything about ids. The five that knew only a heading's opening words — the rest being a machine
+name or a number they were about to read out of the match — go through `headingLike()`, and the
+six regexes take `<h2\b[^>]*>`. The slug reads a heading the way a person does: markup dropped,
+entities put back, accents folded, everything else that is not a letter or a digit a hyphen. The
+longest it produces is 75 characters, on *the machines that miss Qwen3 235B-A22B Instruct 2507, and
+what they run*; the shortest real one is 9.
+
+**The guard.** `checkHeadingAnchors()` holds four claims: every section heading has an id, no two
+sections on one page share one, each id is a slug, and each id is the slug of *its own* heading.
+The fourth is the one that protects the twenty guards above, because an id set by hand instead of
+derived would leave them silently missing sections that are really there. The build prints
+*`1,177 section headings across 307 pages, each with the id a link lands on, none repeated on its
+page`*.
+
+**Four breaks, each run and each caught.** Stop anchoring → *`/best/` heads a section "50k tokens a
+day …" with no id, so nothing can link to it*. Truncate the slug to two words so pages really
+collide, with `headingSlug` truncated to match so only duplication is left → *`/how-much-memory/`
+gives two sections the same id, "how-much", so a link to it lands on the first*, and the same on
+three comparison pages. Set an id by hand — `what-` rewritten to `section-` → *`/best-gpu/` gives
+"What the same money buys with a computer" the id "section-the-same-money-buys-with-a-computer-
+around-it" where its own words slug to "what-the-same-money-buys-…"*. Drop the lower-casing →
+*`/best/` gives a section the id "1M-tokens-a-day-…", which is not a slug*. Three tests on the two
+new helpers cover the parts the data does not reach, the dedupe among them: no page on this site
+has two headings that slug the same, so removing the dedupe changed nothing in the build at all.
+
+**How it was checked that no word changed.** Not by reading one page and trusting the rest. The site
+was built twice, once from `main` and once from this change, and all 307 pages compared with every
+tag stripped: **zero differences**. The only file that differed at all was `sitemap.xml`, by one
+line, and it differed in the right direction — `/best-gpu/` gained the `lastmod` it had never had.
+A separate sweep confirmed 1,182 ids across 307 documents with not one repeated, which is more than
+the guard checks, since the guard only looks at headings and `/best/` also carries five on sections.
+
+**Verified**: 396 tests (393 plus three new), typecheck clean, the full `npm run build` end to end
+including `build:og`, `build:share` and `build:functions`, 307 pages with every guard passing, and a
+machine page read rendered out of `dist/`.
+
+**Pushed as `e932be3`. Deploy run 230 went green at 15:50 on 2026-09-19**, so the anchors are live,
+with the log as `b80df05` on run 231. The live site was not read back: this environment's egress
+proxy blocks `sunkcost.ai`, by `curl` and by fetch alike, so everything above was verified on the
+built output in `dist/` and `public/`. Worth knowing before a future run plans a check against the
+deployed page.
+
+**The one pull request this broke, and it is repaired.** #16 collided with `main` inside the minute,
+in the same one place the log has now warned about three times: both branches extended the same
+import line in `scripts/build-pages.ts`, so git offered one line where two additions belong. Both
+sides kept by hand, `seo/page-dates.json` rebuilt rather than chosen because neither side's hashes
+are right for the merged tree, and pushed to `seo/cost-per-month` as `f1d02ce`. Verified on the
+merged tree rather than assumed: 406 tests, typecheck clean, 308 pages with every guard passing, and
+this branch's own `/cost-per-month/` taking its four anchors from `main`'s change with nothing to
+do. GitHub reports it `clean` again. #17 needed no repair: it was really merged and built here
+rather than trusted to `git merge-tree` — 398 tests, 307 pages, every guard passing — and its ledger
+came out needing no rebuild at all, because `main` did not touch the one hash that branch owns.
+
+**What to continue.** The anchors exist and almost nothing points at them, which is the item this
+run adds to the top of the backlog: a *Jump to* line on the long pages, and internal links that
+point at the section that answers rather than at the page that contains it. The judgement to make
+first is which links deserve it, because re-pointing every one because it is now possible is
+keyword stuffing by another name.
+
 
 ### 2026-09-19 — every heading on 111 pages called the page's subject "it"
 

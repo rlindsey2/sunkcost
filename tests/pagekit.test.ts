@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  anchoredHeading, anchorHeadings, headingSlug, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
+  addJumpLine, anchoredHeading, anchorHeadings, headingSlug, JUMP_MIN_SECTIONS, sectionLink, SECTIONS, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
   machinesThatHold,
@@ -1625,7 +1625,7 @@ describe('where a page that prices a card says the cards are ranked', () => {
   const line = cardRankingLine(data);
 
   it('counts the cards the ranking itself counts, in words', () => {
-    expect(line).toBe(`All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`);
+    expect(line).toBe(`All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/#every-card-here-side-by-side">ranked by what each one holds</a>.`);
     expect(line).not.toMatch(/\d/);
     expect(line.endsWith('.')).toBe(true);
   });
@@ -1638,7 +1638,7 @@ describe('where a page that prices a card says the cards are ranked', () => {
 
   it('is said once however many cards the page prices', () => {
     for (const machines of [[computers[0], cards[0]], [cards[0], cards[1]], [computers[0], cards[0], cards[1]]])
-      expect(cardScopeNote(machines, data).match(/href="\/best-gpu\/"/g)).toHaveLength(1);
+      expect(cardScopeNote(machines, data).match(/href="\/best-gpu\/(?:#[^"]*)?"/g)).toHaveLength(1);
   });
 
   it('is never said on its own, where the page prices no card at all', () => {
@@ -2380,5 +2380,73 @@ describe('the id a section heading answers to', () => {
       expect(anchorHeadings(`<h2>${heading}</h2>`)).toBe(anchoredHeading(heading));
     // and a heading with no slug in it still round-trips
     expect(anchorHeadings('<h2>···</h2>')).toBe(anchoredHeading('···'));
+  });
+});
+
+describe('a link that names a section, and the address it lands on', () => {
+  it('builds the address out of the heading the page publishes', () => {
+    // the one claim the whole thing rests on: both ends of the link come from the
+    // same words, so a reworded heading moves the link with it
+    for (const heading of ['Machine against machine', 'A million tokens, model by model', 'Every card here, side by side'])
+      expect(anchoredHeading(heading)).toContain(`id="${sectionLink('/x/', heading).split('#')[1]}"`);
+  });
+
+  it('keeps the page in front of the fragment, so the link still reaches the page', () => {
+    expect(sectionLink('/compare/', 'Model against model')).toBe('/compare/#model-against-model');
+    for (const href of Object.values(SECTIONS)) {
+      expect(href).toMatch(/^\/[a-z0-9-]+\/#[a-z0-9][a-z0-9-]*$/);
+      expect(href.split('#')[1]).toBe(headingSlug(href.split('#')[1]));
+    }
+  });
+
+  it('names each section once, because two names for one section is one of them going stale', () => {
+    const named = Object.values(SECTIONS);
+    expect(new Set(named).size).toBe(named.length);
+  });
+});
+
+describe('the line of jumps into a page\u2019s own sections', () => {
+  // a page of the shape the rule is written for: an h1 that names a pair, and four
+  // headings that name the pair once between them
+  const pair = (headings: string[]) =>
+    `<h1>Mac mini M6, 16GB vs Mac Studio M5 Max, 64GB for local AI</h1>\n<p class="lede">Which one.</p>\n` +
+    headings.map((h) => `${anchoredHeading(h)}\n<p>Words.</p>`).join('\n');
+  const four = ['Side by side on Gemma 4 12B', 'How much use it takes to pay back', 'What the extra memory buys', 'The assumptions behind both columns'];
+
+  it('offers one jump a section, landing on the id that section heads', () => {
+    const out = addJumpLine(pair(four), ['Mac mini M6, 16GB', 'Mac Studio M5 Max, 64GB', 'Gemma 4 12B']);
+    const line = out.match(/<p class="note">Jump to: ([\s\S]*?)<\/p>/)![1];
+    const jumps = [...line.matchAll(/<a href="#([^"]+)">([^<]+)<\/a>/g)];
+    expect(jumps.map((m) => m[2])).toEqual(four);
+    // both ends of every jump are the heading's own words, so a reworded heading moves both
+    for (const [, id, text] of jumps) expect(anchoredHeading(text)).toContain(`id="${id}"`);
+  });
+
+  it('puts the line above the first section, and outside whatever wraps it', () => {
+    const out = addJumpLine(pair(four), []);
+    expect(out.indexOf('Jump to:')).toBeLessThan(out.indexOf('<h2'));
+    const wrapped = addJumpLine(`<h1>Best buys</h1>${four.map((h) => `<section id="${headingSlug(h)}-s">${anchoredHeading(h)}</section>`).join('')}`, []);
+    expect(wrapped.indexOf('Jump to:')).toBeLessThan(wrapped.indexOf('<section'));
+  });
+
+  it('leaves a page alone where more than one heading names what the h1 already names', () => {
+    // the model pages: every heading carries the model, so a line built from them
+    // would print its name three times in a row
+    const model = `<h1>What hardware do you need to run Gemma 4 31B it?</h1>` +
+      ['How good is Gemma 4 31B it, really?', 'What Gemma 4 31B it costs either way', 'Machines that run Gemma 4 31B it', 'The specifics']
+        .map((h) => anchoredHeading(h)).join('');
+    expect(addJumpLine(model, ['Gemma 4 31B it'])).toBe(model);
+    // one heading naming the subject is a page about several things, and keeps its line
+    expect(addJumpLine(pair(four), ['Gemma 4 12B'])).toContain('Jump to:');
+  });
+
+  it('leaves a page alone with fewer sections than the line is worth, and never writes a second', () => {
+    const three = pair(four.slice(0, JUMP_MIN_SECTIONS - 1));
+    expect(addJumpLine(three, [])).toBe(three);
+    const once = addJumpLine(pair(four), []);
+    expect(addJumpLine(once, [])).toBe(once);
+    // and a page with no h1 is not a page this rule knows the subject of
+    const headless = four.map((h) => anchoredHeading(h)).join('');
+    expect(addJumpLine(headless, [])).toBe(headless);
   });
 });
