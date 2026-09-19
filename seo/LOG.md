@@ -1531,11 +1531,10 @@ read rendered out of `dist/`.
 the runs before this one. The words a visitor reads did change, so a new date would have been
 earned; there was none to take.
 
-**Pushed as `f2e2d2d`, with the log as `9314210`.** Deploy run 226, on the code commit, was
-cancelled by the log push a minute later, which is the usual shape here; **run 227 was still queued
-on GitHub's runners when this run ended**, seven minutes after the push, so the next run should
-confirm it went green rather than assume it. Nothing about it looks wrong: CI runs `npm test` and
-the full build, and both are green here.
+**Pushed as `f2e2d2d`, with the log as `9314210` and this line as `b80f109`. Deploy run 228 went
+green at 14:49 on 2026-09-19**, so the headings are live. Runs 226 and 227 were each cancelled by
+the next push a minute later, which is the usual shape here and is why the green one is three
+numbers along from the code commit.
 Both open pull requests were **really merged into the new `main` in
 worktrees and built there**, rather than trusted to a clean `git merge-tree`, because #16 edits
 `scripts/build-pages.ts` too: #16 gives 403 tests, 308 pages and this run's guard passing at 284
