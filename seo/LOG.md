@@ -29,6 +29,26 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       can name — never inventing one, and stopping where a figure is missing — say so and the rule
       can be lifted for this the way it was lifted for the usage slider in PR #6.
 
+- [ ] **Five pull requests are open and nothing has merged since PR #11 at 11:01 on 2026-09-18.**
+      None of them is broken and none is waiting on the agent: all five were built and read here
+      before they were opened, and the three that were re-checked against `main` still merge clean.
+      What they are waiting on is you. **[#8](https://github.com/rlindsey2/sunkcost/pull/8)**, the
+      *local LLM vs API cost* page, and **[#10](https://github.com/rlindsey2/sunkcost/pull/10)**,
+      the `/hardware/` index of all 56 machines, are the two that unblock page work — the
+      monthly-cost page has been the top backlog item for four runs and sits on #8's helpers, so
+      every run since has spent its hour on something smaller. **[#12](https://github.com/rlindsey2/sunkcost/pull/12)**
+      (the top bar on a phone), **[#13](https://github.com/rlindsey2/sunkcost/pull/13)** (the
+      assumptions panel) and **[#14](https://github.com/rlindsey2/sunkcost/pull/14)** (the
+      waterline's time axis, which is the one a visitor can hit today) are the calculator's own
+      head, which is why they are pull requests rather than pushes.
+      Two things are worth knowing before you decide. **#8 and #10 conflict with `main` and with
+      each other**, in the four files every new page type touches — `scripts/build-og.ts`,
+      `scripts/build-pages.ts`, `src/list-card.ts`, `src/pagekit.ts` — and the resolution has been
+      the same union every time; the longer they sit, the more repairs they need, and PR #1 needed
+      fourteen. **#12, #13 and #14 conflict with nothing**, so those three can go in whenever you
+      have five minutes. **Ryan was notified at 01:55 on 2026-09-19**; this is the first ping about
+      the queue, so it should not be repeated unless something changes.
+
 - [ ] **Two one-line data faults, both surfaced on 2026-09-18 by naming the source links, and both
       in files the agent must not edit.**
 
@@ -452,20 +472,15 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
 
-- [ ] **The mirror of what the machine pages gained on 2026-09-19: does a model page name every
-      machine that runs it?** A machine page's table stopped at twelve and the rest were a count,
-      which left 530 machine-and-model pairs with no link between them; that is fixed. A model
-      page has a "Machines that run it" table with its own shape, and nobody has measured whether
-      it names every machine that holds the model or only the cheapest per family.
-      **Measured on 2026-09-19 and it is the second: 1,190 pairs where a machine's page links the
-      model and the model's page does not link the machine back. 16 of the 55 model pages name
-      every machine that runs them; Ling 3.0 tiny runs on all 56 and names 8.**
-      That is not the same fault, and it should not get the same fix without thought. A machine
-      runs at most 39 models, so naming them all is a sentence; a small model runs on all 56
-      machines, and 56 names is a dump nobody reads. `cheapestPerFamily()` is a deliberate choice
-      and a good one. The question to settle first is what the reader on a model page is missing:
-      probably not every machine, but the one they own, and the shape that answers it is a list by
-      family rather than by name. Worth one look before anything is written.
+- [x] **The mirror of what the machine pages gained on 2026-09-19: does a model page name every
+      machine that runs it?** Done 2026-09-19, and the item's own instinct was right on both
+      counts: not every machine, and by family rather than by name. What settled the shape was a
+      measurement the item did not have — **inside a family, memory alone decides, with no
+      exception anywhere in the data**: over all 56 machines and 339 family-and-model groups, the
+      set that holds a model is exactly the set at or above one memory size. So the rule fits in a
+      phrase where fifty names would not, and it covers the discontinued and unpriced machines the
+      table cannot show. 54 model pages carry it. The run entry below has the figures, the nine
+      breaks that proved the tests and the four that proved the guard.
 
 - [x] **36 model pages opened with this site's own ratings paperwork, and 31 of them then printed
       the score it said they did not have.** Done 2026-09-18. `capability_note` glues a line about
@@ -1046,6 +1061,98 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a model page says which machines run it, not just the cheapest in each family
+
+**Why this item.** `npm run model-watch` prints 2026-09-19 as last checked, which is today, so the
+watch is done and the backlog was the job. Its top item is still the monthly-cost page and that
+still waits on PR #8, which is one of **five pull requests open with nothing merged since PR #11**
+— #8, #10, #12, #13 and #14, unchanged since last night. The item under it was the one the last
+entry named as the next thing measurable: the mirror, on model pages, of the fault the machine
+pages had fixed. Pushed as **`e698ade`**.
+
+**The fault, measured before it was fixed.** A model page's table is `cheapestPerFamily()`: one
+machine per family, cheapest first. That answers "what should I buy" and leaves "does mine run it"
+to a reader who owns the 64GB one of something.
+
+| | before | after |
+| --- | --- | --- |
+| model pages naming fewer machines than run the model | 54 of 55 | 0 |
+| machine-and-model pairs the page's table has no row for | 1,667 | 0 |
+| machines a page's words account for | the 8 in the table | all 56 |
+| median words, model pages | 601 | 664 |
+
+**Naming them is not the fix it was on the machine pages, and the backlog item was right to say
+so.** A machine runs at most 39 models, so naming them all is a sentence. A small model runs on
+**all 56 machines**, and 56 names is a list nobody reads — 13 models are in exactly that case.
+
+**What made it one sentence instead is a measurement, and it is the find here.** Fit on this site
+is the weights plus the key-value cache against the memory the GPU can address, so inside a family
+nothing but memory decides; what differs between families is the share of memory the GPU gets,
+about two-thirds on a Mac against nearly all of it on a card. That is a rule only if the data has
+no exception to it, so it was checked rather than assumed: **339 family-and-model groups across all
+56 machines, and in every one the set that holds the model is exactly the set at or above one
+memory size**, as the machine's own name gives it. Nothing needs a name it does not already have.
+
+So the pages say the rule. *"The table is the cheapest machine in each family, not the only one
+that runs it: 44 of the 56 machines on this site hold it at 32k. Within a family only memory
+decides, so that is every Mac Studio and Strix Halo box at any size, every NVIDIA card with 24GB or
+more, every Mac mini and MacBook Pro with 32GB or more, the Radeon AI PRO R9700, 32GB and the DGX
+Spark, 128GB."* Where every machine runs it, the whole thing is one line: *"All 56 machines on this
+site run it at 32k, not just the eight in the table."* 17 words to 79, twelve distinct sentences
+across the 54 pages.
+
+**Three things the wording had to get right.** A family of one has no range to draw a line through,
+so it goes in by its own name rather than as *every DGX Spark*. Two families that draw the line in
+the same place share a clause, so five families read as three phrases. And the first draft said
+*every Mac Studio here*, one line under a sentence that says *every machine here* of the table's
+own rows — two different heres in a row, so it is *at any size* now, which says the thing the other
+clauses say in their words.
+
+**It covers the machines the table cannot.** The count is over all 56 machine pages, not the 37
+priced current ones a table is drawn from, so the reader who owns a discontinued Mac Studio or is
+looking at an unpriced one is answered too. It cannot contradict the two sections below it —
+`machinesShorter()` and `missedMachines()` both name machines that *miss* the model at 32k, and
+this names the ones that hold it.
+
+**Nine breaks proved nine claims, one each**, and every one fired the test written for it: the
+count taken from the table's rows rather than every machine, the floor read off the current
+machines only, the short line dropped where all 56 run it, a size printed on a family that needs
+none, a clause each where two families draw the same line, a family of one written as a range, a
+family that holds it nowhere kept in, families of one dropped from the reach, and a family named as
+the data writes it rather than as a sentence would.
+
+**And four breaks proved the guard.** `checkFamilyReach()` does not call the function that wrote
+the sentence: it reads the paragraph back off the shipped page, turns each clause into the set of
+machines it names, and compares that with the set the data says holds the model. A family dropped
+from the sentence fails the build naming `/models/llama-3.1-8b-q8/` and the seven MacBook Pros it
+left out; every floor doubled fails naming eleven; every floor halved fails the other way, *claims
+4 machines that do not hold it*, naming them; and the sentence not printed at all fails with
+*lists 8 machines and does not say which of the other 48 run it*. Exit code 1 in each case, so CI
+cannot ship it.
+
+**Verified.** 324 tests (9 new), `tsc --noEmit` clean, and the full `npm run build` end to end with
+`build:functions` included — 253 pages, every guard passing, 1,999 machine-and-model pairs covered
+by a rule the data agrees with. All 54 sentences read out of `dist/` rather than `public/`, swept
+for maintainer words, doubled stops and stray punctuation, and the longest and shortest read in
+full. **Deploy run 186 queued on `e698ade` at 01:50.**
+
+**One thing to know about this environment, because it cost a few minutes.** The session started on
+a **detached HEAD** at `origin/main`, and the local `main` branch is an old unrelated history
+(`94aa957`, the log's seed commit) that `git merge --ff-only` refuses and `git checkout main`
+silently reverts the working tree to. The way onto main is `git checkout -B main <your commit>`
+after committing, not `git checkout main`. Nothing was lost; worth knowing before the next run
+commits.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month*
+— is still the biggest open item and still waits on PR #8. Five pull requests are open and nothing
+has merged since PR #11 on 2026-09-18: **#8** and **#10** unblock page work, **#12**, **#13** and
+**#14** are the calculator's own head. Of what can go straight to main, the honest answer is that
+the two link-graph faults are now both fixed and neither side has another. The nearest open
+questions are the `/hardware/` and `/leaderboard/` cross-link and the model page's duplicate call
+to action, and both are a question to settle before they are a change — the second is now slightly
+riper, because the call to action sits two lines under the sentence this run added and the page has
+one more thing competing for the same spot.
 
 ### 2026-09-19 — a machine page names every model it runs, not the twelve it has room for
 
