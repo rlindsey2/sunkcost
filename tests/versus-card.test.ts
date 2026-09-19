@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   chipStepPairs, clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
   generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
-  MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard, rankedModels,
+  memoryNeighbourPairs, MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard,
+  rankedModels,
   versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
 import { computeView } from '../src/compute';
+import { footprintGb, kvScaleFor } from '../src/fit';
 import {
   appleChip, chipStepNames, discontinuedOn, generationNames, gpuCores, gpuPart, machineVerdict, runnersFor,
   sameSilicon, shortHardwareLabel,
@@ -449,9 +451,11 @@ describe('the pairs the cards and the pages cut', () => {
     const ladder = new Set<string>();
     for (let i = 0; i + 1 < ranked.length; i++) ladder.add(key(ranked[i], ranked[i + 1]));
     // the ladder is cut first and a pair is written once, so the pages are the union of
-    // the two rules rather than the sum: one generation pair is also a rung of the ladder
+    // the three rules rather than the sum: one generation pair is also a rung of the
+    // ladder, and so are four memory neighbours
     const pairs = modelPairs(data);
-    expect(pairs.length).toBe(new Set([...ladder, ...gens.map(([a, b]) => key(a, b))]).size);
+    const mem = memoryNeighbourPairs(data);
+    expect(pairs.length).toBe(new Set([...ladder, ...gens.map(([a, b]) => key(a, b)), ...mem.map(([a, b]) => key(a, b))]).size);
     expect(pairs.slice(0, ranked.length - 1).map(([a, b]) => key(a, b))).toEqual([...ladder]);
     for (const [a, b] of pairs) {
       expect(a.display_name).not.toBe(b.display_name);
@@ -659,5 +663,75 @@ describe('machines of different families at about the same price', () => {
     const firstNew = all.findIndex(([a, b]) => keys.has([a.id, b.id].sort().join('|')));
     expect(firstNew).toBe(older.length);
     expect(all.length).toBe(older.length + pairs.length);
+  });
+});
+
+describe('models of different families that need about the same memory', () => {
+  const pairs = memoryNeighbourPairs(data);
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const nearest = (m: Model) =>
+    ranked
+      .filter((o) => o.family !== m.family)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+
+  it('cuts pairs at all', () => {
+    expect(pairs.length).toBeGreaterThan(0);
+  });
+
+  it('takes two scored models from different families, the stronger one first', () => {
+    for (const [a, b] of pairs) {
+      expect(a.family).not.toBe(b.family);
+      expect(ranked.map((m) => m.id)).toContain(a.id);
+      expect(ranked.map((m) => m.id)).toContain(b.id);
+      const [sa, sb] = [a.frontier_equivalent!.score!, b.frontier_equivalent!.score!];
+      expect(sa).toBeGreaterThanOrEqual(sb);
+      // where the index cannot order them, the smaller of the two goes first
+      if (sa === sb) expect(need(a)).toBeLessThanOrEqual(need(b));
+    }
+  });
+
+  it('keeps the two within the gap that makes them the same decision', () => {
+    for (const [a, b] of pairs) {
+      expect(Math.abs(need(a) - need(b)) / Math.min(need(a), need(b))).toBeLessThanOrEqual(MODEL_MEMORY_GAP);
+    }
+  });
+
+  it('measures what a machine is asked for, weights and cache together', () => {
+    // the pair the weights alone would never reach: 19.6 GB against 25.48 GB is 30%
+    // apart, and at 32k of context the two are within a percent of each other, because
+    // the cache is where the difference goes
+    const cachey = pairs.filter(([a, b]) => {
+      if (a.weights_gb == null || b.weights_gb == null) return false;
+      return Math.abs(a.weights_gb - b.weights_gb) / Math.min(a.weights_gb, b.weights_gb) > MODEL_MEMORY_GAP;
+    });
+    expect(cachey.length).toBeGreaterThan(0);
+    for (const [a, b] of cachey) expect(Math.abs(need(a) - need(b)) / Math.min(need(a), need(b))).toBeLessThanOrEqual(MODEL_MEMORY_GAP);
+  });
+
+  it('pairs each model with its own nearest outside its family, not with every model in a band', () => {
+    for (const [a, b] of pairs) expect(nearest(a)?.id === b.id || nearest(b)?.id === a.id).toBe(true);
+  });
+
+  it('writes each pair once', () => {
+    const keys = pairs.map(([a, b]) => [a.id, b.id].sort().join('|'));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('leaves every pair the older rules cut at the address it already had', () => {
+    const all = modelPairs(data);
+    const key = (a: Model, b: Model) => [a.id, b.id].sort().join('|');
+    const mine = new Set(pairs.map(([a, b]) => key(a, b)));
+    const older = new Set<string>();
+    for (let i = 0; i + 1 < rankedModels(data).length; i++) older.add(key(rankedModels(data)[i], rankedModels(data)[i + 1]));
+    for (const [a, b] of modelGenerationPairs(data)) older.add(key(a, b));
+    // the rule is appended last, so nothing it adds sits before a pair another rule cut,
+    // and the pairs both it and an older rule reach are written once, at the older address
+    const shared = [...mine].filter((k) => older.has(k));
+    expect(shared.length).toBeGreaterThan(0);
+    expect(all.length).toBe(older.size + mine.size - shared.length);
+    expect(all.slice(0, older.size).every(([a, b]) => older.has(key(a, b)))).toBe(true);
   });
 });

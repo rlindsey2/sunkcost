@@ -24,14 +24,15 @@ import {
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
-  MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, sameSiliconPairs, versusCardPath,
+  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
+  versusCardPath,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, TOKEN_COST_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
-import { fit, footprintGb, kvCacheGb } from '../src/fit';
+import { fit, footprintGb, kvCacheGb, kvScaleFor } from '../src/fit';
 import { fingerprint, mainOf, nextDates, publishedDate, type PageDates } from '../src/page-dates';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 import type { ModelRow, View } from '../src/compute';
@@ -318,9 +319,18 @@ function checkMatchUpSiblings() {
   // both rules reach keeps the ladder's address, and it is the address that decides
   // which of the two things the page says about it
   const generations = new Set(modelGenerationPairs(data).map(([old, now]) => modelComparePath(old, now)));
+  const ladder = new Set<string>();
+  const ranked = rankedModels(data);
+  for (let i = 0; i + 1 < ranked.length; i++) ladder.add(modelComparePath(ranked[i], ranked[i + 1]));
+  const memories = new Set(
+    memoryNeighbourPairs(data)
+      .map(([x, y]) => modelComparePath(x, y))
+      .filter((href) => !ladder.has(href)),
+  );
   for (const [a, b] of mPairs) {
     const path = modelComparePath(a, b);
     const reasons: string[] = [];
+    let saysMemory = false;
     const sides = [a, b].map((self) => {
       const want = new Map<string, string>();
       for (const [x, y] of mPairs) {
@@ -331,7 +341,13 @@ function checkMatchUpSiblings() {
         want.set(href, other.display_name);
         // and the clause that says why those two are on a page together. The ladder is
         // always written from the higher model to the lower, so the pair's own order
-        // says which side of this one the other model sits.
+        // says which side of this one the other model sits. A memory neighbour is the
+        // one reason that is the same for every model carrying it, so the page says it
+        // once for the group rather than after each name.
+        if (memories.has(href)) {
+          saysMemory = true;
+          continue;
+        }
         reasons.push(
           generations.has(href)
             ? `${esc(other.display_name)}</a>, the ${x.id === self.id ? 'current' : 'last-generation'} ${esc(self.family ?? '')} nearest it in size`
@@ -344,6 +360,8 @@ function checkMatchUpSiblings() {
     links += n;
     widest = Math.max(widest, n);
     const notes = notesOn(path).join(' ');
+    if (saysMemory && !notes.includes('much the same memory'))
+      problems.push(`${path} links a match-up cut by the memory rule and does not say the two models need much the same memory`);
     for (const reason of reasons)
       if (!notes.includes(reason)) problems.push(`${path} does not say why one of its other match-ups exists: ${reason.replace(/<[^>]*>/g, '')}`);
     if (sides.some((s) => s.want.size)) noted++;
@@ -1903,26 +1921,48 @@ function machineSiblingNote(a: Hardware, b: Hardware): string {
 const modelGenerations = new Map<string, [Model, Model]>();
 for (const [old, now] of modelGenerationPairs(data)) modelGenerations.set(modelComparePath(old, now), [old, now]);
 
+// A pair more than one rule reaches keeps the address the first rule gave it, and the
+// address is what decides which of the three things the page says about it. Both the
+// ladder and the memory rule write the stronger model first, so four pairs are reached
+// by both, and on those the leaderboard is what a reader is already looking at.
+const ladderPaths = new Set<string>();
+const rankedForLadder = rankedModels(data);
+for (let i = 0; i + 1 < rankedForLadder.length; i++)
+  ladderPaths.add(modelComparePath(rankedForLadder[i], rankedForLadder[i + 1]));
+const modelMemoryPairs = new Map<string, [Model, Model]>();
+for (const [a, b] of memoryNeighbourPairs(data)) {
+  const href = modelComparePath(a, b);
+  if (!ladderPaths.has(href)) modelMemoryPairs.set(href, [a, b]);
+}
+
 type ModelMatchUp = { href: string; other: Model } & (
   | { kind: 'ladder'; side: 'above' | 'below' }
   // 'above' and 'below' name where the other model sits; 'is-older' and 'is-current'
   // name which side of the pair this model is, since neither is above the other on
-  // anything the reader can see.
+  // anything the reader can see. A memory neighbour is symmetrical: what puts the two
+  // on a page together is a figure they share, so both sides say the same thing.
   | { kind: 'generation'; side: 'is-older' | 'is-current' }
+  | { kind: 'memory'; side: 'same-memory' }
 );
 const modelHeadToHeads = new Map<string, ModelMatchUp[]>();
 for (const [a, b] of modelPairs(data)) {
   const href = modelComparePath(a, b);
   const gen = modelGenerations.get(href);
+  const mem = gen ? null : modelMemoryPairs.get(href);
   const sides: ModelMatchUp[] = gen
     ? [
         { href, other: gen[1], kind: 'generation', side: 'is-older' },
         { href, other: gen[0], kind: 'generation', side: 'is-current' },
       ]
-    : [
-        { href, other: b, kind: 'ladder', side: 'below' },
-        { href, other: a, kind: 'ladder', side: 'above' },
-      ];
+    : mem
+      ? [
+          { href, other: b, kind: 'memory', side: 'same-memory' },
+          { href, other: a, kind: 'memory', side: 'same-memory' },
+        ]
+      : [
+          { href, other: b, kind: 'ladder', side: 'below' },
+          { href, other: a, kind: 'ladder', side: 'above' },
+        ];
   const selves = gen ? [gen[0], gen[1]] : [a, b];
   selves.forEach((self, i) => modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), sides[i]]));
 }
@@ -2410,7 +2450,20 @@ function modelPage(m: Model): string {
   const genLine = !gen
     ? ''
     : `${ladderLine ? 'Also head to head' : 'Head to head'}: ${versusLink(gen)}, the ${gen.side === 'is-older' ? 'current' : 'last-generation'} ${esc(m.family)} nearest it in size.`;
-  const versusLine = ladderLine || genLine ? `<p class="note">${[ladderLine, genLine].filter(Boolean).join(' ')}</p>` : '';
+  // And the third: the models from other families that ask a machine for the same
+  // memory. Neither of the lines above reaches them, because two models a year apart in
+  // the same family and two rungs of one index are both about what a model is rather
+  // than about what it takes to hold one.
+  const mem = versus.filter((v) => v.kind === 'memory');
+  const memLinks = mem.map((v) => versusLink(v)).join(', ');
+  const memLine = !mem.length
+    ? ''
+    : ladderLine || genLine
+      // a third sentence opening "Also head to head" after the second would be the same
+      // three words twice, so this one leads with the reason instead
+      ? `${mem.length === 1 ? 'One more model needs' : `${sentenceCase(numberWord(mem.length))} more models need`} much the same memory at ${Math.round(ctx / 1024)}k of context: ${memLinks}.`
+      : `Head to head with ${mem.length === 1 ? 'a model that needs' : 'the models that need'} much the same memory at ${Math.round(ctx / 1024)}k of context: ${memLinks}.`;
+  const versusLine = ladderLine || genLine || memLine ? `<p class="note">${[ladderLine, genLine, memLine].filter(Boolean).join(' ')}</p>` : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
 <p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}</p>
@@ -5827,6 +5880,70 @@ function checkPriceNeighbours() {
 }
 
 /**
+ * The model side of the same thing, and it is cut from the memory a model needs rather
+ * than from the money a machine costs. A pair that is no longer two models of different
+ * families, or that has drifted past a tenth as a figure in data/*.json changes, should
+ * fail the build rather than keep a page whose whole reason is that the two ask a machine
+ * for the same thing.
+ *
+ * It holds the other direction too: no page may say two models need much the same memory
+ * unless it links a pair this rule cut, and every one of these pages has to print what
+ * each model needs, because that figure is the claim.
+ */
+function checkMemoryNeighbours() {
+  const problems: string[] = [];
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const nearest = (m: Model) =>
+    ranked
+      .filter((o) => o.family !== m.family)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+
+  let pages = 0;
+  const cut = new Set<string>();
+  for (const [a, b] of memoryNeighbourPairs(data)) {
+    pages++;
+    const path = modelComparePath(a, b);
+    cut.add(path);
+    const html = unesc(meta.find((p) => p.path === path)?.html ?? '');
+    if (!html) {
+      problems.push(`${path} is a memory-neighbour pair with no page`);
+      continue;
+    }
+    if (a.family === b.family) problems.push(`${path} sets two models of one family against each other`);
+    const spread = Math.abs(need(a) - need(b)) / Math.min(need(a), need(b));
+    if (spread > MODEL_MEMORY_GAP)
+      problems.push(`${path} is ${Math.round(spread * 100)}% apart in what it needs at ${Math.round(ctx / 1024)}k, past the ${Math.round(MODEL_MEMORY_GAP * 100)}% this rule allows`);
+    if (nearest(a)?.id !== b.id && nearest(b)?.id !== a.id)
+      problems.push(`${path} is neither model's nearest in memory outside its own family`);
+    const [sa, sb] = [a.frontier_equivalent?.score ?? 0, b.frontier_equivalent?.score ?? 0];
+    if (sa < sb || (sa === sb && need(a) > need(b)))
+      problems.push(`${path} does not put the stronger model first, or the smaller where the two score the same`);
+    for (const m of [a, b])
+      if (!html.includes(fmtGb(need(m))))
+        problems.push(`${path} does not print what ${m.display_name} needs at ${Math.round(ctx / 1024)}k, which is the whole reason the two are on a page together`);
+  }
+
+  // and the only pages that may say it: a model in one of these pairs, or a head-to-head
+  // one of whose two sides is in one, which is where the sentence names the others
+  const inAPair = new Set(memoryNeighbourPairs(data).flatMap(([a, b]) => [a.id, b.id]));
+  const maySay = new Set<string>();
+  for (const m of data.models) if (inAPair.has(m.id)) maySay.add(`/models/${m.id}/`);
+  for (const [a, b] of modelPairs(data)) if (inAPair.has(a.id) || inAPair.has(b.id)) maySay.add(modelComparePath(a, b));
+  for (const p of meta)
+    if (p.html.includes('much the same memory') && !maySay.has(p.path))
+      problems.push(`${p.path} says two models need much the same memory and is not a page the rule reaches`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} memory-neighbour head-to-head${problems.length === 1 ? ' does' : 's do'} not hold to the rule that cut them`);
+  }
+  console.log(`  ${pages} head-to-heads between models of different families within ${Math.round(MODEL_MEMORY_GAP * 100)}% of each other in the memory they need at ${Math.round(ctx / 1024)}k`);
+}
+
+/**
  * A pay-back sentence that hands one machine the win and then prints the same figure on
  * both sides argues with the table under it. Two machines at the same price can come out
  * days apart over decades, and days do not survive the rounding the pages print at, so
@@ -5872,6 +5989,7 @@ checkSameSilicon();
 checkGenerationPairs();
 checkChipStepPairs();
 checkPriceNeighbours();
+checkMemoryNeighbours();
 checkPayBackReads();
 checkStandInPower();
 checkModelContexts();

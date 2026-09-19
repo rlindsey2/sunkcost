@@ -2180,6 +2180,36 @@ describe('the other match-ups the two on a head-to-head are in', () => {
     );
   });
 
+  it('gives the models that need the same memory a sentence of their own, and says the reason once', () => {
+    const three = words(
+      modelMatchUpsLine('Gemma 3 27B it', [
+        { href: '/compare/a-vs-g/', name: 'Qwen3 8B', side: 'above', family: 'Gemma' },
+        { href: '/compare/g-vs-b/', name: 'Ministral 3 8B', side: 'below', family: 'Gemma' },
+        { href: '/compare/c-vs-g/', name: 'Qwen3.6 27B', side: 'same-memory' },
+        { href: '/compare/d-vs-g/', name: 'Devstral Small 2 24B', side: 'same-memory' },
+      ]),
+    );
+    expect(three).toBe(
+      'Gemma 3 27B it is also head to head with Qwen3 8B above it on the leaderboard and Ministral 3 8B below it. Two more models need much the same memory: Qwen3.6 27B and Devstral Small 2 24B.',
+    );
+    // one of them is one model, not two
+    expect(
+      words(
+        modelMatchUpsLine('gpt-oss-20b', [
+          { href: '/compare/a-vs-g/', name: 'Qwen3-Coder Next', side: 'above' },
+          { href: '/compare/g-vs-m/', name: 'Ministral 3 14B', side: 'same-memory' },
+        ]),
+      ),
+    ).toBe(
+      'gpt-oss-20b is also head to head with Qwen3-Coder Next above it on the leaderboard. One more model needs much the same memory: Ministral 3 14B.',
+    );
+    // and where the page itself is the rung of the leaderboard, the memory neighbours are
+    // all that is left to say, so they carry the sentence rather than follow one
+    expect(
+      words(modelMatchUpsLine('GLM-4.7-Flash', [{ href: '/compare/g-vs-q/', name: 'Qwen3-Coder 30B-A3B', side: 'same-memory' }])),
+    ).toBe('GLM-4.7-Flash is also head to head with Qwen3-Coder 30B-A3B, which needs much the same memory.');
+  });
+
   it('reads as finished copy: no doubled stop, no stray comma, nothing left blank', () => {
     const lines = [
       machineMatchUpsLine('Mac Studio M5 Max, 128GB', groups),
@@ -2187,6 +2217,11 @@ describe('the other match-ups the two on a head-to-head are in', () => {
         { href: '/compare/q-vs-r/', name: 'Qwen3 32B', side: 'is-current', family: 'Qwen' },
         { href: '/compare/s-vs-q/', name: 'Inkling Small', side: 'below', family: 'Qwen' },
       ]),
+      modelMatchUpsLine('Gemma 3 27B it', [
+        { href: '/compare/a-vs-g/', name: 'Qwen3 8B', side: 'above' },
+        { href: '/compare/c-vs-g/', name: 'Qwen3.6 27B', side: 'same-memory' },
+      ]),
+      modelMatchUpsLine('Gemma 3 27B it', [{ href: '/compare/c-vs-g/', name: 'Qwen3.6 27B', side: 'same-memory' }]),
     ];
     for (const line of lines) {
       const w = words(line);

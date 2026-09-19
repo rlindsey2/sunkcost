@@ -9,6 +9,7 @@
 import { esc, fmtDuration, fmtGb, fmtNum, fmtUsd } from './format';
 import { clampText, EM, EM_BOLD, fitLines, fitsIn, fitOneLine, wrapText } from './text-fit';
 import { computeView, hardwareLabel } from './compute';
+import { footprintGb, kvScaleFor } from './fit';
 import { defaultState } from './state';
 import {
   appleChip, chipStepNames, generationNames, gpuPart, priceWithScopeText, runnersFor, sameSilicon,
@@ -488,11 +489,69 @@ export function modelGenerationPairs(data: Dataset): [Model, Model][] {
 }
 
 /**
+ * How far apart two models may be in memory and still be the same decision at the till.
+ * A tenth is a round number, and on this data it does not sit in the middle of anything:
+ * the widest pair it keeps is 8.7% apart and the nearest one it turns away is 12.7%, so
+ * no pair is kept or dropped by a hair.
+ */
+export const MODEL_MEMORY_GAP = 0.1;
+
+/**
+ * Each model against the model from another family nearest it in the memory it needs,
+ * stronger side first, where the two are within a tenth of each other.
+ *
+ * The ladder above pairs a model with the next one down the index, and the generation
+ * rule pairs it with what replaced it. Neither asks the question a reader with a machine
+ * already on the desk starts from, which is what to run in the memory they have. Two
+ * models that need the same memory are a straight choice: 19.7 GB at 32k of context is
+ * Gemma 3 27B or Devstral Small 2 24B, and until this rule nothing here put those two
+ * side by side. The families have to differ, because two models from one maker at the
+ * same size are the quantisations and generations the rules above already cut.
+ *
+ * Memory is the footprint at the context this site assumes, weights and cache together,
+ * rather than the weights alone: the cache is the part that decides whether a machine
+ * holds the model, and two models with the same weights can want very different amounts
+ * of it. One pair per model, its own nearest, rather than every pair inside a band —
+ * a band writes a grid of near-identical pages around the crowded sizes and leaves the
+ * smallest and largest models with none.
+ */
+export function memoryNeighbourPairs(data: Dataset): [Model, Model][] {
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const out: [Model, Model][] = [];
+  const seen = new Set<string>();
+  for (const m of ranked) {
+    const near = ranked
+      .filter((o) => o.family !== m.family)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+    if (!near) continue;
+    if (Math.abs(need(near) - need(m)) / Math.min(need(near), need(m)) > MODEL_MEMORY_GAP) continue;
+    // the pair is equal on memory by construction, so what orders it is the one figure
+    // the page leads with, the same way round as every rung of the ladder
+    const score = (x: Model) => x.frontier_equivalent?.score ?? 0;
+    const [first, second] =
+      score(m) !== score(near)
+        ? score(m) > score(near) ? [m, near] : [near, m]
+        : need(m) !== need(near)
+          ? need(m) < need(near) ? [m, near] : [near, m]
+          : m.id < near.id ? [m, near] : [near, m];
+    const key = `${first.id}|${second.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push([first, second]);
+  }
+  return out;
+}
+
+/**
  * Every model pair that has a page, in the order the build writes them: each model
  * against the next one down the leaderboard, then each last-generation model against the
- * current one of its family nearest it in size. The ladder is cut first, so a pair both
- * rules reach keeps the address it has always had, and a pair is written once whichever
- * way round the rules reach it.
+ * current one of its family nearest it in size, then each model against the one from
+ * another family nearest it in the memory it needs. The ladder is cut first, so a pair
+ * more than one rule reaches keeps the address it has always had, and a pair is written
+ * once whichever way round the rules reach it.
  */
 export function modelPairs(data: Dataset): [Model, Model][] {
   const r = rankedModels(data);
@@ -505,6 +564,7 @@ export function modelPairs(data: Dataset): [Model, Model][] {
   };
   for (let i = 0; i + 1 < r.length; i++) add(r[i], r[i + 1]);
   for (const [a, b] of modelGenerationPairs(data)) add(a, b);
+  for (const [a, b] of memoryNeighbourPairs(data)) add(a, b);
   return out;
 }
 

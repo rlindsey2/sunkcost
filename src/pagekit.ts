@@ -1926,7 +1926,7 @@ export function machineMatchUpsLine(self: string, groups: MatchUpGroup[]): strin
  * model being written about: a rung of the leaderboard above or below it, or the
  * model of its own family a generation away.
  */
-export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current';
+export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current' | 'same-memory';
 
 export interface ModelMatchUp {
   href: string;
@@ -1934,7 +1934,9 @@ export interface ModelMatchUp {
   name: string;
   /**
    * where the other model sits, or — for a generation pair, where neither is above
-   * the other on anything a reader can see — which side of it this model is.
+   * the other on anything a reader can see — which side of it this model is. A
+   * memory neighbour is the third case and symmetrical: the two need the same
+   * memory, so both sides say the same thing about each other.
    */
   side: ModelMatchUpSide;
   /** the family both sides share, which only the generation pairs name */
@@ -1942,15 +1944,19 @@ export interface ModelMatchUp {
 }
 
 /**
- * One model's other match-ups, as a sentence about that model. A model is in at
- * most three, so all of them fit and none is left for an index to carry. Each
- * arrives with the reason it exists, because "vs" on its own says nothing about
- * why these two are on a page together.
+ * One model's other match-ups, as a sentence about that model. Each arrives with
+ * the reason it exists, because "vs" on its own says nothing about why these two
+ * are on a page together.
+ *
+ * The memory neighbours go in a sentence of their own. A model can have three of
+ * them, and they all carry the same reason, so strung through the first sentence
+ * they would say "which needs much the same memory" three times.
  */
 export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
   if (!items.length) return '';
   const order: ModelMatchUpSide[] = ['above', 'below', 'is-older', 'is-current'];
-  const sorted = [...items].sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
+  const memory = items.filter((i) => i.side === 'same-memory');
+  const sorted = items.filter((i) => i.side !== 'same-memory').sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
   const hasAbove = sorted.some((i) => i.side === 'above');
   const phrases = sorted.map((i) => {
     const link = `<a href="${esc(i.href)}">${esc(i.name)}</a>`;
@@ -1966,9 +1972,12 @@ export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
       ? `${link}, the ${which} ${esc(i.family)} nearest it in size`
       : `${link}, the ${which} model of its family nearest it in size`;
   });
-  const list =
-    phrases.length === 1
-      ? phrases[0]
-      : `${phrases.slice(0, -1).join(', ')} and ${phrases[phrases.length - 1]}`;
-  return `${esc(self)} is also head to head with ${list}.`;
+  const join = (xs: string[]) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  const memLinks = memory.map((i) => `<a href="${esc(i.href)}">${esc(i.name)}</a>`);
+  const needs = memory.length === 1 ? 'needs' : 'need';
+  if (!phrases.length) return `${esc(self)} is also head to head with ${join(memLinks)}, which ${needs} much the same memory.`;
+  const first = `${esc(self)} is also head to head with ${join(phrases)}.`;
+  if (!memory.length) return first;
+  const more = memory.length === 1 ? 'One more model needs' : `${numberWord(memory.length)} more models need`;
+  return `${first} ${more[0].toUpperCase()}${more.slice(1)} much the same memory: ${join(memLinks)}.`;
 }
