@@ -1679,11 +1679,23 @@ guard passing, and the page read rendered out of `dist/`.
 is the push side of the standing rule; no data file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts`
 is touched.
 
+**Deploy run 256 went green at 23:47 on `bc67561`**, so both commits are live on sunkcost.ai. Run
+255 was cancelled rather than failed: the log commit followed the code commit inside a minute and
+the workflow's concurrency group dropped the older of the two, which is the same shape as run 248.
+
+**Both open pull requests were re-checked against this push and neither conflicts with it.**
+`git merge-tree` against `main` at `bc67561` reports clean for `seo/cost-per-month` (PR #16) and
+`seo/home-h1` (PR #17). The import line at the head of `scripts/build-pages.ts` — the line that has
+collided three times — took `publishedPriceLine` on a different row from the one PR #16 extends, so
+git had nothing to choose between. The standing note on PR #16 still holds: `main`'s `/hardware/`
+hash moved in this push, so whoever merges it rebuilds `seo/page-dates.json` rather than picking a
+side of that line.
+
 **What to continue.** `/leaderboard/` is the page left in the item above, and it is the bigger half:
 nothing it says about its own table is held by anything. Same shape as `checkBestCuts()` and this
 run's guard — name the rule once, let the page print it, let the build fail when the two disagree.
-Ryan's side is unchanged: PR #16 and PR #17 are both open and both merge clean as of the last check,
-and the Ternary Bonsai 2 27B figures still need him.
+Ryan's side is otherwise unchanged: PR #16 and PR #17 are both still open, and the Ternary Bonsai 2
+27B figures still need him.
 
 ### 2026-09-19 — three rows a class, and the other 23 models were in no row and no count
 
