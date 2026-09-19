@@ -553,6 +553,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **Every heading on the 56 machine pages and the 55 model pages called the page's own subject
+      "it".** Done 2026-09-19, pushed as `f2e2d2d`. *What it runs*, *Machines that run it*, *How good
+      is it, really?* — 284 headings across 111 pages and not one named a machine or a model. The
+      `h1` above them does, so a reader from the top was never lost; a reader from a search result
+      lands on the heading that matched what they typed, and a pronoun there answers a question about
+      nothing. All 284 name their subject now. The 146 left are the spec list and the shorter-window
+      sections, which are about the page's own furniture and carry no pronoun either. No figure,
+      table, link or count changed. The run entry below has the rule, the guard and the six breaks
+      that proved it.
+
 - [x] **The site held the answer to "what can I run with 32 GB" and asked it under a heading that
       reads as a statement.** Done 2026-09-19. `/how-much-memory/` asks four questions in its own
       headings and every one of them starts from the model — *How much memory for a 70B model?* The
@@ -581,6 +591,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       It is a new page type and a top-level page, so it is a pull request and one `<a>` in
       `index.html`, which is the standing rule. Worth doing when the two open pull requests are
       settled rather than queued behind them.
+
+- [ ] **One page on this site can be linked to by section, and no heading anywhere can.** Measured
+      2026-09-19 over all 307 generated pages: exactly one anchor inside `<main>` on the whole site,
+      and it is `/best/`, whose five usage bands are `id="u-50k"` and so on. Not one of the 430
+      headings on the machine and model pages carries an `id`, and nor does any other heading here.
+      Two things that costs, both small: another site linking to *what the Framework Desktop, 128GB
+      runs* has to link the whole page, and Google can offer no jump link into a section from a
+      search result — the feature the headings renamed this morning would feed. The change is a slug
+      on each `<h2>` in `scripts/build-pages.ts`, so it is a push rather than a pull request.
+      **The reason it is written down rather than done** is the sitemap. An `id` changes no word a
+      visitor reads, and `seo/page-dates.json` fingerprints the markup, so adding them re-dates all
+      307 pages as having changed on the day a maintainer added an attribute, which is exactly the
+      claim that ledger was built to stop. Worth doing on a day those pages have changed anyway, or
+      folded into a change that earns the date on its own.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1433,6 +1457,90 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — every heading on 111 pages called the page's subject "it"
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Every open item on it is waiting on Ryan, or is a measurement written
+down so nobody takes it twice, which is where the seven runs before this one found it too. Both open
+pull requests were checked first and **both still merge clean into `main`**, #16 and #17, so there
+was no repair to do. The work came from the same place as the run before it: a question with real
+search volume that this site answers, asked on the page in words nobody types.
+
+**What the headings said.** A machine page and a model page are each about one thing, and every
+heading on them referred to it as *it*: **What it runs**, **Other machines to weigh against it**,
+**How good is it, really?**, **What it costs either way**, **Machines that run it**, **The machines
+that miss it, and what they run**, **It fits at 16k of context**. 284 headings across 111 pages, and
+not one of them named a machine or a model.
+
+**Why that is worth an hour.** The `h1` above them does name the subject, so a reader coming down
+the page is never lost and the grammar is right. A reader from a search result does not come down
+the page. They land on the heading that matched what they typed — *what can a 3090 run*, *is Qwen3
+32B any good*, *what hardware do I need for Gemma 4 12B* — and a heading with a pronoun in it is the
+answer to a question about nothing. It is the same fault as a title cut before the memory size: the
+page holds the answer and the part a searcher sees does not say so.
+
+| | before | after |
+| --- | --- | --- |
+| headings naming their subject | 0 of 430 | 284 of 430 |
+| headings calling it "it" | 284 | 0 |
+| figures, tables, links or counts changed | — | 0 |
+
+**What keeps its wording, and why that is not an oversight.** The other 146 are `The specifics`,
+which heads the spec list, and 35 shorter-window sections — *Four more machines, at a shorter
+window*. Both are about the page's own furniture rather than about the machine or the model, neither
+is the answer to anything anybody searches for, and neither carries a pronoun. The rule is one line:
+**a heading that answers a question somebody asks in the subject's own name names it.** Nothing on
+the comparison pages changed either — their `h1` and their *Side by side on …* headings already name
+both sides.
+
+**How a machine is named.** `shortHardwareLabel()`, which is what the tables and every other page
+call it: *What the Framework Desktop, 128GB runs*, not the `hardwareLabel()` the `h1` and the
+breadcrumb use, which would put *Strix Halo* three times down one page. The longest heading the rule
+produces is 69 characters, on the Corsair AI Workstation 300, 128GB; a heading is not a title, so
+nothing is cut.
+
+**The guard.** `checkSubjectHeadings()` holds two claims. The first is the rule itself: **no heading
+on these 111 pages refers to the page's subject as "it"**, with the subject's own name stripped out
+of the heading before the pronoun is looked for — because two models here are called *Gemma 4 31B
+it* and *Gemma 3 12B it*, where *it* is what Google calls an instruction-tuned build, and a guard
+that did not know that would refuse a page for printing the model's real name. The second is that a
+heading of a naming shape names **this** page's subject: the fault it catches is a builder handed
+the neighbour's machine, which reads as a fact and is the one mistake a reader could not spot. The
+build prints *`111 machine and model pages name their subject in 284 headings; none of the headings
+on them calls it "it"`*.
+
+**Six breaks, each run and each caught.** Put `What it runs` back → *`/hardware/mac-mini-m6-32/`
+heads a section "What it runs", which calls Mac mini M6, 32GB "it"*, on all 56. Put `How good is it,
+really?` back → the same on all 55, and the shape claim as well. Head every machine's table with the
+first machine in the data → *`/hardware/mac-mini-m5-pro-24/` heads a section "What the Mac mini M6,
+16GB runs", which names Mac mini M6, 16GB where the page is about Mac mini M5 Pro, 24GB*, on 55.
+Head every model's machines with the first model → the same, on 52. Add a pronoun after the name,
+which is where stripping the name could have hidden one → *"What Qwen3 8B costs either way, and what
+it saves", which calls Qwen3 8B "it"*. And `It fits at 16k of context` back on the one page that
+carries it → caught by both claims.
+
+**No new test.** The change adds no helper to `src/pagekit.ts` — it is seven heading strings and the
+guards that read them back — so the guard is the test, and it runs on every build and every deploy.
+393 tests unchanged, typecheck clean, the full `npm run build` including `build:og`, `build:share`
+and `build:functions`, 307 pages with every guard passing, and both a machine page and a model page
+read rendered out of `dist/`.
+
+**What the sitemap did, because it is the thing to watch here.** 111 hashes move in
+`seo/page-dates.json` and **no date moves**: every one of those pages had already changed today, on
+the runs before this one. The words a visitor reads did change, so a new date would have been
+earned; there was none to take.
+
+**Pushed as `f2e2d2d`.** Both open pull requests were then **really merged into the new `main` in
+worktrees and built there**, rather than trusted to a clean `git merge-tree`, because #16 edits
+`scripts/build-pages.ts` too: #16 gives 403 tests, 308 pages and this run's guard passing at 284
+headings; #17 gives 395 tests and 307 pages. Both are still waiting on Ryan.
+
+**What to continue.** The backlog is where the last seven runs left it. The item this run adds is
+the thing the measurement turned up and deliberately did not take: **no heading on this site has an
+`id`**, so no section here can be linked to and no search result can offer a jump link into one. It
+is a push rather than a pull request, and the reason it is written down rather than done is the
+sitemap: it changes no word a visitor reads and would re-date all 307 pages.
 
 ### 2026-09-19 — the memory table answered a question nobody asks in the words it is asked in
 
