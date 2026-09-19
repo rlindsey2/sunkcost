@@ -24,7 +24,7 @@ import {
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
-  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
+  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, memoryTierPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
   versusCardPath,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
@@ -653,6 +653,65 @@ function checkCompareIndex() {
     throw new Error(`${missing.length} comparisons are missing from the head-to-head index`);
   }
   console.log(`  the head-to-head index lists all ${comparisons.length} comparisons`);
+}
+
+/**
+ * The index says what cuts its two lists, and a rule added to `versus-card.ts` without
+ * a clause on the page leaves rows nothing on it explains. This holds the sentence to
+ * the rules in both directions: every match-up the page lists is reached by a kind the
+ * page names, every kind the page names reaches at least one match-up on it, and the
+ * page really carries each clause and the count of them.
+ *
+ * It is checked against the recut rules rather than against the table, so a kind whose
+ * pairs an earlier rule reached first still has to be named: the reader of a row cannot
+ * see which rule got there first, only whether the page explains why the two are on a
+ * page together.
+ */
+function checkMatchUpKinds() {
+  const index = meta.find((p) => p.path === '/compare/');
+  if (!index) throw new Error('no head-to-head index was written');
+  const problems: string[] = [];
+  let named = 0;
+
+  // a match-up is the same one whichever way round its address is written, and the
+  // address is written by whichever rule reached the pair first: four card pairs are
+  // cut by both grids and carry the flagship grid's order. So the two sides are matched
+  // on the pair rather than on the path.
+  const hold = <T extends { id: string }>(
+    what: string,
+    kinds: MatchUpKind<T>[],
+    all: [T, T][],
+    label: (a: T, b: T) => string,
+  ) => {
+    const key = (a: T, b: T) => [a.id, b.id].sort().join(' vs ');
+    const listed = new Map(all.map(([a, b]) => [key(a, b), label(a, b)]));
+    const explained = new Set<string>();
+    for (const kind of kinds) {
+      const onPage = kind.pairs.map(([a, b]) => key(a, b)).filter((k) => listed.has(k));
+      if (!onPage.length) problems.push(`the head-to-head index names a kind of ${what} match-up that cuts none of them: ${kind.clause}`);
+      for (const k of onPage) explained.add(k);
+      if (!index.html.includes(esc(kind.clause)))
+        problems.push(`the head-to-head index does not say what puts ${onPage.length} ${what} match-ups on it: ${kind.clause}`);
+      named++;
+    }
+    for (const [k, name] of listed)
+      if (!explained.has(k)) problems.push(`the head-to-head index lists ${name} and names no kind of match-up that cuts it`);
+    const count = `${sentenceCase(numberWord(kinds.length))} kinds of match-up cut this list.`;
+    if (!index.html.includes(count)) problems.push(`the head-to-head index does not say it lists ${kinds.length} kinds of ${what} match-up`);
+  };
+
+  hold('machine', machineMatchUpKinds(), hardwarePairs(data), (a, b) => `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`);
+  hold('model', modelMatchUpKinds(), modelPairs(data), (a, b) => `${a.display_name} vs ${b.display_name}`);
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing the head-to-head index says about its own lists does not hold'
+        : `${problems.length} things the head-to-head index says about its own lists do not hold`,
+    );
+  }
+  console.log(`  the head-to-head index names the ${named} rules that cut its ${hardwarePairs(data).length} machine and ${modelPairs(data).length} model match-ups, and every one of them is cut by a rule it names`);
 }
 
 /**
@@ -4405,6 +4464,98 @@ ${modelSiblingNote(a, b)}
 /* ------------------------- the head-to-head index ------------------------- */
 
 /**
+ * What cuts the two lists on `/compare/`, one entry per rule, in the order
+ * `hardwarePairs()` and `modelPairs()` apply them.
+ *
+ * The sentence above each table is written from this list rather than by hand, because
+ * written by hand it drifted: seven rules cut the machine match-ups while the page said
+ * five, and three cut the model match-ups while it said two, so 50 of the 189 rows sat
+ * under an explanation that did not reach them. A reader who found *Mac mini M6, 32GB vs
+ * Radeon AI PRO R9700, 32GB* on a page naming five kinds none of them was had no way to
+ * tell why the two were on a page together.
+ *
+ * `checkMatchUpKinds()` holds the list to the rules: a rule added to `versus-card.ts`
+ * without a clause here fails the build naming the match-up nothing explains.
+ */
+interface MatchUpKind<T> {
+  /** every pair this rule cuts, whether or not an earlier rule reached it first */
+  pairs: [T, T][];
+  /** the clause the page gives it, mid-sentence and without its punctuation */
+  clause: string;
+}
+
+const gridOf = <T,>(xs: T[]): [T, T][] => {
+  const out: [T, T][] = [];
+  for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) out.push([xs[i], xs[j]]);
+  return out;
+};
+
+const machineMatchUpKinds = (): MatchUpKind<Hardware>[] => [
+  {
+    pairs: gridOf(flagshipMachines(data)),
+    clause: 'One machine per family, the middle of its range by price, against every other',
+  },
+  {
+    pairs: gridOf(graphicsCards(data)),
+    clause: 'Every graphics card against every other card, since a card is bought as a part and a part is what people put against another part',
+  },
+  {
+    pairs: memoryTierPairs(data),
+    clause: 'Every memory tier of one machine against the others, which is the question left once you have picked the box',
+  },
+  {
+    pairs: sameSiliconPairs(data),
+    clause: 'Each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top',
+  },
+  {
+    pairs: generationPairs(data),
+    clause: 'Every discontinued machine against the one that replaced it, which is the upgrade question',
+  },
+  {
+    pairs: chipStepPairs(data),
+    clause: 'The cheapest configuration of a box against the cheapest one with the better chip in it, since what a maker cuts to reach a headline price is the chip and the memory at once',
+  },
+  {
+    pairs: priceNeighbourPairs(data),
+    clause: `Each machine against the one from another family nearest it in price, within ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}%, which holds the price still and asks what the same money buys twice`,
+  },
+];
+
+const modelMatchUpKinds = (): MatchUpKind<Model>[] => {
+  const ranked = rankedModels(data);
+  const ladder: [Model, Model][] = [];
+  for (let i = 0; i + 1 < ranked.length; i++) ladder.push([ranked[i], ranked[i + 1]]);
+  return [
+    {
+      pairs: ladder,
+      clause: 'Each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds',
+    },
+    {
+      pairs: modelGenerationPairs(data),
+      clause: 'Each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it',
+    },
+    {
+      pairs: memoryNeighbourPairs(data),
+      clause: `Each model against the one from another family nearest it in the memory it needs, within ${Math.round(MODEL_MEMORY_GAP * 100)}%, which is where a reader with a machine already on the desk starts`,
+    },
+  ];
+};
+
+/**
+ * The kinds, as a line saying how many and one line each.
+ *
+ * They were a single sentence of clauses while there were two of them and five, and at
+ * seven that sentence ran to 170 words and six semicolons — a wall in front of the table
+ * it explains, on a page a reader comes to for one row. A list is what it always was.
+ */
+function matchUpKindsList(kinds: { clause: string }[]): string {
+  const items = kinds.map((k) => `<li>${k.clause}.</li>`).join('');
+  return `<p>${sentenceCase(numberWord(kinds.length))} kinds of match-up cut this list.</p>
+<ul class="rules">${items}</ul>`;
+}
+
+
+/**
  * One page listing every comparison this site writes. Somebody typing
  * "mac studio vs rtx 5090" wants the match-up, not either machine's own page,
  * and until now a comparison could only be found from the two things it
@@ -4501,14 +4652,16 @@ ${most && cheapest ? `<h2>Does any machine here hold every model?</h2>
 <p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
 
 <h2>Machine against machine</h2>
-<p>Five kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top; and every discontinued machine against the one that replaced it, which is the upgrade question. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+${matchUpKindsList(machineMatchUpKinds())}
+<p>The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
 <tbody>${machineRows}</tbody>
 </table>`, { fig: 3, labels: { 4: 'Both speeds' } })}
 
 <h2>Model against model</h2>
-<p>Two kinds of match-up: each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds; and each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it. The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
+${matchUpKindsList(modelMatchUpKinds())}
+<p>The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Score</th><th>Weights</th><th>Cheapest machine that runs both</th><th></th></tr></thead>
 <tbody>${modelRows}</tbody>
@@ -6517,6 +6670,7 @@ checkTables();
 checkPairedColumns();
 checkArticles();
 checkCompareIndex();
+checkMatchUpKinds();
 checkHardwareIndex();
 checkPayback();
 checkMeetingPoint();
