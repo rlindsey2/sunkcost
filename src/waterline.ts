@@ -9,7 +9,8 @@
  * cards are drawn by the same code.
  */
 import { positionAfterDays } from './calc';
-import { fmtUsd } from './format';
+import { fmtNum, fmtUsd } from './format';
+import { EM } from './text-fit';
 
 export interface WaterlineOptions {
   devicePriceUsd: number;
@@ -74,6 +75,21 @@ export function waterlineGeometry(o: WaterlineOptions): WaterlineGeometry {
   return { horizonDays: Math.max(o.breakevenDays * 1.16, 60), surfacesOnChart: true, surfacesOffChart: false, never: false };
 }
 
+/**
+ * The step that keeps the axis to six labels or fewer, at whatever scale the
+ * wait turns out to be. A ladder that stops has to fall back on its last rung,
+ * and at the far end of this site's data that is a label every hundred years
+ * against a horizon of millions: tens of thousands of them, stacked on top of
+ * each other at the origin. So the ladder does not stop — 1, 2 and 5, climbing
+ * a decade at a time for as long as the numbers do.
+ */
+function yearStep(years: number): number {
+  if (years <= 3) return 0.5;
+  const target = years / 6;
+  const mag = Math.pow(10, Math.floor(Math.log10(target)));
+  return [1, 2, 5, 10].map((m) => m * mag).find((c) => c >= target)!;
+}
+
 function niceTimeTicks(horizonDays: number): { days: number; label: string }[] {
   const years = horizonDays / YEAR;
   const out: { days: number; label: string }[] = [];
@@ -83,9 +99,8 @@ function niceTimeTicks(horizonDays: number): { days: number; label: string }[] {
     for (let m = step; m * (YEAR / 12) <= horizonDays * 1.001; m += step) out.push({ days: m * (YEAR / 12), label: `${m} mo` });
     return out;
   }
-  const steps = [0.5, 1, 2, 5, 10, 20, 50, 100];
-  const step = steps.find((s) => years / s <= 6) ?? 100;
-  for (let y = step; y <= years * 1.001; y += step) out.push({ days: y * YEAR, label: `${y % 1 === 0 ? y : y.toFixed(1)} yr` });
+  const step = yearStep(years);
+  for (let y = step; y <= years * 1.001; y += step) out.push({ days: y * YEAR, label: `${fmtNum(y)} yr` });
   return out;
 }
 
@@ -259,7 +274,10 @@ export function renderWaterline(o: WaterlineOptions): string {
     }
     for (const t of niceTimeTicks(T)) {
       const tx = x(t.days);
-      if (tx > labelR - 12 * s) continue;
+      // a tick is centred on its year, so it is the label's own width that has
+      // to fit, not a fixed allowance: "4,000 yr" needs twice what "4 yr" does
+      const half = (t.label.length * 10.5 * s * EM) / 2;
+      if (tx + half > labelR || tx - half < labelL) continue;
       // a tick label sitting under the year-one label would print on top of it
       if (markerBox && Math.abs(markerBox.y - ty) < 13 * s && tx + 20 * s > markerBox.x0 && tx - 20 * s < markerBox.x1) continue;
       p.push(`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.55" style="font-variant-numeric: tabular-nums">${t.label}</text>`);
@@ -272,8 +290,8 @@ export function renderWaterline(o: WaterlineOptions): string {
 
 export function labelDays(days: number): string {
   const years = days / YEAR;
-  if (years >= 0.98 && Math.abs(years - Math.round(years)) < 0.03) return `${Math.round(years)} yr${Math.round(years) === 1 ? '' : 's'}`;
-  if (years >= 1.5) return years >= 100 ? `${Math.round(years)} yrs` : `${years.toFixed(1)} yrs`;
+  if (years >= 0.98 && Math.abs(years - Math.round(years)) < 0.03) return `${fmtNum(Math.round(years), 0)} yr${Math.round(years) === 1 ? '' : 's'}`;
+  if (years >= 1.5) return years >= 100 ? `${fmtNum(Math.round(years), 0)} yrs` : `${years.toFixed(1)} yrs`;
   const months = days / (YEAR / 12);
   if (months >= 1.5) return `${months.toFixed(1)} mo`;
   return `${Math.round(days)} days`;
