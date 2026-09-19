@@ -680,7 +680,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       section headings above named groups of rows is the likelier answer, and it is `<tbody>` per
       group rather than a new page type, so it stays a push.
 
-- [ ] **`/compare/` heads two sections and is now the thinnest page on the site**, measured
+- [x] **`/compare/` headed two sections and was the thinnest page on the site.** Done 2026-09-19,
+      pushed as `a97e551`. It heads four now and offers a way into all four, and the item's own
+      question — whether the page has a third thing to say that is not filler — was answered by
+      reading it: **it had two, and both were sitting as unheaded prose at either end.** Its own
+      answer about what the 53 machines compared here hold opens the page under the lede, and its
+      assumptions close it under the last table, the same two things `/hardware/` and
+      `/leaderboard/` had headed the run before. Nothing was written for the occasion, no sentence
+      changed, and the rules cutting the match-ups stay where they were, under the two headings
+      they already explain. The run entry below has the figures and the three breaks.
+      The original follows. Measured
       2026-09-19 after the two indexes above were cut. 111 machine match-ups sit under *Machine
       against machine* and 78 model match-ups under *Model against model*, which is an honest cut
       of what the page holds — but two sections is below the floor a jump line wants, and the page
@@ -692,6 +701,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       is the one question a reader of an index of 189 pairs has that the table does not answer.
       Both section headings are named in `SECTIONS` and linked from other pages by name, so neither
       can be reworded without `checkSectionLinks` saying so, which is the guard doing its job.
+
+- [ ] **Two sections on one page can carry the same words and the build says nothing.** Found
+      2026-09-19 while breaking the guards on `/compare/`: `checkHeadingAnchors()` prints *none
+      repeated on its page*, and that is true of the **ids** rather than of the headings —
+      `anchorHeadings` gives a repeated slug a `-2` suffix, so a page with two sections headed the
+      same words builds clean, and its jump line then offers the reader the same words twice
+      pointing at two different places. No page on the site does this today; the whole of the work
+      is a claim in that guard and a break to prove it, and it is `scripts/build-pages.ts`, so it is
+      a push. Small, and the sort of thing that is cheap now and confusing the day a template
+      repeats a heading.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1544,6 +1563,75 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the index of 189 match-ups says what is on it
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which is a new page
+type and waits on Ryan's two open pull requests; the one below it was `/compare/`, the thinnest page
+on the site at two sections and the third of the four top-level indexes to head almost nothing.
+
+**The question the item left, answered by reading the page rather than by writing for it.** It asked
+whether `/compare/` has a third thing to say that is not filler, and guessed the answer was the rules
+cutting the match-ups. Those rules are already on the page, a paragraph each under the two headings
+it had. What is not headed is the page's own answer — *none of the 53 machines compared here holds
+more than 38 of the 39 open models* — and its own assumptions, which open and close the page as
+unheaded prose. So the same treatment the two big indexes had yesterday: two headings over prose that
+was already there, and **not one sentence written, changed or removed.**
+
+| | before | after |
+| --- | --- | --- |
+| sections on `/compare/` | 2 | 4 |
+| jumps into its own sections | 0 | 4 |
+| section headings on the site | 1,185 | 1,187 |
+| pages offering a way into their own sections | 150 | 151 |
+| jumps, one a section | 618 | 622 |
+| pages whose words changed | — | 1 of 307 |
+| dates moved in `seo/page-dates.json` | — | 0 |
+
+**How it reads.** *Does any machine here hold every model?* · *Machine against machine* · *Model
+against model* · *The assumptions behind both tables*. The first is the question the paragraph under
+it has been answering since it was written, in the form `/hardware/` and `/leaderboard/` already ask
+theirs; the last is what the head-to-heads have called *The assumptions behind both columns* for
+weeks, in the plural the two tables here make it. Four sections is exactly the floor
+`JUMP_MIN_SECTIONS` sets and no heading names a machine or a model, so the jump line came from the
+rule written two days ago without a line of that rule changing.
+
+**Three breaks, each run.** Head the note with the page's own `h1` → *`/compare/` heads a section
+"Every head-to-head: machine against machine, model against model", which is the page's own title
+said twice*, exit 1. Drop the note's heading and the page falls back to three sections → **the build
+passes and the jump line goes silently**, 150 pages and 618 jumps again. That is the rule's floor
+doing what it was written to do rather than a fault, and it is worth knowing that the loss is quiet.
+The third is worth writing down because it is not what the print claims: give the page two sections
+with the same words and **the build passes** — `anchorHeadings` gives the second the `-2` id, and
+`checkHeadingAnchors` holds ids apart rather than headings, so *none repeated on its page* is a claim
+about addresses, not about words. It is in the backlog below.
+
+**Nothing else on the site moved.** The site was built before and after and all 307 pages compared:
+`/compare/` differs, the other 306 are byte-for-byte identical, and `sitemap.xml` changes only in
+that one page's `lastmod`, which stays `2026-09-19` because the page had already changed today. One
+hash line moves in `seo/page-dates.json`. Note for the next run that touches a page: the first build
+after a change writes the new hash and drops that page's `lastmod`, and a second build puts the date
+back — so build twice before reading the sitemap, or the guard's own count says *307 of 308*.
+
+**Verified**: 403 tests, typecheck clean, `npm run validate` with the two null prices already on
+Ryan's side of this file, 307 pages with every guard passing, the full `npm run build` end to end
+including `build:og`, `build:share` and `build:functions`, and the page read rendered out of `dist/`
+rather than from the source — 5,909 words, the jump line above the first section, and the four
+headings in the order the line names them. **Pushed as `a97e551`**; deploy run 241 was still in flight when
+this entry was written, and gets a line of its own once it lands. The live site was not read back: this
+environment's egress proxy blocks `sunkcost.ai`, so everything above is from the built output.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree and
+built there rather than trusted to `git merge-tree`: no conflict, 413 tests, typecheck clean, 308
+pages with every guard passing, and `/compare/`'s new line survives the merge — 152 pages and 626
+jumps, the extra four being `/cost-per-month/`'s own. PR #17 touches `index.html` and
+`src/styles.css`, which this change goes nowhere near; `git merge-tree` reports it clean.
+
+**What to continue.** The backlog's top open item is still the per-memory-size pages, a pull request
+that wants Ryan's two settled first. Below it the new item about the heading-id gap, and `/compare/`
+is no longer the thinnest page on the site: the floor is 3 sections now, on 37 machine pages and 45
+model head-to-heads, and none of those is thin in the way an index of 189 pairs was.
 
 ### 2026-09-19 — the two indexes that headed nothing
 
