@@ -29,51 +29,33 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       can name — never inventing one, and stopping where a figure is missing — say so and the rule
       can be lifted for this the way it was lifted for the usage slider in PR #6.
 
-- [ ] **Three of the five open pull requests are now one: [PR #15](https://github.com/rlindsey2/sunkcost/pull/15).**
+- [x] **Three pull requests became one and it is merged: [PR #15](https://github.com/rlindsey2/sunkcost/pull/15).**
       Ryan asked for this at 02:00 on 2026-09-19, because #8, #10 and #13 all conflicted with `main`
-      and with each other. #15 is those three branches merged onto `main` at `0c970b4` — no new work
-      — and it merges clean. **You merged #12 and #14 yourself at 12:18 and 12:19 while it was being
-      built**, so #15 has merged `main` since and carries both; it is now **the only open pull
-      request**. The three originals are **left open rather than closed**, in case you would
-      rather take them separately; closing them is a click and nobody should do it but you.
-      What #15 carries: the `/local-llm-vs-api-cost/` page, the `/hardware/` index of all 56
-      machines, and the calculator's assumptions panel. 346 tests, typecheck clean, the full build
-      with `build:functions`, 255 pages, both new pages read rendered out of `dist/`, and the
-      calculator itself rendered in Chromium to read the panel.
-      **The part of it worth a second look** is in the pull request too: in
-      `scripts/build-pages.ts` and `src/list-card.ts` the two page branches add their builder in the
-      same place, so git interleaved them into one broken function — one function's opening, the
-      other's body, a single shared `return`. A union compiles to nothing sensible and silently
-      drops the first function's tail. Each side's block was taken whole from its own branch
-      instead. That is the shape to expect the next time two page branches meet, and it is not what
-      the old "every resolution is a union" note predicts.
-      **It has merged `main` once more since, at `ccc6266`, and still merges clean.** The 02:31
-      run of this same hourly job pushed `d9d8068` to `main` — a second rule for model
-      head-to-heads and six pages with it — which broke this branch's merge in three files, so
-      that run repaired it rather than leaving it, since it was its own push that broke it. Two
-      were import-list unions; the third hit the interleave this item already warns about, one
-      level along: the two appended `describe` blocks in `tests/pagekit.test.ts` were run into one
-      because both end on the same closing lines, so each was taken whole from its own side.
-      Verified on the merge: 354 tests, typecheck clean, 261 pages, every guard passing, and
-      nothing about what the pull request carries has changed.
-      **Merged `main` once more at `1dcaf6b`, at 04:02 on 2026-09-19, and still merges clean.** The
-      03:31 run of this hourly job pushed `be3484e` to `main` — the links between one head-to-head and
-      another — which broke this branch in the same three files, so that run repaired it rather than
-      leaving it. Two were import-list unions; the third was the interleave at the end of
-      `src/pagekit.ts`, where both sides append and git left the branch's own closing brace outside
-      the marker. Verified on the merge: 362 tests, typecheck clean, 261 pages, every guard passing,
-      and nothing about what the pull request carries has changed.
-      **Merged `main` once more at `f298ef5`, at 04:52 on 2026-09-19, and still merges clean.** The
-      04:31 run of this hourly job pushed `471fc47` to `main` — the link to the card ranking on every
-      page that prices a card — which broke this branch in two files, so that run repaired it rather
-      than leaving it. Both were import-list unions, and nothing hit the interleave the last two
-      repairs did, because neither side appends to the end of a file. Verified on the merge: 367
-      tests, typecheck clean, 261 pages, every guard passing, and the full build. **One thing it
-      turned up is not the merge's to fix and is worth knowing before you merge:** this branch's
-      `/hardware/` index says graphics cards are priced as the card alone and does not link the
-      ranking, so it would land as the one page on the site outside that new rule. The guard cannot
-      catch it, because `/hardware/` does not exist on `main` for it to name. One
-      `${cardRankingLine(data)}` in that page's note settles it.
+      and with each other; **he merged it at 05:19 and deploy run 202 went green at 05:22 on
+      `a5caf81`**, so the `/local-llm-vs-api-cost/` page, the `/hardware/` index and the
+      calculator's assumptions panel are all live. Verified on merged `main` rather than assumed:
+      367 tests, typecheck clean, the full `npm run build` with `build:functions`, **261 pages**,
+      every guard passing, and both new pages read out of `dist/` — 1,708 words at `/hardware/` and
+      1,497 at `/local-llm-vs-api-cost/`, both in the sitemap.
+      **What to keep from it, because it will happen again.** Where two branches each append to the
+      same place in a file — a page builder, a share card, a `describe` block at the end of a test
+      file — git does not offer two blocks to choose between. **It interleaves them into one broken
+      function**: one side's opening, the other's body, a single shared `return`, with the first
+      side's tail swallowed as common context. A union of the marked hunks compiles to nothing
+      sensible and silently drops that tail; `tsc` caught it at 21 errors the first time, and
+      `git apply -3` gave cleaner blocks and the same fault one level down, because the closing
+      lines are common text too. **Take each side's block whole from its own branch and splice both
+      in**, then hand-merge the import lists. Four later repairs by sibling sessions hit the same
+      shape twice more, in `tests/pagekit.test.ts` and at the end of `src/pagekit.ts`.
+      **The one thing that repair flagged is now fixed.** `/hardware/` priced seven cards, said the
+      card-alone caveat and did not link the ranking, which made it the only page on the site
+      outside the rule the 04:31 run had just written — and the guard could not catch it, because
+      `/hardware/` did not exist on `main` when the rule was made. Pushed as `87a6a6d`: one
+      `${cardRankingLine(data)}` in that note, and `/hardware/` added to `checkCardRanking()`'s list
+      of indexes, so it cannot come back. 90 pages become 91, and with the sentence removed the
+      build fails naming the page, exit 1.
+      **#8, #10 and #13 are left open rather than closed**, in case you would rather look at them
+      separately; closing them is a click and nobody should do it but you.
       **Ryan was notified about the queue at 01:55 on 2026-09-19**, before he asked for this; that
       was the first ping about it and it should not be repeated unless something changes.
 
