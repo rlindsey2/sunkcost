@@ -589,6 +589,24 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       push rather than a pull request. This is a trust fix rather than a traffic one, and it is the
       same fault the stand-in power figure had on the comparison pages two days ago.
 
+- [ ] **The price-neighbour rule has a round number in it, and one day it will bite.** The cap
+      is a tenth. On the data as it stands that is not a judgement call at all: the widest pair it
+      keeps is 8.8% apart and the nearest one it turns away is 15.5%, so nothing sits on the line
+      and moving the cap anywhere between those two changes nothing. The pair it excludes today is
+      the Mac mini M6, 24GB against the Framework Desktop, 32GB, $1,099 against $1,269, which is a
+      real question a buyer asks and the only one the rule turns away. Worth revisiting when a price
+      in `data/hardware.json` moves and the gap between 8.8% and 15.5% closes: at that point the cap
+      is deciding something and should be set by what it is deciding, not by being round. Written
+      down 2026-09-19 so the next run does not read the number as considered.
+
+- [ ] **21 new pages share 45 words, and it is the rule's own explanation.** The sentence *"Every
+      other head-to-head on this site holds a piece of the hardware equal and asks what the price
+      gap buys"* is identical on all 21 price-neighbour pages, because it is the same fact on all
+      21. At 45 words against 858 to 1,180 it is under 5% of each page, and the two sentences around
+      it carry that pair's own prices, its own makers and its own card caveat, which is the split
+      the machine-lede item settled on in the morning. Measured and left alone deliberately; written
+      down so a future similarity sweep recognises it rather than re-finding it.
+
 - [ ] **The home page carries 142 words, and every one of them is a form label.** Measured
       2026-09-19 over the static markup inside `<main>` on `index.html`: *Tokens a day*, *Context
       window you want*, *Copy link*, *Assumptions you can change*, and the privacy note. The thinnest
@@ -1328,6 +1346,107 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — the site compared machines by hardware and never by money
+
+**Why this item.** `npm run model-watch` prints 2026-09-19, so the watch was done and the backlog was
+the job. Every open item on it is waiting on Ryan, already written down as "leave it", or a "worth one
+look" its own wording expects to end in nothing, which is where the three runs before this one found
+it too. Both open pull requests were checked before anything else and **both still merge clean into
+`main`**, #17 at `6c81367` and #16 at `2c7e5e2`, so there was no repair to do. So this run went
+looking, the way the entry below said the next one would have to.
+
+**What it found, by reading the rules rather than the pages.** Six rules cut the 144 head-to-heads
+this site had, and **every one of them holds a piece of the hardware equal and asks what the price
+gap buys**: the same chip at two memory sizes, the same silicon in two boxes, the same box a
+generation apart, one box's entry chip against the one above it, the grid of family flagships, the
+grid of cards. Not one of them asks the question a buyer starts from, which is what a given amount
+of money buys. $1,299 is a Mac mini M6 with 32 GB **or** a Radeon AI PRO R9700 with 32 GB, $4,699 is
+a DGX Spark and $4,700 a Corsair AI Workstation 300 with the same 128 GB, and nothing on this site
+put either pair side by side. A cross-family pair existed only between the eight family flagships,
+which is the median-priced machine of each range, so the prices in those 28 pairs are as far apart
+as the ranges are.
+
+**The rule.** `priceNeighbourPairs()`: each machine against the machine from another family nearest
+it in price, cheaper side first, where the two are within a tenth of each other. Discontinued and
+unpriced machines are out, because the price is the whole of the comparison. One pair per machine,
+its own nearest, rather than every pair inside a price band — a band writes a grid of near-identical
+pages around the crowded prices and leaves the cheap and dear ends with none. The families have to
+differ, because two machines from one maker at the same price are the memory tiers and chip steps the
+older rules already cut.
+
+| | before | after |
+| --- | --- | --- |
+| machine head-to-heads | 90 | 111 |
+| head-to-heads of every kind | 144 | 165 |
+| pages on the site | 261 | 282 |
+
+**The 21 pages, and why none of them is thin.** 858 to 1,180 words each, against a site median of
+1,024, every one in the sitemap and linked from `/compare/`, every one carrying the full comparison
+table, the like-for-like on the strongest model both hold, pay-back at five levels of use and the
+prefilled calculator links that go with them. The template was already proven on cross-family and
+card-against-computer pairs, because the flagship grid makes both shapes, so nothing here is a page
+type the site has not shipped.
+
+**The section they carry, and what it deliberately does not say.** `sameMoneySection()` is one
+paragraph, because the rest of the page already prices what each machine holds, how fast it runs it
+and how long it takes to pay back, and a section that repeats a figure is filler. It says the two
+prices and the gap, names the two makers from `brandOf()` — eleven of the 21 are two Apple machines,
+so a sentence about different makers would be wrong on half of them — and then says the one thing
+nothing else on the page says: that the row which usually carries the answer is the row these two
+agree on. Where one side is a graphics card it adds that its price is the card alone, which is what
+stops the two figures being the same money at all. Three pages are that shape.
+
+**One wording fault came with the new pages and is fixed for the whole site.** Two machines at the
+same price on the same model can come out days apart over decades, and days do not survive the
+rounding the pages print at, so `machineVerdict()` opened three pages with *"pays for itself sooner,
+in 17 years against 17 years at 500k tokens a day"* — a sentence arguing with the table under it,
+which prints both as 17 years. It compares the printed durations now, not the raw days, and says
+*"Both pay for themselves in 17 years"* where they match. The branch existed for an exact tie; it
+just never fired, because two machines are rarely equal to the day.
+
+**Two guards.** `checkPriceNeighbours()` recuts the rule from `data/hardware.json` rather than reading
+the list the pages were built from: every pair two current priced machines of different families,
+cheaper first, inside the cap, and one of the two's genuine nearest price outside its own family. It
+holds the other direction as well — no page that is not such a pair may carry the section — and where
+one side is a card it holds the section to saying what that price buys. It prints `21 head-to-heads
+between machines of different families within 10% of each other in price, 3 of them pricing a card
+against a whole computer`. `checkPayBackReads()` holds the lede across all 165 comparisons.
+
+**Seven breaks proved the guards**, exit 1 each time: the section dropped (named the first of 21);
+the section printed on every pair (*says two machines cost the same money and is not a pair the rule
+cut*); the cap widened to 25% (*is 15% apart in price*, plus a pair with no page and a page with no
+pair); the card caveat removed, with the older `checkCardPrices()` silenced so the new claim had to
+be the one that fired (3 pages, *calls a card's price the same money as a whole computer*); the pairs
+written dearer side first (21 pages); and the pay-back fix undone (3 pages, naming the figure printed
+on both sides). **Four more proved the eight new tests**: the family test dropped, the cap removed,
+the rule appended before the others instead of last, and the lede fix undone.
+
+**Verified.** 380 tests (8 new), typecheck clean, the full `npm run build` end to end with
+`build:functions`, 282 pages with every guard passing, and the new share cards drawn and checked by
+the existing card tests, which cover every pair `hardwarePairs()` returns. Six of the 21 pages read
+rendered out of `dist/` — a card against a computer, two machines at the same price to the dollar,
+two at $1 apart, two at the far ends of the memory range — and all 21 swept for maintainer words and
+em dashes, of which there are none.
+
+**Pushed to `main` as `9d035bb`**, deploy run 218, green at 11:05 and published.
+
+**Both open pull requests were re-checked against this push, really merged and built rather than
+trusted to a clean `git merge-tree`.** PR #16 (`seo/cost-per-month`) merges clean: 390 tests,
+typecheck clean, 283 pages with every guard passing, and `/cost-per-month/` passes both new guards as
+it stands. PR #17 (`seo/home-h1`) merges clean: 382 tests, typecheck clean, 282 pages. Neither merge
+leaves `seo/page-dates.json` dirty after a rebuild, so neither needs the extra commit the top of this
+file warns about for the other collision. **The two still do not merge cleanly into each other** —
+`git merge-tree pr16 pr17` still reports the conflict — and that resolution is unchanged, because
+nothing in this push touches `index.html`.
+
+**What to continue.** Nothing here is half-finished. The two new backlog items are both "written down
+so nobody re-finds it" rather than work: the cap is a round number that decides nothing today, and
+the 45 words the 21 pages share are the rule's own explanation. Every other open item is still
+waiting on Ryan, so the next run should expect to go looking with a measurement of its own again.
+The model side is the obvious place left: the machine head-to-heads now have six rules and the model
+ones have two, and nobody has asked whether models have a question the two rules miss the way the
+machines did.
 
 ### 2026-09-19 — a machine page printed 661 speeds and named the source of one
 
