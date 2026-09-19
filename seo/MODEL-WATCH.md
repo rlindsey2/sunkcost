@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-18
+Last checked: 2026-09-19
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -68,6 +68,54 @@ but its absence is not what blocks a model from being added.
 
 ## Candidates
 
+### 2026-09-19 · Agnes 3.0-Flash (Agnes AI) — worth adding, needs figures
+
+A 33B open-weight multimodal model, Apache 2.0, released 2026-09-11, with weights on Hugging Face
+at `Agnes-AI/Agnes-3.0-Flash`. It matters here for its attention rather than its size: the
+coverage describes 72 decoder layers where three in every four run a gated delta rule with a
+fixed-size state and only the fourth carries a key-value cache, so **18 layers of 72 pay for the
+context window**. This site's whole memory sum is weights plus a cache that grows with the window,
+and a model that stops the cache growing on three layers in four is the kind that changes which
+machines hold what at 128k and beyond. Context is stated as 262,144 tokens. Artificial Analysis
+carries a page for it, which is the field the Bonsai candidate below is stuck on.
+
+Sources, none of them opened from here: the [Hugging Face
+repo](https://huggingface.co/Agnes-AI/Agnes-3.0-Flash), [Artificial
+Analysis](https://artificialanalysis.ai/models/agnes-3-0-flash), and MindStudio's
+[explainer](https://www.mindstudio.ai/blog/agnes-3-0-flash-preview-open-weights) and [hardware
+notes](https://www.mindstudio.ai/blog/agnes-3-0-flash-hardware-requirements), which is where the
+66 GB disk figure and the layer counts come from.
+
+**Still missing:** `weights_gb` at the quantisation actually entered, from a named GGUF or MLX
+repo — 66 GB is the released precision, not a four-bit build; the `architecture` figures from
+`config.json`; the index score itself; and whether anybody rents it, which decides whether
+`cloud_equivalent` is real or a stand-in.
+
+**One thing worth knowing before the row is written.** `architecture` here is `n_layers`,
+`n_kv_heads` and `head_dim`, and `validate-data.ts` recomputes `kv_cache_gb_per_8k` from the three
+and fails if they disagree. A model where only 18 of 72 layers hold a cache is expressible — enter
+the layers that do, and `architecture.note` says why the number is not the model card's — and
+`types.ts` already carries a bytes-per-token override for the models whose cache is not
+`n_kv_heads × head_dim`. What the schema has no room for is the recurrent state the other 54
+layers keep, which is memory a machine has to find and this site would not be counting.
+
+### 2026-09-19 · Nex-N2.5-mini — worth adding, needs figures
+
+A 35.1B total / 3B active sparse mixture of experts on the Qwen3.5-MoE architecture, Apache 2.0,
+released 2026-09-08, 262,144 context, multimodal. It sits almost exactly where Qwen3.6 35B-A3B
+sits on this site — 22.13 GB at Q4_K_M — so it is a row rather than a rethink, and community GGUF
+builds exist: an IQ4_XS at about 21.3 GB, 3-bit builds near 15.6 GB, and a 13.56 GiB custom quant.
+The architecture is given as 256 experts with 8 active per token and 40 text layers.
+
+Sources, none of them opened from here: [one community GGUF
+repo](https://huggingface.co/ngquocvinh/Nex-N2.5-mini-GGUF), [another with the quantisation
+sizes](https://huggingface.co/IsValorum/Nex-N2.5-mini-APEX-I-MiniPlus-GGUF) and
+[LocalClaw's notes on running it](https://localclaw.io/models/nex-n2-5-mini).
+
+**Still missing:** a Q4_K_M figure from a repo worth citing — every size above is a community
+build at a different precision, and this site names the quantisation it prices; `n_kv_heads` and
+`head_dim` from `config.json`; an index score; and a rental price.
+
 ### 2026-09-17 · Ternary Bonsai 2 27B (PrismML) — worth adding, needs figures
 
 **Why it matters here, which is not the reason the coverage gives.** It is Qwen3.8 27B — the model
@@ -107,5 +155,18 @@ prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
 
-Nothing yet. This is where a model goes once it has been looked at and ruled out, with the reason,
-so no later run spends an hour reaching the same answer.
+### 2026-09-19
+
+- **Tencent Hy4 preview** (2026-08-28), 770B total / 49B active, Apache 2.0, 1M context. Genuinely
+  open and the cheapest of the flagship-tier open models to rent, but it is four times the size of
+  anything this site can hold: at the four-bit sizes the data already carries, 770B lands near
+  450 GB against the 119.5 GB the largest machine here can address. Nothing on the list runs it, so
+  a row would be a page saying no. Revisit only if a machine with that much usable memory is priced.
+- **Atria Dawn Preview**, 744B mixture of experts built on GLM-5.2, MIT, 256k context. Same reason,
+  same arithmetic.
+- **Sakana AI Fugu Max and Fugu Ultra v2** (2026-09-11). Not a model in this site's sense: Fugu is
+  an orchestrator that routes a request to other models behind one API. There are no weights to
+  download and nothing to fit in a machine.
+
+This is where a model goes once it has been looked at and ruled out, with the reason, so no later
+run spends an hour reaching the same answer.

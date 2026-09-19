@@ -452,6 +452,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       record a model and everything it still needs, but it cannot write `data/*.json`, which is the
       rule that keeps every figure on this site sourced. So a found model waits on him.
 
+- [ ] **The mirror of what the machine pages gained on 2026-09-19: does a model page name every
+      machine that runs it?** A machine page's table stopped at twelve and the rest were a count,
+      which left 530 machine-and-model pairs with no link between them; that is fixed. A model
+      page has a "Machines that run it" table with its own shape, and nobody has measured whether
+      it names every machine that holds the model or only the cheapest per family.
+      **Measured on 2026-09-19 and it is the second: 1,190 pairs where a machine's page links the
+      model and the model's page does not link the machine back. 16 of the 55 model pages name
+      every machine that runs them; Ling 3.0 tiny runs on all 56 and names 8.**
+      That is not the same fault, and it should not get the same fix without thought. A machine
+      runs at most 39 models, so naming them all is a sentence; a small model runs on all 56
+      machines, and 56 names is a dump nobody reads. `cheapestPerFamily()` is a deliberate choice
+      and a good one. The question to settle first is what the reader on a model page is missing:
+      probably not every machine, but the one they own, and the shape that answers it is a list by
+      family rather than by name. Worth one look before anything is written.
+
 - [x] **36 model pages opened with this site's own ratings paperwork, and 31 of them then printed
       the score it said they did not have.** Done 2026-09-18. `capability_note` glues a line about
       the five capability ratings to the description of the model, and the lede printed the field
@@ -1031,6 +1046,74 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a machine page names every model it runs, not the twelve it has room for
+
+**Why this item.** `npm run model-watch` was due, so the watch came first and is written up below.
+After it, the backlog: the monthly-cost page is still the top open item and still waits on PR #8,
+which is one of **five pull requests open with nothing merged since PR #11**, so page work is
+blocked the way the last three entries found it. What was left was to look for a fault rather than
+a feature, so the 253 built pages were measured — titles, descriptions, word counts, and the
+internal link graph. Titles and descriptions are clean: no duplicate title, no duplicate
+description, none over 160 characters, no page under 498 words, no orphan. The link graph is where
+the hole was. Pushed as **`7815928`**.
+
+**The fault, measured before it was fixed.** A machine page's table of what it runs stops at twelve,
+ordered by index class, and what sat below the cut was a count: *26 more fit; the calculator lists
+them all.* So on the largest machines the page that answers "what does this run?" named 18 of the
+38 models it runs and sent the reader to the calculator for the rest.
+
+| | before | after |
+| --- | --- | --- |
+| machine pages naming fewer models than they run | 44 of 56 | 0 |
+| machine-and-model pairs with no link between them | 530 | 0 |
+| pairs the build guard held to the rule | 235 | 1,425 |
+| links in the note under the table | 217 | 764 |
+
+**What the note says now.** Every model below the cut, each one a link to its own page, in the order
+the table would have put them, and the models the intelligence index has not scored kept in their
+own sentence, because a ranking by class cannot place them. 50 pages carry it, from 30 words on the
+RTX 4080, where one model is below the cut, to 104 on the Mac Studio M5 Ultra, 512GB, where 27 are.
+The wording was moved out of `scripts/build-pages.ts` into `runsOnNote()` in `src/pagekit.ts` so a
+test can hold it rather than only the build.
+
+**The guard was already written to the rule this fixes.** `checkHiddenModels()` says in its own
+comment: *if a model fits a machine, that machine's page links it, whether it made the table or
+not.* It enforced that for the unscored models only, which was the case the run that wrote it was
+fixing. It holds every model that fits now, so the next model added to `data/models.json` cannot
+land below a cut and go unnamed.
+
+**Seven breaks proved seven claims, one each.** The unscored tail dropped, the count taken from the
+ranked ones alone, a caveat printed where nothing is unscored, a note printed where the table had
+room for everything, one model named twice, the reason dropped where nothing can be ranked — one
+test fires for each. And the guard itself: a name dropped from the list fails the build, naming the
+five pages it would have shipped wrong.
+
+**Verified.** 315 tests (7 new), `tsc --noEmit` clean, and the full `npm run build` end to end with
+`build:functions` included. 253 pages, every guard passing, and the section read rendered out of
+`dist/` on the widest case and the narrowest. 50 machine pages changed words today and take
+2026-09-19 in the sitemap, which is the ledger working.
+
+**Today's model watch, which found two candidates and ruled out three.** Both candidates are in
+`seo/MODEL-WATCH.md` with their sources and what each still needs, and neither is urgent enough to
+ping about. **Agnes 3.0-Flash** (33B, Apache 2.0, 2026-09-11) is the interesting one: the coverage
+describes 72 decoder layers where only 18 carry a key-value cache, which is the sort of thing that
+changes which machines hold what at a long window — and this site's schema has no room for the
+recurrent state the other 54 layers keep, which the watch file now says. **Nex-N2.5-mini** (35.1B
+total, 3B active, Apache 2.0) sits almost exactly where Qwen3.6 35B-A3B sits. Ruled out and written
+down so nobody checks them twice: **Tencent Hy4 preview** (770B) and **Atria Dawn Preview** (744B),
+both far past the 119.5 GB the largest machine here can address, and **Sakana AI Fugu**, which is an
+orchestrator over other models rather than weights anybody can download.
+
+**What to continue.** The monthly-cost page — *how much does it cost to run a local LLM per month* —
+is still the biggest open item and still waits on PR #8. Five pull requests are open: **#8** and
+**#10** unblock page work, **#12**, **#13** and **#14** are the calculator's own head. Of what can
+go straight to main, the model pages are now the mirror of the fault fixed here and worth measuring
+next, and it was measured before this entry was written: **1,190 pairs where the machine's page
+links the model and the model's page does not link the machine back**, 16 of 55 model pages naming
+every machine that runs them. It is not the same fix, because a small model runs on all 56 machines
+and 56 names is a dump; the backlog item says what has to be settled first. Under it, the `/hardware/` and `/leaderboard/` cross-link and the
+model page's duplicate call to action are both still a question to settle before they are a change.
 
 ### 2026-09-18 — the chart's labels line up with the card, and the axis stops labelling every hundredth year
 
