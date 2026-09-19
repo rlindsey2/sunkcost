@@ -1433,6 +1433,32 @@ export function cardRankingLine(data: Dataset): string {
 }
 
 /**
+ * What the machine index says about its own prices. The table has a row for
+ * every machine on this site, and not every machine here has a price: a
+ * configuration can be announced before it is sold, and until somebody
+ * publishes a figure the site will not print one. A first paragraph that says
+ * the site prices all of them is a promise the table does not keep, and the
+ * reader who scrolls to the row finds out the hard way.
+ *
+ * So the split is counted from the data and the machines without a price are
+ * named, which is the part a reader can act on: those rows are the two the
+ * calculator wants a number for. A price published tomorrow rewrites the
+ * sentence rather than dating it.
+ */
+export function publishedPriceLine(data: Dataset): string {
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.length - unpriced.length;
+  if (!unpriced.length) return 'Every one of them carries a published price.';
+  const count = priced === 1 ? 'One of them carries a published price.' : `${priced} of them carry a published price.`;
+  const names = andList(unpriced.map((h) => `the ${esc(shortHardwareLabel(h))}`));
+  const rest =
+    unpriced.length === 1
+      ? `${names} does not, so its row opens the calculator for you to put in what you would pay.`
+      : `${names} do not, so their rows open the calculator for you to put in what you would pay.`;
+  return `${count} ${rest[0].toUpperCase()}${rest.slice(1)}`;
+}
+
+/**
  * A power figure, marked where the data has no figure for that machine and
  * borrows one. Electricity is the running cost in every pay-back sum on the
  * site, so a borrowed watt printed bare reads as a measurement of the machine

@@ -16,7 +16,7 @@ import {
   headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
+  pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
@@ -782,6 +782,67 @@ function checkHardwareIndex() {
   }
   console.log(
     `  the machine index lists all ${machinePages.length} machines, each with the count, the strongest model, the speed and the pay-back its own page prints, and sits above every one of them in its breadcrumbs`,
+  );
+}
+
+/**
+ * The machine index opens by saying what is in its table, and one clause of that
+ * was a count of what the site prices rather than of what it lists. Two of the 56
+ * configurations here have no published price, so the sentence was wrong by two
+ * and the rows it was wrong about are the two a reader most needs warning of:
+ * their price cell says "not published" and their pay-back cell says "needs a
+ * price".
+ *
+ * Four claims, and the first two are the ones that keep the sentence honest when
+ * the data moves. The count in the paragraph is the count of rows the table
+ * really prints a price on, read back out of the page rather than taken from the
+ * same array that wrote it. Every machine without a published price is named up
+ * there. No machine that has one is named among them. And each of those rows
+ * offers the calculator instead, which is what the sentence promises.
+ */
+function checkPricedRows() {
+  const index = meta.find((p) => p.path === '/hardware/');
+  if (!index) throw new Error('no machine index was written');
+  const problems: string[] = [];
+  const lede = index.html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '';
+  const said = publishedPriceLine(data);
+
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.filter((h) => h.price_usd != null);
+
+  const tbody = index.html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+  const rows = tbody.split('<tr').slice(1).map((r) => `<tr${r}`).filter((r) => r.includes('c-hw'));
+  const withPrice = rows.filter((r) => !r.includes('not published'));
+  if (withPrice.length !== priced.length)
+    problems.push(
+      `the machine index prints a price on ${withPrice.length} of its ${rows.length} rows, where ${priced.length} of the machines here have a published price`,
+    );
+  if (!lede.includes(said))
+    problems.push(
+      `the machine index does not open by saying that ${withPrice.length} of its ${rows.length} rows carry a published price`,
+    );
+  for (const hw of unpriced) {
+    if (!said.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`the machine index has no price for the ${shortHardwareLabel(hw)} and does not name it in its first paragraph`);
+    const row = rows.find((r) => r.includes(`href="/hardware/${esc(hw.id)}/"`));
+    if (!row) problems.push(`the machine index has no row for the ${shortHardwareLabel(hw)}`);
+    else if (!row.includes('price it yourself'))
+      problems.push(`the ${shortHardwareLabel(hw)} is named as a machine you price yourself and its row does not offer the calculator`);
+  }
+  for (const hw of priced)
+    if (said.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`the machine index names the ${shortHardwareLabel(hw)} among the machines it has no price for, and it is priced at ${fmtUsd(hw.price_usd!)}`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing the machine index says about its own prices does not hold'
+        : `${problems.length} things the machine index says about its own prices do not hold`,
+    );
+  }
+  console.log(
+    `  the machine index says ${withPrice.length} of its ${rows.length} rows carry a published price, prints one on exactly those, and names the ${numberWord(unpriced.length)} it prices itself`,
   );
 }
 
@@ -4896,7 +4957,7 @@ function hardwareIndex(): string {
 
   const body = `<article class="prose">
 <h1>Every machine that runs local models, priced</h1>
-<p class="lede">All ${data.hardware.length} configurations this site prices, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
+<p class="lede">All ${data.hardware.length} configurations this site lists, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. ${publishedPriceLine(data)} Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
 ${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
 <p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
 <h2>How long each machine takes to pay for itself</h2>
@@ -6748,6 +6809,7 @@ checkArticles();
 checkCompareIndex();
 checkMatchUpKinds();
 checkHardwareIndex();
+checkPricedRows();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();

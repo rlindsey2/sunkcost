@@ -9,7 +9,7 @@ import {
   longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, MTOK, nearestCompleteComputer,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
-  priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
+  priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
@@ -1576,6 +1576,38 @@ describe('where a page that prices a card says the cards are ranked', () => {
     const note = cardScopeNote([computers[0], cards[0]]);
     expect(note).not.toContain('/best-gpu/');
     expect(note).toContain('priced as the card alone');
+  });
+});
+
+describe('what the machine index says about its own prices', () => {
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.filter((h) => h.price_usd != null);
+  const fleet = (kit: Hardware[]) => ({ ...data, hardware: kit }) as Dataset;
+
+  it('counts the machines with a published price and names the ones without', () => {
+    const line = publishedPriceLine(data);
+    expect(line).toContain(`${priced.length} of them carry a published price.`);
+    for (const h of unpriced) expect(line).toContain(shortHardwareLabel(h));
+    for (const h of priced) expect(line).not.toContain(shortHardwareLabel(h));
+    expect(line.endsWith('.')).toBe(true);
+  });
+
+  it('says every one of them where every one of them is priced', () => {
+    expect(publishedPriceLine(fleet(priced))).toBe('Every one of them carries a published price.');
+  });
+
+  it('keeps its singulars where one machine has no price', () => {
+    const line = publishedPriceLine(fleet([priced[0], unpriced[0]]));
+    expect(line).toBe(
+      `One of them carries a published price. The ${shortHardwareLabel(unpriced[0])} does not, so its row opens the calculator for you to put in what you would pay.`,
+    );
+  });
+
+  it('counts the priced ones rather than listing them', () => {
+    const line = publishedPriceLine(fleet([...priced.slice(0, 3), ...unpriced]));
+    expect(line).toBe(
+      `3 of them carry a published price. The ${shortHardwareLabel(unpriced[0])} and the ${shortHardwareLabel(unpriced[1])} do not, so their rows open the calculator for you to put in what you would pay.`,
+    );
   });
 });
 
