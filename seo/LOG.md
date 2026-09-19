@@ -54,6 +54,12 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `/cost-per-month/` and main's new machine-index link on 56 pages. `git merge-tree` against
       `main` at `76246da` now reports no conflict. Nothing about the page changed; it is the same
       pull request, still waiting on you.
+      **It conflicted again at 15:47 on 2026-09-19 and is merged clean again**, as `f1d02ce`. Same
+      file, same line, same shape: `main`'s heading anchors and this branch's monthly-cost helpers
+      both extended the import list at the head of `scripts/build-pages.ts`. Both kept by hand, and
+      `seo/page-dates.json` rebuilt rather than chosen, which is the rule that already stood on this
+      pull request. Verified on the merged tree: 406 tests, typecheck clean, 308 pages with every
+      guard passing. GitHub reports it `clean`. Nothing about the page changed.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
@@ -592,19 +598,31 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       `index.html`, which is the standing rule. Worth doing when the two open pull requests are
       settled rather than queued behind them.
 
-- [ ] **One page on this site can be linked to by section, and no heading anywhere can.** Measured
-      2026-09-19 over all 307 generated pages: exactly one anchor inside `<main>` on the whole site,
-      and it is `/best/`, whose five usage bands are `id="u-50k"` and so on. Not one of the 430
-      headings on the machine and model pages carries an `id`, and nor does any other heading here.
-      Two things that costs, both small: another site linking to *what the Framework Desktop, 128GB
-      runs* has to link the whole page, and Google can offer no jump link into a section from a
-      search result — the feature the headings renamed this morning would feed. The change is a slug
-      on each `<h2>` in `scripts/build-pages.ts`, so it is a push rather than a pull request.
-      **The reason it is written down rather than done** is the sitemap. An `id` changes no word a
-      visitor reads, and `seo/page-dates.json` fingerprints the markup, so adding them re-dates all
-      307 pages as having changed on the day a maintainer added an attribute, which is exactly the
-      claim that ledger was built to stop. Worth doing on a day those pages have changed anyway, or
-      folded into a change that earns the date on its own.
+- [x] **One page on this site could be linked to by section, and no heading anywhere could.**
+      Done 2026-09-19, pushed as `e932be3`. All 1,177 section headings across the 307 pages carry
+      the id their own words slug to, and the five anchors on `/best/` are no longer the only ones
+      on the site. The sitemap objection that parked this item was void on the day it was taken:
+      every one of the 307 pages had already changed today, so 307 hashes moved and **no date
+      moved**. `/best-gpu/`, which had never carried a recorded date at all, gained one.
+      `checkHeadingAnchors()` holds four claims and the run entry below has the four breaks that
+      proved them, plus the measurement that showed no word a visitor reads changed.
+      **What it deliberately leaves for the next run, so nobody reads it as a gap.** The anchors
+      exist and nothing yet points at them; that is the item below. And `h2` is the whole job, not
+      half of it: the 307 pages carry 307 `h1`s, 1,177 `h2`s and **no `h3` at all**, so there is no
+      second level of heading waiting for the same treatment.
+
+- [ ] **1,177 sections can now be linked to, and 1,172 of them have nothing pointing at them.**
+      Every heading got its anchor this afternoon; only `/best/` uses one, in the *Jump to* line
+      above its five usage bands. Two things the site could now do and does not. A long page could
+      carry `/best/`'s own *Jump to* line — the machine and model pages run to four sections and a
+      reader from a search lands mid-page — and an internal link that today points at a whole page
+      could point at the section that answers it, which is what a crawler reads as the specific
+      answer. Both are `scripts/build-pages.ts`, so both are a push. **The thing to settle first**
+      is which links are worth re-pointing: a link into a section is better than a link to a page
+      only where the section really is the answer, and re-pointing every internal link on the site
+      because it is now possible is the keyword-stuffing of internal linking. The honest cut is
+      probably the links that already name a section's own subject. Worth an hour; written down
+      2026-09-19 rather than taken because one change per run is the rule.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1457,6 +1475,101 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — every section on the site got a link that lands on it
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Both open pull requests were checked first and both still merged clean
+into `main` at `a6c1051`, so there was no repair to do before the work. The item taken is the one
+the run before this one added: **no heading on this site had an `id`**. It had been written down
+rather than done for one reason, and that reason was void today.
+
+**The reason it was parked, and why today was the day.** `seo/page-dates.json` fingerprints the
+markup between `<main>` and `</main>`, so an attribute added to 307 pages re-dates all 307 as having
+changed — which is the exact claim that ledger exists to stop a build from making. The ledger was
+read before a line was written: **all 307 pages already carried `2026-09-19`**, put there by the
+seven runs before this one. So the hashes had somewhere to move to and the dates had nowhere. That
+is what the parked item asked for in as many words: *worth doing on a day those pages have changed
+anyway.*
+
+**What it costs to have no anchors.** Another site linking to *what the Framework Desktop, 128GB
+runs* had to send a reader to the top of the page and let them find it. And a search engine can only
+offer a jump straight into a section of a result where the section has somewhere to jump to — which
+is the feature this morning's run fed when it made every heading name its own subject, and which
+nothing on this site could take up.
+
+| | before | after |
+| --- | --- | --- |
+| anchors inside `<main>`, whole site | 5, all on `/best/` | 1,182 |
+| section headings that can be linked to | 0 of 1,177 | 1,177 |
+| pages with a repeated id anywhere in the document | 0 | 0 |
+| words a visitor reads that changed | — | 0 |
+| pages re-dated | — | 0 |
+
+**Where the change went, which is one place.** `write()` in `scripts/build-pages.ts` is the single
+funnel every page passes through, so `anchorBody()` sits at the top of it and the file on disk, the
+fingerprint the sitemap dates and the markup all 40-odd guards read are one and the same page. No
+heading emitter was touched: there are 45 of them and each would have been a chance to get one
+wrong. The header and footer are left alone, because `mainOf()` draws the same line the ledger does.
+
+**The one idea the whole change rests on.** A slug is a function of the heading's own words, so
+`anchoredHeading('The specifics')` reconstructs exactly what the build published. That is how 20
+guards that matched `<h2>The specifics</h2>` as a literal string keep matching without learning
+anything about ids. The five that knew only a heading's opening words — the rest being a machine
+name or a number they were about to read out of the match — go through `headingLike()`, and the
+six regexes take `<h2\b[^>]*>`. The slug reads a heading the way a person does: markup dropped,
+entities put back, accents folded, everything else that is not a letter or a digit a hyphen. The
+longest it produces is 75 characters, on *the machines that miss Qwen3 235B-A22B Instruct 2507, and
+what they run*; the shortest real one is 9.
+
+**The guard.** `checkHeadingAnchors()` holds four claims: every section heading has an id, no two
+sections on one page share one, each id is a slug, and each id is the slug of *its own* heading.
+The fourth is the one that protects the twenty guards above, because an id set by hand instead of
+derived would leave them silently missing sections that are really there. The build prints
+*`1,177 section headings across 307 pages, each with the id a link lands on, none repeated on its
+page`*.
+
+**Four breaks, each run and each caught.** Stop anchoring → *`/best/` heads a section "50k tokens a
+day …" with no id, so nothing can link to it*. Truncate the slug to two words so pages really
+collide, with `headingSlug` truncated to match so only duplication is left → *`/how-much-memory/`
+gives two sections the same id, "how-much", so a link to it lands on the first*, and the same on
+three comparison pages. Set an id by hand — `what-` rewritten to `section-` → *`/best-gpu/` gives
+"What the same money buys with a computer" the id "section-the-same-money-buys-with-a-computer-
+around-it" where its own words slug to "what-the-same-money-buys-…"*. Drop the lower-casing →
+*`/best/` gives a section the id "1M-tokens-a-day-…", which is not a slug*. Three tests on the two
+new helpers cover the parts the data does not reach, the dedupe among them: no page on this site
+has two headings that slug the same, so removing the dedupe changed nothing in the build at all.
+
+**How it was checked that no word changed.** Not by reading one page and trusting the rest. The site
+was built twice, once from `main` and once from this change, and all 307 pages compared with every
+tag stripped: **zero differences**. The only file that differed at all was `sitemap.xml`, by one
+line, and it differed in the right direction — `/best-gpu/` gained the `lastmod` it had never had.
+A separate sweep confirmed 1,182 ids across 307 documents with not one repeated, which is more than
+the guard checks, since the guard only looks at headings and `/best/` also carries five on sections.
+
+**Verified**: 396 tests (393 plus three new), typecheck clean, the full `npm run build` end to end
+including `build:og`, `build:share` and `build:functions`, 307 pages with every guard passing, and a
+machine page read rendered out of `dist/`.
+
+**Pushed as `e932be3`; deploy run 230 started at 15:46 on 2026-09-19.**
+
+**The one pull request this broke, and it is repaired.** #16 collided with `main` inside the minute,
+in the same one place the log has now warned about three times: both branches extended the same
+import line in `scripts/build-pages.ts`, so git offered one line where two additions belong. Both
+sides kept by hand, `seo/page-dates.json` rebuilt rather than chosen because neither side's hashes
+are right for the merged tree, and pushed to `seo/cost-per-month` as `f1d02ce`. Verified on the
+merged tree rather than assumed: 406 tests, typecheck clean, 308 pages with every guard passing, and
+this branch's own `/cost-per-month/` taking its four anchors from `main`'s change with nothing to
+do. GitHub reports it `clean` again. #17 needed no repair: it was really merged and built here
+rather than trusted to `git merge-tree` — 398 tests, 307 pages, every guard passing — and its ledger
+came out needing no rebuild at all, because `main` did not touch the one hash that branch owns.
+
+**What to continue.** The anchors exist and almost nothing points at them, which is the item this
+run adds to the top of the backlog: a *Jump to* line on the long pages, and internal links that
+point at the section that answers rather than at the page that contains it. The judgement to make
+first is which links deserve it, because re-pointing every one because it is now possible is
+keyword stuffing by another name.
+
 
 ### 2026-09-19 — every heading on 111 pages called the page's subject "it"
 
