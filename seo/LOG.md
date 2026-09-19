@@ -1135,7 +1135,11 @@ cannot ship it.
 `build:functions` included — 253 pages, every guard passing, 1,999 machine-and-model pairs covered
 by a rule the data agrees with. All 54 sentences read out of `dist/` rather than `public/`, swept
 for maintainer words, doubled stops and stray punctuation, and the longest and shortest read in
-full. **Deploy run 186 queued on `e698ade` at 01:50.**
+full. **Deploy run 187 went green at 01:56 and published**, on `0c970b4`, which carries both
+commits — run 186, on the code commit alone, was cancelled by the log push a minute later, as
+usual. CI ran the same 324 tests and the same full build, so `checkFamilyReach()` passed there
+as well as here. The 54 model pages take 2026-09-19 in the published sitemap, because the
+ledger went out in the commit that changed them.
 
 **One thing to know about this environment, because it cost a few minutes.** The session started on
 a **detached HEAD** at `origin/main`, and the local `main` branch is an old unrelated history
