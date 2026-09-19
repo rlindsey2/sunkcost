@@ -1551,7 +1551,11 @@ the guard checks, since the guard only looks at headings and `/best/` also carri
 including `build:og`, `build:share` and `build:functions`, 307 pages with every guard passing, and a
 machine page read rendered out of `dist/`.
 
-**Pushed as `e932be3`; deploy run 230 started at 15:46 on 2026-09-19.**
+**Pushed as `e932be3`. Deploy run 230 went green at 15:50 on 2026-09-19**, so the anchors are live,
+with the log as `b80df05` on run 231. The live site was not read back: this environment's egress
+proxy blocks `sunkcost.ai`, by `curl` and by fetch alike, so everything above was verified on the
+built output in `dist/` and `public/`. Worth knowing before a future run plans a check against the
+deployed page.
 
 **The one pull request this broke, and it is repaired.** #16 collided with `main` inside the minute,
 in the same one place the log has now warned about three times: both branches extended the same
