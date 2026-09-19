@@ -553,6 +553,31 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
+      second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
+      the count as a warning for days; nobody had read it. Nine of the ten carried a MacBook, and
+      every one spent ten characters on a screen size that separates nothing: this site prices one
+      MacBook Pro M5 Pro and one M5 Max, both 16-inch. A title may now leave the bracket out where
+      no other machine here answers to the name without it, and must keep it where one does — which
+      it is, for the two MacBook Air M5s at 16GB. 304 of 307 titles fit now. The page's heading, its
+      description and every other label on the site keep the full name, and no page body changed.
+      The run entry below has the figures, the four breaks that proved the guard, the hole the first
+      version of it had, and the two that proved the tests.
+
+- [ ] **Three titles are still longer than a search result shows, and none of them can be cut
+      honestly.** Measured 2026-09-19, after the item above took the other ten.
+      `/compare/nemotron-3-5-lightning-30b-q4-vs-qwen3-235b-a22b-2507-q4/` is 63 characters and
+      `/compare/deepseek-r1-distill-qwen-32b-q4-vs-deepseek-r1-distill-llama-70b-q4/` is 61: both
+      are model pairs, and *Qwen3 235B-A22B Instruct 2507* and *DeepSeek-R1-Distill-Llama-70B* are
+      what their publishers call them, so a shorter form would be a name nobody uses. Worth
+      revisiting only if `data/models.json` ever carries a short name a publisher itself uses; the
+      agent must not invent one. The third,
+      `/compare/macbook-air-m5-15-inch-16gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/` at 62, is the
+      one pair where the screen size is load-bearing — two Airs at 16GB — against a chip name that
+      is already as short as NVIDIA writes it. Nothing to do on any of the three. Written down so
+      the next run reads the build's *3 titles over 60 characters* as considered rather than as a
+      gap.
+
 - [x] **The two rules cutting the model head-to-heads both asked what a model is, and neither
       asked what to run in the memory you already have.** Done 2026-09-19. Each model against the
       next one down the index, and each last-generation model against what replaced it, are both
@@ -1379,6 +1404,83 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — ten search results were cut before the second machine's memory size
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. Every open item on it is waiting on Ryan, or is a note written down so
+nobody re-finds it, which is where the five runs before this one found it too. Both open pull
+requests were checked first and **both still merge clean into `main`**, #16 and #17, so there was no
+repair to do. The work came out of the one number this build has printed for days and nobody had
+read: `checkMeta()` ends with a warning, and it said **13 titles over 60 characters**.
+
+**What the 13 were.** Ten machine head-to-heads, two model head-to-heads and one that turned out to
+be neither — the count is bytes in a shell and UTF-8, so the `·` in the brand suffix reads as two.
+The real list is 13 and the guard had it right. On the ten, the title is two machine names joined by
+*vs*, and the second name's memory size is the last thing in it: **MacBook Air M5 (15-inch), 16GB vs
+MacBook Pro M5 Pro (16-inch), 64GB** is 68 characters, so a search result showed the reader
+everything except the figure the page turns on. Nine of the ten carry a MacBook, and every one of
+them spends ten characters on a bracket.
+
+**The bracket separates two machines only where this site prices both.** `data/hardware.json` holds
+one MacBook Pro M5 Pro, the 16-inch, in three memory sizes, and one MacBook Pro M5 Max, also 16-inch.
+It holds **two MacBook Air M5s at 16GB**, a 13-inch and a 15-inch, and there the bracket is the whole
+of the difference. So the rule is not *drop the screen size*: it is that a title may leave it out
+where no other machine here answers to the name without it, and must keep it where one does.
+`titleHardwareLabel()` in `src/pagekit.ts` does exactly that against the whole fleet, and it is used
+nowhere but the title. The page's `<h1>`, its meta description, its tables and every other label on
+the site keep the full name, which is the same split `shortHardwareLabel` was written for.
+
+| | before | after |
+| --- | --- | --- |
+| titles inside 60 characters | 294 of 307 | 304 of 307 |
+| head-to-heads that drop a redundant screen size | 0 | 10 |
+| page bodies changed | — | 0 |
+
+**Nothing a visitor reads on the page moved.** The only bytes that changed on those ten pages are the
+`<title>`, the `og:title` and the `twitter:title`, which is why ten hashes move in
+`seo/page-dates.json` and no dates do — every one of those pages had already changed today.
+
+**Three are still long, and all three are honest.** `/compare/nemotron-3-5-lightning-30b-q4-vs-qwen3-235b-a22b-2507-q4/`
+at 63 and `/compare/deepseek-r1-distill-qwen-32b-q4-vs-deepseek-r1-distill-llama-70b-q4/` at 61 are
+model pairs: *Qwen3 235B-A22B Instruct 2507* and *DeepSeek-R1-Distill-Llama-70B* are the names their
+publishers use, and cutting a word off either would be naming a model something nobody calls it.
+The third is `/compare/macbook-air-m5-15-inch-16gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/` at 62,
+where the bracket is the thing that tells the two Airs apart and the other side is a chip name.
+Backlog item added rather than forced.
+
+**The guard, and the version of it that had a hole.** `checkTitleLabels()` holds three things: no
+title anywhere names a machine by a name a second machine answers to; a bracket is dropped only where
+keeping it would have put the title over the limit; and a head-to-head still over the limit is one
+where neither name had a bracket left to lose. The first version asked those questions through
+`titleHardwareLabel()` and `withoutBracket()`, the same helpers the builder uses, so **a rule that
+stopped shortening anything at all would have passed it**: with `withoutBracket()` neutered, nothing
+is loseable, so nothing is over length with something to lose. It now cuts the bare name itself with
+its own regex over `data/hardware.json`, and that same break fails it at 10 pages, naming them.
+
+**Four breaks, each run and each caught.** Remove the two shortened rungs from the title ladder →
+*10 page titles … longer than a search result shows*. Make `titleHardwareLabel()` return the bare
+name always → *4 page titles name a machine by a name that is not its own*, naming both Airs on both
+their pages. Neuter `withoutBracket()` → the 10 again, each named with the screen size it still
+carries. Put the shortened rungs first, so a title shortens where the full names would have fit →
+*`/compare/mac-mini-m5-pro-24gb-vs-macbook-pro-m5-pro-16-inch-64gb/` drops a screen size to reach 49
+characters where the full names fit in 59*.
+
+**Five tests, and two breaks proved them.** The strongest is that `titleHardwareLabel()` over the
+whole fleet still gives 56 distinct names for 56 machines. One test adds a hypothetical 14-inch M5
+Pro to the fleet and asserts the 16-inch gets its bracket back, so the rule is held to the fleet it
+is given rather than to today's data. Returning the bare name always fails 3 of the 5; never dropping
+fails 2.
+
+**Verified on `main` at `7ce0dcd` and pushed as `a0ec560`:** 393 tests where it was 388, typecheck
+clean, the full `npm run build` including `build:og`, `build:pages`, `build:share` and
+`build:functions`, 307 pages with every guard passing, the four breaks above, and the changed heads
+read out of `dist/` — title short, description and `<h1>` full. 305 of 308 titles in `dist/` fit 60
+characters, the extra page being `/` which the sitemap counts and `meta` does not.
+
+**What to continue.** Nothing here is half-done. The backlog's top open items are all notes or
+Ryan's; the next run that wants work of its own could look at what the site does with
+`/hardware/` and `/leaderboard/` naming each other, which is the oldest open question on the list.
 
 ### 2026-09-19 — the site compared models by what they are and never by what they ask of a machine
 
