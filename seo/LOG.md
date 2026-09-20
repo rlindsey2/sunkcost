@@ -39,8 +39,19 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       **It still merges clean with `main` at `1d7a98b`**, checked 2026-09-20 with `git merge-tree`
       against a deepened history. This push goes nowhere near `index.html` or `src/styles.css`.
 
-- [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
-      `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
+- [x] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
+      `/cost-per-month/`. Merged 05:42 on 2026-09-20**, as `4304094`, after five merge repairs in a
+      day and always in the same place: the import list at the head of `scripts/build-pages.ts`.
+      The session that opened it was woken by the merge and checked merged `main` rather than
+      assuming: **440 tests**, typecheck clean, the full `npm run build` with `build:functions`,
+      **308 pages** with every guard passing, and 303 OG cards drawn. `checkMonthlyCost()` reports
+      on merged `main` exactly what it reported the day the page was written — 30 machines,
+      $0.25 to $0.65 of electricity a month against $53.45 to $750 for the machines themselves —
+      so a day of other people's work has not moved a figure on it. The page reads back at 1,282
+      words with its lede, its four answer rows, its 30-machine table and its sitemap entry intact,
+      and it has already picked up another run's site-wide *Jump to* contents line, which names its
+      four headings correctly. Nothing is left here. The history below is kept for the one lesson it
+      keeps teaching, which is what two branches do to a shared import list. Opened 2026-09-19, and the only pull request open. It answers *how much
       does it cost to run a local LLM per month*, which is the shape every bill it would replace is
       written in and the one question this site could not answer. It is a pull request rather than a
       push for two reasons that are the standing rules here: it is a new page type, and a page at the
@@ -1795,6 +1806,36 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — PR #16 merged: what a month of it costs is live
+
+Not an hourly run: the session that opened PR #16 at 06:03 on 2026-09-19 was woken by the merge
+event and checked the result. The whole of it is in the ticked item above; what follows is what a
+later run would otherwise have to re-derive.
+
+**`/cost-per-month/` is live and intact on merged `main` (`4304094`).** Verified here rather than
+assumed: 440 tests, typecheck clean, the full `npm run build` with `build:functions`, 308 pages with
+every guard passing, 303 OG cards drawn. `checkMonthlyCost()` recomputes the page on the merged tree
+and reports what it reported the day it was written — 30 machines, $0.25 to $0.65 of electricity a
+month against $53.45 to $750 for the machines themselves. The page was written against a site of 262
+pages and an eight-link footer; it now sits in one of 308, and not a line of it needed changing,
+because every figure on it is recomputed from the data at build time.
+
+**Two things worth knowing.** The first is that `npm run build:pages` on merged `main` rewrote
+**nothing** in `seo/page-dates.json`, which is the one file this merge could have quietly got wrong —
+the five repairs on the branch rebuilt the ledger each time rather than picking a side, and that is
+why there was nothing left to fix. The second is that the page has already absorbed a site-wide
+feature another run added while it sat in review: the *Jump to* contents line, which names its four
+headings correctly. A page built from the site's own helpers grows with the site without being
+touched, which is the argument for writing pages this way rather than by hand.
+
+**Nothing is open behind it.** No pull request is open, so the backlog is the whole of the next run's
+job. **Continue next: the anchor-text audit**, the top open item, which has never been done — the
+links inside `<main>` across the site have been counted and re-pointed by six runs and nobody has
+measured the words they are written in. The item says to measure before writing anything, and that
+still stands: this site's links live in sentences rather than in lists, so the honest finding may be
+that they are already fine.
+
 
 ### 2026-09-20 — the address a shared link says it is
 
