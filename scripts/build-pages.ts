@@ -7,13 +7,13 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  addJumpLine, anchoredHeading, anchorHeadings, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  addJumpLine, anchoredHeading, anchorHeadings, andList, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -1892,15 +1892,15 @@ function checkModelGenerations() {
 function checkLeaderboardLinks() {
   const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
   const problems: string[] = [];
-  const seen = new Set<string>();
-  const ranked = data.models
-    .filter((m) => m.frontier_equivalent?.score != null)
-    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
-    .filter((m) => {
-      if (seen.has(m.display_name)) return false;
-      seen.add(m.display_name);
-      return true;
-    });
+  // The same cut the page makes, from the same rule, so this guard never goes
+  // looking for a row the table was never going to print. What the cut itself
+  // is held to is `checkLeaderboardBuilds()`.
+  const ranked = leaderboardRows(
+    data.models
+      .filter((m) => m.frontier_equivalent?.score != null)
+      .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!),
+    data,
+  ).map((r) => r.model);
   const notes = html.split('<p class="note">').slice(1).map((p) => p.split('</p>')[0]);
   let linked = 0;
   let shortened = 0;
@@ -1977,6 +1977,126 @@ function checkLeaderboardLinks() {
   const withAlt = hosted.filter((h) => h.score_alt != null).length;
   console.log(
     `  /leaderboard/ ranks ${hostedRows.length} hosted models alongside the open ones, ${withAlt} of them also at the score the index gives them with reasoning turned down, and says once above the block that none of them is a download`,
+  );
+}
+
+/**
+ * Every model this site prices is on the leaderboard somewhere, and the page's
+ * first paragraph counts what it shows.
+ *
+ * Two things sat outside both before this guard existed. The table keeps one
+ * row per model, so the second build of a model — the same weights at a heavier
+ * quantisation, its own download, its own memory bill, its own page — was
+ * dropped without a word: in no row, in no count, and not in the note below
+ * that lists the models the index has not scored. The page that ranks Qwen3 32B
+ * did not say the site also prices it at eight bits.
+ *
+ * So four claims, and three of them are read back out of the rendered page
+ * rather than taken from the arrays that wrote it. Every model in the data is
+ * named on the page exactly once, as a row or beside one or in the unscored
+ * note. The build a row keeps is the lightest of the builds that row names,
+ * checked against the gigabytes the page itself prints. The lede's count of
+ * models is the count of rows really there. And the lede says how many models
+ * carry a second build, or says nothing about builds at all where none does.
+ */
+function checkLeaderboardBuilds() {
+  const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
+  const problems: string[] = [];
+  const lede = html.split('<p class="lede">')[1]?.split('</p>')[0] ?? '';
+  // The jump line at the top of the page names this section too, so the note
+  // itself is what follows the last mention rather than the first.
+  const unscoredNote = html.split('Models the index has not scored yet').pop() ?? '';
+
+  // The open rows, as the page prints them: the head of each is the model whose
+  // link opens the model cell, the rest of that cell is what it also names, and
+  // the weights column is the gigabytes the reader is shown for the head. The
+  // stacking wrapper adds a class to every cell, so the cells are found by the
+  // one class the page's own markup gives them rather than by the whole
+  // attribute.
+  const cellOf = (row: string, name: string) =>
+    row.split(new RegExp(`<td class="[^"]*${name}"[^>]*>`))[1]?.split('</td>')[0] ?? '';
+  const rows = html
+    .split('<tr>')
+    .slice(1)
+    .map((r) => r.split('</tr>')[0])
+    .map((r) => ({ model: cellOf(r, 'c-model'), weights: cellOf(r, 'c-gb') }))
+    .filter((r) => r.model.includes('href="/models/'))
+    .map(({ model, weights }) => {
+      const ids = [...model.matchAll(/href="\/models\/([^"]+)\//g)].map((m) => m[1]);
+      return {
+        head: ids[0],
+        also: ids.slice(1),
+        headGb: Number(weights.replace(/<[^>]*>/g, '').match(/([\d.]+) GB/)?.[1] ?? NaN),
+        alsoGb: [...model.matchAll(/([\d.]+) GB/g)].map((m) => Number(m[1])),
+      };
+    });
+
+  const named = new Map<string, string>();
+  const claim = (id: string, where: string) => {
+    const already = named.get(id);
+    if (already) problems.push(`/leaderboard/ names ${id} twice, ${already} and ${where}`);
+    else named.set(id, where);
+  };
+  for (const r of rows) {
+    if (r.head) claim(r.head, 'as a row of its own');
+    for (const id of r.also) claim(id, `beside ${r.head}`);
+  }
+  for (const m of data.models) {
+    if (named.has(m.id)) continue;
+    if (unscoredNote.includes(`href="/models/${esc(m.id)}/"`)) {
+      named.set(m.id, 'in the note about unscored models');
+      continue;
+    }
+    problems.push(
+      m.frontier_equivalent?.score == null
+        ? `/leaderboard/ leaves ${m.display_name} at ${m.quantisation} out of the note about models the index has not scored`
+        : `/leaderboard/ gives ${m.display_name} at ${m.quantisation} no row and names it beside none`,
+    );
+  }
+
+  // The row keeps the lightest build, measured against the weights the cell
+  // itself prints rather than against the data that wrote it.
+  let doubled = 0;
+  for (const r of rows) {
+    if (!r.also.length) continue;
+    doubled++;
+    const head = data.models.find((m) => m.id === r.head);
+    const heavier = r.also
+      .map((id) => data.models.find((m) => m.id === id))
+      .filter((m): m is Model => m != null)
+      .filter((m) => (m.weights_gb ?? 0) < (head?.weights_gb ?? 0));
+    if (heavier.length)
+      problems.push(
+        `/leaderboard/ gives the row to ${head?.display_name} at ${head?.quantisation}, ${fmtGb(head?.weights_gb)}, where ${andList(heavier.map((m) => `${m.quantisation} is ${fmtGb(m.weights_gb)}`))}`,
+      );
+    const lighter = r.alsoGb.filter((gb) => gb < r.headGb);
+    if (lighter.length)
+      problems.push(
+        `/leaderboard/ prints ${fmtGb(r.headGb)} as the weights of ${head?.display_name} and names a build of it beside them at ${andList(lighter.map((gb) => fmtGb(gb)))}`,
+      );
+  }
+
+  const openRows = rows.length;
+  if (!lede.includes(`${openRows} open-weight models`))
+    problems.push(`/leaderboard/ prints ${openRows} rows of open models and does not open by saying so`);
+  if (doubled) {
+    const said = doubled === 1 ? 'one of them is' : `${numberWord(doubled)} of them are`;
+    if (!lede.includes(`${said} also priced at a heavier quantisation`))
+      problems.push(`/leaderboard/ names a second build on ${doubled} of its rows and does not say so in its first paragraph`);
+  } else if (/lightest build/.test(lede)) {
+    problems.push('/leaderboard/ explains a cut between builds that its table does not make');
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 claim about what /leaderboard/ lists does not match the page'
+        : `${problems.length} claims about what /leaderboard/ lists do not match the page`,
+    );
+  }
+  console.log(
+    `  /leaderboard/ names all ${named.size} models this site prices: ${openRows} ranked rows, ${doubled} of them naming a heavier build beside the one they rank, and ${named.size - openRows - doubled} in the note about models the index has not scored`,
   );
 }
 
@@ -2149,13 +2269,12 @@ function leaderboard(): string {
     .filter((m) => m.frontier_equivalent?.score != null)
     .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!);
   const max = data.defaults.frontier_scale_max ?? 70;
-  const seen = new Set<string>();
-  const unique = scored.filter((m) => {
-    const key = m.display_name;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  // One row a model, at the lightest build, with the heavier one named in the
+  // row rather than dropped. `leaderboardRows()` carries the rule and the lede
+  // prints it; `checkLeaderboardBuilds()` holds the page to both.
+  const built = leaderboardRows(scored, data);
+  const unique = built.map((r) => r.model);
+  const alsoAt = new Map(built.map((r) => [r.model.id, r.alsoAt]));
 
   // What runs each model, worked out once: the row's own cell wants the cheapest, and
   // the note under the table wants the models where the cheapest answer needed a
@@ -2177,7 +2296,7 @@ function leaderboard(): string {
 
   const rows = placed
     .map(({ m, next, score, cheapest, shorter }) => `<tr>
-  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span></td>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span>${(alsoAt.get(m.id) ?? []).length ? `<br><span class="dim">also at ${andList((alsoAt.get(m.id) ?? []).map((o) => `<a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, ${fmtGb(o.weights_gb)}`))}</span>` : ''}</td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
@@ -2216,11 +2335,12 @@ function leaderboard(): string {
     .filter((m) => m.frontier_equivalent?.score == null)
     .sort((a, b) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0));
 
+  const buildsLine = leaderboardBuildsLine(built);
   const best = unique[0];
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. ${buildsLine ? `${buildsLine} ` : ''}Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
 ${gap != null ? `<h2>How far behind the frontier open models are</h2>
 <p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 <h2>Every model here, ranked</h2>
@@ -6830,6 +6950,7 @@ checkHiddenModels();
 checkFamilyReach();
 checkModelGenerations();
 checkLeaderboardLinks();
+checkLeaderboardBuilds();
 checkBestGpu();
 checkBestCuts();
 checkNotes();

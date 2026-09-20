@@ -6,7 +6,7 @@ import {
   machineIndexLine,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
+  leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine, MTOK, nearestCompleteComputer,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
@@ -1608,6 +1608,55 @@ describe('what the machine index says about its own prices', () => {
     expect(line).toBe(
       `3 of them carry a published price. The ${shortHardwareLabel(unpriced[0])} and the ${shortHardwareLabel(unpriced[1])} do not, so their rows open the calculator for you to put in what you would pay.`,
     );
+  });
+});
+
+describe('one row a model on the leaderboard', () => {
+  const scored = data.models
+    .filter((m) => m.frontier_equivalent?.score != null)
+    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!);
+  const rows = leaderboardRows(scored, data);
+
+  it('gives every model one row and leaves no build unnamed', () => {
+    const names = rows.map((r) => r.model.display_name);
+    expect(new Set(names).size).toBe(names.length);
+    const named = rows.flatMap((r) => [r.model.id, ...r.alsoAt.map((o) => o.id)]);
+    expect(new Set(named).size).toBe(named.length);
+    for (const m of scored) expect(named).toContain(m.id);
+  });
+
+  it('keeps the lightest build and names the heavier one beside it', () => {
+    for (const r of rows) {
+      for (const o of r.alsoAt) expect(o.weights_gb ?? 0).toBeGreaterThanOrEqual(r.model.weights_gb ?? 0);
+      expect(r.alsoAt.every((o) => o.display_name === r.model.display_name)).toBe(true);
+    }
+    const doubled = rows.filter((r) => r.alsoAt.length);
+    expect(doubled.length).toBeGreaterThan(0);
+  });
+
+  it('keeps the score order it is handed', () => {
+    const scores = rows.map((r) => r.model.frontier_equivalent!.score!);
+    expect([...scores].sort((a, b) => b - a)).toEqual(scores);
+  });
+
+  it('never gives the row to a build the index has not scored', () => {
+    const q8 = data.models.find((m) => m.id === 'qwen3-32b-q8');
+    const q4 = data.models.find((m) => m.id === 'qwen3-32b-q4');
+    expect(q8 && q4).toBeTruthy();
+    const unscored = { ...q4!, frontier_equivalent: { ...q4!.frontier_equivalent!, score: null } } as typeof q4;
+    const set = { ...data, models: [unscored!, q8!] } as Dataset;
+    const [row] = leaderboardRows([q8!], set);
+    expect(row.model.id).toBe('qwen3-32b-q8');
+    expect(row.alsoAt.map((o) => o.id)).toEqual(['qwen3-32b-q4']);
+  });
+
+  it('counts the models with a second build, in words', () => {
+    expect(leaderboardBuildsLine(rows)).toContain('two of them are also priced at a heavier quantisation');
+    expect(leaderboardBuildsLine([{ alsoAt: [data.models[0]] }])).toContain('one of them is also priced');
+  });
+
+  it('says nothing about builds where every model is priced once', () => {
+    expect(leaderboardBuildsLine([{ alsoAt: [] }, { alsoAt: [] }])).toBe('');
   });
 });
 

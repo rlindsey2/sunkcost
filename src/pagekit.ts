@@ -1459,6 +1459,58 @@ export function publishedPriceLine(data: Dataset): string {
 }
 
 /**
+ * One row a model on the leaderboard, and this is the rule that picks which
+ * build gets it. This site prices some models at two quantisations — the same
+ * weights, downloaded at a different precision, for a different memory bill —
+ * and they share a name, a score and a page each. The table ranks by score, so
+ * two builds of one model would be two rows with the same number in the Score
+ * column, one under the other, telling a reader nothing they can act on.
+ *
+ * So the table keeps one, and it keeps the lightest, because the column that
+ * ends the row is the cheapest machine that runs it: the smaller download runs
+ * on more of them, which is the answer the row exists to give. The heavier
+ * build is named in the row it was cut from rather than dropped, so every model
+ * this site prices is somewhere on the page.
+ *
+ * It wants the scored models already sorted by score, which is the order the
+ * rows come out in.
+ */
+export function leaderboardRows(scored: Model[], data: Dataset): { model: Model; alsoAt: Model[] }[] {
+  const out: { model: Model; alsoAt: Model[] }[] = [];
+  const done = new Set<string>();
+  const byWeight = (a: Model, b: Model) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0);
+  for (const m of scored) {
+    if (done.has(m.display_name)) continue;
+    done.add(m.display_name);
+    const builds = [m, ...otherQuantisations(m, data)];
+    // An unscored build is never promoted into a table of scores; it is named
+    // alongside the row the same way, because it is still a download this site
+    // prices.
+    const model = builds.filter((b) => b.frontier_equivalent?.score != null).sort(byWeight)[0] ?? m;
+    out.push({ model, alsoAt: builds.filter((b) => b.id !== model.id).sort(byWeight) });
+  }
+  return out;
+}
+
+/**
+ * What the leaderboard says about that cut, in its own first paragraph. Without
+ * it the page opened by counting models and then printed a table with fewer
+ * rows than the site has builds, and the two it left out sat in no row and in
+ * no figure — a reader on a 48 GB machine wondering whether to run Qwen3 32B at
+ * eight bits found the question answered nowhere on the page that ranks it.
+ *
+ * The sentence is written from the rows themselves, so a second build entered
+ * tomorrow rewrites it rather than dating it, and a site that prices every
+ * model once drops it rather than printing a rule about nothing.
+ */
+export function leaderboardBuildsLine(rows: { alsoAt: Model[] }[]): string {
+  const doubled = rows.filter((r) => r.alsoAt.length).length;
+  if (!doubled) return '';
+  const which = doubled === 1 ? 'one of them is' : `${numberWord(doubled)} of them are`;
+  return `Each model has one row, at the lightest build this site prices, and ${which} also priced at a heavier quantisation, named in the row itself.`;
+}
+
+/**
  * A power figure, marked where the data has no figure for that machine and
  * borrows one. Electricity is the running cost in every pay-back sum on the
  * site, so a borrowed watt printed bare reads as a measurement of the machine
