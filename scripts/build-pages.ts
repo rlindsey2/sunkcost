@@ -2403,7 +2403,7 @@ function bestBuys(): string {
           const { moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
           const counted = pairsSaid ? sentenceCase(pairsSaid) : '';
           if (!t.picks.length) {
-            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
+            return `${header}<tr><td colspan="5" class="c-note dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
           }
           return header + t.picks
             .slice(0, BEST_PER_CLASS)
@@ -2420,7 +2420,7 @@ function bestBuys(): string {
   <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
-            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
+            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="c-note dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
         })
         .join('');
       return `<section id="${bestAnchor(l.usage)}">
@@ -2435,7 +2435,7 @@ ${stack(`<table class="board">
 
   const body = `<article class="prose">
 <h1>Best buys: the quickest pay-back at each level of capability</h1>
-<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; what a class leaves out is counted under its table. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
+<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; under each table, a class counts what it leaves out and names the next model down. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
 <p class="note">Jump to: ${levels.map((l) => `<a href="#${bestAnchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
@@ -2468,8 +2468,12 @@ ${sections}
  *
  * The cut is `BEST_PER_CLASS` and the lede prints it from there. This holds the page to
  * it, class by class and level by level: the rows a class carries, the models it says
- * it leaves out, and the pairs it counts. Raising the cut without changing the sentence,
- * listing a fourth model, or claiming a model is left out when none is, fails the build.
+ * it leaves out, the pairs it counts, and the one model past the cut it names. Raising
+ * the cut without changing the sentence, listing a fourth model, or claiming a model is
+ * left out when none is, fails the build. So does naming a model that already has a row
+ * in the same class, which is what a cut counted from the wrong end of the list would
+ * print, and so does calling it the quickest of the ones left out when a row above it
+ * pays back more slowly.
  */
 function checkBestCuts() {
   const page = meta.find((p) => p.path === '/best/');
@@ -2481,6 +2485,7 @@ function checkBestCuts() {
 
   let classes = 0;
   let left = 0;
+  let named = 0;
   const levels = bestUsageLevels(data);
   for (const l of levels) {
     const at = `${fmtTokens(l.usage)} tokens a day`;
@@ -2507,8 +2512,33 @@ function checkBestCuts() {
       if (more && !block.includes(moreSaid)) problems.push(`/best/ lists ${listed} of the ${t.picks.length} models that pay back in ${t.label} at ${at} and does not say the other ${more} ${more === 1 ? 'is' : 'are'} left out`);
       if (!more && /more model/.test(block)) problems.push(`/best/ says ${t.label} at ${at} leaves a model out, and every model in it that pays back is listed`);
       if (pairsSaid && !block.includes(sentenceCase(pairsSaid))) problems.push(`/best/ does not count what ${t.label} at ${at} leaves out: ${pairsSaid}`);
+      if (more) {
+        named++;
+        // the next model down is the first pick past the cut, so the claim is checked
+        // against the picks rather than against the sentence that was written from them
+        const next = t.picks[BEST_PER_CLASS];
+        const rowIds = [...block.matchAll(/class="[^"]*\bc-model\b[^"]*"><a href="\/models\/([^/]+)\//g)].map((m) => m[1]);
+        // the aside under the rows, not the rows themselves: a row links a machine too
+        const note = block.match(/<td[^>]*\bc-note\b[^>]*>([\s\S]*?)<\/td>/)?.[1] ?? '';
+        if (!note.includes(`/models/${next.model.id}/`))
+          problems.push(`/best/ leaves ${more} model${more === 1 ? '' : 's'} out of ${t.label} at ${at} and does not name ${next.model.display_name}, the quickest of them`);
+        else if (rowIds.includes(next.model.id))
+          problems.push(`/best/ names ${next.model.id} as the next model down in ${t.label} at ${at}, and it already has a row there`);
+        if (!note.includes(`/hardware/${next.hw.id}/`) || !note.includes(fmtDuration(next.days)))
+          problems.push(`/best/ names ${next.model.display_name} as the next model down in ${t.label} at ${at} without the machine that pays it back and the ${fmtDuration(next.days)} it takes`);
+        // the note calls it the quickest of the ones left out, so the picks have to be in that order
+        if (next.days < t.picks[BEST_PER_CLASS - 1].days)
+          problems.push(`/best/ calls ${next.model.display_name} the quickest model left out of ${t.label} at ${at}, and it pays back sooner than the last row listed`);
+      }
     }
   }
+
+  // the lede promises the note names one, so it says so only where one is named
+  const names = 'names the next model down';
+  if (named && !page.html.includes(names))
+    problems.push(`/best/ names the next model down in ${named} of its classes and does not say so in its first paragraph: "${names}"`);
+  if (!named && page.html.includes(names))
+    problems.push('/best/ says it names the next model down, and every class lists every model in it that pays back');
 
   if (problems.length) {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
@@ -2518,7 +2548,7 @@ function checkBestCuts() {
         : `${problems.length} things /best/ says about its own lists do not hold`,
     );
   }
-  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, and counts the ${left} more that pay back behind them`);
+  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, counts the ${left} more that pay back behind them, and names the next one down in the ${named} classes that leave one out`);
 }
 
 /**

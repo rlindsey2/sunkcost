@@ -2459,19 +2459,31 @@ describe('the line of jumps into a page\u2019s own sections', () => {
 });
 
 describe('what a class on /best/ leaves out', () => {
+  const pick = (days: number) => ({ hw: data.hardware[0], model: data.models[0], days });
   const klass = (picks: number, never = 0, overCapacity = 0, considered = 100) =>
-    ({ picks: Array.from({ length: picks }, (_, i) => i), never, overCapacity, considered });
+    ({ picks: Array.from({ length: picks }, (_, i) => pick(i)), never, overCapacity, considered });
+  // the fourth-quickest pay-back in a class, which is the one the note names
+  const fourth = { hw: hw('mac-mini-m6-32'), model: data.models.find((m) => m.id === 'qwen3.8-27b-q4')!, days: 640 };
+  const named = '<a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a>, in 21 months on a <a href="/hardware/mac-mini-m6-32/">Mac mini M6, 32GB</a>';
+  const cutAt3 = (picks: number) => ({ ...klass(picks), picks: [...klass(3).picks, fourth, ...klass(picks - 4).picks] });
 
-  it('counts the models a class pays back but does not list, and says so in their own number', () => {
-    expect(bestLeftOut(klass(17), 3).more).toBe(14);
-    expect(bestLeftOut(klass(17), 3).moreSaid).toBe('14 more models in this class pay back and are not listed.');
+  it('counts the models a class pays back but does not list, and names the next one down', () => {
+    expect(bestLeftOut(cutAt3(17), 3).more).toBe(14);
+    expect(bestLeftOut(cutAt3(17), 3).moreSaid).toBe(
+      `14 more models in this class pay back behind these three. The quickest of them is ${named}.`,
+    );
     // one is the case the plural would read wrong in, and it is a real class on the page
-    expect(bestLeftOut(klass(4), 3).moreSaid).toBe('1 more model in this class pays back and is not listed.');
+    expect(bestLeftOut(cutAt3(4), 3).moreSaid).toBe(
+      `One more model in this class pays back behind these three: ${named}.`,
+    );
+    // the model named is the first past the cut, not the first of the picks
+    expect(bestLeftOut(cutAt3(17), 3).nextSaid).toBe(named);
   });
 
   it('says nothing about models where the class lists every one that pays back', () => {
     expect(bestLeftOut(klass(3), 3).more).toBe(0);
     expect(bestLeftOut(klass(3), 3).moreSaid).toBe('');
+    expect(bestLeftOut(klass(3), 3).nextSaid).toBe('');
     expect(bestLeftOut(klass(1), 3).moreSaid).toBe('');
   });
 
@@ -2489,5 +2501,10 @@ describe('what a class on /best/ leaves out', () => {
     expect(bestLeftOut(klass(17), 5).more).toBe(12);
     expect(bestLeftOut(klass(17), 17).moreSaid).toBe('');
     expect(bestLeftOut(klass(17), Infinity).more).toBe(0);
+    // the cut is what the sentence counts back from, in words as well as in number
+    const wider = { ...klass(17), picks: [...klass(5).picks, fourth, ...klass(11).picks] };
+    expect(bestLeftOut(wider, 5).moreSaid).toBe(
+      `12 more models in this class pay back behind these five. The quickest of them is ${named}.`,
+    );
   });
 });

@@ -1251,24 +1251,44 @@ export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
  * listed, and machine-and-model pairs that fit and never pay back at all. Counting
  * them together would read as one number and be two.
  *
+ * The count alone was a dead end for the reader it was written for. A class saying
+ * *14 more models in this class pay back and are not listed* sent someone who wanted
+ * the fourth-best buy to a leaderboard ranked by score, which is a different order
+ * from the one they were reading. So the sentence names the next model down: the
+ * quickest pay-back the cut left out, on the machine that gets it, which is the one
+ * row the reader would have asked for next. Naming all fourteen is the table again.
+ *
  * The page prints these sentences and its guard checks for them, so the words under
  * a table and the figures behind it cannot drift apart. It wants the uncut list of
  * picks, which is what `bestByTier(data, usage, Infinity)` returns.
  */
 export function bestLeftOut(
-  t: { picks: unknown[]; considered: number; never: number; overCapacity: number },
+  t: {
+    picks: { hw: Hardware; model: Model; days: number }[];
+    considered: number;
+    never: number;
+    overCapacity: number;
+  },
   perClass: number,
-): { more: number; moreSaid: string; pairsSaid: string } {
+): { more: number; moreSaid: string; pairsSaid: string; nextSaid: string } {
   const more = Math.max(0, t.picks.length - perClass);
   const counted = [
     t.never ? `${t.never} never pay back` : '',
     t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : '',
   ].filter(Boolean);
+  // the picks are sorted by pay-back, so the first one past the cut is the next one down
+  const next = more ? t.picks[perClass] : undefined;
+  const nextSaid = next
+    ? `<a href="/models/${esc(next.model.id)}/">${esc(next.model.display_name)}</a>, in ${esc(fmtDuration(next.days))} on a <a href="/hardware/${esc(next.hw.id)}/">${esc(hardwareLabel(next.hw))}</a>`
+    : '';
   return {
     more,
     moreSaid: more
-      ? `${more} more model${more === 1 ? '' : 's'} in this class pay${more === 1 ? 's' : ''} back and ${more === 1 ? 'is' : 'are'} not listed.`
+      ? more === 1
+        ? `One more model in this class pays back behind these ${numberWord(perClass)}: ${nextSaid}.`
+        : `${more} more models in this class pay back behind these ${numberWord(perClass)}. The quickest of them is ${nextSaid}.`
       : '',
+    nextSaid,
     pairsSaid: counted.length ? `of the ${t.considered} machine-and-model pairs that fit, ${counted.join(' and ')}.` : '',
   };
 }

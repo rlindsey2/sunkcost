@@ -160,6 +160,11 @@ a:hover { color: var(--ink); }
    speeds with a "vs" between them — is prose twice over, so it wraps like
    prose rather than holding one line and pushing the column beside it out. */
 .board .c-pair { white-space: normal; }
+/* An aside under a group of rows is a sentence rather than a column, so it
+   wraps. Held on one line it made the table 1263px wide against the 936px the
+   page gives it, and what went off the right edge was the pay-back — the one
+   figure every row on /best/ is read for. */
+.board .c-note { white-space: normal; }
 .board thead th { text-align: left; font-size: 11.5px; font-weight: 500; color: var(--faint); padding: 8px 10px; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
 .board td, .board tbody th { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .board tbody th { text-align: left; font-weight: 400; color: var(--muted); font-size: 13px; }
