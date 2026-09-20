@@ -1945,6 +1945,16 @@ model the most of it are both discontinued graphics cards, so that page's speed 
 nobody sells; the column says so, and the machine table marks every discontinued row, but a 24 GB
 card that is still on sale would be the better basis if one is ever added.
 
+**The deploy this run's log push started is wedged, and it costs nothing.** Run 275 on `04bc8b4`
+passed `npm ci` and `npm test` in seventeen seconds and then sat in `npm run build` for over twenty
+minutes, where run 274 finished the whole job in three. It is the same shape as the run the 2026-09-19
+entry recorded. Nothing visitor-facing is waiting on it: the commit it is building changes
+`seo/LOG.md` and nothing else, so the site it would publish is the site already live. This agent
+cannot dispatch or cancel a workflow — the API answers 403 — but `deploy.yml` sets
+`concurrency: deploy-production` with `cancel-in-progress: true`, so the next push to `main` cancels
+it and starts a fresh one. This note is that push. If a later run finds 275 still going and nothing
+newer beside it, the fix is the same: push something small.
+
 **Continue next.** The backlog's top open item that is work is now the home page's `og:url`, one line
 that is waiting on PR #17 rather than on a run. Behind it, `/models/` is a 404 and wants a redirect
 with the next change to `public/_headers`. Both are cheap; neither is an hour. The fuller one is the
