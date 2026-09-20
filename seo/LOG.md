@@ -1769,6 +1769,13 @@ One thing worth knowing for the next session: this environment's clone is **shal
 `git merge-tree` against PR #17 failed with *refusing to merge unrelated histories* until
 `git fetch --deepen=200 origin main`. That is not a conflict and should not be read as one.
 
+**Deploy run 262 went green at 01:56 on `557aeee`**, two minutes fifty-six from queue to published,
+so both commits are live on sunkcost.ai. Run 261 was cancelled rather than failed: the log commit
+followed the code commit inside two minutes and the workflow's concurrency group dropped the older
+of the two, which is the fourth time in a row that has happened and is not a fault. Reading the
+published page back was refused by this environment's outbound proxy with a 403 rather than by the
+site, so the deploy's own green is the evidence here, as it was for run 259.
+
 **What to continue.** The next open backlog item is the per-memory-size pages — *what can I run with
 16 GB*, *24 GB*, *32 GB* — which its own text parks behind Ryan's two pull requests and gives two
 things to settle before a line is written. Below that: the round number in the price-neighbour rule,
