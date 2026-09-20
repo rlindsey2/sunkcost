@@ -36,6 +36,8 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       in a throwaway worktree and building there: 405 tests, typecheck clean, 307 pages with every
       guard passing. It gains no jump line from that push, because the line is written by the page
       builder and `index.html` is not one of its pages.
+      **It still merges clean with `main` at `1d7a98b`**, checked 2026-09-20 with `git merge-tree`
+      against a deepened history. This push goes nowhere near `index.html` or `src/styles.css`.
 
 - [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
       `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
@@ -73,6 +75,11 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       thing to know before you merge: four hashes moved on `main` rather than one, so the rebuild
       of `seo/page-dates.json` matters more than it did — `/leaderboard/`, `/best/`, `/compare/`
       and `/hardware/`.
+      **It still merges clean with `main` at `1d7a98b`**, checked 2026-09-20 by merging it for real
+      in a throwaway worktree and building there: 427 tests, typecheck clean, 308 pages with every
+      guard passing. This time the ledger needed nothing — `npm run build:pages` on the merged tree
+      wrote no change at all, so there is no line to rebuild and nothing to pick a side of. Run it
+      anyway after merging; it is one command and it is the thing that goes wrong in silence.
       **It conflicted a third time at 17:51 on 2026-09-19 and is merged clean again**, as `a81e913`.
       Same file, same import line: `main`'s jump-line rule and this branch's monthly-cost helpers,
       with `MTOK` sitting on a different line on each side. Both kept by hand, `MTOK` kept once, and
@@ -657,7 +664,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       from the array that wrote it. One page's words moved and no figure, row or count changed. The
       run entry below has the four breaks and the two that proved the tests.
 
-- [ ] **A class on `/best/` counts the models it leaves out and names none of them.** Left
+- [x] **A class on `/best/` counted the models it left out and named none of them.** Done
+      2026-09-20, pushed as `1d7a98b`, and the item's own guess about the cheapest honest version
+      was the one that got built: the aside under each class names the next model down — the
+      quickest pay-back past the cut, with its machine and its figure — rather than the fourteen.
+      All 15 classes across the five levels leave one out, so all 15 name one. The count alone was
+      a dead end: it sent a reader who wanted the fourth-best buy to `/leaderboard/`, which is
+      ranked by score, a different order from the one they were reading. `checkBestCuts()` holds
+      four more claims, read out of the aside itself rather than out of the sentence written from
+      it, and the run entry below has the six breaks that proved them.
+      **One thing it had to fix to be worth doing.** Held on one line the longer aside took the
+      table to 1,263px against the 936px the page is given, and what went off the right edge was
+      the pay-back column — the one figure every row there is read for. `.board .c-note` wraps it.
+      Measured at four widths before and after: 936px at 1280 and 1440, unchanged at 900 and 390.
+      The original item follows.
+      Left
       deliberately by the 2026-09-19 run rather than missed, because naming them is a different page:
       14 models under one class, each wanting its machine and its figure to be worth reading, is the
       table again rather than a note under it. The lede points at `/leaderboard/`, where every model
@@ -1662,6 +1683,99 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — the fourth-best buy, named
+
+**The watch was already done.** `npm run model-watch` printed `2026-09-20` as last checked against
+today, so an earlier run had it and the backlog was the job. The three candidates waiting on figures
+— Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B — still need Ryan and are unchanged.
+
+**Why this item.** The three-page item closed on the last run, and the next open one was the one the
+last three entries kept deferring: a class on `/best/` counted the models it left out and named none
+of them. Its own text said to weigh it once rather than drift into it, and named the cheapest honest
+version. That is what this is. The per-memory-size pages below it are still parked behind Ryan's two
+pull requests, which its own text says to leave until they are settled.
+
+**What was wrong.** A class listed the three quickest pay-backs and then said, in a grey line under
+them, *14 more models in this class pay back and are not listed.* The count is honest and it is a
+dead end. A reader looking at three rows and wanting the fourth was sent by the lede to
+`/leaderboard/`, which ranks every model by score — a different order from the one they were reading,
+on a page that does not say what anything pays back in. The fourth-best buy was computed, sorted and
+thrown away, at every one of the 15 class-and-level blocks on the page.
+
+**What it says now.** The aside names it:
+
+> 14 more models in this class pay back behind these three. The quickest of them is
+> **Qwen3.5 9B**, in 685 years on a **Mac mini M6, 16GB**. Of the 530 machine-and-model pairs that
+> fit, 57 never pay back.
+
+and where a class leaves exactly one out, it names it without the arithmetic: *One more model in this
+class pays back behind these three: DeepSeek V4-Flash, in 10,564 years on a Mac Studio M5 Ultra,
+256GB.* Both names link the way the rows above them link — the model to its page, the machine to
+its own — so the aside is the row the reader would have asked for next, written as a sentence.
+`bestLeftOut()` takes the first pick past the cut, which is what the sort already puts there, so
+**no row moved and no figure changed**: the page prints one more line per class out of numbers it
+had already computed. The lede says it does this, and says it only because a class really does.
+
+**Four more claims in `checkBestCuts()`, all read out of the aside rather than out of the sentence.**
+The helper writes the words the guard then looks for, so a claim checked against the helper's own
+string proves nothing — this was measured, not assumed: stripping the name out of the sentence
+passed the build clean until the check was moved onto the picks. The model named is now looked up as
+`t.picks[BEST_PER_CLASS]` and its page must be linked **inside the aside**, not merely somewhere in
+the block, because every row links a machine and three of them link models. It must have no row of
+its own in that class. The aside must carry the machine's page and the duration as well as the name.
+And `t.picks[BEST_PER_CLASS].days` must be no quicker than the row above it, which is what *the
+quickest of them* claims and what an unsorted pick list would make a lie.
+
+**Six breaks, each run.** Count them and name none → exit 1 with 20 problems, *leaves 8 models out
+of Haiku-class at 50k tokens a day and does not name Qwen3.6 35B-A3B, the quickest of them*. Name
+`picks[0]` instead of the first past the cut → exit 1, 30 problems, the same message plus the
+machine-and-duration one. Print the machine without linking it → exit 1, 15 problems, *names
+DeepSeek V4-Flash as the next model down in Sonnet-class at 50k tokens a day without the machine
+that pays it back and the 10,564 years it takes*. Drop the lede's promise → exit 1, exactly one
+problem, *names the next model down in 15 of its classes and does not say so in its first
+paragraph*. Reverse the pick order in `bestByTier()` → exit 1, 15 problems, *calls Qwen3.8 27B the
+quickest model left out of Sonnet-class at 50k tokens a day, and it pays back sooner than the last
+row listed*. And, to prove the row-clash branch is live rather than unreachable, render a fourth row
+under an unchanged cut → exit 1, *names deepseek-v4-flash-ud-q4 as the next model down in
+Sonnet-class at 50k tokens a day, and it already has a row there*.
+
+**The layout fault the longer sentence exposed, found by reading the page in a browser rather than
+in a file.** `.board` holds every cell on one line unless a class says otherwise, and the aside had
+no class. At 1,263px against the 936px the page is ever given, the table scrolled sideways and took
+*Pays back in* and *Open in the calculator* off the right edge — the exact fault `page.css` already
+has a comment about, on the tables it was fixed on. The aside is a sentence, not a column, so
+`.board .c-note { white-space: normal; }` and the cells carry the class. Measured in Chromium at
+four widths, before and after: 1263 → 936 at 1440 and 1280, and 856 and 358 unchanged at 900 and
+390, so nothing below a full-width page moved at all. Read rendered at 1280 and 390 out of `dist/`.
+
+**Nothing else on the site moved, measured rather than assumed.** Exactly one hash changed in
+`seo/page-dates.json`, `/best/`, and `c-note` appears on one page and in the stylesheet. The page is
+1,850 words. **417 tests**, typecheck clean, the full `npm run build` end to end including
+`build:og`, `build:share` and `build:functions`, and 307 pages with every guard passing.
+
+**Pushed to `main` as `1d7a98b`.** `scripts/build-pages.ts`, `src/pagekit.ts`, `public/page.css`, a
+test and the date ledger. `public/page.css` is the generated pages' stylesheet and not the
+calculator's — `index.html` does not link it, checked rather than assumed — so this stays on the
+push side of the standing rule. No data file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts` is
+touched. `origin/main` was still at `07e4baf` when this went up, so no sibling session had run.
+
+**Both open pull requests still merge clean, and #16 needs less than it did.** PR #16 was merged for
+real in a throwaway worktree and built there: 427 tests, typecheck clean, 308 pages with every guard
+passing, and — new this time — `npm run build:pages` on the merged tree wrote **no change to
+`seo/page-dates.json` at all**, so the rebuild the standing note asks for has nothing to rebuild.
+PR #17 is clean by `git merge-tree`; this push goes nowhere near `index.html` or `src/styles.css`.
+One thing worth knowing for the next session: this environment's clone is **shallow**, so
+`git merge-tree` against PR #17 failed with *refusing to merge unrelated histories* until
+`git fetch --deepen=200 origin main`. That is not a conflict and should not be read as one.
+
+**What to continue.** The next open backlog item is the per-memory-size pages — *what can I run with
+16 GB*, *24 GB*, *32 GB* — which its own text parks behind Ryan's two pull requests and gives two
+things to settle before a line is written. Below that: the round number in the price-neighbour rule,
+the 45 words 21 pages share, and the home page's 142 words of form labels. Ryan's side is unchanged
+apart from the notes above: PR #16 and PR #17 both still open, the leaderboard's estimated-score
+count still wrong by eleven in `data/defaults.json`, the `TODO:` still live in the calculator's
+assumptions panel, and Ternary Bonsai 2 27B still waiting on figures.
 
 ### 2026-09-20 — a leaderboard of every open model, with two of them on it nowhere
 
