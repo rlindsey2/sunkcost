@@ -636,8 +636,16 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       speeds in prose that already compares them, which is the line `checkSpeedBasis()` drew and
       this keeps.
 
-- [ ] **No generated page carries `og:url`, and the home page does not either.** Measured
-      2026-09-20 over all 308 pages. Every one carries a correct `rel=canonical`, `og:title`,
+- [x] **No generated page carried `og:url`. All 307 do now.** Done 2026-09-20, pushed as
+      `0f2afd0`. Every page says its own address in the card, the same one its canonical claims,
+      and `checkCanonicals()` holds the two to each other so a page cannot ship sharing as
+      somewhere it is not. The 307 files differ from the previous build by that one line and by
+      nothing else: `sitemap.xml` is byte for byte identical and no page moved the day its words
+      last changed, because the tag sits in the head, outside the title, the description and the
+      `<main>` the ledger fingerprints. The run entry below has the three breaks that proved the
+      guard and the three that proved the tests.
+      **The home page is the one line left, and it is on the item below rather than done here.**
+      The original item follows. Measured 2026-09-20 over all 308 pages. Every one carries a correct `rel=canonical`, `og:title`,
       `og:description`, `og:image` and `twitter:card`, so a share renders right; what is missing is
       the tag Facebook, LinkedIn and Slack use to decide that `…/?utm_source=x` and the clean URL
       are the same object. Without it a shared link with a tracking parameter counts as its own
@@ -648,6 +656,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       assumed: `twitter:image` and `twitter:description` are missing on all 307, and X falls back
       to `og:image` and `og:description`, so adding them would be the same two strings twice. The
       home page carries both, which is where the asymmetry comes from.
+
+- [ ] **The home page is the one page on this site with no `og:url`, and it is the one most
+      likely to be shared.** Left 2026-09-20 when the other 307 got theirs. It is a single
+      `<meta property="og:url" content="https://sunkcost.ai/" />` beside the canonical already in
+      `index.html`'s head, and it is a pull request rather than a push because `index.html` is the
+      calculator's own head, which is the standing rule. **It is deliberately not a third branch.**
+      Both open pull requests already rewrite the `"/"` hash in `seo/page-dates.json` — the
+      collision PR #16 and PR #17 both carry a note about — and `index.html` is fingerprinted
+      whole, so a third branch touching it adds a third value for one line nobody can pick between.
+      The cheap way is for it to ride PR #17, which is already one line in that file's head, or to
+      go up on its own the first run after both are settled. Worth noting that the /s/ share pages
+      are built from `index.html` and already set their own `og:url`, so nothing the site shares
+      today is wrong; the home page simply says nothing.
 
 - [ ] **1,532 distinct query URLs point at the home page, and that is the right number. Nothing to
       do.** Measured 2026-09-20: the prefilled calculator links are 2,918 `<a>`s across the built
@@ -1774,6 +1795,83 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — the address a shared link says it is
+
+**The watch was already done.** `npm run model-watch` printed `today 2026-09-20 · last checked
+2026-09-20 · done for today`, so an earlier run had it and the backlog was the job. The candidates
+waiting on figures are unchanged and still need Ryan.
+
+**The item.** `og:url`, the top open item on the backlog and the cheapest thing on it. All 307
+generated pages carried a correct canonical, `og:title`, `og:description`, `og:image` and
+`twitter:card`, so a shared link already rendered a card; none carried the tag that says which page
+the card is *of*. A search engine settles duplicates from the canonical. Facebook, LinkedIn and
+Slack read `og:url`, and without it `…/best/?utm_source=x` and `…/best/` are two objects: two share
+counts, two sets of comments, and none of the second lot pointing at the first.
+
+**What it says now.** One line in `pageShell()` in `src/pagekit.ts`, beside `og:type`:
+
+> `<meta property="og:url" content="https://sunkcost.ai/hardware/mac-mini-m6-16/" />`
+
+the whole address rather than the path, which is the form a parser reads, and always the same
+string the page's own canonical carries. **307 pages, one address each in the head and in the
+card**, which is what `checkCanonicals()` now prints. That guard already held four things about a
+page's address; this is the fifth, and it compares the two tags read back out of the built markup
+rather than the value that wrote either.
+
+**Three breaks, each run, each naming the page.** Take the tag out: exit 1, *`/leaderboard/` shares
+as (no og:url) and is canonically https://sunkcost.ai/leaderboard/*, and 306 more. Share every page
+as the home page: exit 1, *`/best/` shares as https://sunkcost.ai/ and is canonically
+https://sunkcost.ai/best/* — the fault that would be invisible in a browser and would quietly
+collapse the whole site into one shared object. Write the path where the address belongs: exit 1,
+*`/best/` shares as /best/*.
+
+**Three tests in `tests/pagekit.test.ts`, all three proved by breaking them.** The tag gone fails
+all three. A path instead of an address fails two, including the one written for exactly that. A
+`name=` attribute where `property=` belongs fails all three, which is worth having because it is
+the shape that renders fine in every HTML validator and is read by nothing.
+
+**Nothing a visitor reads moved, and it was measured rather than assumed.** The previous tree was
+built in a throwaway worktree and every built file compared byte for byte: **all 307 pages differ
+by exactly one added line and no other**, none gained or lost, and the five non-page files —
+`sitemap.xml` and `robots.txt` among them — are identical. `seo/page-dates.json` is untouched by
+the push, because the ledger fingerprints the title, the description and `<main>`, and the tag is
+in the head outside all three. So dating stays honest and no page claims a change it did not have.
+**430 tests**, typecheck clean, and the full `npm run build` end to end including `build:og`,
+`build:share` and `build:functions`, with 307 pages and every guard passing. The `/s/` share pages
+were checked too: they set their own `og:url` in `build-share-pages.ts` and still carry exactly one
+each, their own address.
+
+**Pushed to `main` as `0f2afd0`.** `src/pagekit.ts`, `scripts/build-pages.ts` and a test, which is
+the push side of the standing rule: no data file, no `src/calc.ts`, `src/compute.ts` or `src/fit.ts`,
+and nothing a visitor reads. `origin/main` was still at `4bab57d` when this went up, so no sibling
+session had run this hour.
+
+**Deploy run 270 went green at 04:42 on `0f2afd0`**, so the tag is live on all 307 pages. This is
+the first push in seven not to have its run cancelled by a log commit landing inside three minutes,
+because this one waited for the deploy before writing the entry. The built site could not be read
+back over HTTP from this environment, which blocks sunkcost.ai at the egress proxy; the pages were
+read out of `dist/` instead, which is the tree the deploy publishes.
+
+**Both open pull requests still merge clean with this push, checked rather than assumed.** PR #16
+was really merged into a worktree and built there: **440 tests**, typecheck clean, 308 pages with
+every guard passing, and its own `/cost-per-month/` comes out with `og:url` of its own without a
+line of the branch changing. Nothing was pushed to the branch, because there was nothing to repair.
+PR #17 merges clean by `git merge-tree`; it goes nowhere near either file here. One thing worth
+writing down for the next run, because it cost ten minutes: **this clone's `main` branch ref is
+stale** — the working tree is a detached HEAD, `main` sits 51 commits behind, and a merge test
+against it reports *Already up to date* against a tree from days ago. Use `origin/main`. The same
+clone is shallow enough that `git merge-tree` said *refusing to merge unrelated histories* until
+`git fetch --deepen=200`.
+
+**What to continue.** The home page is the one page left without `og:url` and it is now its own
+backlog item, deliberately not a third branch against `index.html`: both open pull requests already
+rewrite the `"/"` hash in `seo/page-dates.json` and a third value for that line is the collision
+this log has written up five times. It rides PR #17 or goes up alone once Ryan has settled both.
+After that the top open item with real traffic in it is still the per-memory-size pages, parked
+behind the same two pull requests. Ryan's side is unchanged: two pull requests open, the
+leaderboard's estimated-score count still wrong by eleven in `data/defaults.json`, the `TODO:`
+still live in the calculator's assumptions panel, and Ternary Bonsai 2 27B still waiting on figures.
 
 ### 2026-09-20 — what a local speed is worth, said under the column of them
 
