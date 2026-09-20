@@ -19,7 +19,7 @@ import {
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
+  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -54,7 +54,18 @@ const paths: string[] = [];
 const cardFor = (hwId: string | undefined, modelId: string | null | undefined) =>
   hwId && modelId && hasShareCard(hwId, modelId, data) ? `/og/${hwId}--${modelId}.png` : '/og/default.png';
 
-const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string }[] = [];
+const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string; hash: string }[] = [];
+
+// A page's lastmod is the day its own words last changed, read out of
+// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
+// prices were checked, and why a page whose fingerprint has moved goes into the
+// sitemap without a date rather than with a guess at one. It is read here, before
+// the first page is built, because each page now carries that day itself.
+const datesFile = new URL('../seo/page-dates.json', import.meta.url);
+const recordedDates: PageDates | null = existsSync(datesFile)
+  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
+  : null;
+const today = new Date().toISOString().slice(0, 10);
 /** which pages link to each page, so the build can refuse to ship one nothing links to */
 const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
@@ -94,6 +105,15 @@ function write(path: string, html: string) {
   // on disk, the fingerprint the sitemap dates and the markup every guard below
   // reads are one and the same page. See anchorHeadings in src/pagekit.ts.
   html = anchorBody(html);
+  const title = unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
+  const description = unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? '');
+  // The page's own words, fingerprinted the moment they are final. Where the ledger
+  // still recognises them it can say which day they last moved, and the page says so
+  // itself rather than leaving the sitemap to claim it alone. Nothing withModified
+  // touches is inside the fingerprint, so the stamp cannot move the date it stamps.
+  const hash = fingerprint({ title, description, body: mainOf(html) });
+  const changed = publishedDate(recordedDates, path, hash);
+  if (changed) html = withModified(html, changed);
   const dir = new URL(`.${path}`, outRoot);
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
@@ -118,8 +138,9 @@ function write(path: string, html: string) {
     if (m[1] !== path) inbound.set(m[1], (inbound.get(m[1]) ?? new Set()).add(path));
   meta.push({
     path,
-    title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
-    description: unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? ''),
+    title,
+    description,
+    hash,
     canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
     ogImage: unesc(html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '').replace(site, ''),
     links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
@@ -5370,20 +5391,13 @@ for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), compa
 // running it asks
 for (const [a, b] of modelPairs(data)) write(modelComparePath(a, b), modelComparePage(a, b));
 
-// A page's lastmod is the day its own words last changed, read out of
-// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
-// prices were checked, and why a page whose fingerprint has moved goes into the
-// sitemap without a date rather than with a guess at one.
-const datesFile = new URL('../seo/page-dates.json', import.meta.url);
-const recordedDates: PageDates | null = existsSync(datesFile)
-  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
-  : null;
 const fingerprints = [
   // the home page has no body of its own; the calculator draws it
   { path: '/', hash: fingerprint({ title: '', description: '', body: readFileSync(new URL('../index.html', import.meta.url), 'utf8') }) },
-  ...meta.map((p) => ({ path: p.path, hash: fingerprint({ title: p.title, description: p.description, body: mainOf(p.html) }) })),
+  // every other page was fingerprinted as it was written, so the day in its own
+  // markup and the day in the sitemap cannot be two different readings
+  ...meta.map((p) => ({ path: p.path, hash: p.hash })),
 ];
-const today = new Date().toISOString().slice(0, 10);
 const urls = fingerprints
   .map(({ path, hash }) => {
     const changed = publishedDate(recordedDates, path, hash);
@@ -6226,6 +6240,10 @@ function checkSourceLinks() {
  * its content. The last is the one worth a build failing over — a date left behind by a
  * page that has since changed is exactly the wrong signal, and it is the fault that
  * cannot be seen by reading the sitemap.
+ *
+ * Each page now says the same day in its own structured data, so the claim is made in
+ * two places and the two have to agree: the day, the node it sits on, and the fact of
+ * it at all. See withModified in src/pagekit.ts.
  */
 function checkPageDates() {
   const problems: string[] = [];
@@ -6250,6 +6268,26 @@ function checkPageDates() {
   for (const [path, was] of Object.entries(recordedDates?.pages ?? {})) {
     if (was.changed !== null && !/^\d{4}-\d{2}-\d{2}$/.test(was.changed)) problems.push(`${path} is recorded as changing "${was.changed}", which is not a day`);
   }
+  // The same day, said twice. A sitemap is a file the reader never sees and the crawler
+  // has to take on trust; the page repeating the claim out of the same ledger is what
+  // makes it checkable at all. So it is read back out of the markup rather than out of
+  // the string that wrote it: a dated page carries the day once, on the node that is
+  // the page, and an undated one carries nothing.
+  let stamped = 0;
+  for (const p of meta) {
+    const graph = (JSON.parse(p.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '{"@graph":[]}') as { '@graph': Record<string, unknown>[] })['@graph'];
+    const carrying = graph.filter((n) => n.dateModified !== undefined);
+    const want = publishedDate(recordedDates, p.path, p.hash);
+    if (carrying.length > 1) { problems.push(`${p.path} dates itself ${carrying.length} times over`); continue; }
+    const on = carrying[0];
+    if (want && !on) problems.push(`${p.path} is dated ${want} in the sitemap and says nothing about it itself`);
+    else if (!want && on) problems.push(`${p.path} dates itself ${String(on.dateModified)} where the sitemap will not date it`);
+    else if (want && on) {
+      stamped++;
+      if (on['@type'] !== 'WebPage') problems.push(`${p.path} puts its date on a ${String(on['@type'])} rather than on the page`);
+      if (on.dateModified !== want) problems.push(`${p.path} dates itself ${String(on.dateModified)} where the sitemap says ${want}`);
+    }
+  }
   if (problems.length) {
     console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
     throw new Error(`${problems.length} sitemap dates are wrong or cannot be read`);
@@ -6265,6 +6303,10 @@ function checkPageDates() {
     `  ${dated} of ${entries.length} sitemap entries carry the day that page's own words last changed` +
       (why.length ? `; ${why.join(', ')}` : ''),
   );
+  // the home page is the difference between the two counts: it is a static file the
+  // calculator fills, so it is fingerprinted whole and cannot carry a date without
+  // changing the words that date is taken over
+  console.log(`  ${stamped} of the ${meta.length} generated pages say that day in their own structured data as well`);
 }
 
 /**

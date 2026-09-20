@@ -303,6 +303,34 @@ export function jsonLd(graph: LdNode[]): string {
   return `<script type="application/ld+json">${JSON.stringify(doc).replace(/</g, '\\u003c')}</script>`;
 }
 
+/** the one structured-data block a page carries, found in its head */
+const LD_TAG = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/;
+
+/**
+ * The day a page's own words last changed, written into the page as well as into
+ * the sitemap.
+ *
+ * `seo/page-dates.json` has dated every page in the sitemap since page-dates.ts was
+ * written, and a sitemap is a file a reader never sees and a crawler has to take on
+ * trust. This puts the same day, out of the same ledger, where the page itself can be
+ * read for it. On a site whose whole subject is what a machine costs this week, that
+ * is the claim most worth making twice.
+ *
+ * It goes on after the body is final, because until then the ledger cannot recognise
+ * the page. The node it lands in sits in the head, outside the title, the description
+ * and the `<main>` the fingerprint is taken over, so dating a page can never change
+ * the date the page is given.
+ */
+export function withModified(html: string, changed: string): string {
+  const found = html.match(LD_TAG);
+  if (!found) throw new Error('a page reached its date with no structured data to carry it');
+  const graph = (JSON.parse(found[1]) as { '@graph': LdNode[] })['@graph'];
+  const page = graph.find((n) => n['@type'] === 'WebPage');
+  if (!page) throw new Error('a page reached its date with nothing in its structured data that is the page');
+  page.dateModified = changed;
+  return html.replace(LD_TAG, () => jsonLd(graph));
+}
+
 /**
  * The machine a hardware page is about. Only figures that are somebody's
  * published specification go in: a stand-in or an estimate needs the sentence

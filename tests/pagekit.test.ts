@@ -11,8 +11,9 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, type LdNode,
+  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
 } from '../src/pagekit';
+import { fingerprint, mainOf } from '../src/page-dates';
 import {
   indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
@@ -139,6 +140,74 @@ describe('structured data', () => {
     const parsed = JSON.parse(html.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, ''));
     expect(parsed['@graph'][0].name).toBe('</script><img src=x>');
     expect(parsed['@context']).toBe('https://schema.org');
+  });
+});
+
+describe('the day a page says its own words last moved', () => {
+  const shell = () =>
+    pageShell(
+      {
+        title: 'Mac mini M6, 16GB: can it run local LLMs?',
+        description: 'Some description.',
+        canonical: '/hardware/mac-mini-m6-16/',
+        ogImage: '/og/card.png',
+        crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/hardware/mac-mini-m6-16/', label: 'Mac mini M6, 16GB' }],
+        about: hardwareProduct(hw('mac-mini-m6-16'), 'https://sunkcost.ai/hardware/mac-mini-m6-16/'),
+      },
+      '<main><h1>A machine</h1><p>Some words.</p></main>',
+      data,
+    );
+  const graphIn = (html: string) =>
+    JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1])['@graph'] as LdNode[];
+
+  it('puts the day on the page and on nothing else in the graph', () => {
+    const graph = graphIn(withModified(shell(), '2026-09-19'));
+    expect(node(graph, 'WebPage').dateModified).toBe('2026-09-19');
+    expect(graph.filter((n) => 'dateModified' in n)).toHaveLength(1);
+  });
+
+  it('leaves every other node exactly as it found it', () => {
+    const before = graphIn(shell());
+    const after = graphIn(withModified(shell(), '2026-09-19'));
+    expect(after).toHaveLength(before.length);
+    for (const [i, n] of after.entries()) {
+      const { dateModified, ...rest } = n as LdNode & { dateModified?: string };
+      expect(rest).toEqual(before[i]);
+    }
+  });
+
+  // the load-bearing one: the stamp sits in the head, so the ledger that decides
+  // which day a page is given cannot see it. Were it inside <main>, dating a page
+  // would change the page, and the date would be wrong the moment it was written.
+  it('changes nothing the page is fingerprinted over', () => {
+    const plain = shell();
+    const dated = withModified(plain, '2026-09-19');
+    const print = (html: string) =>
+      fingerprint({
+        title: html.match(/<title>([\s\S]*?)<\/title>/)![1],
+        description: html.match(/<meta name="description" content="([\s\S]*?)" \/>/)![1],
+        body: mainOf(html),
+      });
+    expect(print(dated)).toBe(print(plain));
+    expect(dated).not.toBe(plain);
+  });
+
+  it('keeps the escaping that stops a name closing the script tag', () => {
+    const html = withModified(
+      jsonLd([
+        { '@type': 'WebPage', name: '</script><img src=x>' },
+        { '@type': 'Thing', name: 'ok' },
+      ]),
+      '2026-09-19',
+    );
+    expect(html).not.toContain('</script><img');
+    expect(html.match(/<\/script>/g)).toHaveLength(1);
+    expect(node(graphIn(html), 'WebPage').name).toBe('</script><img src=x>');
+  });
+
+  it('refuses a page it cannot date rather than dating the wrong thing', () => {
+    expect(() => withModified('<html><head></head></html>', '2026-09-19')).toThrow(/no structured data/);
+    expect(() => withModified(jsonLd([{ '@type': 'Thing' }]), '2026-09-19')).toThrow(/nothing in its structured data that is the page/);
   });
 });
 
