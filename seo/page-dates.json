@@ -10,11 +10,11 @@
       "changed": "2026-09-19"
     },
     "/best/": {
-      "hash": "fdf3f168bd0aa3b7",
+      "hash": "703804eea969073f",
       "changed": "2026-09-19"
     },
     "/compare/": {
-      "hash": "615c0a4d6d8fd137",
+      "hash": "0cb4b5b3d9e4d5b5",
       "changed": "2026-09-19"
     },
     "/compare/amd-radeon-ai-pro-r9700-32gb-vs-nvidia-geforce-rtx-3060-12gb/": {
@@ -778,7 +778,7 @@
       "changed": "2026-09-19"
     },
     "/hardware/": {
-      "hash": "0c735cef0424408c",
+      "hash": "f3fcdc4a0ed3770d",
       "changed": "2026-09-19"
     },
     "/hardware/beelink-gtr9-pro-128/": {
@@ -1010,8 +1010,8 @@
       "changed": "2026-09-19"
     },
     "/leaderboard/": {
-      "hash": "b0d165fb54aeba0a",
-      "changed": "2026-09-19"
+      "hash": "b6cf97c0312fcf0f",
+      "changed": "2026-09-20"
     },
     "/local-llm-vs-api-cost/": {
       "hash": "1c2f4121089cf22f",

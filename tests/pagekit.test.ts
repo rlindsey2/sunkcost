@@ -2,15 +2,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   addJumpLine, anchoredHeading, anchorHeadings, headingSlug, JUMP_MIN_SECTIONS, sectionLink, SECTIONS, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
-  contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  bestLeftOut, contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
   machinesThatHold,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
+  leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, nearestCompleteComputer, SPREAD_MONTHS,
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
-  priceWithScope, priceWithScopeText, rowFor, runnersFor, tokenCost, tokenCosts,
+  priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, type LdNode,
 } from '../src/pagekit';
@@ -1653,6 +1653,87 @@ describe('where a page that prices a card says the cards are ranked', () => {
   });
 });
 
+describe('what the machine index says about its own prices', () => {
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.filter((h) => h.price_usd != null);
+  const fleet = (kit: Hardware[]) => ({ ...data, hardware: kit }) as Dataset;
+
+  it('counts the machines with a published price and names the ones without', () => {
+    const line = publishedPriceLine(data);
+    expect(line).toContain(`${priced.length} of them carry a published price.`);
+    for (const h of unpriced) expect(line).toContain(shortHardwareLabel(h));
+    for (const h of priced) expect(line).not.toContain(shortHardwareLabel(h));
+    expect(line.endsWith('.')).toBe(true);
+  });
+
+  it('says every one of them where every one of them is priced', () => {
+    expect(publishedPriceLine(fleet(priced))).toBe('Every one of them carries a published price.');
+  });
+
+  it('keeps its singulars where one machine has no price', () => {
+    const line = publishedPriceLine(fleet([priced[0], unpriced[0]]));
+    expect(line).toBe(
+      `One of them carries a published price. The ${shortHardwareLabel(unpriced[0])} does not, so its row opens the calculator for you to put in what you would pay.`,
+    );
+  });
+
+  it('counts the priced ones rather than listing them', () => {
+    const line = publishedPriceLine(fleet([...priced.slice(0, 3), ...unpriced]));
+    expect(line).toBe(
+      `3 of them carry a published price. The ${shortHardwareLabel(unpriced[0])} and the ${shortHardwareLabel(unpriced[1])} do not, so their rows open the calculator for you to put in what you would pay.`,
+    );
+  });
+});
+
+describe('one row a model on the leaderboard', () => {
+  const scored = data.models
+    .filter((m) => m.frontier_equivalent?.score != null)
+    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!);
+  const rows = leaderboardRows(scored, data);
+
+  it('gives every model one row and leaves no build unnamed', () => {
+    const names = rows.map((r) => r.model.display_name);
+    expect(new Set(names).size).toBe(names.length);
+    const named = rows.flatMap((r) => [r.model.id, ...r.alsoAt.map((o) => o.id)]);
+    expect(new Set(named).size).toBe(named.length);
+    for (const m of scored) expect(named).toContain(m.id);
+  });
+
+  it('keeps the lightest build and names the heavier one beside it', () => {
+    for (const r of rows) {
+      for (const o of r.alsoAt) expect(o.weights_gb ?? 0).toBeGreaterThanOrEqual(r.model.weights_gb ?? 0);
+      expect(r.alsoAt.every((o) => o.display_name === r.model.display_name)).toBe(true);
+    }
+    const doubled = rows.filter((r) => r.alsoAt.length);
+    expect(doubled.length).toBeGreaterThan(0);
+  });
+
+  it('keeps the score order it is handed', () => {
+    const scores = rows.map((r) => r.model.frontier_equivalent!.score!);
+    expect([...scores].sort((a, b) => b - a)).toEqual(scores);
+  });
+
+  it('never gives the row to a build the index has not scored', () => {
+    const q8 = data.models.find((m) => m.id === 'qwen3-32b-q8');
+    const q4 = data.models.find((m) => m.id === 'qwen3-32b-q4');
+    expect(q8 && q4).toBeTruthy();
+    const unscored = { ...q4!, frontier_equivalent: { ...q4!.frontier_equivalent!, score: null } } as typeof q4;
+    const set = { ...data, models: [unscored!, q8!] } as Dataset;
+    const [row] = leaderboardRows([q8!], set);
+    expect(row.model.id).toBe('qwen3-32b-q8');
+    expect(row.alsoAt.map((o) => o.id)).toEqual(['qwen3-32b-q4']);
+  });
+
+  it('counts the models with a second build, in words', () => {
+    expect(leaderboardBuildsLine(rows)).toContain('two of them are also priced at a heavier quantisation');
+    expect(leaderboardBuildsLine([{ alsoAt: [data.models[0]] }])).toContain('one of them is also priced');
+  });
+
+  it('says nothing about builds where every model is priced once', () => {
+    expect(leaderboardBuildsLine([{ alsoAt: [] }, { alsoAt: [] }])).toBe('');
+  });
+});
+
 describe('the way back to the indexes', () => {
   it('names every index once, and the calculator', () => {
     const foot = footerHtml();
@@ -2448,5 +2529,39 @@ describe('the line of jumps into a page\u2019s own sections', () => {
     // and a page with no h1 is not a page this rule knows the subject of
     const headless = four.map((h) => anchoredHeading(h)).join('');
     expect(addJumpLine(headless, [])).toBe(headless);
+  });
+});
+
+describe('what a class on /best/ leaves out', () => {
+  const klass = (picks: number, never = 0, overCapacity = 0, considered = 100) =>
+    ({ picks: Array.from({ length: picks }, (_, i) => i), never, overCapacity, considered });
+
+  it('counts the models a class pays back but does not list, and says so in their own number', () => {
+    expect(bestLeftOut(klass(17), 3).more).toBe(14);
+    expect(bestLeftOut(klass(17), 3).moreSaid).toBe('14 more models in this class pay back and are not listed.');
+    // one is the case the plural would read wrong in, and it is a real class on the page
+    expect(bestLeftOut(klass(4), 3).moreSaid).toBe('1 more model in this class pays back and is not listed.');
+  });
+
+  it('says nothing about models where the class lists every one that pays back', () => {
+    expect(bestLeftOut(klass(3), 3).more).toBe(0);
+    expect(bestLeftOut(klass(3), 3).moreSaid).toBe('');
+    expect(bestLeftOut(klass(1), 3).moreSaid).toBe('');
+  });
+
+  it('counts pairs as pairs, and keeps the two reasons a pair is not a row apart', () => {
+    expect(bestLeftOut(klass(3, 57, 0, 530), 3).pairsSaid).toBe('of the 530 machine-and-model pairs that fit, 57 never pay back.');
+    expect(bestLeftOut(klass(3, 0, 18, 33), 3).pairsSaid).toBe('of the 33 machine-and-model pairs that fit, 18 can’t produce this much in a day.');
+    expect(bestLeftOut(klass(3, 39, 63, 530), 3).pairsSaid).toBe(
+      'of the 530 machine-and-model pairs that fit, 39 never pay back and 63 can’t produce this much in a day.',
+    );
+    // a class that leaves no pair out counts none, rather than printing a nought
+    expect(bestLeftOut(klass(3, 0, 0, 33), 3).pairsSaid).toBe('');
+  });
+
+  it('moves with the cut rather than with the number three', () => {
+    expect(bestLeftOut(klass(17), 5).more).toBe(12);
+    expect(bestLeftOut(klass(17), 17).moreSaid).toBe('');
+    expect(bestLeftOut(klass(17), Infinity).more).toBe(0);
   });
 });

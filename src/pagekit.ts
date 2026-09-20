@@ -1246,6 +1246,35 @@ export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
  * that do not. Every machine that holds it is covered by one of these clauses,
  * which is the claim the guard checks.
  */
+/**
+ * What a class on `/best/` leaves out, each figure in the unit it is counted in.
+ * The page lists the few models in a class that pay back soonest, so two different
+ * things sit behind the rows: models that pay back on some machine and are not
+ * listed, and machine-and-model pairs that fit and never pay back at all. Counting
+ * them together would read as one number and be two.
+ *
+ * The page prints these sentences and its guard checks for them, so the words under
+ * a table and the figures behind it cannot drift apart. It wants the uncut list of
+ * picks, which is what `bestByTier(data, usage, Infinity)` returns.
+ */
+export function bestLeftOut(
+  t: { picks: unknown[]; considered: number; never: number; overCapacity: number },
+  perClass: number,
+): { more: number; moreSaid: string; pairsSaid: string } {
+  const more = Math.max(0, t.picks.length - perClass);
+  const counted = [
+    t.never ? `${t.never} never pay back` : '',
+    t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : '',
+  ].filter(Boolean);
+  return {
+    more,
+    moreSaid: more
+      ? `${more} more model${more === 1 ? '' : 's'} in this class pay${more === 1 ? 's' : ''} back and ${more === 1 ? 'is' : 'are'} not listed.`
+      : '',
+    pairsSaid: counted.length ? `of the ${t.considered} machine-and-model pairs that fit, ${counted.join(' and ')}.` : '',
+  };
+}
+
 export function familyReachNote(reach: FamilyReach[], listed: number, rows: number, ctx: number): string {
   if (!reach.length) return '';
   const held = reach.reduce((n, r) => n + r.runs, 0);
@@ -1403,6 +1432,84 @@ export function cardScopeNote(machines: Hardware[], rankedIn?: Dataset): string 
  */
 export function cardRankingLine(data: Dataset): string {
   return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="${SECTIONS.cardsSideBySide}">ranked by what each one holds</a>.`;
+}
+
+/**
+ * What the machine index says about its own prices. The table has a row for
+ * every machine on this site, and not every machine here has a price: a
+ * configuration can be announced before it is sold, and until somebody
+ * publishes a figure the site will not print one. A first paragraph that says
+ * the site prices all of them is a promise the table does not keep, and the
+ * reader who scrolls to the row finds out the hard way.
+ *
+ * So the split is counted from the data and the machines without a price are
+ * named, which is the part a reader can act on: those rows are the two the
+ * calculator wants a number for. A price published tomorrow rewrites the
+ * sentence rather than dating it.
+ */
+export function publishedPriceLine(data: Dataset): string {
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.length - unpriced.length;
+  if (!unpriced.length) return 'Every one of them carries a published price.';
+  const count = priced === 1 ? 'One of them carries a published price.' : `${priced} of them carry a published price.`;
+  const names = andList(unpriced.map((h) => `the ${esc(shortHardwareLabel(h))}`));
+  const rest =
+    unpriced.length === 1
+      ? `${names} does not, so its row opens the calculator for you to put in what you would pay.`
+      : `${names} do not, so their rows open the calculator for you to put in what you would pay.`;
+  return `${count} ${rest[0].toUpperCase()}${rest.slice(1)}`;
+}
+
+/**
+ * One row a model on the leaderboard, and this is the rule that picks which
+ * build gets it. This site prices some models at two quantisations — the same
+ * weights, downloaded at a different precision, for a different memory bill —
+ * and they share a name, a score and a page each. The table ranks by score, so
+ * two builds of one model would be two rows with the same number in the Score
+ * column, one under the other, telling a reader nothing they can act on.
+ *
+ * So the table keeps one, and it keeps the lightest, because the column that
+ * ends the row is the cheapest machine that runs it: the smaller download runs
+ * on more of them, which is the answer the row exists to give. The heavier
+ * build is named in the row it was cut from rather than dropped, so every model
+ * this site prices is somewhere on the page.
+ *
+ * It wants the scored models already sorted by score, which is the order the
+ * rows come out in.
+ */
+export function leaderboardRows(scored: Model[], data: Dataset): { model: Model; alsoAt: Model[] }[] {
+  const out: { model: Model; alsoAt: Model[] }[] = [];
+  const done = new Set<string>();
+  const byWeight = (a: Model, b: Model) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0);
+  for (const m of scored) {
+    if (done.has(m.display_name)) continue;
+    done.add(m.display_name);
+    const builds = [m, ...otherQuantisations(m, data)];
+    // An unscored build is never promoted into a table of scores; it is named
+    // alongside the row the same way, because it is still a download this site
+    // prices.
+    const model = builds.filter((b) => b.frontier_equivalent?.score != null).sort(byWeight)[0] ?? m;
+    out.push({ model, alsoAt: builds.filter((b) => b.id !== model.id).sort(byWeight) });
+  }
+  return out;
+}
+
+/**
+ * What the leaderboard says about that cut, in its own first paragraph. Without
+ * it the page opened by counting models and then printed a table with fewer
+ * rows than the site has builds, and the two it left out sat in no row and in
+ * no figure — a reader on a 48 GB machine wondering whether to run Qwen3 32B at
+ * eight bits found the question answered nowhere on the page that ranks it.
+ *
+ * The sentence is written from the rows themselves, so a second build entered
+ * tomorrow rewrites it rather than dating it, and a site that prices every
+ * model once drops it rather than printing a rule about nothing.
+ */
+export function leaderboardBuildsLine(rows: { alsoAt: Model[] }[]): string {
+  const doubled = rows.filter((r) => r.alsoAt.length).length;
+  if (!doubled) return '';
+  const which = doubled === 1 ? 'one of them is' : `${numberWord(doubled)} of them are`;
+  return `Each model has one row, at the lightest build this site prices, and ${which} also priced at a heavier quantisation, named in the row itself.`;
 }
 
 /**

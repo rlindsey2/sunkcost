@@ -7,17 +7,17 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  addJumpLine, anchoredHeading, anchorHeadings, appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  addJumpLine, anchoredHeading, anchorHeadings, andList, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
+  pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
   strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
@@ -25,7 +25,7 @@ import {
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
-  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
+  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, memoryTierPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
   versusCardPath,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
@@ -657,6 +657,65 @@ function checkCompareIndex() {
 }
 
 /**
+ * The index says what cuts its two lists, and a rule added to `versus-card.ts` without
+ * a clause on the page leaves rows nothing on it explains. This holds the sentence to
+ * the rules in both directions: every match-up the page lists is reached by a kind the
+ * page names, every kind the page names reaches at least one match-up on it, and the
+ * page really carries each clause and the count of them.
+ *
+ * It is checked against the recut rules rather than against the table, so a kind whose
+ * pairs an earlier rule reached first still has to be named: the reader of a row cannot
+ * see which rule got there first, only whether the page explains why the two are on a
+ * page together.
+ */
+function checkMatchUpKinds() {
+  const index = meta.find((p) => p.path === '/compare/');
+  if (!index) throw new Error('no head-to-head index was written');
+  const problems: string[] = [];
+  let named = 0;
+
+  // a match-up is the same one whichever way round its address is written, and the
+  // address is written by whichever rule reached the pair first: four card pairs are
+  // cut by both grids and carry the flagship grid's order. So the two sides are matched
+  // on the pair rather than on the path.
+  const hold = <T extends { id: string }>(
+    what: string,
+    kinds: MatchUpKind<T>[],
+    all: [T, T][],
+    label: (a: T, b: T) => string,
+  ) => {
+    const key = (a: T, b: T) => [a.id, b.id].sort().join(' vs ');
+    const listed = new Map(all.map(([a, b]) => [key(a, b), label(a, b)]));
+    const explained = new Set<string>();
+    for (const kind of kinds) {
+      const onPage = kind.pairs.map(([a, b]) => key(a, b)).filter((k) => listed.has(k));
+      if (!onPage.length) problems.push(`the head-to-head index names a kind of ${what} match-up that cuts none of them: ${kind.clause}`);
+      for (const k of onPage) explained.add(k);
+      if (!index.html.includes(esc(kind.clause)))
+        problems.push(`the head-to-head index does not say what puts ${onPage.length} ${what} match-ups on it: ${kind.clause}`);
+      named++;
+    }
+    for (const [k, name] of listed)
+      if (!explained.has(k)) problems.push(`the head-to-head index lists ${name} and names no kind of match-up that cuts it`);
+    const count = `${sentenceCase(numberWord(kinds.length))} kinds of match-up cut this list.`;
+    if (!index.html.includes(count)) problems.push(`the head-to-head index does not say it lists ${kinds.length} kinds of ${what} match-up`);
+  };
+
+  hold('machine', machineMatchUpKinds(), hardwarePairs(data), (a, b) => `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`);
+  hold('model', modelMatchUpKinds(), modelPairs(data), (a, b) => `${a.display_name} vs ${b.display_name}`);
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing the head-to-head index says about its own lists does not hold'
+        : `${problems.length} things the head-to-head index says about its own lists do not hold`,
+    );
+  }
+  console.log(`  the head-to-head index names the ${named} rules that cut its ${hardwarePairs(data).length} machine and ${modelPairs(data).length} model match-ups, and every one of them is cut by a rule it names`);
+}
+
+/**
  * The machine index is a second place the site states what a machine costs, what
  * it holds and what that takes to pay back, and a second statement of a figure is
  * a second chance to be wrong. Every row is recomputed here from the same view the
@@ -724,6 +783,67 @@ function checkHardwareIndex() {
   }
   console.log(
     `  the machine index lists all ${machinePages.length} machines, each with the count, the strongest model, the speed and the pay-back its own page prints, and sits above every one of them in its breadcrumbs`,
+  );
+}
+
+/**
+ * The machine index opens by saying what is in its table, and one clause of that
+ * was a count of what the site prices rather than of what it lists. Two of the 56
+ * configurations here have no published price, so the sentence was wrong by two
+ * and the rows it was wrong about are the two a reader most needs warning of:
+ * their price cell says "not published" and their pay-back cell says "needs a
+ * price".
+ *
+ * Four claims, and the first two are the ones that keep the sentence honest when
+ * the data moves. The count in the paragraph is the count of rows the table
+ * really prints a price on, read back out of the page rather than taken from the
+ * same array that wrote it. Every machine without a published price is named up
+ * there. No machine that has one is named among them. And each of those rows
+ * offers the calculator instead, which is what the sentence promises.
+ */
+function checkPricedRows() {
+  const index = meta.find((p) => p.path === '/hardware/');
+  if (!index) throw new Error('no machine index was written');
+  const problems: string[] = [];
+  const lede = index.html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '';
+  const said = publishedPriceLine(data);
+
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.filter((h) => h.price_usd != null);
+
+  const tbody = index.html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+  const rows = tbody.split('<tr').slice(1).map((r) => `<tr${r}`).filter((r) => r.includes('c-hw'));
+  const withPrice = rows.filter((r) => !r.includes('not published'));
+  if (withPrice.length !== priced.length)
+    problems.push(
+      `the machine index prints a price on ${withPrice.length} of its ${rows.length} rows, where ${priced.length} of the machines here have a published price`,
+    );
+  if (!lede.includes(said))
+    problems.push(
+      `the machine index does not open by saying that ${withPrice.length} of its ${rows.length} rows carry a published price`,
+    );
+  for (const hw of unpriced) {
+    if (!said.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`the machine index has no price for the ${shortHardwareLabel(hw)} and does not name it in its first paragraph`);
+    const row = rows.find((r) => r.includes(`href="/hardware/${esc(hw.id)}/"`));
+    if (!row) problems.push(`the machine index has no row for the ${shortHardwareLabel(hw)}`);
+    else if (!row.includes('price it yourself'))
+      problems.push(`the ${shortHardwareLabel(hw)} is named as a machine you price yourself and its row does not offer the calculator`);
+  }
+  for (const hw of priced)
+    if (said.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`the machine index names the ${shortHardwareLabel(hw)} among the machines it has no price for, and it is priced at ${fmtUsd(hw.price_usd!)}`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing the machine index says about its own prices does not hold'
+        : `${problems.length} things the machine index says about its own prices do not hold`,
+    );
+  }
+  console.log(
+    `  the machine index says ${withPrice.length} of its ${rows.length} rows carry a published price, prints one on exactly those, and names the ${numberWord(unpriced.length)} it prices itself`,
   );
 }
 
@@ -1773,15 +1893,15 @@ function checkModelGenerations() {
 function checkLeaderboardLinks() {
   const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
   const problems: string[] = [];
-  const seen = new Set<string>();
-  const ranked = data.models
-    .filter((m) => m.frontier_equivalent?.score != null)
-    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
-    .filter((m) => {
-      if (seen.has(m.display_name)) return false;
-      seen.add(m.display_name);
-      return true;
-    });
+  // The same cut the page makes, from the same rule, so this guard never goes
+  // looking for a row the table was never going to print. What the cut itself
+  // is held to is `checkLeaderboardBuilds()`.
+  const ranked = leaderboardRows(
+    data.models
+      .filter((m) => m.frontier_equivalent?.score != null)
+      .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!),
+    data,
+  ).map((r) => r.model);
   const notes = html.split('<p class="note">').slice(1).map((p) => p.split('</p>')[0]);
   let linked = 0;
   let shortened = 0;
@@ -1858,6 +1978,126 @@ function checkLeaderboardLinks() {
   const withAlt = hosted.filter((h) => h.score_alt != null).length;
   console.log(
     `  /leaderboard/ ranks ${hostedRows.length} hosted models alongside the open ones, ${withAlt} of them also at the score the index gives them with reasoning turned down, and says once above the block that none of them is a download`,
+  );
+}
+
+/**
+ * Every model this site prices is on the leaderboard somewhere, and the page's
+ * first paragraph counts what it shows.
+ *
+ * Two things sat outside both before this guard existed. The table keeps one
+ * row per model, so the second build of a model — the same weights at a heavier
+ * quantisation, its own download, its own memory bill, its own page — was
+ * dropped without a word: in no row, in no count, and not in the note below
+ * that lists the models the index has not scored. The page that ranks Qwen3 32B
+ * did not say the site also prices it at eight bits.
+ *
+ * So four claims, and three of them are read back out of the rendered page
+ * rather than taken from the arrays that wrote it. Every model in the data is
+ * named on the page exactly once, as a row or beside one or in the unscored
+ * note. The build a row keeps is the lightest of the builds that row names,
+ * checked against the gigabytes the page itself prints. The lede's count of
+ * models is the count of rows really there. And the lede says how many models
+ * carry a second build, or says nothing about builds at all where none does.
+ */
+function checkLeaderboardBuilds() {
+  const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
+  const problems: string[] = [];
+  const lede = html.split('<p class="lede">')[1]?.split('</p>')[0] ?? '';
+  // The jump line at the top of the page names this section too, so the note
+  // itself is what follows the last mention rather than the first.
+  const unscoredNote = html.split('Models the index has not scored yet').pop() ?? '';
+
+  // The open rows, as the page prints them: the head of each is the model whose
+  // link opens the model cell, the rest of that cell is what it also names, and
+  // the weights column is the gigabytes the reader is shown for the head. The
+  // stacking wrapper adds a class to every cell, so the cells are found by the
+  // one class the page's own markup gives them rather than by the whole
+  // attribute.
+  const cellOf = (row: string, name: string) =>
+    row.split(new RegExp(`<td class="[^"]*${name}"[^>]*>`))[1]?.split('</td>')[0] ?? '';
+  const rows = html
+    .split('<tr>')
+    .slice(1)
+    .map((r) => r.split('</tr>')[0])
+    .map((r) => ({ model: cellOf(r, 'c-model'), weights: cellOf(r, 'c-gb') }))
+    .filter((r) => r.model.includes('href="/models/'))
+    .map(({ model, weights }) => {
+      const ids = [...model.matchAll(/href="\/models\/([^"]+)\//g)].map((m) => m[1]);
+      return {
+        head: ids[0],
+        also: ids.slice(1),
+        headGb: Number(weights.replace(/<[^>]*>/g, '').match(/([\d.]+) GB/)?.[1] ?? NaN),
+        alsoGb: [...model.matchAll(/([\d.]+) GB/g)].map((m) => Number(m[1])),
+      };
+    });
+
+  const named = new Map<string, string>();
+  const claim = (id: string, where: string) => {
+    const already = named.get(id);
+    if (already) problems.push(`/leaderboard/ names ${id} twice, ${already} and ${where}`);
+    else named.set(id, where);
+  };
+  for (const r of rows) {
+    if (r.head) claim(r.head, 'as a row of its own');
+    for (const id of r.also) claim(id, `beside ${r.head}`);
+  }
+  for (const m of data.models) {
+    if (named.has(m.id)) continue;
+    if (unscoredNote.includes(`href="/models/${esc(m.id)}/"`)) {
+      named.set(m.id, 'in the note about unscored models');
+      continue;
+    }
+    problems.push(
+      m.frontier_equivalent?.score == null
+        ? `/leaderboard/ leaves ${m.display_name} at ${m.quantisation} out of the note about models the index has not scored`
+        : `/leaderboard/ gives ${m.display_name} at ${m.quantisation} no row and names it beside none`,
+    );
+  }
+
+  // The row keeps the lightest build, measured against the weights the cell
+  // itself prints rather than against the data that wrote it.
+  let doubled = 0;
+  for (const r of rows) {
+    if (!r.also.length) continue;
+    doubled++;
+    const head = data.models.find((m) => m.id === r.head);
+    const heavier = r.also
+      .map((id) => data.models.find((m) => m.id === id))
+      .filter((m): m is Model => m != null)
+      .filter((m) => (m.weights_gb ?? 0) < (head?.weights_gb ?? 0));
+    if (heavier.length)
+      problems.push(
+        `/leaderboard/ gives the row to ${head?.display_name} at ${head?.quantisation}, ${fmtGb(head?.weights_gb)}, where ${andList(heavier.map((m) => `${m.quantisation} is ${fmtGb(m.weights_gb)}`))}`,
+      );
+    const lighter = r.alsoGb.filter((gb) => gb < r.headGb);
+    if (lighter.length)
+      problems.push(
+        `/leaderboard/ prints ${fmtGb(r.headGb)} as the weights of ${head?.display_name} and names a build of it beside them at ${andList(lighter.map((gb) => fmtGb(gb)))}`,
+      );
+  }
+
+  const openRows = rows.length;
+  if (!lede.includes(`${openRows} open-weight models`))
+    problems.push(`/leaderboard/ prints ${openRows} rows of open models and does not open by saying so`);
+  if (doubled) {
+    const said = doubled === 1 ? 'one of them is' : `${numberWord(doubled)} of them are`;
+    if (!lede.includes(`${said} also priced at a heavier quantisation`))
+      problems.push(`/leaderboard/ names a second build on ${doubled} of its rows and does not say so in its first paragraph`);
+  } else if (/lightest build/.test(lede)) {
+    problems.push('/leaderboard/ explains a cut between builds that its table does not make');
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 claim about what /leaderboard/ lists does not match the page'
+        : `${problems.length} claims about what /leaderboard/ lists do not match the page`,
+    );
+  }
+  console.log(
+    `  /leaderboard/ names all ${named.size} models this site prices: ${openRows} ranked rows, ${doubled} of them naming a heavier build beside the one they rank, and ${named.size - openRows - doubled} in the note about models the index has not scored`,
   );
 }
 
@@ -2030,13 +2270,12 @@ function leaderboard(): string {
     .filter((m) => m.frontier_equivalent?.score != null)
     .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!);
   const max = data.defaults.frontier_scale_max ?? 70;
-  const seen = new Set<string>();
-  const unique = scored.filter((m) => {
-    const key = m.display_name;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  // One row a model, at the lightest build, with the heavier one named in the
+  // row rather than dropped. `leaderboardRows()` carries the rule and the lede
+  // prints it; `checkLeaderboardBuilds()` holds the page to both.
+  const built = leaderboardRows(scored, data);
+  const unique = built.map((r) => r.model);
+  const alsoAt = new Map(built.map((r) => [r.model.id, r.alsoAt]));
 
   // What runs each model, worked out once: the row's own cell wants the cheapest, and
   // the note under the table wants the models where the cheapest answer needed a
@@ -2058,7 +2297,7 @@ function leaderboard(): string {
 
   const rows = placed
     .map(({ m, next, score, cheapest, shorter }) => `<tr>
-  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span></td>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span>${(alsoAt.get(m.id) ?? []).length ? `<br><span class="dim">also at ${andList((alsoAt.get(m.id) ?? []).map((o) => `<a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, ${fmtGb(o.weights_gb)}`))}</span>` : ''}</td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
@@ -2097,18 +2336,23 @@ function leaderboard(): string {
     .filter((m) => m.frontier_equivalent?.score == null)
     .sort((a, b) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0));
 
+  const buildsLine = leaderboardBuildsLine(built);
   const best = unique[0];
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
-${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. ${buildsLine ? `${buildsLine} ` : ''}Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
+${gap != null ? `<h2>How far behind the frontier open models are</h2>
+<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
+<h2>Every model here, ranked</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${hostedHeading}${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' }, pair: [3, 4] })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
-${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
+${unplaced.length ? `<h2>Models the index has not scored yet</h2>
+<p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
+<h2>How to read the scores</h2>
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
@@ -2130,10 +2374,22 @@ ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this
 
 /* ------------------------------ best buys ------------------------------ */
 
+/**
+ * How many models a class on `/best/` lists. The rest of the class is counted rather
+ * than listed, which is a fair cut on a page about the quickest pay-back — but the page
+ * has to say so, and until now it did not: 23 of the 32 models that pay back somewhere
+ * sat in no row and in no count, at every one of the five levels of use.
+ *
+ * The number lives here, the lede prints it and `checkBestCuts()` holds the page to it,
+ * so changing the cut changes the sentence and the guard with it.
+ */
+const BEST_PER_CLASS = 3;
+
+const bestAnchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
 function bestBuys(): string {
   const d = data.defaults;
-  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage) }));
-  const anchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage, Infinity) }));
 
   // the headline: at the default usage, the most capable class with anything that pays back
   const headLevel = levels.find((l) => l.usage >= d.usage.default_tokens_per_day) ?? levels[0];
@@ -2145,11 +2401,13 @@ function bestBuys(): string {
       const rows = l.tiers
         .map((t) => {
           const header = `<tr class="is-frontier"><th colspan="5">${esc(t.label)}${t.hosted.length ? ` <span class="dim">· alongside ${esc(t.hosted.join(', '))}</span>` : ''}</th></tr>`;
-          const counts = `${t.never ? `${t.never} never pay back` : ''}${t.never && t.overCapacity ? '; ' : ''}${t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : ''}`;
+          const { moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
+          const counted = pairsSaid ? sentenceCase(pairsSaid) : '';
           if (!t.picks.length) {
-            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage${counts ? ` (${counts}, of ${t.considered} pairs that fit)` : ''}.</td></tr>`;
+            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
           }
           return header + t.picks
+            .slice(0, BEST_PER_CLASS)
             .map((c) => {
               const v = c.view;
               const tp = v.throughput;
@@ -2163,10 +2421,10 @@ function bestBuys(): string {
   <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
-            .join('') + (counts ? `<tr><td colspan="5" class="dim">Also in this class: ${counts}, of ${t.considered} pairs that fit.</td></tr>` : '');
+            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
         })
         .join('');
-      return `<section id="${anchor(l.usage)}">
+      return `<section id="${bestAnchor(l.usage)}">
 <h2>${esc(fmtTokens(l.usage))} tokens a day <span class="dim">· ${esc(l.label)}</span></h2>
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Machine</th><th>Speed</th><th>Pays back in</th><th></th></tr></thead>
@@ -2178,9 +2436,9 @@ ${stack(`<table class="board">
 
   const body = `<article class="prose">
 <h1>Best buys: the quickest pay-back at each level of capability</h1>
-<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each model appears once, on its quickest machine.</p>
+<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; what a class leaves out is counted under its table. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
-<p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
+<p class="note">Jump to: ${levels.map((l) => `<a href="#${bestAnchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
 <p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="${SECTIONS.cardsSideBySide}">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="${SECTIONS.millionTokens}">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
 </article>`;
@@ -2201,6 +2459,68 @@ ${sections}
 }
 
 /* --------------------- headings that name their subject -------------------- */
+
+/**
+ * `/best/` is a page about the quickest pay-back, so it lists the quickest few in each
+ * class and counts the rest. That is a fair cut and it was an unstated one: three rows
+ * a class, four, eleven and seventeen models paying back behind them, and no sentence
+ * on the page saying any of the other 23 existed. A reader counting three rows under
+ * *Haiku-class* had no way to tell whether that was the whole class or the top of it.
+ *
+ * The cut is `BEST_PER_CLASS` and the lede prints it from there. This holds the page to
+ * it, class by class and level by level: the rows a class carries, the models it says
+ * it leaves out, and the pairs it counts. Raising the cut without changing the sentence,
+ * listing a fourth model, or claiming a model is left out when none is, fails the build.
+ */
+function checkBestCuts() {
+  const page = meta.find((p) => p.path === '/best/');
+  if (!page) throw new Error('no best-buys page was written');
+  const problems: string[] = [];
+
+  const cut = `Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest`;
+  if (!page.html.includes(cut)) problems.push(`/best/ does not say that a class lists ${BEST_PER_CLASS} models: "${cut}"`);
+
+  let classes = 0;
+  let left = 0;
+  const levels = bestUsageLevels(data);
+  for (const l of levels) {
+    const at = `${fmtTokens(l.usage)} tokens a day`;
+    const section = page.html.split(`<section id="${bestAnchor(l.usage)}">`)[1]?.split('</section>')[0];
+    if (!section) {
+      problems.push(`/best/ has no section for ${at}, which the calculator names as a level of use`);
+      continue;
+    }
+    const blocks = section.split('<tr class="is-frontier">').slice(1);
+    const tiers = bestByTier(data, l.usage, Infinity);
+    if (blocks.length !== tiers.length) {
+      problems.push(`/best/ heads ${blocks.length} classes at ${at}, where ${tiers.length} classes have a machine-and-model pair that fits`);
+      continue;
+    }
+    for (const [i, t] of tiers.entries()) {
+      classes++;
+      const block = blocks[i];
+      // `stack()` rewrites the class list on every cell, so a row is counted by its name cell rather than by the markup this file wrote
+      const listed = (block.match(/class="[^"]*\bc-model\b/g) ?? []).length;
+      const want = Math.min(t.picks.length, BEST_PER_CLASS);
+      if (listed !== want) problems.push(`/best/ lists ${listed} models in ${t.label} at ${at}, where the cut takes ${want} of the ${t.picks.length} that pay back`);
+      const { more, moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
+      left += more;
+      if (more && !block.includes(moreSaid)) problems.push(`/best/ lists ${listed} of the ${t.picks.length} models that pay back in ${t.label} at ${at} and does not say the other ${more} ${more === 1 ? 'is' : 'are'} left out`);
+      if (!more && /more model/.test(block)) problems.push(`/best/ says ${t.label} at ${at} leaves a model out, and every model in it that pays back is listed`);
+      if (pairsSaid && !block.includes(sentenceCase(pairsSaid))) problems.push(`/best/ does not count what ${t.label} at ${at} leaves out: ${pairsSaid}`);
+    }
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing /best/ says about its own list does not hold'
+        : `${problems.length} things /best/ says about its own lists do not hold`,
+    );
+  }
+  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, and counts the ${left} more that pay back behind them`);
+}
 
 /**
  * A machine page and a model page are each about one thing, and until now their
@@ -4402,6 +4722,98 @@ ${modelSiblingNote(a, b)}
 /* ------------------------- the head-to-head index ------------------------- */
 
 /**
+ * What cuts the two lists on `/compare/`, one entry per rule, in the order
+ * `hardwarePairs()` and `modelPairs()` apply them.
+ *
+ * The sentence above each table is written from this list rather than by hand, because
+ * written by hand it drifted: seven rules cut the machine match-ups while the page said
+ * five, and three cut the model match-ups while it said two, so 50 of the 189 rows sat
+ * under an explanation that did not reach them. A reader who found *Mac mini M6, 32GB vs
+ * Radeon AI PRO R9700, 32GB* on a page naming five kinds none of them was had no way to
+ * tell why the two were on a page together.
+ *
+ * `checkMatchUpKinds()` holds the list to the rules: a rule added to `versus-card.ts`
+ * without a clause here fails the build naming the match-up nothing explains.
+ */
+interface MatchUpKind<T> {
+  /** every pair this rule cuts, whether or not an earlier rule reached it first */
+  pairs: [T, T][];
+  /** the clause the page gives it, mid-sentence and without its punctuation */
+  clause: string;
+}
+
+const gridOf = <T,>(xs: T[]): [T, T][] => {
+  const out: [T, T][] = [];
+  for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) out.push([xs[i], xs[j]]);
+  return out;
+};
+
+const machineMatchUpKinds = (): MatchUpKind<Hardware>[] => [
+  {
+    pairs: gridOf(flagshipMachines(data)),
+    clause: 'One machine per family, the middle of its range by price, against every other',
+  },
+  {
+    pairs: gridOf(graphicsCards(data)),
+    clause: 'Every graphics card against every other card, since a card is bought as a part and a part is what people put against another part',
+  },
+  {
+    pairs: memoryTierPairs(data),
+    clause: 'Every memory tier of one machine against the others, which is the question left once you have picked the box',
+  },
+  {
+    pairs: sameSiliconPairs(data),
+    clause: 'Each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top',
+  },
+  {
+    pairs: generationPairs(data),
+    clause: 'Every discontinued machine against the one that replaced it, which is the upgrade question',
+  },
+  {
+    pairs: chipStepPairs(data),
+    clause: 'The cheapest configuration of a box against the cheapest one with the better chip in it, since what a maker cuts to reach a headline price is the chip and the memory at once',
+  },
+  {
+    pairs: priceNeighbourPairs(data),
+    clause: `Each machine against the one from another family nearest it in price, within ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}%, which holds the price still and asks what the same money buys twice`,
+  },
+];
+
+const modelMatchUpKinds = (): MatchUpKind<Model>[] => {
+  const ranked = rankedModels(data);
+  const ladder: [Model, Model][] = [];
+  for (let i = 0; i + 1 < ranked.length; i++) ladder.push([ranked[i], ranked[i + 1]]);
+  return [
+    {
+      pairs: ladder,
+      clause: 'Each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds',
+    },
+    {
+      pairs: modelGenerationPairs(data),
+      clause: 'Each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it',
+    },
+    {
+      pairs: memoryNeighbourPairs(data),
+      clause: `Each model against the one from another family nearest it in the memory it needs, within ${Math.round(MODEL_MEMORY_GAP * 100)}%, which is where a reader with a machine already on the desk starts`,
+    },
+  ];
+};
+
+/**
+ * The kinds, as a line saying how many and one line each.
+ *
+ * They were a single sentence of clauses while there were two of them and five, and at
+ * seven that sentence ran to 170 words and six semicolons — a wall in front of the table
+ * it explains, on a page a reader comes to for one row. A list is what it always was.
+ */
+function matchUpKindsList(kinds: { clause: string }[]): string {
+  const items = kinds.map((k) => `<li>${k.clause}.</li>`).join('');
+  return `<p>${sentenceCase(numberWord(kinds.length))} kinds of match-up cut this list.</p>
+<ul class="rules">${items}</ul>`;
+}
+
+
+/**
  * One page listing every comparison this site writes. Somebody typing
  * "mac studio vs rtx 5090" wants the match-up, not either machine's own page,
  * and until now a comparison could only be found from the two things it
@@ -4494,22 +4906,26 @@ function compareIndex(): string {
   const body = `<article class="prose">
 <h1>Every head-to-head: machine against machine, model against model</h1>
 <p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a>, the <a href="/leaderboard/">leaderboard</a> or <a href="/hardware/">every machine in one table</a>.</p>
-${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
+${most && cheapest ? `<h2>Does any machine here hold every model?</h2>
+<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
 
 <h2>Machine against machine</h2>
-<p>Five kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top; and every discontinued machine against the one that replaced it, which is the upgrade question. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+${matchUpKindsList(machineMatchUpKinds())}
+<p>The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
 <tbody>${machineRows}</tbody>
 </table>`, { fig: 3, labels: { 4: 'Both speeds' } })}
 
 <h2>Model against model</h2>
-<p>Two kinds of match-up: each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds; and each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it. The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
+${matchUpKindsList(modelMatchUpKinds())}
+<p>The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Score</th><th>Weights</th><th>Cheapest machine that runs both</th><th></th></tr></thead>
 <tbody>${modelRows}</tbody>
 </table>`, { fig: 1, labels: { 3: 'Cheapest' } })}
 
+<h2>The assumptions behind both tables</h2>
 <p class="note">Every figure here is the one the page behind it prints, at the same defaults: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. A speed that says <i>estimated</i> is worked out from memory bandwidth rather than measured. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} Scores are the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}. Each calculator link opens the machine in its row running the first model named; change any of it once you are there.</p>
 </article>`;
 
@@ -4662,13 +5078,17 @@ function hardwareIndex(): string {
 
   const body = `<article class="prose">
 <h1>Every machine that runs local models, priced</h1>
-<p class="lede">All ${data.hardware.length} configurations this site prices, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
-${plateau && quickest && slowest ? `<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<p class="lede">All ${data.hardware.length} configurations this site lists, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. ${publishedPriceLine(data)} Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
+${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
+<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<h2>How long each machine takes to pay for itself</h2>
 <p>Pay-back runs the other way, because the strongest model a machine holds is also the slowest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. Nothing here pays for itself inside a decade at that usage. What changes the answer is using the machine much harder, or running a smaller model on it, and <a href="/best/">best buys by usage</a> ranks both.${launchLine([quickest])}</p>` : ''}
+<h2>Every machine here, side by side</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 5, labels: { 2: 'Usable', 3: 'Models', 4: 'Strongest model' } })}
+<h2>The assumptions behind the table</h2>
 <p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
 </article>`;
 
@@ -6503,6 +6923,53 @@ function checkSubjectHeadings() {
 }
 
 /**
+ * Every page on this site is cut into sections, and no section is the page over
+ * again.
+ *
+ * A page with no `<h2>` on it is a page nothing can link into, a page no search
+ * result can offer a jump into, and a page a reader has to read from the top to
+ * find the part they came for. It is also the state `/hardware/` and
+ * `/leaderboard/` were in for weeks without anyone noticing: 56 machines and 55
+ * models under one heading each, while every other index on the site headed five
+ * sections or more. The floor is one section, and the print says what the
+ * thinnest page actually heads, so the next index written as one slab is caught
+ * by the build rather than by the next person to measure it.
+ *
+ * The second claim is what stops the floor being met with a heading that says
+ * nothing: a section headed in the page's own title is the page labelling itself
+ * inside itself, which buys the reader nothing and a jump line a repeated line.
+ */
+function checkPageSections() {
+  const problems: string[] = [];
+  const words = (h: string) => unesc(h.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  let fewest = { path: '', sections: Infinity };
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const h1 = words(body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '');
+    const sections = [...body.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => words(m[1]));
+    if (!sections.length) {
+      problems.push(`${path} heads no sections at all, so nothing can link into it and a reader has to start at the top`);
+      continue;
+    }
+    if (sections.length < fewest.sections) fewest = { path, sections: sections.length };
+    for (const heading of sections)
+      if (heading.toLowerCase() === h1.toLowerCase())
+        problems.push(`${path} heads a section "${heading}", which is the page's own title said twice`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 page does not cut itself into sections a reader can land on'
+        : `${problems.length} pages do not cut themselves into sections a reader can land on`,
+    );
+  }
+  console.log(
+    `  ${meta.length} pages head at least one section, the fewest being ${fewest.sections} on ${fewest.path}; none of them heads a section in the page's own title`,
+  );
+}
+
+/**
  * Every section on this site can be linked to, and no two sections on one page
  * answer to the same link.
  *
@@ -6516,13 +6983,25 @@ function checkSubjectHeadings() {
  * `anchoredHeading`, which slugs the text the same way the build did; if an id
  * anywhere were set by hand instead, those guards would start missing sections
  * that are really there and this one says so first.
+ *
+ * Answering to one link is not the same as reading differently, and until now
+ * this guard only held the first. `anchorHeadings` numbers a slug it has already
+ * used, so a page headed "The specifics" twice builds clean on ids
+ * `the-specifics` and `the-specifics-2`, and the jump line above those sections
+ * then offers the reader the same words twice pointing at two different places.
+ * Every id is unique and the line is useless. So the last claim is about the
+ * words rather than the addresses: no page heads two sections that read the same.
+ * Nothing on the site does it today, which is the point of saying so now rather
+ * than the day a template repeats a heading.
  */
 function checkHeadingAnchors() {
   const problems: string[] = [];
+  const words = (h: string) => unesc(h.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
   let headings = 0;
   for (const { path, html } of meta) {
     const body = mainOf(html);
     const seen = new Set<string>();
+    const read = new Set<string>();
     for (const [, id, text] of body.matchAll(/<h2(?:\s+id="([^"]*)")?[^>]*>([\s\S]*?)<\/h2>/g)) {
       headings++;
       if (!id) {
@@ -6533,6 +7012,9 @@ function checkHeadingAnchors() {
       seen.add(id);
       if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) problems.push(`${path} gives a section the id "${id}", which is not a slug`);
       const expected = headingSlug(text);
+      if (read.has(expected))
+        problems.push(`${path} heads two sections "${words(text)}", so a jump into them offers the reader the same words twice`);
+      read.add(expected);
       if (id !== expected && id !== `${expected}-2` && id !== `${expected}-3`)
         problems.push(`${path} gives "${text.slice(0, 40)}" the id "${id}" where its own words slug to "${expected}"`);
     }
@@ -6541,7 +7023,9 @@ function checkHeadingAnchors() {
     console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
     throw new Error(`${problems.length} section heading${problems.length === 1 ? '' : 's'} cannot be linked to`);
   }
-  console.log(`  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, none repeated on its page`);
+  console.log(
+    `  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, no id repeated on its page and no two of them reading the same`,
+  );
 }
 
 /**
@@ -6681,6 +7165,7 @@ checkCardRanking();
 checkMachineIndex();
 checkMachineLedes();
 checkSubjectHeadings();
+checkPageSections();
 checkHeadingAnchors();
 checkJumpLines();
 checkSpeedBasis();
@@ -6688,7 +7173,9 @@ checkTables();
 checkPairedColumns();
 checkArticles();
 checkCompareIndex();
+checkMatchUpKinds();
 checkHardwareIndex();
+checkPricedRows();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();
@@ -6709,7 +7196,9 @@ checkHiddenModels();
 checkFamilyReach();
 checkModelGenerations();
 checkLeaderboardLinks();
+checkLeaderboardBuilds();
 checkBestGpu();
+checkBestCuts();
 checkNotes();
 checkHardwareNotes();
 checkTierLabels();

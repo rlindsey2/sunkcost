@@ -32,6 +32,10 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       either hash as it stands costs the home page its sitemap `lastmod` in silence. Really merged
       here rather than assumed: 382 tests, typecheck clean, 262 pages with every guard passing. The
       note is on both pull requests too, so whichever you merge second says what to do.
+      **It still merges clean with `main` at `479b982`**, checked 2026-09-19 by merging it for real
+      in a throwaway worktree and building there: 405 tests, typecheck clean, 307 pages with every
+      guard passing. It gains no jump line from that push, because the line is written by the page
+      builder and `index.html` is not one of its pages.
 
 - [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
       `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
@@ -60,6 +64,14 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `seo/page-dates.json` rebuilt rather than chosen, which is the rule that already stood on this
       pull request. Verified on the merged tree: 406 tests, typecheck clean, 308 pages with every
       guard passing. GitHub reports it `clean`. Nothing about the page changed.
+      **It conflicted a third time at 17:51 on 2026-09-19 and is merged clean again**, as `a81e913`.
+      Same file, same import line: `main`'s jump-line rule and this branch's monthly-cost helpers,
+      with `MTOK` sitting on a different line on each side. Both kept by hand, `MTOK` kept once, and
+      `seo/page-dates.json` rebuilt rather than chosen. Verified on the merged tree: 413 tests,
+      typecheck clean, 308 pages with every guard passing. GitHub reports it `clean`. Nothing about
+      the page changed, but one thing about it is new and worth knowing before you merge:
+      `/cost-per-month/` heads four sections and names no machine or model twice, so `main`'s new
+      rule gives it a jump line of its own in the merged tree, without a line of this branch moving.
 
 - [ ] **A new model is waiting on figures only you can sign off: Ternary Bonsai 2 27B**, announced
       2026-09-17 and the reason the daily model watch exists. It is Qwen3.8 27B — the model this
@@ -559,6 +571,57 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **The index of all 190 head-to-heads named five of the seven rules that cut it, and two of
+      the three on its model side.** Done 2026-09-19, pushed as `a868268`. 50 of the 189 rows — the
+      4 chip-step pairs, the 21 price neighbours and the 29 memory neighbours — sat under an
+      explanation that did not reach them, because the price-neighbour rule landed one day and the
+      memory-neighbour rule the next and neither run went back to `/compare/`. Both sentences are
+      written from the rules now and `checkMatchUpKinds()` holds the list to them both ways, so a
+      rule added without a clause fails the build. Seven clauses also stopped being a sentence: at
+      170 words and six semicolons they are a list, one rule to a line. The run entry below has the
+      table of rules, the four breaks and the measurement that says the other 306 pages did not move.
+
+- [ ] **Two of those three pages are left: `/hardware/` and `/leaderboard/`.** `/best/` is done,
+      pushed as `5627008` on 2026-09-19, and the item's own guess about it was too kind: the sentence
+      was not drifted, it had never been written. The page listed the three quickest models in a
+      class and said neither that number nor that 23 other models pay back behind them. It now prints
+      the cut from `BEST_PER_CLASS` and counts what each class leaves out, and `checkBestCuts()` holds
+      the page to both. The run entry below has the table and the five breaks.
+      **`/hardware/` is half-done and `/leaderboard/` is untouched.** The one claim on `/hardware/`
+      that was measurably false — 56 configurations priced where 54 are — is held by
+      `checkPricedRows()` as of `e0b6b23`. What is still hand-written there is the rest of the same
+      lede and the assumptions note: the count of models at 32k, the order the families are in, what
+      usable memory means. `/leaderboard/` is where the next run should go, because nothing on it is
+      held at all: it says what its table holds, what the ranking is and where the hosted rows come
+      from, all in prose beside figures the build recomputes.
+      Found 2026-09-19 while fixing `/compare/`,
+      which had drifted by two rules on one side and one on the other. `/hardware/` and
+      `/leaderboard/` each say in their own words what their table holds and how it is cut — which
+      machines are in it, what the ranking is, where the hosted rows come from — and every one of
+      those sentences is hand-written next to a figure the build recomputes. The cheap version is the
+      shape `checkMatchUpKinds()` and `checkBestCuts()` both took: name the rule in one place, let the
+      page print it, and let the build fail when the two disagree. One page a run, and only where the
+      sentence really is a claim about the data rather than about the reader.
+
+- [x] **`/hardware/` said the site prices all 56 configurations, and it prices 54.** Done
+      2026-09-19, pushed as `e0b6b23`. The lede opened *All 56 configurations this site prices, in
+      one table*, and the Mac Studio M5 Ultra, 512GB and the Framework Desktop, 192GB have no
+      published price, so their own rows read *not published · price it yourself* under a sentence
+      promising a price for every machine in the table. It lists 56 now and prices 54, and it names
+      the two, which is the part a reader can act on: those are the two rows the calculator wants a
+      number for. `publishedPriceLine()` writes the count from the data and `checkPricedRows()`
+      holds four claims about it, one of them read back out of the rendered table rather than taken
+      from the array that wrote it. One page's words moved and no figure, row or count changed. The
+      run entry below has the four breaks and the two that proved the tests.
+
+- [ ] **A class on `/best/` counts the models it leaves out and names none of them.** Left
+      deliberately by the 2026-09-19 run rather than missed, because naming them is a different page:
+      14 models under one class, each wanting its machine and its figure to be worth reading, is the
+      table again rather than a note under it. The lede points at `/leaderboard/`, where every model
+      is ranked with its class beside it, and that may well be the whole answer. Worth weighing once
+      rather than drifting into: the cheapest useful version is probably the next model down in each
+      class by name, which is one link and one figure, not fourteen.
+
 - [x] **Every heading on the 56 machine pages and the 55 model pages called the page's own subject
       "it".** Done 2026-09-19, pushed as `f2e2d2d`. *What it runs*, *Machines that run it*, *How good
       is it, really?* — 284 headings across 111 pages and not one named a machine or a model. The
@@ -623,25 +686,87 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       entry below has the figures, the four breaks and the three links the cut deliberately leaves
       pointing at the top of a page.
 
-- [ ] **The other half: 1,172 sections still have nothing pointing at them, and the *Jump to* line
-      is what would change that.** `/best/` carries one, above its five usage bands, and it is still
-      the only page on the site that does. A reader from a search lands mid-page and a search result
-      can offer a jump into a section only where the page itself offers one. **What the run of
-      2026-09-19 found before leaving this half alone**, so it is not re-derived: a jump line built
-      from the headings themselves reads as keyword stuffing on the two biggest page types, because
-      yesterday's run made every heading name its own subject. A model page would open *Jump to: How
-      good is Gemma 4 31B, really? · What Gemma 4 31B costs either way · Machines that run Gemma 4
-      31B · The specifics* — the model named three times in one line. The machine pages are the same
-      shape and carry only three sections besides. **Where it reads clean is the 190 head-to-heads**,
-      whose four headings name the pair once between them (*Side by side on Gemma 4 12B · How much
-      use it takes to pay back · What the extra memory buys · The assumptions behind both columns*),
-      and the three long indexes: `/how-much-memory/` at seven sections, four of them a pick-one
-      ladder by model size, `/best-gpu/` at five and `/local-llm-vs-api-cost/` at five.
-      **The two things to settle**: where the line goes, given the site's own rule that the answer
-      comes first — under the lede would push the answer block down, so above the first `<h2>` is
-      the likelier place — and whether the cut is written as a rule the build can hold or as a flag
-      per page type. `scripts/build-pages.ts` either way, so it is a push. `checkSectionLinks()` is
-      already there and would cover the new links the day they are written.
+- [x] **The other half: 1,172 sections had nothing pointing at them, and the *Jump to* line was what
+      would change that.** Done 2026-09-19, pushed as `479b982`. 148 pages offer 610 jumps into their
+      own sections where `/best/` alone offered five, and 565 sections are left with nothing pointing
+      at them against 1,167. Both things the item said to settle are settled and written into the
+      code: the line goes **above the first `<h2>`**, not under the lede, because on a head-to-head
+      the lede, the table and the calculator links are the answer and a contents line in front of
+      them pushes it down; and the cut is **a rule the build holds**, four sections or more and at
+      most one heading repeating a name the page's own `h1` carries, rather than a list of page types
+      somebody has to remember to keep current. The run entry below has the figures, the five breaks
+      that proved `checkJumpLines()` and the two that proved the tests.
+      **What it turns away, so none of it reads as a gap:** the 55 model pages and 19 machine pages
+      by the name count, 37 machine pages and 45 head-to-heads by the four-section floor, `/compare/`
+      at two sections, and `/best/`, which keeps the shortened line it wrote for itself because each
+      of its headings carries a second clause.
+
+- [x] **`/hardware/` and `/leaderboard/` head no sections at all.** Done 2026-09-19, pushed as
+      `c6c4753`. Each heads four sections now, both tables stay whole, and both pages picked up
+      anchors and a jump line from the rules already in the build — 1,185 section headings on the
+      site where there were 1,177, and 150 pages offering a way into their own sections where there
+      were 148. **The item's own guess was the one answer the markup forbids**: an `h2` cannot sit
+      inside a `<table>`, so sections over groups of rows means several tables, and a reader
+      comparing 56 machines on price wants one table to read down. The sections are the argument
+      each page already makes instead, and nothing was written for the occasion. `checkPageSections()`
+      now holds that every page heads at least one section and none heads a section in its own
+      title; the run entry below has the figures and the two breaks that proved it. What it leaves,
+      because it is a smaller version of the same thing: `/compare/` is now the thinnest page on the
+      site at two sections, which is the item below. The original follows.
+      Measured 2026-09-19 while the
+      jump lines were being cut. They are two of the site's four top-level indexes — 56 machines on
+      one, 55 models on the other — and each is linked from the footer of all 306 other pages, but
+      each is a single table under an `h1` with not one `h2` on it. So nothing can link
+      into either by section, a search result cannot offer a jump into one, and neither can carry a
+      jump line however many rows it grows to. Every other index on the site heads five sections or
+      more.
+      **The two things to settle before a line of it is written.** The first is what the sections
+      are, and it has to be the reader's own question rather than a heading over an alphabetical cut:
+      on `/hardware/` the candidates are the shape of the thing you are buying (a laptop, a small
+      desktop, a workstation, a card that needs a PC around it) or what it holds, since memory is
+      what the whole site says decides it; on `/leaderboard/` it is the size bands `SIZE_BANDS`
+      already names. The second is whether one sorted table becomes several, which changes what the
+      page is — a reader comparing 56 machines on price wants one table they can read down, and
+      cutting it into four is a worse page with better headings. A table that stays whole with
+      section headings above named groups of rows is the likelier answer, and it is `<tbody>` per
+      group rather than a new page type, so it stays a push.
+
+- [x] **`/compare/` headed two sections and was the thinnest page on the site.** Done 2026-09-19,
+      pushed as `a97e551`. It heads four now and offers a way into all four, and the item's own
+      question — whether the page has a third thing to say that is not filler — was answered by
+      reading it: **it had two, and both were sitting as unheaded prose at either end.** Its own
+      answer about what the 53 machines compared here hold opens the page under the lede, and its
+      assumptions close it under the last table, the same two things `/hardware/` and
+      `/leaderboard/` had headed the run before. Nothing was written for the occasion, no sentence
+      changed, and the rules cutting the match-ups stay where they were, under the two headings
+      they already explain. The run entry below has the figures and the three breaks.
+      The original follows. Measured
+      2026-09-19 after the two indexes above were cut. 111 machine match-ups sit under *Machine
+      against machine* and 78 model match-ups under *Model against model*, which is an honest cut
+      of what the page holds — but two sections is below the floor a jump line wants, and the page
+      says nothing of its own before it starts listing the way `/hardware/`, `/leaderboard/` and
+      `/compare/`'s own siblings do. **What to settle before a line is written**: whether the page
+      has a third thing to say that is not filler. The candidates are what the rules cutting the
+      match-ups actually are — each machine against the family flagships and the cards, each model
+      against the next one down, the model it replaced and the model nearest it in memory — which
+      is the one question a reader of an index of 189 pairs has that the table does not answer.
+      Both section headings are named in `SECTIONS` and linked from other pages by name, so neither
+      can be reworded without `checkSectionLinks` saying so, which is the guard doing its job.
+
+- [x] **Two sections on one page could carry the same words and the build said nothing.** Done
+      2026-09-19, pushed as `1165130`. The guard holds the words now as well as the addresses, and
+      its print says which of the two it is holding. The item's own account of the fault was right
+      and understated the proof: the old build was run with a repeated heading on `/compare/` before
+      the claim went in, and it did not merely pass — it shipped `id="machine-against-machine-2"`
+      and a jump line reading *Machine against machine · Model against model · Machine against
+      machine*, which is the reader being offered the same words twice. No page output changed: all
+      307 pages and the sitemap are byte-for-byte what they were, compared build against build, and
+      no hash moved in `seo/page-dates.json`. The run entry below has the four breaks.
+      **What it deliberately leaves in place, so nobody reads it as a leftover.** `anchorHeadings`
+      still numbers a repeated slug, and the guard still accepts a `-2` or `-3` id. Neither is dead
+      code being tidy: the numbering is what keeps an id unique for a browser if one ever slips
+      through, and accepting it is what makes the build fail with the one message that names the
+      real fault — the words — rather than with two, the second of which is about a slug.
 
 - [x] **Thirteen titles ran past the 60 characters a search result shows, and ten of them lost the
       second machine's memory size.** Done 2026-09-19, pushed as `a0ec560`. The build has printed
@@ -1494,6 +1619,572 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-19 — a table of 56 machines under a sentence that priced all of them
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which its own text says
+to leave until Ryan's two pull requests are settled. The next is the one the last two runs have been
+working down — `/hardware/` and `/leaderboard/` explain their own tables in prose and nothing holds
+those sentences to the code — and the item under it names the one sentence on `/hardware/` that is
+measurably wrong. That is this run.
+
+**What was wrong.** The lede opened *All 56 configurations this site prices, in one table*, written
+from `data.hardware.length`. Two of the 56 have no `price_usd`: the **Mac Studio M5 Ultra, 512GB**
+and the **Framework Desktop, 192GB**. Their own rows already said so — *not published · price it
+yourself* in the price cell, *needs a price* in the pay-back cell — so the page contradicted itself
+between its first paragraph and its table, and the reader who scrolled to the row found out the hard
+way. Nothing about it was a figure: the table has been right the whole time.
+
+**What it says now.**
+
+> All 56 configurations this site lists, in one table: … **54 of them carry a published price. The
+> Mac Studio M5 Ultra, 512GB and the Framework Desktop, 192GB do not, so their rows open the
+> calculator for you to put in what you would pay.**
+
+*Prices* became *lists*, which is what the table does, and the count of what it prices is its own
+sentence. Naming the two is the part a reader can act on rather than a caveat: those are the two
+rows where the price is theirs to enter, and the link in the cell already goes there.
+`publishedPriceLine()` in `src/pagekit.ts` writes it from `data.hardware`, singular and plural both,
+and says *Every one of them carries a published price* on a fleet where nobody is missing one — so a
+price published tomorrow rewrites the sentence rather than dating it.
+
+**`checkPricedRows()`, four claims.** The count in the paragraph is the count of rows the table
+really prints a price on, **read back out of the rendered page** rather than taken from the same
+array that wrote the sentence. Every machine without a published price is named in the lede. No
+machine that has one is named among them. And each of those rows offers the calculator, which is
+what the sentence promises.
+
+**Four breaks, each run.** Drop `${publishedPriceLine(data)}` from the lede → exit 1, *the machine
+index does not open by saying that 54 of its 56 rows carry a published price*. Invert the filter so
+it names two priced machines → exit 1 with 4 problems, naming the Mac Studio M5 Ultra and the
+Framework Desktop as unnamed and the two Mac minis as wrongly named, *and it is priced at $899*.
+Stop marking the two rows *not published* → exit 1, *prints a price on 56 of its 56 rows, where 54
+of the machines here have a published price*. Change the link's words from *price it yourself* → exit
+1 on both rows, *is named as a machine you price yourself and its row does not offer the calculator*.
+The first version of that fourth break removed the link outright and was caught one guard earlier by
+`checkHardwareIndex`, which wants the calculator link on every row; it was re-run keeping the link
+and changing only its words, so the claim proved is this guard's own.
+
+**Two breaks proved the four new tests.** Count `data.hardware.length` instead of the priced ones →
+three of the four fail. Drop the singular branch → *keeps its singulars where one machine has no
+price* fails, because one machine without a price read as several.
+
+**Nothing else on the site moved.** `seo/page-dates.json` is the measurement: exactly one hash
+changed, `/hardware/`, and the other 306 pages are byte-for-byte what they were. 411 tests (407
+before), typecheck clean, the full `npm run build` including `build:functions`, 307 pages with every
+guard passing, and the page read rendered out of `dist/`.
+
+**Pushed to `main` as `e0b6b23`.** It is `scripts/build-pages.ts`, `src/pagekit.ts` and a test, which
+is the push side of the standing rule; no data file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts`
+is touched.
+
+**Deploy run 256 went green at 23:47 on `bc67561`**, so both commits are live on sunkcost.ai. Run
+255 was cancelled rather than failed: the log commit followed the code commit inside a minute and
+the workflow's concurrency group dropped the older of the two, which is the same shape as run 248.
+
+**Both open pull requests were re-checked against this push and neither conflicts with it.**
+`git merge-tree` against `main` at `bc67561` reports clean for `seo/cost-per-month` (PR #16) and
+`seo/home-h1` (PR #17). The import line at the head of `scripts/build-pages.ts` — the line that has
+collided three times — took `publishedPriceLine` on a different row from the one PR #16 extends, so
+git had nothing to choose between. The standing note on PR #16 still holds: `main`'s `/hardware/`
+hash moved in this push, so whoever merges it rebuilds `seo/page-dates.json` rather than picking a
+side of that line.
+
+**What to continue.** `/leaderboard/` is the page left in the item above, and it is the bigger half:
+nothing it says about its own table is held by anything. Same shape as `checkBestCuts()` and this
+run's guard — name the rule once, let the page print it, let the build fail when the two disagree.
+Ryan's side is otherwise unchanged: PR #16 and PR #17 are both still open, and the Ternary Bonsai 2
+27B figures still need him.
+
+### 2026-09-19 — three rows a class, and the other 23 models were in no row and no count
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which the item itself
+says to leave until Ryan's two pull requests are settled. The one below it is the item the last run
+wrote: `/hardware/`, `/leaderboard/` and `/best/` each explain their own list in prose and nothing
+holds those sentences to the code. This run took `/best/`, and the sentence it was missing was not a
+drifted one. It had never been written.
+
+**What was wrong, measured rather than reasoned about.** `bestByTier()` sorts a class by pay-back,
+keeps one row per model and then takes `perTier = 3`. The page printed those three and said nothing
+about the cut. Behind them, at every one of the five levels of use:
+
+| class | models that pay back | listed | in no row and no count |
+| --- | --- | --- | --- |
+| Sonnet-class | 4 | 3 | 1 |
+| Haiku-class | 11 | 3 | 8 |
+| Below every hosted tier | 17 | 3 | 14 |
+
+**23 of the 32 models that pay back somewhere** were on the page in neither a row nor a figure. A
+reader counting three rows under *Haiku-class* had no way to tell whether that was the whole class
+or the top of it, and the lede's *Each model appears once, on its quickest machine* reads as though
+every model is there. The one line under a table that did count anything counted the wrong thing for
+the job: *Also in this class: 57 never pay back, of 530 pairs that fit* — pairs, beside rows that are
+models, and silent about the models that do pay back and are not shown.
+
+**What it does now.** The cut is `BEST_PER_CLASS`, the lede prints it from there — *Each class lists
+the three that pay back soonest, one row per model, on the machine that pays it back quickest* — and
+each class says how many more models pay back behind its rows. `bestLeftOut()` in `src/pagekit.ts`
+writes both sentences and keeps each figure in the unit it is counted in: models that pay back and
+are not listed, machine-and-model pairs that fit and never do. The lede also points at
+`/leaderboard/`, which is where every model on the site is ranked with its class beside it, and it
+was the only index lede on the site linking nowhere.
+
+**Four breaks and a negative control, each run.** List a fourth model → exit 1, *lists 4 models in
+Sonnet-class at 50k tokens a day, where the cut takes 3 of the 4 that pay back*, 15 of them. Put the
+old lede back → exit 1, *does not say that a class lists 3 models*. Drop the not-listed sentence →
+exit 1, *lists 3 of the 17 models that pay back in Below every hosted tier at 50k tokens a day and
+does not say the other 14 are left out*. Drop the pairs sentence → exit 1, naming the class and the
+sentence. Claim a model is left out where the class lists every one → exit 1, *and every model in it
+that pays back is listed*. And the control that says the guard is about the cut rather than about
+the number three: raise `BEST_PER_CLASS` to 4 → **the build passes**, the lede says *four*, and the
+counts fall from 115 to 100 without a word being edited. Two more breaks proved the four new tests:
+force the plural, and count the two reasons a pair is not a row as one number.
+
+**Nothing else on the site moved, and this was checked rather than assumed.** The site was built from
+`main` in a throwaway worktree and from the change, and all 307 pages compared: `/best/` differs and
+**the other 306 are byte-for-byte identical**, `sitemap.xml` included, `lastmod` and all. One hash
+line moves in `seo/page-dates.json` and no date moves, because the page had already changed today.
+The page is 1,604 words where it was 1,398. Worth knowing for the next run that measures this:
+`publishedDate()` reads the ledger as committed, so the first build after a change drops that one
+page's `lastmod` and the next build restores it. A sitemap diff taken between those two builds is
+reading the ledger, not the page.
+
+**Verified**: 407 tests, typecheck clean, 307 pages with every guard passing, the full `npm run
+build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
+rendered out of `dist/` — the lede, the three class lines at 50k and the two-clause line at 20M,
+where *39 never pay back and 63 can’t produce this much in a day*. **Pushed as `5627008`, and it is
+live**: its own run 252 was cancelled by this entry's push a minute later, as usual, so **deploy run
+253 on `341b9e2` carries both and went green at 22:56**, three minutes thirteen from queue to
+published. The live site was not read back: this environment's egress proxy blocks `sunkcost.ai`.
+**And the Actions cache the last run was caught by is still there.** Four reads of
+`list_workflow_jobs` came back byte-identical, timestamps included, while the build step was really
+finishing; the fifth showed it done at 22:56:28 and the sixth the whole run green. An identical
+answer here means nothing was re-fetched, so it is worth neither a conclusion nor a wait.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree and
+built there rather than trusted to `git merge-tree`, because it is the one that touches
+`scripts/build-pages.ts`: no conflict, **417 tests**, typecheck clean, 308 pages with every guard
+passing, and the new guard holds over the merged tree. PR #17 touches `index.html` and
+`src/styles.css`, which this change goes nowhere near; `git merge-tree` reports it clean.
+
+**One thing about this environment, the same as the last run's.** The clone starts on a **detached
+HEAD**, so a commit goes onto no branch and `git push origin main` would push the stale local `main`.
+`git branch -f main HEAD && git checkout main` first; nothing was forced. Unlike the last run, the
+full build including `build:functions` ran here: the font was found.
+
+**What to continue.** The same item, two pages down: `/hardware/` and `/leaderboard/` still explain
+their own lists in sentences nothing holds. `/hardware/` has the concrete one, new below: its lede
+says the site prices all 56 configurations and two of them have no published price.
+
+### 2026-09-19 — the index that named five rules where seven cut its list
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, a new page type and a
+top-level page, so it is a third pull request against `index.html` behind two Ryan has not settled,
+and the item says to do it once those are settled. The items below it — the three over-long titles,
+the memory cap, the price cap, the 45 shared words, the site's depth — are all written up as
+considered rather than open. So this run read the pages instead, and the biggest index on the site
+was wrong about itself.
+
+**What was wrong, measured rather than reasoned about.** `/compare/` is the index of all 190
+head-to-heads, and above each of its two tables it says what cuts the list. It said *Five kinds of
+match-up* over the machine table and *Two kinds of match-up* over the model table.
+`hardwarePairs()` applies **seven** rules and `modelPairs()` **three**:
+
+| the rule | rows it cuts | named on the page |
+| --- | --- | --- |
+| one machine per family against every other | 28 | yes |
+| every graphics card against every other | 21 | yes |
+| every memory tier of a machine against the others | 18 | yes |
+| the same silicon in two boxes | 8 | yes |
+| every discontinued machine against its successor | 12 | yes |
+| the cheapest box against the one with the better chip | 4 | **no** |
+| two machines of different families at the same price | 21 | **no** |
+| each model against the next one down the leaderboard | 47 | yes |
+| each last-generation model against what replaced it | 7 | yes |
+| two models of different families that need the same memory | 29 | **no** |
+
+**50 of the 189 rows** — a quarter of the index — sat under an explanation that did not reach them.
+A reader who found *Mac mini M6, 32GB vs Radeon AI PRO R9700, 32GB* on a page naming five kinds,
+none of them that one, had no way to tell why the two were on a page together. Both sentences were
+written by hand and both fell behind the code that cuts the list: the price-neighbour rule landed on
+2026-09-18 and the memory-neighbour rule on 2026-09-19, and neither run went back to the index.
+
+**What it does now.** Both sentences are written from a list of the rules themselves, one entry a
+rule's own pairs and the clause the page gives it, and `checkMatchUpKinds()` holds the list to the
+rules in both directions: every match-up the page lists is cut by a kind the page names, every kind
+it names cuts at least one match-up on it, and the page really carries each clause and the count of
+them. A rule added to `versus-card.ts` without a clause here now fails the build naming the pairs
+nothing explains. The match is on the pair rather than on the address, because four card pairs are
+cut by both grids and carry the flagship grid's order.
+
+**And seven clauses are not a sentence.** Strung together the way five were, they ran to 170 words
+and six semicolons in front of the table they explain, on a page a reader comes to for one row. They
+are a list now, one rule to a line, under a line saying how many there are: three lines of CSS in
+`public/page.css`, which is the generated pages' own stylesheet rather than the calculator's.
+
+**Four breaks, each run.** Drop the price-neighbour clause → exit 1, *the head-to-head index lists
+Mac mini M6, 32GB vs MacBook Air M5 (13-inch), 16GB and names no kind of match-up that cuts it*, 21
+of them. Name a kind that cuts nothing — each model against the one it was distilled from → exit 1,
+naming the clause. Print one clause fewer than the list holds, which is what a hand-edit of the page
+would do → exit 1, *does not say what puts 21 machine match-ups on it* and 29 model ones. And the
+negative control that says the guard is about the rules rather than about the number seven: add an
+eighth kind that really does cut three of the listed pairs → **the build passes**, 11 rules named.
+
+**Nothing else on the site moved, and this was checked rather than assumed.** The site was built
+from `main` and from the change and all 307 pages compared: `/compare/` differs, `page.css` differs,
+the other 306 pages are byte-for-byte identical and `sitemap.xml` is unchanged, `lastmod` included.
+One hash line moves in `seo/page-dates.json` and no date moves, because the page had already changed
+today. The page is 6,004 words where it was 5,909.
+
+**Verified**: 403 tests, typecheck clean, 307 pages with every guard passing, the full `npm run
+build` end to end including `build:og`, `build:share` and `build:functions`, and the page read
+rendered out of the built output in Chromium at 1,280 and 390px — the seven lines carry their
+markers, the lead line sits above them and the sentence about the two speeds sits below.
+**Pushed as `a868268`, and it is live.** Runs 247, 248 and 249 were each cancelled a minute or two
+in by the next push — this entry, then a note about the deploy, then a correction to that note — so
+**deploy run 250 on `134c2be` is the one that carries all four commits, and it went green at
+22:04**. Its whole job took three minutes and eighteen seconds, the `npm run build` step two minutes
+forty, which is worth knowing because this container takes about thirteen minutes over the same
+build: a deploy here is never the slow part. The live site was not read back: this environment's
+egress proxy blocks `sunkcost.ai`, so everything above is from the built output.
+
+**And one thing about reading Actions from this environment, which cost this run half an hour.**
+`get_workflow_run` and the run list come back **cached**: run 248 was cancelled at 21:58:30 and both
+kept reporting it `in_progress`, with the same `updated_at`, for fifteen minutes afterwards. An
+earlier version of this entry said the run was slow on the strength of those polls, and it was not
+slow, it was already dead. Repeated identical answers here mean nothing has been re-fetched rather
+than nothing has changed. `list_workflow_jobs` on the run id is the call to make when a deploy's
+state matters — it returned the live step list, and it is what finally showed run 250 finishing —
+but it caches too, so an answer identical to the last one is worth nothing either way. The tell is
+that a step's timestamps do not move.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree
+and built there rather than trusted to `git merge-tree`: no conflict, **413 tests**, typecheck
+clean, 308 pages with every guard passing, and the new guard holds over the merged tree's own list
+unchanged. PR #17 touches `index.html` and `src/styles.css`, which this change goes nowhere near;
+`git merge-tree` reports it clean.
+
+**One thing about this environment, the same as the last run's.** The clone starts on a **detached
+HEAD**, so a commit goes onto no branch and `git push origin main` would push the stale local `main`.
+`git branch -f main HEAD && git checkout main` first; nothing was forced.
+
+**What to continue.** The backlog's top open item is still the per-memory-size pages, a pull request
+that wants Ryan's two settled first. New below it: the same drift this run fixed is worth looking
+for elsewhere — `/hardware/`, `/leaderboard/` and `/best/` all explain in prose what their own lists
+hold, and nothing holds those sentences to the code either.
+
+### 2026-09-19 — the guard that checked the addresses and printed a claim about the words
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which is a new page
+type and a top-level page, so it is a third pull request against `index.html` behind two Ryan has
+not settled; the item itself says to do it when those are settled rather than queued behind them.
+The one below it was this, and the previous run had found it while breaking a different guard.
+
+**What was wrong, measured rather than reasoned about.** `checkHeadingAnchors()` ended its print
+with *none repeated on its page*, which reads as a claim about headings and was a claim about ids.
+`anchorHeadings` numbers a slug it has already used, so the two are not the same thing. The old
+build was run with one repeated heading added to `/compare/` to see what it actually did, and it
+did not merely pass the guard:
+
+| | with the heading repeated |
+| --- | --- |
+| the old build | passes, 1,188 headings, 307 pages written |
+| the id it shipped | `id="machine-against-machine-2"` |
+| the line above the sections | *Jump to: Does any machine here hold every model? · Machine against machine · Model against model · **Machine against machine** · The assumptions behind both tables* |
+| the new build | exit 1, *`/compare/` heads two sections "Machine against machine", so a jump into them offers the reader the same words twice* |
+
+**Four breaks, each run.** Repeat a heading word for word → caught, exit 1. Repeat it with markup in
+the middle, `Machine <span class="dim">against</span> machine` → caught, and the message prints the
+words a reader sees rather than the markup, which is what the `words()` helper is for. Repeat it
+differing only by a question mark → caught, because a mark is not a word and the two slug the same.
+And the negative control, the one that says the guard is about repetition rather than about the
+count: head a fifth section *Machine against a graphics card* → **the build passes**, 1,188
+headings, 307 pages.
+
+**Nothing a visitor reads changed, and this was checked rather than assumed.** The site was built
+from `main` and from the change and every file compared: `diff -rq` over `public/` reports no
+difference at all, in any of the 307 pages or the sitemap, and `seo/page-dates.json` is untouched,
+so no page's `lastmod` moves. A guard is worth what it prevents and this one prevents a jump line
+that wastes the reader's click; it is not worth a single changed word today.
+
+**Verified**: 403 tests, typecheck clean, 307 pages with every guard passing, and the full
+`npm run build` end to end including `build:og`, `build:share` and `build:functions`.
+**Pushed as `1165130`.** Run 244 was cancelled a minute later by the push of this entry, as usual,
+and **deploy run 245 went green at 20:45 on 2026-09-19** on `7114721`, carrying both. The live site
+was not read back: this environment's egress proxy blocks `sunkcost.ai`, so everything above is
+from the built output.
+
+**Both open pull requests still merge clean**, checked against the new `main`. PR #16 was merged for
+real in a throwaway worktree and built there rather than trusted to `git merge-tree`: no conflict,
+413 tests, typecheck clean, 308 pages with every guard passing, and the new claim holds over
+`/cost-per-month/`'s own four headings as well — 1,191 section headings against 1,187. It touches
+`scripts/build-pages.ts` in 255 lines and not one of them is in this function, which is why the
+import line that has caught it three times did not catch it a fourth. PR #17 touches `index.html`
+and `src/styles.css`, which this change goes nowhere near; `git merge-tree` reports it clean.
+
+**One thing about this environment, worth the next run knowing.** The first `git push` was rejected
+as non-fast-forward with no sibling session anywhere near it: the clone starts on a **detached
+HEAD**, so the commit went onto no branch and `git push origin main` pushed the stale local `main`
+at `d8314dc`. The standing rule about a rejected push is to fetch and check for a sibling's work
+first, and that was done — `git log HEAD..origin/main` was empty, which is the tell. The fix is
+`git branch -f main HEAD && git checkout main`, and nothing was forced.
+
+**What to continue.** The backlog's top open item is still the per-memory-size pages, a pull request
+that wants Ryan's two settled first. Below it, the three over-long titles and the memory cap are
+both written up as considered rather than open work, so the next real item is whichever of the
+smaller ones reads best on the day.
+
+### 2026-09-19 — the index of 189 match-ups says what is on it
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the per-memory-size pages, which is a new page
+type and waits on Ryan's two open pull requests; the one below it was `/compare/`, the thinnest page
+on the site at two sections and the third of the four top-level indexes to head almost nothing.
+
+**The question the item left, answered by reading the page rather than by writing for it.** It asked
+whether `/compare/` has a third thing to say that is not filler, and guessed the answer was the rules
+cutting the match-ups. Those rules are already on the page, a paragraph each under the two headings
+it had. What is not headed is the page's own answer — *none of the 53 machines compared here holds
+more than 38 of the 39 open models* — and its own assumptions, which open and close the page as
+unheaded prose. So the same treatment the two big indexes had yesterday: two headings over prose that
+was already there, and **not one sentence written, changed or removed.**
+
+| | before | after |
+| --- | --- | --- |
+| sections on `/compare/` | 2 | 4 |
+| jumps into its own sections | 0 | 4 |
+| section headings on the site | 1,185 | 1,187 |
+| pages offering a way into their own sections | 150 | 151 |
+| jumps, one a section | 618 | 622 |
+| pages whose words changed | — | 1 of 307 |
+| dates moved in `seo/page-dates.json` | — | 0 |
+
+**How it reads.** *Does any machine here hold every model?* · *Machine against machine* · *Model
+against model* · *The assumptions behind both tables*. The first is the question the paragraph under
+it has been answering since it was written, in the form `/hardware/` and `/leaderboard/` already ask
+theirs; the last is what the head-to-heads have called *The assumptions behind both columns* for
+weeks, in the plural the two tables here make it. Four sections is exactly the floor
+`JUMP_MIN_SECTIONS` sets and no heading names a machine or a model, so the jump line came from the
+rule written two days ago without a line of that rule changing.
+
+**Three breaks, each run.** Head the note with the page's own `h1` → *`/compare/` heads a section
+"Every head-to-head: machine against machine, model against model", which is the page's own title
+said twice*, exit 1. Drop the note's heading and the page falls back to three sections → **the build
+passes and the jump line goes silently**, 150 pages and 618 jumps again. That is the rule's floor
+doing what it was written to do rather than a fault, and it is worth knowing that the loss is quiet.
+The third is worth writing down because it is not what the print claims: give the page two sections
+with the same words and **the build passes** — `anchorHeadings` gives the second the `-2` id, and
+`checkHeadingAnchors` holds ids apart rather than headings, so *none repeated on its page* is a claim
+about addresses, not about words. It is in the backlog below.
+
+**Nothing else on the site moved.** The site was built before and after and all 307 pages compared:
+`/compare/` differs, the other 306 are byte-for-byte identical, and `sitemap.xml` changes only in
+that one page's `lastmod`, which stays `2026-09-19` because the page had already changed today. One
+hash line moves in `seo/page-dates.json`. Note for the next run that touches a page: the first build
+after a change writes the new hash and drops that page's `lastmod`, and a second build puts the date
+back — so build twice before reading the sitemap, or the guard's own count says *307 of 308*.
+
+**Verified**: 403 tests, typecheck clean, `npm run validate` with the two null prices already on
+Ryan's side of this file, 307 pages with every guard passing, the full `npm run build` end to end
+including `build:og`, `build:share` and `build:functions`, and the page read rendered out of `dist/`
+rather than from the source — 5,909 words, the jump line above the first section, and the four
+headings in the order the line names them. **Pushed as `a97e551`**; run 241 was cancelled a minute later by
+the push of this entry, as usual, and **deploy run 242 went green at 19:46 on 2026-09-19** on
+`da8e03b`, carrying both, so the page is live. The live site was not read back: this
+environment's egress proxy blocks `sunkcost.ai`, so everything above is from the built output.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a throwaway worktree and
+built there rather than trusted to `git merge-tree`: no conflict, 413 tests, typecheck clean, 308
+pages with every guard passing, and `/compare/`'s new line survives the merge — 152 pages and 626
+jumps, the extra four being `/cost-per-month/`'s own. PR #17 touches `index.html` and
+`src/styles.css`, which this change goes nowhere near; `git merge-tree` reports it clean.
+
+**What to continue.** The backlog's top open item is still the per-memory-size pages, a pull request
+that wants Ryan's two settled first. Below it the new item about the heading-id gap, and `/compare/`
+is no longer the thinnest page on the site: the floor is 3 sections now, on 37 machine pages and 45
+model head-to-heads, and none of those is thin in the way an index of 189 pairs was.
+
+### 2026-09-19 — the two indexes that headed nothing
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item was the two top-level indexes that headed no sections
+at all: `/hardware/`, 56 machines, and `/leaderboard/`, 55 models, each a single table under one `h1`
+while every other index on the site headed five sections or more. Both are linked from the footer of
+all 306 other pages, so they were the two pages on this site nothing could link into and no search
+result could offer a jump into.
+
+**The two things the item said to settle, settled the other way round.** The item guessed the
+sections would be groups of rows — machine shape on one, `SIZE_BANDS` on the other — and that is the
+one answer the markup forbids: an `h2` cannot sit inside a `<table>`, so headings over groups of rows
+means several tables, and a reader comparing 56 machines on price wants one table they can read down.
+Both tables stay whole and unchanged. **The sections are the argument each page already makes**: the
+two paragraphs `/hardware/` opens with are its answer about what a dearer machine buys and how long
+one takes to pay back, the leaderboard's is the gap to the frontier, and the notes under each table
+are a section in their own right, the way the head-to-heads have headed *The assumptions behind both
+columns* for weeks. Nothing was written for the occasion; eight headings were put over prose, tables
+and notes that were already there.
+
+| | before | after |
+| --- | --- | --- |
+| pages heading no sections | 2 | 0 |
+| section headings on the site | 1,177 | 1,185 |
+| pages offering a way into their own sections | 148 | 150 |
+| jumps, one a section | 610 | 618 |
+| pages whose words changed | — | 2 of 307 |
+| dates moved in `seo/page-dates.json` | — | 0 |
+
+**How they read.** `/hardware/`: *Does a dearer machine run a better model?* · *How long each machine
+takes to pay for itself* · *Every machine here, side by side* · *The assumptions behind the table*.
+`/leaderboard/`: *How far behind the frontier open models are* · *Every model here, ranked* · *Models
+the index has not scored yet* · *How to read the scores*. Four sections each is exactly the floor
+`JUMP_MIN_SECTIONS` sets, and neither page names a machine or a model in a heading, so both picked up
+a jump line from the rule written yesterday without a line of that rule changing.
+
+**One sentence changed, and one deliberately did not.** The leaderboard's note under its own new
+heading read *5 more open models on this site have no index score yet, so they are not in the table*,
+which says what the heading above it had just said; it reads *are not in the table above* now. The
+one left alone is *The short version:*, which opens the first paragraph of `/compare/`, `/hardware/`
+and `/leaderboard/` alike. Under a question heading it is a beat before the answer, but it is the
+site's own voice on all three indexes, and stripping it from two of them would have made the third
+read as an oversight.
+
+**The guard.** `checkPageSections()` holds two claims: every page heads at least one section, and no
+page heads a section in its own title. The first is the state these two pages were in for weeks with
+nobody noticing, and it now stops a build; the print names the thinnest page on the site, so the
+floor is a number somebody reads rather than one nobody measures — *`307 pages head at least one
+section, the fewest being 2 on /compare/`*. The second stops the floor being met with a heading that
+labels the page inside itself, which would buy the reader nothing and the jump line a repeated line.
+
+**Two breaks, each run and each caught.** Strip the leaderboard's four headings → *`/leaderboard/`
+heads no sections at all, so nothing can link into it and a reader has to start at the top*, exit 1.
+Head the machine table *Every machine that runs local models, priced*, which is that page's own `h1` →
+*`/hardware/` heads a section "Every machine that runs local models, priced", which is the page's own
+title said twice*. The first break also printed *1 page do not cut themselves*, which is fixed: the
+message is written both ways round now, the way `checkSectionLinks` writes its own.
+
+**Nothing else on the site moved.** Two page hashes change in `seo/page-dates.json` and no date does,
+because both pages already carried today's; `sitemap.xml` is unchanged, and the other 305 pages are
+byte-for-byte what they were.
+
+**Verified**: 403 tests, typecheck clean, `npm run validate` with the two null prices already on
+Ryan's side of this file, 307 pages with every guard passing, the full `npm run build` end to end
+including `build:og`, `build:share` and `build:functions`, and both pages read rendered out of
+`dist/` rather than from the source. **Pushed as `c6c4753`, and deploy run 239 went green at 18:51
+on 2026-09-19**, so both pages are live. The live site was not read back: this environment's egress
+proxy blocks `sunkcost.ai`, so everything above is from the built output.
+
+**Both open pull requests still merge clean.** PR #16 was merged for real in a worktree and built
+there rather than trusted to `git merge-tree`: no conflict, 413 tests, typecheck clean, 308 pages
+with every guard passing, and `/cost-per-month/` picks up the new guard and its own jump line in the
+merged tree — 151 pages, 622 jumps. PR #17 touches `index.html` and `src/styles.css`, which this
+change goes nowhere near; `git merge-tree` reports it clean and it was not built again, since
+yesterday's entry already built it against the jump lines.
+
+**What to continue.** The backlog's top open item is the per-memory-size pages, which is a pull
+request and still wants the two open ones settled first. Below it, `/compare/` is now the thinnest
+page on the site at two sections, which is the same shape as this item one size down and is written
+up in the backlog.
+
+### 2026-09-19 — a way into the sections of the pages worth one
+
+**Why this item.** `npm run model-watch` prints `2026-09-19` as last checked, so the watch was done
+and the backlog was the job. The top open item is the other half of the section links: 1,177 sections
+could be linked to, and `/best/` was still the only page on the site that offered its own reader a
+way in. The item left two things to settle before a line was written, and both are settled below.
+
+**Where the line goes.** Above the first `<h2>`, and above whatever wraps it. Not under the lede,
+which the item guessed at: on a head-to-head the answer is the lede, the comparison table and the two
+prefilled calculator links, and a contents line in front of that pushes the answer down the page.
+Above the first section is where the reader has finished the answer and started looking for the rest
+of it.
+
+**The cut is a rule the build takes for itself, not a flag per page type**, and it is two counts:
+**four sections or more, and at most one heading repeating a name the page's own `h1` already
+carries.** The second count is the whole of it. Where a page is about one machine or one model every
+heading names it, so a line built from those headings prints the reader's own search term back at
+them three times in a row, which is what the item meant when it called the model pages keyword
+stuffing. Where the headings name different things, the same line is a contents page. The names come
+from `data/*.json` as the pages print them, so the rule is keyed on this site's own vocabulary rather
+than on a page type somebody remembered to list.
+
+| | before | after |
+| --- | --- | --- |
+| pages offering a way into their own sections | 1 | 148 |
+| jumps, one a section | 5 | 610 |
+| distinct lines across those pages | 1 | 28 |
+| sections with nothing pointing at them | 1,167 of 1,177 | 565 |
+| words a visitor reads that changed elsewhere | — | 0 |
+
+**What the rule turns away, so none of it reads as a gap.** The 55 model pages head four sections
+each and name the model in three of them. 19 of the 56 machine pages head four and name the machine
+in two; the other 37 head three. 45 head-to-heads head three sections, because no model fits both
+machines and the *Side by side on* section is not written — a contents line for what is already on
+the screen. `/compare/` heads two. `/hardware/` and `/leaderboard/` head **none at all**, which is
+the one thing this measurement turned up that is worth its own backlog item, below. And `/best/`
+keeps the line it wrote for itself: its five headings each carry a second clause after a `·`, so the
+generic line would read as ten items rather than five, and *50k/day · 200k/day · 1M/day · 4M/day ·
+20M/day* is better than anything a rule would build from those words.
+
+**How the lines read.** 46 characters at the shortest, which is `/best/`'s own, and 283 at the
+longest, which is `/how-much-memory/`: *Where the cache figure comes from · How much memory for a 7B
+or 8B model? · How much memory for a 14B to 32B model? · How much memory for a 70B model? · How much
+memory for a 100B model or larger? · Context is the part people miss · What can you run with the
+memory you already have?* Four of those seven share their opening words, and it was read rendered
+before it was kept: the repetition is the ladder, and the part that differs is the part the reader is
+looking for. A head-to-head's is 139 to 174 characters. No link text carries an entity or a stray
+separator; all 148 were read out of the built pages.
+
+**The guard.** `checkJumpLines()` holds three claims. The first is the rule itself, both ways round —
+a page that should carry a line and does not, and a page that carries one and should not, each stop
+the build, so the day a fourth section is written onto a machine page the build says what that does
+rather than leaving it to whoever next reads the page. The second is that the line covers the page:
+one jump a section, in the order the page puts them in, each landing on an id the page really heads.
+The third is that it sits above the first section it points into. The build prints *`148 pages offer
+610 jumps into their own sections, one a section; 159 pages carry none, each under 4 sections or
+naming its own subject in more than one`*.
+
+**Five breaks, each run and each caught.** Drop the last section from the line → *`/compare/mac-mini-m5-pro-24gb-vs-mac-studio-m5-max-128gb/` jumps into 3 of the 4 sections it
+heads*, on 147 pages. Reverse the order → *`/how-much-memory/` lists
+`#how-much-memory-for-a-14b-to-32b-model` after `#how-much-memory-for-a-70b-model`, where the page
+itself has them the other way round*. Put the line after the first heading → *puts its jump links
+below the first section they point into*. Loosen the name count from one to three → *`/models/qwen3-14b-q4/` offers jump links whose words name How good is Qwen3 14B, really? and 2 more
+headings carrying the same name*, on 67 pages. Raise the floor from four sections to five → *heads 4
+sections and offers no way into them*, on 132. Two of the four new tests were proved the same way:
+loosening the name count fails *leaves a page alone where more than one heading names what the h1
+already names*, and ignoring the `<section>` wrapper fails *puts the line above the first section,
+and outside whatever wraps it*.
+
+**Nothing else on any page moved.** The site was built from `main` at `6b27303` in a worktree and
+from this change, and all 307 pages compared: **147 differ by the new line alone, 160 are identical,
+and `sitemap.xml` is the same byte for byte.** No page is re-dated, because every page on this site
+already carried today's date from this morning's runs; 147 hashes move in `seo/page-dates.json` and
+no date does.
+
+**Verified**: 403 tests (399 plus four new), typecheck clean, `npm run validate` with the two null
+prices already on Ryan's side of this file, 307 pages with every guard passing, and the full
+`npm run build` end to end including `build:og`, `build:share` and `build:functions`.
+
+**Pushed as `479b982`, and deploy run 236 went green at 17:49 on 2026-09-19**, so the jump lines are
+live. The live site was not read back: this environment's egress proxy blocks `sunkcost.ai`, so
+everything above is from the built output.
+
+**PR #16 conflicted on this push and is merged clean again, as `a81e913`.** Same file, same line, the
+third time in a day: `main`'s `JUMP_MIN_SECTIONS` and that branch's monthly-cost helpers both
+extended the import list at the head of `scripts/build-pages.ts`, and `MTOK` sat on a different line
+on each side. Both kept by hand, `MTOK` kept once, and `seo/page-dates.json` rebuilt rather than
+chosen. Verified on the merged tree: 413 tests, typecheck clean, 308 pages with every guard passing.
+**One thing worth knowing before merging it**: `/cost-per-month/` heads four sections and names no
+machine or model twice, so it picks up a jump line of its own in the merged tree — 149 pages, 614
+jumps — without a line of that branch changing. GitHub reports it `clean`. **PR #17 merges clean and
+was merged for real rather than assumed**: 405 tests, 307 pages, every guard passing.
+
+**What to continue.** The backlog's top open item is now the two indexes that head no sections at
+all, `/hardware/` and `/leaderboard/`, measured here and written up below. The per-memory-size pages
+are still the biggest open item and still want the two open pull requests settled first.
 
 ### 2026-09-19 — the links that name a section now land on it
 
