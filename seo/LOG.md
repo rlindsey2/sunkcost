@@ -75,6 +75,14 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       thing to know before you merge: four hashes moved on `main` rather than one, so the rebuild
       of `seo/page-dates.json` matters more than it did — `/leaderboard/`, `/best/`, `/compare/`
       and `/hardware/`.
+      **It conflicted a fifth time at 03:49 on 2026-09-20 and is merged clean again**, as `9328a19`.
+      Same file and the same import line as the four before it: `main`'s new `hostedSpeedLine` and
+      this branch's monthly-cost helpers, with `MTOK` on a different line on each side. Both kept by
+      hand, `MTOK` kept once, and `seo/page-dates.json` rebuilt rather than chosen, which moved 222
+      lines because the push it is merging re-dated 110 pages. Verified on the merged tree: **437
+      tests**, typecheck clean, 308 pages with every guard passing, including this branch's
+      `/cost-per-month/` and main's new speed note on 110 pages. GitHub reports it `clean`. Nothing
+      about the page changed.
       **It still merges clean with `main` at `1d7a98b`**, checked 2026-09-20 by merging it for real
       in a throwaway worktree and building there: 427 tests, typecheck clean, 308 pages with every
       guard passing. This time the ledger needed nothing — `npm run build:pages` on the merged tree
@@ -602,6 +610,54 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 `search.google.com` would not make it usable by the agent. That check stays on Ryan's side.
 
 ## Backlog (ordered; the agent keeps this list current)
+
+- [x] **The site printed 995 speeds and never said whether one of them is quick.** Done
+      2026-09-20, pushed as `6df11bd`. A reader meets *19 tok/s* in a column and has nothing to
+      hold it against; the thing they are actually choosing between is a hosted API, and the site
+      had that yardstick all along and only the calculator used it. `cloud.default_tokens_per_sec`
+      in `data/defaults.json` is 80 tok/s, the speed the calculator times a local answer against
+      and one the reader can change, and `src/render.ts` has printed it beside a local figure since
+      the panel was written. The 56 machine pages and 54 model pages, which is where a reader
+      actually lands from a search, printed 661 and 334 bare figures between them.
+      One sentence under each of those tables now names the figure and counts the rows above that
+      reach it. **128 of the 995 do**, and the shape of the answer is the page's own: on **49 of
+      the 110** nothing listed reaches a hosted API at all, on **55** some of it does, on the **6**
+      that list one machine that one falls short, and there is no page here where every row
+      listed reaches it. `hostedSpeedLine()` counts the speeds as the table draws them rather than
+      the precision behind them, so a reader counting the column gets the same answer, and
+      `checkHostedSpeed()` recomputes every figure in the sentence out of the rendered table rather
+      than out of the helper that wrote it. The run entry below has the six breaks that proved the
+      guard and the two that proved the tests.
+      **What it deliberately leaves, so the next run does not read it as a gap.** `/hardware/` and
+      `/leaderboard/` both print a speed column too, and neither takes the sentence: a speed on
+      `/hardware/` is each machine's own best model rather than one model across machines, so a
+      count of rows clearing 80 tok/s there would be counting 56 different questions. Worth
+      revisiting only if the index ever holds one model still. The head-to-heads say their two
+      speeds in prose that already compares them, which is the line `checkSpeedBasis()` drew and
+      this keeps.
+
+- [ ] **No generated page carries `og:url`, and the home page does not either.** Measured
+      2026-09-20 over all 308 pages. Every one carries a correct `rel=canonical`, `og:title`,
+      `og:description`, `og:image` and `twitter:card`, so a share renders right; what is missing is
+      the tag Facebook, LinkedIn and Slack use to decide that `…/?utm_source=x` and the clean URL
+      are the same object. Without it a shared link with a tracking parameter counts as its own
+      page. It is one line in `head()` in `src/pagekit.ts` and one in `index.html`, so the
+      generated pages are a push and the home page is a pull request. Small, and worth a cheap run
+      rather than a page of its own.
+      Two other absences on the generated pages are not faults and were checked rather than
+      assumed: `twitter:image` and `twitter:description` are missing on all 307, and X falls back
+      to `og:image` and `og:description`, so adding them would be the same two strings twice. The
+      home page carries both, which is where the asymmetry comes from.
+
+- [ ] **1,532 distinct query URLs point at the home page, and that is the right number. Nothing to
+      do.** Measured 2026-09-20: the prefilled calculator links are 2,918 `<a>`s across the built
+      site, 1,532 of them distinct, every one of them `/?hw=…&m=…&u=…`. The server ignores the
+      query string, so all 1,532 serve `index.html` byte for byte, and `index.html` carries
+      `rel=canonical` to `https://sunkcost.ai/`: each one tells a crawler exactly what it is, which
+      is the textbook handling and better than blocking them in `robots.txt`, which would stop the
+      crawler reading the canonical it needs. Written down so a future run reads Search Console's
+      *alternate page with proper canonical tag* on this site as working rather than as a fault,
+      and does not reach for a `Disallow` line.
 
 - [x] **The sitemap knew when every page last changed and no page said so itself.** Done
       2026-09-20, pushed as `ab123f2`. All 307 generated pages carry `dateModified` on their
@@ -1718,6 +1774,96 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — what a local speed is worth, said under the column of them
+
+**The watch was already done.** `npm run model-watch` printed `2026-09-20` as last checked against
+today, so an earlier run had it and the backlog was the job. The three candidates waiting on figures
+are unchanged and still need Ryan: Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B.
+
+**Why this item, when it was not on the backlog.** Every open item above it is parked or is not the
+agent's: the per-memory-size pages are parked by their own text behind Ryan's two pull requests, and
+the five notes under them are all written down as considered rather than as work. So this run
+measured the site before writing anything, and what the measurements said was that the head is in
+good order and the gap is in the body. Every one of the 307 pages has a correct canonical, a unique
+title inside 60 characters and a unique description inside 155; none is missing `og:image` or a
+breadcrumb; and the 1,532 prefilled calculator links, which looked like a crawl problem, all serve
+the home page's own canonical and are handled. Two things were left: `og:url`, which is a line and
+is now on the backlog, and the one below, which is not a tag at all.
+
+**What was missing.** This site prints a speed on nearly every page and has never said what one is
+worth. The machine pages carry 661 tok/s figures and the model pages another 334, and a reader
+meeting *19 tok/s* has nothing to hold it against. The yardstick they want is the hosted API,
+because that is the thing they are choosing between, and the site has had it all along:
+`cloud.default_tokens_per_sec` in `data/defaults.json` is 80 tok/s, the speed the calculator times a
+local answer against, and `src/render.ts` has printed the two side by side since the figures panel
+was written. It never reached a generated page, which is where a reader from a search lands.
+
+**What it says now.** One sentence under each speed table, on 56 machine pages and 54 model pages:
+
+> For scale, the calculator starts from **80 tok/s** for a hosted API and times a local machine
+> against it. 1 of the 12 above reaches it, and the slowest is 13 tok/s.
+
+and where the column clears nothing, *Nothing above reaches it, and the quickest is 79 tok/s*, which
+is the most useful version of it. **128 of the 995 rows reach 80 tok/s.** On **49 of the 110** pages
+nothing listed does, on **55** some of it does, and the **6** that list a single machine all fall
+short. No page on this site lists a table where every row reaches a hosted API.
+
+**The one thing that had to be got right.** The sentence is read beside the table, so it has to
+count the figures the table draws rather than the precision behind them: 79.6 tok/s is printed 80,
+and a count taken on the full number would say *2 of the 3* over a column where three rows read 80
+or more. `hostedSpeedLine()` rounds through `roundTps()`, the same helper `speedFrom()` prints
+with, which is the rule `shownTps()` already set on this site. The test that holds it fails the
+moment the rounding is taken out.
+
+**Six breaks, each run, each naming the right page.** Say nothing: exit 1, 110 problems,
+*`/models/llama-3.1-8b-q4/` prints 8 speeds and says nothing about what a speed is worth*. Count
+strictly above instead of at or above: exit 1, *`/hardware/geforce-rtx-3060-12/` says 2 of 11 reach
+80 tok/s where the table has 3 of 11*. Hold them against a figure that is not the data's: exit 1,
+*holds its speeds against 85 tok/s where the data says 80 tok/s*. Name the quickest where the
+sentence means the slowest: exit 1, *names 134 tok/s where the table's is 12*. Say it twice: exit 1,
+*says what a speed is worth 2 times over*. Count every model that fits rather than the twelve the
+table shows: exit 1, *says 1 of 27 reach 80 tok/s where the table has 0 of 12*. The guard reads the
+speeds out of the first board table on the page, which is the one the note sits under, so none of
+its figures comes from the string that wrote the sentence.
+
+**Five tests in `tests/pagekit.test.ts`, two of them proved.** The load-bearing one is the rounding:
+taking `roundTps()` out of the count fails it. The other proved is the agreement, *1 of the 12 above
+reaches it* against *reach*, which is the fault the first build of this actually shipped into the
+`public/` tree and which reading the page rendered caught. The other three hold the figure coming
+out of the data rather than out of the helper, the four shapes of the count, and a table with no
+speed in it saying nothing rather than printing a nought.
+
+**Nothing a visitor reads moved, measured against a build of the previous tree.** The pre-push tree
+was built in a throwaway worktree and every file compared: **197 of the 307 pages are byte for byte
+identical**, the 110 differ only by this note and by the day their own words last changed, no page
+was gained or lost, `robots.txt` is unchanged and `sitemap.xml` moves only those 110 `lastmod`
+dates. **427 tests**, typecheck clean, and the full `npm run build` end to end including
+`build:og`, `build:share` and `build:functions`, with 307 pages and every guard passing. The pages
+were read rendered out of `dist/` as well as `public/`, in context under their own tables, and every
+one of the 67 distinct variants of the sentence was read at once.
+
+**Pushed to `main` as `6df11bd`.** `scripts/build-pages.ts`, `src/pagekit.ts` and a test. No data
+file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts` is touched, and no visitor-facing file either,
+so this stays on the push side of the standing rule. `origin/main` was still at `59c97eb` when this
+went up, so no sibling session had run.
+
+**PR #16 conflicted on this push and is repaired, as `9328a19`.** Fifth time, same file, same import
+line, same shape the log has warned about four times: `main`'s `hostedSpeedLine` and the branch's
+monthly-cost helpers both extended the list at the head of `scripts/build-pages.ts`, with `MTOK` on
+a different line on each side. Both kept by hand, `MTOK` once, `seo/page-dates.json` rebuilt rather
+than chosen. Verified on the merged tree rather than assumed: **437 tests**, typecheck clean, 308
+pages with every guard passing, and the new note lands on 110 of them there too. GitHub now reports
+the pull request `clean`. **PR #17 never conflicted**: `git merge-tree` against this push is clean,
+and nothing here goes near `index.html` or `src/styles.css`.
+
+**What to continue.** The backlog above this entry gains three items and loses none that were work.
+`og:url` is the cheapest of them and is a genuine absence on all 308 pages; the other two are
+measurements that say there is nothing to do. The per-memory-size pages are still the top open item
+with real traffic in them and still parked behind Ryan's two pull requests. Ryan's side is unchanged
+but for PR #16's repair: both pull requests open, the leaderboard's estimated-score count still
+wrong by eleven in `data/defaults.json`, the `TODO:` still live in the calculator's assumptions
+panel, and Ternary Bonsai 2 27B still waiting on figures.
 
 ### 2026-09-20 — the sitemap's date, said on the page as well
 
