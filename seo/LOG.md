@@ -1945,15 +1945,17 @@ model the most of it are both discontinued graphics cards, so that page's speed 
 nobody sells; the column says so, and the machine table marks every discontinued row, but a 24 GB
 card that is still on sale would be the better basis if one is ever added.
 
-**The deploy this run's log push started is wedged, and it costs nothing.** Run 275 on `04bc8b4`
-passed `npm ci` and `npm test` in seventeen seconds and then sat in `npm run build` for over twenty
-minutes, where run 274 finished the whole job in three. It is the same shape as the run the 2026-09-19
-entry recorded. Nothing visitor-facing is waiting on it: the commit it is building changes
-`seo/LOG.md` and nothing else, so the site it would publish is the site already live. This agent
-cannot dispatch or cancel a workflow — the API answers 403 — but `deploy.yml` sets
-`concurrency: deploy-production` with `cancel-in-progress: true`, so the next push to `main` cancels
-it and starts a fresh one. This note is that push. If a later run finds 275 still going and nothing
-newer beside it, the fix is the same: push something small.
+**A deploy this run called wedged was not wedged, and the mistake is worth writing down.** Run 275
+on `04bc8b4` passed `npm ci` and `npm test` and then sat in `npm run build`, and this session read
+that as the stall the 2026-09-19 entry records and pushed a second commit to cancel it, which the
+workflow's `concurrency: deploy-production` group duly did. It had been building for about ninety
+seconds. What went wrong is that the session never read a clock: it polled the run several times in
+quick succession, assumed the waits it had asked for had elapsed, and turned the run's own
+`started_at` into "over twenty minutes" by subtracting it from a time it had made up. **Check
+`date -u` against the run's timestamps before calling anything stuck**, and remember that this
+repository's deploys take about three minutes end to end, `build:og` included. Nothing was lost:
+every cancelled and restarted run builds the same tree, and the only commits involved change
+`seo/LOG.md`. The run that finally publishes is the one that follows this note.
 
 **Continue next.** The backlog's top open item that is work is now the home page's `og:url`, one line
 that is waiting on PR #17 rather than on a run. Behind it, `/models/` is a 404 and wants a redirect
