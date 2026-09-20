@@ -10,8 +10,8 @@
 import { esc, fmtDuration, fmtGb, fmtTokens, fmtUsd } from './format';
 import { bestByTier, bestUsageLevels, type Combo } from './best';
 import {
-  bandFit, computeView, costMachine, familyGroup, fitsOf, fmtGb1, fmtPerMtok, graphicsCards, priceWithScopeText,
-  shortHardwareLabel, SIZE_BANDS, tokenCosts, type BandFit,
+  bandFit, computeView, costMachine, familyGroup, fitsOf, fmtGb1, fmtPerMtok, graphicsCards, monthlyCost,
+  priceWithScopeText, shortHardwareLabel, SIZE_BANDS, tokenCosts, type BandFit,
 } from './pagekit';
 import { defaultState } from './state';
 import {
@@ -19,6 +19,7 @@ import {
   DEEP, DIM, EM, EM_BOLD, HAIR, INK, STEEL, VS_HEIGHT, VS_WIDTH, WATER,
 } from './versus-card';
 import type { Dataset } from './types';
+import type { MonthlyCost } from './pagekit';
 
 export interface ListRow {
   /** the entry itself: a model name, or an amount of daily use */
@@ -160,6 +161,7 @@ export const MEMORY_CARD = '/og/how-much-memory.png';
 export const GPU_CARD = '/og/best-gpu.png';
 export const HARDWARE_CARD = '/og/hardware.png';
 export const TOKEN_COST_CARD = '/og/local-llm-vs-api-cost.png';
+export const MONTHLY_CARD = '/og/cost-per-month.png';
 
 /** How many open models the leaderboard card lists under the best hosted one. */
 const LEADERBOARD_ROWS = 5;
@@ -396,6 +398,40 @@ export function hardwareIndexCard(data: Dataset, fontFamily?: string): string {
     metaW: 340,
     valueW: 110,
     note: `${data.hardware.length} configurations across ${families.length} families, at list price`,
+    dataChecked: data.defaults.data_last_checked,
+    fontFamily,
+  });
+}
+
+/**
+ * What a month costs, one row per level of use: the electricity the machine
+ * draws for that month's work against what renting the same work costs. The
+ * card carries the page's own answer, which is the distance between two columns
+ * that are both a great deal smaller than the machine.
+ */
+export function monthlyCostCard(data: Dataset, fontFamily?: string): string {
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const dm = computeView({ ...st, hw: hw.id }, data).model!;
+  const rows: ListRow[] = bestUsageLevels(data)
+    .map((l) => ({ level: l, cost: monthlyCost(dm, hw, data, l.usage) }))
+    .filter((x): x is { level: { usage: number; label: string }; cost: MonthlyCost } => !!x.cost)
+    .map(({ level, cost }) => ({
+      name: `${fmtTokens(level.usage)} tokens a day`,
+      sub: level.label,
+      meta: fmtUsd(cost.rented),
+      value: fmtUsd(cost.electricity),
+    }));
+
+  return listCardSvg({
+    eyebrow: 'Cost per month',
+    headline: 'What a local LLM costs to run per month',
+    columns: { name: "A day's use", meta: 'Rented instead', value: 'Electricity a month' },
+    rows,
+    metaX: 620,
+    metaW: 180,
+    valueW: 170,
+    note: `${dm.display_name} on a ${shortHardwareLabel(hw)}, ${fmtUsd(hw.price_usd)} to buy`,
     dataChecked: data.defaults.data_last_checked,
     fontFamily,
   });

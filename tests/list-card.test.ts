@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   BEST_CARD, bestBuysCard, COMPARE_CARD, compareIndexCard, GPU_CARD, gpuCard, HARDWARE_CARD, hardwareIndexCard,
-  LEADERBOARD_CARD, leaderboardCard, listCardSvg, MEMORY_CARD, memoryCard, quickestAt, TOKEN_COST_CARD, tokenCostCard,
+  LEADERBOARD_CARD, leaderboardCard, listCardSvg, MEMORY_CARD, memoryCard, MONTHLY_CARD, monthlyCostCard, quickestAt,
+  TOKEN_COST_CARD, tokenCostCard,
 } from '../src/list-card';
 import { bestUsageLevels } from '../src/best';
 import {
-  bandFit, cheapestThatHolds, computeView, costMachine, fitsOf, fmtGb1, fmtPerMtok, graphicsCards,
+  bandFit, cheapestThatHolds, computeView, costMachine, fitsOf, fmtGb1, fmtPerMtok, graphicsCards, monthlyCost,
   priceWithScopeText, shortHardwareLabel, SIZE_BANDS, tokenCosts,
 } from '../src/pagekit';
 import { footprintGb } from '../src/fit';
@@ -27,7 +28,8 @@ const memory = memoryCard(data);
 const gpu = gpuCard(data);
 const machines = hardwareIndexCard(data);
 const tokens = tokenCostCard(data);
-const cards = [leaderboard, best, compare, memory, gpu, machines, tokens];
+const monthly = monthlyCostCard(data);
+const cards = [leaderboard, best, compare, memory, gpu, machines, tokens, monthly];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
 /** The same text with the spaces taken out, so a name that wrapped onto two lines still matches. */
@@ -341,6 +343,40 @@ describe('the machine index card', () => {
 
   it('is drawn where the page asks for it', () => {
     expect(HARDWARE_CARD).toBe('/og/hardware.png');
+  });
+});
+
+describe('the cost per month card', () => {
+  const st = defaultState(data);
+  const machine = costMachine(data);
+  const model = computeView({ ...st, hw: machine.id }, data).model!;
+  const levels = bestUsageLevels(data);
+
+  it('prices a month at every level of use the calculator names, in its own order', () => {
+    let at = -1;
+    for (const l of levels) {
+      const next = flat(monthly).indexOf(noSpace(`${fmtTokens(l.usage)} tokens a day`));
+      expect(next).toBeGreaterThan(at);
+      at = next;
+    }
+  });
+
+  it('carries both sides of the month on every row', () => {
+    for (const l of levels) {
+      const cost = monthlyCost(model, machine, data, l.usage)!;
+      expect(flat(monthly)).toContain(noSpace(fmtUsd(cost.electricity)));
+      expect(flat(monthly)).toContain(noSpace(fmtUsd(cost.rented)));
+    }
+  });
+
+  it('names the machine the month is priced on, the model, and what the machine costs', () => {
+    expect(flat(monthly)).toContain(noSpace(shortHardwareLabel(machine)));
+    expect(flat(monthly)).toContain(noSpace(model.display_name));
+    expect(flat(monthly)).toContain(noSpace(fmtUsd(machine.price_usd)));
+  });
+
+  it('is written where the page asks for it', () => {
+    expect(MONTHLY_CARD).toBe('/og/cost-per-month.png');
   });
 });
 
