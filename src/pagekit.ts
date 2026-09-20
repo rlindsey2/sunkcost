@@ -1212,6 +1212,47 @@ export function machinesThatHold(m: Model, data: Dataset, ctx: number): Hardware
   return data.hardware.filter((hw) => memoryFit(m, hw, ctx, data.defaults.nearly_fits_ratio, kvScale).status === 'fits');
 }
 
+/* ---------------------------- one memory size ---------------------------- */
+
+/** The page about one size of memory, which is the size printed on the box. */
+export function memorySizePath(gb: number): string {
+  return `/how-much-memory/${gb}gb/`;
+}
+
+/**
+ * Every machine this site lists that is sold with a given amount of memory,
+ * the one that hands a model the most of it first.
+ *
+ * A size is not a machine. 16 GB on a Mac reaches a model as 10.5 GB and on a
+ * GeForce RTX 4080 as 15 GB, because the system keeps a share of unified memory
+ * and a card keeps a margin. So anything said about a size has to be said about
+ * the machines sold at it, and the order is the order that decides what runs.
+ */
+export function machinesAtSize(gb: number, data: Dataset): Hardware[] {
+  return data.hardware
+    .filter((h) => h.unified_memory_gb === gb && h.usable_memory_gb != null)
+    .sort(
+      (a, b) =>
+        b.usable_memory_gb! - a.usable_memory_gb! ||
+        (a.price_usd ?? Infinity) - (b.price_usd ?? Infinity) ||
+        a.id.localeCompare(b.id),
+    );
+}
+
+/**
+ * The amounts of memory a model actually gets at one size, tightest first, with
+ * the machines that hand it over. Two machines at the same level hold exactly
+ * the same models, because fit is the weights plus the cache against that
+ * figure and nothing else, so this is the smallest list a page about a size can
+ * answer from.
+ */
+export function memoryLevels(gb: number, data: Dataset): { usable: number; machines: Hardware[] }[] {
+  const machines = machinesAtSize(gb, data);
+  return [...new Set(machines.map((h) => h.usable_memory_gb!))]
+    .sort((a, b) => a - b)
+    .map((usable) => ({ usable, machines: machines.filter((h) => h.usable_memory_gb === usable) }));
+}
+
 /**
  * How far down each family a model reaches, counted over every machine the
  * site lists rather than the priced current ones the table is drawn from.

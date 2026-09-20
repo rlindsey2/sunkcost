@@ -14,7 +14,7 @@ import {
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
+  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -3210,7 +3210,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `, and <a href="${esc(memorySizePath(hw.unified_memory_gb))}">one on what ${hw.unified_memory_gb} GB runs, machine by machine</a>` : ''}. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
@@ -4085,7 +4085,7 @@ function memoryPage(): string {
     .map((hw) => {
       const top = strongestThatFits(hw, CTX);
       return `<tr>
-  <td><b>${hw.unified_memory_gb} GB</b></td>
+  <td><b>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `<a href="${esc(memorySizePath(hw.unified_memory_gb))}">${hw.unified_memory_gb} GB</a>` : `${hw.unified_memory_gb} GB`}</b></td>
   <td>${fmtGb1(hw.usable_memory_gb)}</td>
   <td class="c-hw">${machineLink(hw)}</td>
   <td>${fitCount(hw, CTX)}</td>
@@ -4195,6 +4195,8 @@ ${
       : ''
   }
 
+<p>Every size in that first column has a page of its own, and so does every other size a machine here is sold in: the machines you can buy at it, what each of them hands a model, every model that fits, and what the next size up buys. ${MEMORY_SIZES.map((gb) => `<a href="${esc(memorySizePath(gb))}">${gb} GB</a>`).join(' · ')}.</p>
+
 <p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. ${cardRankingLine(data)} The tables by size cover all ${data.models.length} models listed here, superseded ones included and marked, because people still run them. The two tables of what a machine holds count the ${currentModels.length} current ones instead, which is what every machine page and the calculator count. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
 </article>`;
 
@@ -4208,6 +4210,310 @@ ${
       canonical: '/how-much-memory/',
       ogImage: MEMORY_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/how-much-memory/', label: 'How much memory' }],
+    },
+    body,
+    data,
+  );
+}
+
+/* ------------------------ what one memory size runs ------------------------ */
+
+/** One amount of memory a model actually gets at a size, and what it holds. */
+interface SizeLevel {
+  usable: number;
+  machines: Hardware[];
+  /** the machine a sentence names for this level: one still sold, where there is one */
+  example: Hardware;
+  fits: Model[];
+  strongest: Model | null;
+}
+
+interface SizeView {
+  gb: number;
+  machines: Hardware[];
+  /** tightest first: two machines at one level hold exactly the same models */
+  levels: SizeLevel[];
+  most: SizeLevel;
+  least: SizeLevel;
+  /** the machine the speed column is for: the one the model table is cut from */
+  reference: Hardware;
+  /** the cheapest machine at this size with a published price */
+  priced: Hardware | null;
+}
+
+function sizeView(gb: number): SizeView {
+  const machines = machinesAtSize(gb, data);
+  const levels: SizeLevel[] = memoryLevels(gb, data).map((l) => ({
+    ...l,
+    example: l.machines.find((h) => (h.generation ?? 'current') === 'current') ?? l.machines[0],
+    // strongest first, which is the order the page says its table is in; the
+    // unscored ones follow, heaviest first, because what they ask is all the
+    // site can rank them by
+    fits: currentModels
+      .filter((m) => holds(l.machines[0], m, CTX))
+      .sort(
+        (a, b) =>
+          (b.frontier_equivalent?.score ?? -1) - (a.frontier_equivalent?.score ?? -1) ||
+          (footprintGb(b, CTX) ?? 0) - (footprintGb(a, CTX) ?? 0),
+      ),
+    strongest: strongestThatFits(l.machines[0], CTX),
+  }));
+  const cheapest = (list: Hardware[]) =>
+    list.filter((h) => h.price_usd != null).sort((a, b) => a.price_usd! - b.price_usd!)[0] ?? null;
+  const now = machines.filter((h) => (h.generation ?? 'current') === 'current');
+  return {
+    gb,
+    machines,
+    levels,
+    most: levels[levels.length - 1],
+    least: levels[0],
+    reference: levels[levels.length - 1].example,
+    priced: cheapest(now) ?? cheapest(machines),
+  };
+}
+
+/**
+ * The sizes with a page of their own: every size a machine here is sold in that
+ * holds at least one current model at the default context. A size nothing fits
+ * in would be a page whose answer is an empty table.
+ */
+const MEMORY_SIZES = [...new Set(data.hardware.filter((h) => h.usable_memory_gb != null).map((h) => h.unified_memory_gb))]
+  .sort((a, b) => a - b)
+  .filter((gb) => sizeView(gb).most.fits.length > 0);
+
+/** the memory a model gets at one size, as one figure or as the spread across the machines */
+const usableSaid = (v: SizeView) =>
+  v.levels.length === 1 ? fmtGb1(v.least.usable) : `${fmtGb1(v.least.usable)} to ${fmtGb1(v.most.usable)}`;
+
+/** how many models fit at one size, likewise */
+const fitsSaid = (v: SizeView) =>
+  v.least.fits.length === v.most.fits.length
+    ? `${v.most.fits.length}`
+    : `${v.least.fits.length} to ${v.most.fits.length}`;
+
+const sizeMachineRow = (hw: Hardware) => {
+  const top = strongestThatFits(hw, CTX);
+  return `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a>${(hw.generation ?? 'current') === 'previous' ? '<span class="c-quant">previous</span>' : ''}</td>
+  <td><b>${fmtGb1(hw.usable_memory_gb)}</b></td>
+  <td>${priceWithScope(hw)}</td>
+  <td>${fitCount(hw, CTX)}</td>
+  <td class="c-model">${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a>` : '<span class="dim">none</span>'}</td>
+  <td>${top ? `<a href="${esc(calcLink({ hw: hw.id, model: top.id, ctx: CTX }, data))}">Run the numbers</a>` : ''}</td>
+</tr>`;
+};
+
+/**
+ * The machine a row hands the reader: the cheapest one at this size with room
+ * for that model, and one still sold where there is one. A link that opens the
+ * calculator on a machine nobody can buy is a worse answer than one that opens
+ * it on the machine they would.
+ */
+const opensOn = (m: Model, v: SizeView): Hardware => {
+  const able = [...v.machines].filter((h) => holds(h, m, CTX)).sort((a, b) => (a.price_usd ?? Infinity) - (b.price_usd ?? Infinity));
+  return able.find((h) => (h.generation ?? 'current') === 'current' && h.price_usd != null) ?? able.find((h) => (h.generation ?? 'current') === 'current') ?? able[0] ?? v.reference;
+};
+
+const sizeModelRow = (m: Model, v: SizeView, refView: View) => {
+  const row = rowFor(refView, m);
+  const opens = opensOn(m, v);
+  return `<tr>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span></td>
+  <td>${fmtNum(m.params_b, 1)}B</td>
+  <td><b>${fmtGb1(footprintGb(m, CTX))}</b></td>
+  <td>${v.machines.filter((h) => holds(h, m, CTX)).length} of ${v.machines.length}</td>
+  <td>${speedWithBasis(row)}</td>
+  <td><a href="${esc(calcLink({ hw: opens.id, model: m.id, ctx: CTX }, data))}">Run the numbers</a></td>
+</tr>`;
+};
+
+/** what changes between two sizes, read off the roomiest machine at each */
+function sizeStep(from: SizeView, to: SizeView) {
+  const had = new Set(from.most.fits.map((m) => m.id));
+  const has = new Set(to.most.fits.map((m) => m.id));
+  return {
+    gained: to.most.fits.filter((m) => !had.has(m.id)),
+    lost: from.most.fits.filter((m) => !has.has(m.id)),
+  };
+}
+
+const modelLinks = (ms: Model[], most = 4) =>
+  `${andList(ms.slice(0, most).map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`))}${
+    ms.length > most ? `, and ${numberWord(ms.length - most)} more` : ''
+  }`;
+
+/**
+ * A page for one size of memory, which is the question this site is asked in
+ * more forms than any other: what can I run with 16 GB, is 32 GB enough, what
+ * fits in 24 GB of VRAM.
+ *
+ * The memory ladder on /how-much-memory/ has answered all of them in one row
+ * each since it was built, and a row is not an answer to a question somebody
+ * types on its own. What a size needs saying about it is what the ladder has no
+ * room for: that the number on the box is not the number a model gets, which
+ * machines are sold at that size and what each of them hands over, every model
+ * that fits and what it leaves for context, what the next size up buys, and
+ * whether a machine at this size ever pays for itself.
+ *
+ * Every figure is computed the way every other page here computes it, so a page
+ * about a size cannot drift from the machine pages it is drawn from.
+ */
+function memorySizePage(gb: number): string {
+  const v = sizeView(gb);
+  const kctx = ctxLabel(CTX);
+  const st = defaultState(data);
+  const refView = computeView({ ...st, hw: v.reference.id, ctx: CTX }, data);
+  const refLabel = shortHardwareLabel(v.reference);
+  const split = v.levels.length > 1;
+  // why the figure on the box is not the figure a model gets, said about the two
+  // machines the lede actually names: a card keeps a margin free, a machine with
+  // unified memory keeps a share of it for everything else
+  const card = (h: Hardware) => h.price_scope === 'card_only';
+  const why = split
+    ? card(v.least.example) && card(v.most.example)
+      ? 'because a card keeps a margin free and these two do not start from the same memory'
+      : card(v.most.example) || card(v.least.example)
+        ? 'because the system keeps a share of one and the card keeps a margin free on the other'
+        : 'because the system keeps a share of it, and how much differs by machine'
+    : card(v.most.example)
+      ? 'because the card keeps a margin free'
+      : 'because the system keeps the rest';
+  const strongest = v.most.strongest;
+  const cta = strongest ? calcLink({ hw: opensOn(strongest, v).id, model: strongest.id, ctx: CTX }, data) : calcLink({ hw: v.reference.id, ctx: CTX }, data);
+
+  // the step up from this size, and on the largest size here the step up to it,
+  // because the reader on that page is asking the same question from the other end
+  const above = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) + 1];
+  const below = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) - 1];
+  const pair = above != null ? { from: v, to: sizeView(above) } : below != null ? { from: sizeView(below), to: v } : null;
+  const step = pair ? sizeStep(pair.from, pair.to) : null;
+
+  const sold = v.machines.filter((h) => (h.generation ?? 'current') === 'current');
+  const machineRows = v.machines.map(sizeMachineRow).join('\n');
+  const modelRows = v.most.fits.map((m) => sizeModelRow(m, v, refView)).join('\n');
+  const speeds = v.most.fits.map((m) => shownTps(rowFor(refView, m)));
+
+  const ctxRows = CTX_STEPS.map(
+    (c) => `<tr>
+  <th>${ctxLabel(c)}${c === CTX ? ' <span class="dim">default</span>' : ''}</th>
+  ${v.levels.map((l) => `<td>${fitCount(l.machines[0], c)}</td>`).join('')}
+</tr>`,
+  ).join('\n');
+
+  // the pay-back, on the cheapest machine at this size that has a price
+  const levels = bestUsageLevels(data);
+  const heavy = levels[levels.length - 1];
+  const payView = v.priced ? computeView({ ...st, hw: v.priced.id, ctx: CTX }, data) : null;
+  const payFits = payView ? fitsOf(payView) : [];
+  const soonest = v.priced && payView ? quickestPayback(v.priced, payFits, st.usage) : null;
+  const soonestHeavy = v.priced && payView ? quickestPayback(v.priced, payFits, heavy.usage) : null;
+  const launchPrice = v.priced && (v.priced.generation ?? 'current') === 'previous';
+
+  // A pay-back the machine cannot actually reach is the one figure here that
+  // reads well and misleads: where a level of use asks for more than the machine
+  // can generate in a day, the figure is for the most it can do, and the page has
+  // to say so in the same breath.
+  const ceilingNote = (best: { capped: boolean; max: number | null }, usage: number) =>
+    best.capped
+      ? ` The ${esc(shortHardwareLabel(v.priced!))} cannot generate ${esc(fmtTokens(usage))} tokens in a day${best.max != null ? `; it manages ${esc(fmtTokens(best.max))}` : ''}, so that figure is for the most it can do.`
+      : '';
+  const payback = !v.priced
+    ? `<p>No machine here with ${gb} GB has a published price, so nothing on this page can say what one pays back. The calculator takes yours: put what you would pay beside the machine and it prices the rest.</p>`
+    : soonest
+      ? `<p>On the <a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}, the cheapest machine at ${gb} GB with a published price, the model that pays it back soonest at ${esc(fmtTokens(st.usage))} tokens a day is <a href="/models/${esc(soonest.model.id)}/">${esc(soonest.model.display_name)}</a>, in ${esc(fmtDuration(soonest.days))}.${ceilingNote(soonest, st.usage)}${
+          soonestHeavy && heavy.usage !== st.usage
+            ? ` At ${esc(fmtTokens(heavy.usage))} tokens a day, ${esc(lowerFirst(heavy.label))}, it is <a href="/models/${esc(soonestHeavy.model.id)}/">${esc(soonestHeavy.model.display_name)}</a> in ${esc(fmtDuration(soonestHeavy.days))}.${ceilingNote(soonestHeavy, heavy.usage)}`
+            : ''
+        }${launchPrice ? ` The ${esc(shortHardwareLabel(v.priced))} is the previous generation, so that price is what it launched at.` : ''}</p>`
+      : `<p>On the <a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}, the cheapest machine at ${gb} GB with a published price, nothing pays the machine back at ${esc(fmtTokens(st.usage))} tokens a day: renting the same work costs less than the machine does. That is an answer rather than a gap, and the calculator says at what level of use it changes.</p>`;
+
+  const body = `<article class="prose">
+<h1>What can you run with ${gb} GB of memory?</h1>
+<p class="lede">A model does not get the ${gb} GB. ${
+    split
+      ? `On the ${esc(shortHardwareLabel(v.least.example))} it gets ${fmtGb1(v.least.usable)} and on the ${esc(shortHardwareLabel(v.most.example))} it gets ${fmtGb1(v.most.usable)}, ${why}. That is ${v.least.fits.length === v.most.fits.length ? `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context either way` : `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context on the first and ${v.most.fits.length === currentModels.length ? 'every one of them' : v.most.fits.length} on the second`}`
+      : `It gets ${fmtGb1(v.most.usable)} on ${v.machines.length === 1 ? `the one machine here sold with ${gb} GB` : v.machines.length === 2 ? `both machines here sold with ${gb} GB` : `all ${numberWord(v.machines.length)} machines here sold with ${gb} GB`}, ${why}. That holds ${v.most.fits.length === currentModels.length ? `every one of the ${currentModels.length} current models` : `${v.most.fits.length} of the ${currentModels.length} current models`} at ${kctx} of context`
+  }${strongest ? `, and the strongest of them is <a href="/models/${esc(strongest.id)}/">${esc(strongest.display_name)}</a>` : ''}.</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">What a model gets</span><span class="answer-v">${usableSaid(v)} of the ${gb} GB${split ? ', depending on the machine' : ''}. Each machine's page says where the rest goes.</span></div>
+  <div class="answer-row"><span class="answer-k">Models that fit at ${kctx}</span><span class="answer-v">${v.least.fits.length === currentModels.length ? `every one of the ${currentModels.length} current ones` : `${fitsSaid(v)} of the ${currentModels.length} current ones`}, at the quantisation this site lists each at.</span></div>
+  ${strongest ? `<div class="answer-row"><span class="answer-k">The strongest of them</span><span class="answer-v"><a href="/models/${esc(strongest.id)}/">${esc(strongest.display_name)}</a>, ${esc(lowerFirst(tierName(strongest, data)))}${v.least.strongest && v.least.strongest.id !== strongest.id ? `, and <a href="/models/${esc(v.least.strongest.id)}/">${esc(v.least.strongest.display_name)}</a> on the machines that hand over less` : ''}.</span></div>` : ''}
+  ${v.priced ? `<div class="answer-row"><span class="answer-k">Cheapest machine at this size</span><span class="answer-v"><a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}${launchPrice ? ', which is what it launched at' : ''}.</span></div>` : `<div class="answer-row"><span class="answer-k">Cheapest machine at this size</span><span class="answer-v">No machine here with ${gb} GB has a published price yet.</span></div>`}
+</div>
+
+<p><a class="cta" href="${esc(cta)}">Run the numbers on ${strongest ? `${esc(strongest.display_name)} at ${gb} GB` : `${gb} GB`}</a></p>
+
+<h2>The machines sold with ${gb} GB</h2>
+<p>${v.machines.length === 1 ? `One machine here comes with ${gb} GB, and the fourth column is what it holds at ${kctx} of context: the number its own page prints.` : `There are ${numberWord(v.machines.length)} machines here with ${gb} GB${split ? ', and what they hand a model is not the same figure' : ', and each hands a model the same amount'}. The fourth column is what each one holds at ${kctx} of context, and it is the number that machine's own page prints.`}${sold.length ? '' : ` No machine on sale here comes with ${gb} GB any more.`}</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>What a model gets</th><th>Price</th><th>Models it holds at ${kctx}</th><th>Strongest of them</th><th></th></tr></thead>
+<tbody>${machineRows}</tbody>
+</table>`, { fig: 1, labels: { 2: 'Price', 3: 'Models', 4: 'Strongest' } })}
+<p class="note">List prices, and the memory each maker publishes. A machine marked <i>previous</i> is one that is no longer sold, priced at what it launched at. ${cardScopeNote(v.machines, v.machines.some((h) => h.price_scope === 'card_only') ? data : undefined)}</p>
+
+<h2>Models that fit in ${gb} GB</h2>
+<p>Every current model ${v.machines.length === 1 ? `the one ${gb} GB machine here holds` : split ? `the roomiest ${gb} GB machine here holds` : `a ${gb} GB machine here holds`} at ${kctx} of context, strongest first. The third column is the whole job at once: the weights plus the cache for ${kctx} of context. The fourth says how many of the machines at this size have room for it, which is the part a size on its own cannot tell you. Speeds are on the ${esc(refLabel)}, the machine this list is cut from${(v.reference.generation ?? 'current') === 'previous' ? ', which is no longer sold' : ''}; speed follows memory bandwidth rather than memory size, so another machine at ${gb} GB runs the same model at its own rate, and <a href="/hardware/${esc(v.reference.id)}/">its page</a> gives every one of them.</p>
+${stack(`<table class="board">
+<thead><tr><th>Model</th><th>Parameters</th><th>Needs at ${kctx}</th><th>Machines at ${gb} GB</th><th>Speed on the ${esc(refLabel)}</th><th></th></tr></thead>
+<tbody>${modelRows}</tbody>
+</table>`, { fig: 2, labels: { 1: 'Parameters', 3: 'Machines', 4: 'Speed' } })}
+${hostedSpeedLine(speeds, data) ? `<p class="note">${hostedSpeedLine(speeds, data)}</p>` : ''}
+<p class="note">Superseded models are left out of the count, because what a machine is worth buying for is what you would run on it today; <a href="/leaderboard/">the leaderboard</a> ranks every model this site lists, older ones included. <a href="${esc(SECTIONS.weightsAndCache)}">Where the cache figure comes from</a> is one section of the memory guide.</p>
+
+${step && pair ? `<h2>What ${pair.to.gb} GB adds over ${pair.from.gb} GB</h2>
+<p>The machine here with ${pair.to.gb} GB that hands a model the most of it is the <a href="/hardware/${esc(pair.to.most.example.id)}/">${esc(shortHardwareLabel(pair.to.most.example))}</a>, at ${fmtGb1(pair.to.most.usable)}, and it holds ${pair.to.most.fits.length} of the ${currentModels.length}. At ${pair.from.gb} GB the most is ${fmtGb1(pair.from.most.usable)}, on the <a href="/hardware/${esc(pair.from.most.example.id)}/">${esc(shortHardwareLabel(pair.from.most.example))}</a>, holding ${pair.from.most.fits.length}. ${
+    step.gained.length
+      ? `The step adds ${modelLinks(step.gained)}.`
+      : 'Nothing new fits. What the step buys is a longer window and room to work, not a model that was out of reach.'
+  }${
+    step.lost.length
+      ? ` It also gives up ${modelLinks(step.lost)}: the larger number on the box hands a model less here, which is why the column to read is what a model gets rather than what the box says.`
+      : ''
+  }${
+    pair.to.most.strongest && pair.from.most.strongest
+      ? pair.to.most.strongest.id === pair.from.most.strongest.id
+        ? ` The strongest either way is <a href="/models/${esc(pair.from.most.strongest.id)}/">${esc(pair.from.most.strongest.display_name)}</a>.`
+        : ` The strongest goes from <a href="/models/${esc(pair.from.most.strongest.id)}/">${esc(pair.from.most.strongest.display_name)}</a> to <a href="/models/${esc(pair.to.most.strongest.id)}/">${esc(pair.to.most.strongest.display_name)}</a>.`
+      : ''
+  }</p>
+${pair.to.priced && pair.from.priced ? `<p>The cheapest machine at ${pair.to.gb} GB is the <a href="/hardware/${esc(pair.to.priced.id)}/">${esc(hardwareLabel(pair.to.priced))}</a> at ${esc(priceWithScopeText(pair.to.priced))}. The cheapest at ${pair.from.gb} GB is the <a href="/hardware/${esc(pair.from.priced.id)}/">${esc(hardwareLabel(pair.from.priced))}</a> at ${esc(priceWithScopeText(pair.from.priced))}${(pair.to.priced.price_scope === 'card_only') === (pair.from.priced.price_scope === 'card_only') && pair.to.priced.price_usd! > pair.from.priced.price_usd! ? `, so the step costs ${fmtUsd(pair.to.priced.price_usd! - pair.from.priced.price_usd!)}` : pair.to.priced.price_usd! < pair.from.priced.price_usd! ? ', so the larger size is the cheaper of the two here' : ''}.${(pair.to.priced.price_scope === 'card_only') !== (pair.from.priced.price_scope === 'card_only') ? ' One of those two is a card and the other is a whole computer, so the gap between them is not the price of the step.' : ''}</p>` : ''}
+<p class="note">Both sides are read off the machine at each size that hands a model the most, so the comparison is the best case against the best case. The table above has every machine at ${gb} GB and what each of them holds.</p>` : ''}
+
+<h2>How much context ${gb} GB leaves room for</h2>
+<p>The cache grows with the window you ask for, so the same machine holds fewer models the longer the context. ${split ? `One column here for each amount a ${gb} GB machine hands over.` : `Every machine at this size hands a model ${fmtGb1(v.most.usable)}, so one column covers all of them.`} A model is counted only where its own context ceiling reaches that far.</p>
+<table class="board compare">
+<thead><tr><th>Context</th>${v.levels.map((l) => `<th>${fmtGb1(l.usable)} to a model<span class="c-quant">${esc(shortHardwareLabel(l.example))}</span></th>`).join('')}</tr></thead>
+<tbody>${ctxRows}</tbody>
+</table>
+<p class="note">Counted over the ${currentModels.length} current models, at the quantisation each is listed at and with the cache at 16 bits. The calculator has a switch for a smaller cache, which changes both what fits and how fast a long window runs.</p>
+
+<h2>Does a ${gb} GB machine pay for itself?</h2>
+${payback}
+<p>The sum is the same everywhere on this site: what the same work costs to rent, less what the electricity costs to generate it, against the price of the machine. <a href="/best/">The best buys</a> rank the quickest pay-back at every level of use, and <a href="/cost-per-month/">what it costs a month</a> puts the machine and the API bill in the same shape.</p>
+<p><a class="cta" href="${esc(cta)}">Put your own usage in</a></p>
+
+<p class="note">Every figure is at ${kctx} of context unless the row says otherwise, with the cache at 16 bits and each model at the quantisation this site lists it at. Weights are the published file sizes on each model's page, and the cache is worked out from the architecture recorded there. What a model gets is the memory the GPU can address, which each machine's page explains. Speeds say whether anybody measured them; where they were not, they are worked out from memory bandwidth. To change the context, the quantisation or the price you would pay, <a href="${esc(calcLink({}, data))}">open the calculator</a>. For the sizes either side of this one, <a href="/how-much-memory/">the memory guide</a> has the ladder in full.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([
+        `What LLM can you run with ${gb} GB of memory?`,
+        `What can you run with ${gb} GB?`,
+      ]),
+      description: descOf([
+        `${fitsSaid(v)} of the ${currentModels.length} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, the machines that come with it, and what each one holds.`,
+        `${fitsSaid(v)} of the ${currentModels.length} models fit at ${kctx} of context. What a model really gets from ${gb} GB, and the machines that come with it.`,
+        `What fits in ${gb} GB at ${kctx} of context, machine by machine.`,
+      ]),
+      canonical: memorySizePath(gb),
+      ogImage: MEMORY_CARD,
+      crumbs: [
+        { href: '/', label: 'Sunk Cost' },
+        { href: '/how-much-memory/', label: 'How much memory' },
+        { href: '#', label: `${gb} GB` },
+      ],
     },
     body,
     data,
@@ -5537,6 +5843,9 @@ ${stack(`<table class="board">
 write('/leaderboard/', leaderboard());
 write('/best/', bestBuys());
 write('/how-much-memory/', memoryPage());
+// one page per size a machine here is sold in, because "what can I run with 16 GB"
+// is asked about a number on a box rather than about a machine
+for (const gb of MEMORY_SIZES) write(memorySizePath(gb), memorySizePage(gb));
 write('/best-gpu/', gpuPage());
 write('/local-llm-vs-api-cost/', tokenCostPage());
 write('/cost-per-month/', monthlyCostPage());
@@ -6436,6 +6745,8 @@ function checkCardRanking() {
     if (!rows.length) continue;
     said += check(`/hardware/${h.id}/`, !!cardScopeNote(rows), h.price_scope !== 'card_only');
   }
+  // a size page prices whatever machines are sold at that size, cards included
+  for (const gb of MEMORY_SIZES) said += check(memorySizePath(gb), !!cardScopeNote(machinesAtSize(gb, data)), true);
   for (const path of ['/best/', '/compare/', '/how-much-memory/', '/hardware/']) {
     const got = links(path);
     if (got == null || got.n !== 1) problems.push(`${path} raises what a card price leaves out and links the ranking ${got?.n ?? 0} times rather than once`);
@@ -7312,6 +7623,145 @@ function checkSectionLinks() {
   console.log(`  ${links} links name a section and land on it, across ${landed.size} sections of ${pages.size} other pages`);
 }
 
+/**
+ * A page about a memory size is the one page type here whose whole subject is a
+ * number somebody else printed on a box, and the figure that decides what runs
+ * is a different one. So every claim it makes is recomputed from the data and
+ * read back out of the rendered page rather than out of the strings that wrote
+ * it.
+ *
+ * Six things hold on each of them. There is a page for every size a machine
+ * here is sold in and for no other. The machine table has a row for every
+ * machine at that size, each printing the memory that machine hands a model and
+ * the count of models its own page prints. The model table holds exactly the
+ * current models the roomiest machine at that size fits at the default context,
+ * each with the memory it needs and the number of machines at that size with
+ * room for it. The context table counts the same fits the rest of the site
+ * counts. What a speed is worth is said against the speeds actually printed.
+ * And nothing is an orphan: the memory guide and every machine at that size
+ * link the page.
+ */
+function checkMemorySizes() {
+  const problems: string[] = [];
+  const kctx = ctxLabel(CTX);
+  const cells = (row: string) => [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((c) => c[1]);
+  const rowsOf = (html: string, heading: string) => {
+    const section = html.split(anchoredHeading(heading))[1]?.split('<h2')[0] ?? '';
+    const body = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1];
+    return body == null ? null : [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]);
+  };
+  const figure = (cell: string | undefined) => Number((cell ?? '').replace(/<[^>]*>/g, '').replace(/[^\d.]/g, ''));
+
+  // a page for every size and no page for a size that is not one
+  const written = paths.filter((p) => /^\/how-much-memory\/\d+gb\/$/.test(p));
+  for (const path of written)
+    if (!MEMORY_SIZES.some((gb) => memorySizePath(gb) === path))
+      problems.push(`${path} is a page about a size no machine here is sold in`);
+  for (const gb of MEMORY_SIZES)
+    if (!written.includes(memorySizePath(gb)))
+      problems.push(`${gb} GB is a size machines here are sold in and has no page`);
+
+  let machineRows = 0;
+  let modelRows = 0;
+  for (const gb of MEMORY_SIZES) {
+    const path = memorySizePath(gb);
+    const page = meta.find((m) => m.path === path);
+    if (!page) continue;
+    const html = page.html;
+    const v = sizeView(gb);
+
+    // the machines at this size, in full, each with what it hands a model and
+    // the count its own page prints
+    const machines = rowsOf(html, `The machines sold with ${gb} GB`);
+    if (machines == null) {
+      problems.push(`${path} does not table the machines sold with ${gb} GB`);
+    } else {
+      if (machines.length !== v.machines.length)
+        problems.push(`${path} tables ${machines.length} machines where ${v.machines.length} here are sold with ${gb} GB`);
+      for (const [i, hw] of v.machines.entries()) {
+        const row = machines[i] ?? '';
+        machineRows++;
+        if (!row.includes(`/hardware/${hw.id}/`))
+          problems.push(`${path} does not name the ${shortHardwareLabel(hw)} in row ${i + 1} of the machines with ${gb} GB`);
+        const c = cells(row);
+        if (figure(c[1]) !== Number(hw.usable_memory_gb!.toFixed(1)))
+          problems.push(`${path} says the ${shortHardwareLabel(hw)} hands a model ${figure(c[1])} GB where the data says ${hw.usable_memory_gb}`);
+        if (figure(c[3]) !== fitCount(hw, CTX))
+          problems.push(`${path} says the ${shortHardwareLabel(hw)} holds ${figure(c[3])} models at ${kctx} where its own page says ${fitCount(hw, CTX)}`);
+        if (hw.price_usd != null && !unesc(row).includes(fmtUsd(hw.price_usd)))
+          problems.push(`${path} leaves the ${shortHardwareLabel(hw)} without its ${fmtUsd(hw.price_usd)}`);
+      }
+    }
+
+    // every model the roomiest machine at this size holds, and nothing else
+    const models = rowsOf(html, `Models that fit in ${gb} GB`);
+    if (models == null) {
+      problems.push(`${path} does not table the models that fit in ${gb} GB`);
+    } else {
+      const listed = models.map((r) => r.match(/href="\/models\/([^/"]+)\//)?.[1] ?? '');
+      const want = v.most.fits.map((m) => m.id);
+      for (const id of want) if (!listed.includes(id)) problems.push(`${path} leaves out ${id}, which fits in ${gb} GB at ${kctx}`);
+      for (const id of listed)
+        if (!want.includes(id)) problems.push(`${path} lists ${id}, which does not fit the roomiest ${gb} GB machine at ${kctx}`);
+      for (const [i, m] of v.most.fits.entries()) {
+        const row = models[i] ?? '';
+        modelRows++;
+        const c = cells(row);
+        const need = footprintGb(m, CTX);
+        if (need != null && figure(c[2]) !== Number(need.toFixed(1)))
+          problems.push(`${path} says ${m.id} needs ${figure(c[2])} GB at ${kctx} where the sum is ${fmtGb1(need)}`);
+        const held = v.machines.filter((h) => holds(h, m, CTX)).length;
+        if (!(c[3] ?? '').includes(`${held} of ${v.machines.length}`))
+          problems.push(`${path} does not say ${held} of the ${v.machines.length} machines at ${gb} GB hold ${m.id}`);
+      }
+    }
+
+    // the context table, counted the way every other page here counts a fit
+    const ctxRows = rowsOf(html, `How much context ${gb} GB leaves room for`);
+    if (ctxRows == null) {
+      problems.push(`${path} does not say how much context ${gb} GB leaves room for`);
+    } else {
+      if (ctxRows.length !== CTX_STEPS.length)
+        problems.push(`${path} counts ${ctxRows.length} context settings where the calculator offers ${CTX_STEPS.length}`);
+      for (const [i, c] of CTX_STEPS.entries()) {
+        const got = cells(ctxRows[i] ?? '').slice(1);
+        if (got.length !== v.levels.length) {
+          problems.push(`${path} gives ${got.length} columns at ${ctxLabel(c)} where ${gb} GB is handed over in ${v.levels.length} amounts`);
+          continue;
+        }
+        for (const [j, level] of v.levels.entries())
+          if (figure(got[j]) !== fitCount(level.machines[0], c))
+            problems.push(
+              `${path} says ${figure(got[j])} models fit ${level.usable} GB at ${ctxLabel(c)} where the data says ${fitCount(level.machines[0], c)}`,
+            );
+      }
+    }
+
+    // what a local speed is worth, against the speeds the table actually prints
+    const printed = [...(models ?? []).join('').matchAll(/([\d,]+(?:\.\d+)?) tok\/s/g)].map((m) => Number(m[1].replace(/,/g, '')));
+    const said = html.includes('For scale, the calculator starts from');
+    const want = hostedSpeedLine(printed, data);
+    if (printed.length && !said) problems.push(`${path} prints ${printed.length} speeds and says nothing about what a speed is worth`);
+    if (said && !unesc(html).includes(unesc(want)))
+      problems.push(`${path} holds its speeds against something other than what the data says a hosted API does`);
+
+    // and nothing here is a page only the sitemap knows about
+    if (!inbound.get(path)?.has('/how-much-memory/'))
+      problems.push(`${path} is not linked from the memory guide the sizes belong to`);
+    for (const hw of v.machines)
+      if (!inbound.get(path)?.has(`/hardware/${hw.id}/`))
+        problems.push(`${path} is not linked from the ${shortHardwareLabel(hw)}, which is sold with ${gb} GB`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} claim${problems.length === 1 ? '' : 's'} on the pages about one memory size no longer match the data`);
+  }
+  console.log(
+    `  ${MEMORY_SIZES.length} sizes have a page of their own, tabling ${machineRows} machines and ${modelRows} models that fit them`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkSectionLinks();
@@ -7373,6 +7823,7 @@ checkSourceLinks();
 checkPageDates();
 checkTitleLabels();
 checkMemoryLadder();
+checkMemorySizes();
 // Every guard has passed, so the three files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a
