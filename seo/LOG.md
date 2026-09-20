@@ -1803,6 +1803,11 @@ wrong in silence. The clone here is shallow, so `git merge-tree` needs `git fetc
 origin main` first, and the local `main` branch is 348 commits stale: merge `origin/main`, not
 `main`, or the merge reports *Already up to date* and proves nothing.
 
+**Deploy run 265 went green at 02:53 on `f80af03`**, three minutes twenty-three from queue to
+published, so both commits are live on sunkcost.ai. Run 264 was cancelled rather than failed: the
+log commit followed the code commit inside three minutes and the workflow's concurrency group
+dropped the older of the two. That is the fifth time in a row and it is not a fault.
+
 **What to continue.** The backlog above this entry is unchanged in order. The per-memory-size pages
 are still the top open item with real traffic in them and still parked behind Ryan's two pull
 requests. Two new notes went in below them, both measured and both saying there is nothing to do.
