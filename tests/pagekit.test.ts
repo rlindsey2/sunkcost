@@ -416,6 +416,43 @@ describe('fonts', () => {
   });
 });
 
+describe('the address a page tells a chat window it is', () => {
+  const site = data.defaults.site_url.replace(/\/$/, '');
+  const shell = (canonical: string, ogImage: string | null) =>
+    pageShell(
+      { title: 'A page', description: 'A description.', canonical, ogImage, crumbs: [{ href: '/', label: 'Sunk Cost' }] },
+      '<main><p>Body.</p></main>',
+      data,
+    );
+  const tag = (html: string) => html.match(/<meta property="og:url" content="([^"]*)" \/>/)?.[1];
+
+  it('shares under the address its canonical claims, whether or not it has a card', () => {
+    expect(tag(shell('/hardware/mac-mini-m6-16/', '/og/card.png'))).toBe(`${site}/hardware/mac-mini-m6-16/`);
+    expect(tag(shell('/best/', null))).toBe(`${site}/best/`);
+    for (const c of ['/leaderboard/', '/compare/a-vs-b/', '/models/llama-3.1-8b-q4/']) {
+      const html = shell(c, null);
+      expect(tag(html)).toBe(html.match(/<link rel="canonical" href="([^"]*)" \/>/)![1]);
+    }
+  });
+
+  it('names the whole address, since a path alone is read as no address at all', () => {
+    const url = tag(shell('/best/', null))!;
+    expect(url.startsWith('https://')).toBe(true);
+    expect(url).not.toBe('/best/');
+  });
+
+  it('says it once, in the head, where the day this page changed cannot see it', () => {
+    const html = shell('/best/', null);
+    expect(html.match(/property="og:url"/g)).toHaveLength(1);
+    // og: tags are read off `property`; a `name` here is a tag nothing parses
+    expect(html).not.toContain('name="og:url"');
+    // the ledger fingerprints the title, the description and <main>, so a tag
+    // in the head cannot change the date it is stamped with
+    expect(html.indexOf('og:url')).toBeLessThan(html.indexOf('<body'));
+    expect(mainOf(html)).not.toContain('og:url');
+  });
+});
+
 describe('the calculator’s own head', () => {
   const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
   const home = read('index.html');

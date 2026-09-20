@@ -54,7 +54,7 @@ const paths: string[] = [];
 const cardFor = (hwId: string | undefined, modelId: string | null | undefined) =>
   hwId && modelId && hasShareCard(hwId, modelId, data) ? `/og/${hwId}--${modelId}.png` : '/og/default.png';
 
-const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string; hash: string }[] = [];
+const meta: { path: string; title: string; description: string; canonical: string; ogUrl: string; ogImage: string; links: string[]; html: string; hash: string }[] = [];
 
 // A page's lastmod is the day its own words last changed, read out of
 // seo/page-dates.json — see src/page-dates.ts for why it is not the day the
@@ -142,6 +142,7 @@ function write(path: string, html: string) {
     description,
     hash,
     canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
+    ogUrl: unesc(html.match(/<meta property="og:url" content="([^"]*)"/)?.[1] ?? ''),
     ogImage: unesc(html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '').replace(site, ''),
     links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
     html,
@@ -433,12 +434,16 @@ function checkMatchUpSiblings() {
 
 /**
  * One page, one address. A search engine that reaches the same content at two
- * URLs splits it in two and ranks neither, so four things have to hold across
+ * URLs splits it in two and ranks neither, so five things have to hold across
  * every generated page:
  *
  *   - each page's canonical is its own address, and no two pages claim the same
  *     one, since a canonical pointing anywhere else takes the page out of the
  *     results it was written for;
+ *   - the page's og:url is that same address. A canonical settles it for a
+ *     search engine; og:url is what Facebook, LinkedIn and Slack read, and
+ *     without it a link shared with a tracking parameter on the end counts as
+ *     a page of its own;
  *   - a head-to-head exists in one direction only — A vs B and B vs A are the
  *     same table with the columns swapped;
  *   - the sitemap and the pages on disk are the same set, so nothing is
@@ -453,6 +458,11 @@ function checkCanonicals() {
   const own = new Set(paths);
   for (const p of meta) {
     if (p.canonical !== site + p.path) problems.push(`${p.path} says its address is ${p.canonical || '(none)'}`);
+    // A share counts as its own page unless the card says which page it is, so
+    // /page/?utm_source=x and /page/ are one object to Facebook, LinkedIn and
+    // Slack only while og:url says the same address the canonical does.
+    if (p.ogUrl !== p.canonical)
+      problems.push(`${p.path} shares as ${p.ogUrl || '(no og:url)'} and is canonically ${p.canonical}`);
     for (const href of p.links) {
       if (!href.startsWith('/')) continue;
       const target = href.split(/[?#]/)[0];
@@ -478,7 +488,7 @@ function checkCanonicals() {
     console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
     throw new Error(`${problems.length} pages are reachable at more than one address, or link to one`);
   }
-  console.log(`  ${meta.length} pages, one address each, ${announced.length} in the sitemap`);
+  console.log(`  ${meta.length} pages, one address each in the head and in the card, ${announced.length} in the sitemap`);
 }
 
 /**

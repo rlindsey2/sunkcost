@@ -449,6 +449,7 @@ export function pageShell(c: PageChrome, body: string, data: Dataset): string {
 <meta name="theme-color" content="#0b1014" media="(prefers-color-scheme: dark)" />
 <link rel="canonical" href="${esc(site + c.canonical)}" />
 <meta property="og:type" content="article" />
+<meta property="og:url" content="${esc(site + c.canonical)}" />
 <meta property="og:site_name" content="Sunk Cost" />
 <meta property="og:title" content="${esc(c.title)}" />
 <meta property="og:description" content="${esc(c.description)}" />
