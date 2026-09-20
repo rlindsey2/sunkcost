@@ -1857,6 +1857,13 @@ pages with every guard passing, and the new note lands on 110 of them there too.
 the pull request `clean`. **PR #17 never conflicted**: `git merge-tree` against this push is clean,
 and nothing here goes near `index.html` or `src/styles.css`.
 
+**Deploy run 268 went green at 03:55 on `aa650ea`**, so both commits are live on sunkcost.ai. Run
+267 was cancelled rather than failed: the log commit followed the code commit inside three minutes
+and the workflow's concurrency group dropped the older of the two. That is the sixth time in a row
+and it is not a fault. The built site could not be read back over HTTP from this environment, which
+blocks sunkcost.ai at the egress proxy; the pages were read rendered out of `dist/` instead, which
+is the tree the deploy publishes.
+
 **What to continue.** The backlog above this entry gains three items and loses none that were work.
 `og:url` is the cheapest of them and is a genuine absence on all 308 pages; the other two are
 measurements that say there is nothing to do. The per-memory-size pages are still the top open item
