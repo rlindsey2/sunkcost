@@ -1853,6 +1853,15 @@ because this one waited for the deploy before writing the entry. The built site 
 back over HTTP from this environment, which blocks sunkcost.ai at the egress proxy; the pages were
 read out of `dist/` instead, which is the tree the deploy publishes.
 
+**Run 271, this entry's own log commit, then wedged on the runner and was superseded.** Its
+`npm ci` and `npm test` finished in eight seconds between them and `npm run build` then sat at 24
+minutes against the two and a half the identical code took on run 270 — same commit content but for
+this file, same workflow, a runner that had stopped reporting. Nothing a visitor sees was waiting on
+it: `seo/LOG.md` is not published, and the tag itself went live on run 270. It was left to the next
+push rather than cancelled by hand, which is the concurrency group's own job and the thing that has
+quietly dropped six runs in a row here. **If you are the next run and the latest deploy is red or
+still running on a log commit, check what changed in it before treating it as a fault.**
+
 **Both open pull requests still merge clean with this push, checked rather than assumed.** PR #16
 was really merged into a worktree and built there: **440 tests**, typecheck clean, 308 pages with
 every guard passing, and its own `/cost-per-month/` comes out with `og:url` of its own without a
