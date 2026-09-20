@@ -12,8 +12,9 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, type LdNode,
+  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
 } from '../src/pagekit';
+import { fingerprint, mainOf } from '../src/page-dates';
 import {
   indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
@@ -140,6 +141,74 @@ describe('structured data', () => {
     const parsed = JSON.parse(html.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, ''));
     expect(parsed['@graph'][0].name).toBe('</script><img src=x>');
     expect(parsed['@context']).toBe('https://schema.org');
+  });
+});
+
+describe('the day a page says its own words last moved', () => {
+  const shell = () =>
+    pageShell(
+      {
+        title: 'Mac mini M6, 16GB: can it run local LLMs?',
+        description: 'Some description.',
+        canonical: '/hardware/mac-mini-m6-16/',
+        ogImage: '/og/card.png',
+        crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/hardware/mac-mini-m6-16/', label: 'Mac mini M6, 16GB' }],
+        about: hardwareProduct(hw('mac-mini-m6-16'), 'https://sunkcost.ai/hardware/mac-mini-m6-16/'),
+      },
+      '<main><h1>A machine</h1><p>Some words.</p></main>',
+      data,
+    );
+  const graphIn = (html: string) =>
+    JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1])['@graph'] as LdNode[];
+
+  it('puts the day on the page and on nothing else in the graph', () => {
+    const graph = graphIn(withModified(shell(), '2026-09-19'));
+    expect(node(graph, 'WebPage').dateModified).toBe('2026-09-19');
+    expect(graph.filter((n) => 'dateModified' in n)).toHaveLength(1);
+  });
+
+  it('leaves every other node exactly as it found it', () => {
+    const before = graphIn(shell());
+    const after = graphIn(withModified(shell(), '2026-09-19'));
+    expect(after).toHaveLength(before.length);
+    for (const [i, n] of after.entries()) {
+      const { dateModified, ...rest } = n as LdNode & { dateModified?: string };
+      expect(rest).toEqual(before[i]);
+    }
+  });
+
+  // the load-bearing one: the stamp sits in the head, so the ledger that decides
+  // which day a page is given cannot see it. Were it inside <main>, dating a page
+  // would change the page, and the date would be wrong the moment it was written.
+  it('changes nothing the page is fingerprinted over', () => {
+    const plain = shell();
+    const dated = withModified(plain, '2026-09-19');
+    const print = (html: string) =>
+      fingerprint({
+        title: html.match(/<title>([\s\S]*?)<\/title>/)![1],
+        description: html.match(/<meta name="description" content="([\s\S]*?)" \/>/)![1],
+        body: mainOf(html),
+      });
+    expect(print(dated)).toBe(print(plain));
+    expect(dated).not.toBe(plain);
+  });
+
+  it('keeps the escaping that stops a name closing the script tag', () => {
+    const html = withModified(
+      jsonLd([
+        { '@type': 'WebPage', name: '</script><img src=x>' },
+        { '@type': 'Thing', name: 'ok' },
+      ]),
+      '2026-09-19',
+    );
+    expect(html).not.toContain('</script><img');
+    expect(html.match(/<\/script>/g)).toHaveLength(1);
+    expect(node(graphIn(html), 'WebPage').name).toBe('</script><img src=x>');
+  });
+
+  it('refuses a page it cannot date rather than dating the wrong thing', () => {
+    expect(() => withModified('<html><head></head></html>', '2026-09-19')).toThrow(/no structured data/);
+    expect(() => withModified(jsonLd([{ '@type': 'Thing' }]), '2026-09-19')).toThrow(/nothing in its structured data that is the page/);
   });
 });
 
@@ -2533,19 +2602,31 @@ describe('the line of jumps into a page\u2019s own sections', () => {
 });
 
 describe('what a class on /best/ leaves out', () => {
+  const pick = (days: number) => ({ hw: data.hardware[0], model: data.models[0], days });
   const klass = (picks: number, never = 0, overCapacity = 0, considered = 100) =>
-    ({ picks: Array.from({ length: picks }, (_, i) => i), never, overCapacity, considered });
+    ({ picks: Array.from({ length: picks }, (_, i) => pick(i)), never, overCapacity, considered });
+  // the fourth-quickest pay-back in a class, which is the one the note names
+  const fourth = { hw: hw('mac-mini-m6-32'), model: data.models.find((m) => m.id === 'qwen3.8-27b-q4')!, days: 640 };
+  const named = '<a href="/models/qwen3.8-27b-q4/">Qwen3.8 27B</a>, in 21 months on a <a href="/hardware/mac-mini-m6-32/">Mac mini M6, 32GB</a>';
+  const cutAt3 = (picks: number) => ({ ...klass(picks), picks: [...klass(3).picks, fourth, ...klass(picks - 4).picks] });
 
-  it('counts the models a class pays back but does not list, and says so in their own number', () => {
-    expect(bestLeftOut(klass(17), 3).more).toBe(14);
-    expect(bestLeftOut(klass(17), 3).moreSaid).toBe('14 more models in this class pay back and are not listed.');
+  it('counts the models a class pays back but does not list, and names the next one down', () => {
+    expect(bestLeftOut(cutAt3(17), 3).more).toBe(14);
+    expect(bestLeftOut(cutAt3(17), 3).moreSaid).toBe(
+      `14 more models in this class pay back behind these three. The quickest of them is ${named}.`,
+    );
     // one is the case the plural would read wrong in, and it is a real class on the page
-    expect(bestLeftOut(klass(4), 3).moreSaid).toBe('1 more model in this class pays back and is not listed.');
+    expect(bestLeftOut(cutAt3(4), 3).moreSaid).toBe(
+      `One more model in this class pays back behind these three: ${named}.`,
+    );
+    // the model named is the first past the cut, not the first of the picks
+    expect(bestLeftOut(cutAt3(17), 3).nextSaid).toBe(named);
   });
 
   it('says nothing about models where the class lists every one that pays back', () => {
     expect(bestLeftOut(klass(3), 3).more).toBe(0);
     expect(bestLeftOut(klass(3), 3).moreSaid).toBe('');
+    expect(bestLeftOut(klass(3), 3).nextSaid).toBe('');
     expect(bestLeftOut(klass(1), 3).moreSaid).toBe('');
   });
 
@@ -2563,5 +2644,55 @@ describe('what a class on /best/ leaves out', () => {
     expect(bestLeftOut(klass(17), 5).more).toBe(12);
     expect(bestLeftOut(klass(17), 17).moreSaid).toBe('');
     expect(bestLeftOut(klass(17), Infinity).more).toBe(0);
+    // the cut is what the sentence counts back from, in words as well as in number
+    const wider = { ...klass(17), picks: [...klass(5).picks, fourth, ...klass(11).picks] };
+    expect(bestLeftOut(wider, 5).moreSaid).toBe(
+      `12 more models in this class pay back behind these five. The quickest of them is ${named}.`,
+    );
+  });
+});
+
+describe('what a local speed is worth', () => {
+  // The reader meets a column of tok/s with nothing to hold it against. The only
+  // yardstick the site has is the one the calculator uses, and it is in the data.
+  const hosted = (speeds: (number | null | undefined)[], tps = 80) =>
+    hostedSpeedLine(speeds, { ...data, defaults: { ...data.defaults, cloud: { ...data.defaults.cloud, default_tokens_per_sec: tps } } } as unknown as Dataset);
+
+  it('names the figure out of the data rather than a number of its own', () => {
+    expect(hosted([10, 20])).toContain('<b>80 tok/s</b>');
+    expect(hosted([10, 20], 42)).toContain('<b>42 tok/s</b>');
+    expect(hosted([10, 20], 42)).not.toContain('80');
+  });
+
+  it('counts the rows that reach it, and names the slowest', () => {
+    expect(hosted([13, 19, 116, 51])).toBe(
+      'For scale, the calculator starts from <b>80 tok/s</b> for a hosted API and times a local machine against it. 1 of the 4 above reaches it, and the slowest is 13 tok/s.',
+    );
+    expect(hosted([90, 13, 116, 51])).toContain('2 of the 4 above reach it, and the slowest is 13 tok/s.');
+    expect(hosted([90, 100, 116])).toContain('All 3 above reach it, and the slowest is 90 tok/s.');
+    expect(hosted([13, 19, 51])).toContain('Nothing above reaches it, and the quickest is 51 tok/s.');
+  });
+
+  it('says one row as one row, either way', () => {
+    expect(hosted([92])).toContain('The one above reaches it, at 92 tok/s.');
+    expect(hosted([18])).toContain('The one above does not reach it, at 18 tok/s.');
+  });
+
+  // The load-bearing one. The sentence is read beside the table, so it has to count
+  // the figures the table prints: 79.6 tok/s is drawn as 80 and a reader counting
+  // the column counts it in. Comparing the full precision would print "2 of the 3"
+  // over a column where three rows say 80 or more.
+  it('counts the speeds as the table draws them, not the precision behind them', () => {
+    expect(hosted([79.6, 80.4, 120])).toContain('All 3 above reach it');
+    expect(hosted([79.4, 120])).toContain('1 of the 2 above reaches it, and the slowest is 79 tok/s.');
+    // under ten the column keeps a decimal, and so does the sentence
+    expect(hosted([8.92, 120])).toContain('the slowest is 8.9 tok/s.');
+  });
+
+  it('says nothing where there is nothing to hold against it', () => {
+    expect(hosted([])).toBe('');
+    expect(hosted([null, undefined])).toBe('');
+    // a row with no speed is not a row this sentence counts
+    expect(hosted([null, 116, undefined])).toContain('The one above reaches it, at 116 tok/s.');
   });
 });

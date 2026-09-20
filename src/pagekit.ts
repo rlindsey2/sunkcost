@@ -304,6 +304,34 @@ export function jsonLd(graph: LdNode[]): string {
   return `<script type="application/ld+json">${JSON.stringify(doc).replace(/</g, '\\u003c')}</script>`;
 }
 
+/** the one structured-data block a page carries, found in its head */
+const LD_TAG = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/;
+
+/**
+ * The day a page's own words last changed, written into the page as well as into
+ * the sitemap.
+ *
+ * `seo/page-dates.json` has dated every page in the sitemap since page-dates.ts was
+ * written, and a sitemap is a file a reader never sees and a crawler has to take on
+ * trust. This puts the same day, out of the same ledger, where the page itself can be
+ * read for it. On a site whose whole subject is what a machine costs this week, that
+ * is the claim most worth making twice.
+ *
+ * It goes on after the body is final, because until then the ledger cannot recognise
+ * the page. The node it lands in sits in the head, outside the title, the description
+ * and the `<main>` the fingerprint is taken over, so dating a page can never change
+ * the date the page is given.
+ */
+export function withModified(html: string, changed: string): string {
+  const found = html.match(LD_TAG);
+  if (!found) throw new Error('a page reached its date with no structured data to carry it');
+  const graph = (JSON.parse(found[1]) as { '@graph': LdNode[] })['@graph'];
+  const page = graph.find((n) => n['@type'] === 'WebPage');
+  if (!page) throw new Error('a page reached its date with nothing in its structured data that is the page');
+  page.dateModified = changed;
+  return html.replace(LD_TAG, () => jsonLd(graph));
+}
+
 /**
  * The machine a hardware page is about. Only figures that are somebody's
  * published specification go in: a stand-in or an estimate needs the sentence
@@ -1253,24 +1281,44 @@ export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
  * listed, and machine-and-model pairs that fit and never pay back at all. Counting
  * them together would read as one number and be two.
  *
+ * The count alone was a dead end for the reader it was written for. A class saying
+ * *14 more models in this class pay back and are not listed* sent someone who wanted
+ * the fourth-best buy to a leaderboard ranked by score, which is a different order
+ * from the one they were reading. So the sentence names the next model down: the
+ * quickest pay-back the cut left out, on the machine that gets it, which is the one
+ * row the reader would have asked for next. Naming all fourteen is the table again.
+ *
  * The page prints these sentences and its guard checks for them, so the words under
  * a table and the figures behind it cannot drift apart. It wants the uncut list of
  * picks, which is what `bestByTier(data, usage, Infinity)` returns.
  */
 export function bestLeftOut(
-  t: { picks: unknown[]; considered: number; never: number; overCapacity: number },
+  t: {
+    picks: { hw: Hardware; model: Model; days: number }[];
+    considered: number;
+    never: number;
+    overCapacity: number;
+  },
   perClass: number,
-): { more: number; moreSaid: string; pairsSaid: string } {
+): { more: number; moreSaid: string; pairsSaid: string; nextSaid: string } {
   const more = Math.max(0, t.picks.length - perClass);
   const counted = [
     t.never ? `${t.never} never pay back` : '',
     t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : '',
   ].filter(Boolean);
+  // the picks are sorted by pay-back, so the first one past the cut is the next one down
+  const next = more ? t.picks[perClass] : undefined;
+  const nextSaid = next
+    ? `<a href="/models/${esc(next.model.id)}/">${esc(next.model.display_name)}</a>, in ${esc(fmtDuration(next.days))} on a <a href="/hardware/${esc(next.hw.id)}/">${esc(hardwareLabel(next.hw))}</a>`
+    : '';
   return {
     more,
     moreSaid: more
-      ? `${more} more model${more === 1 ? '' : 's'} in this class pay${more === 1 ? 's' : ''} back and ${more === 1 ? 'is' : 'are'} not listed.`
+      ? more === 1
+        ? `One more model in this class pays back behind these ${numberWord(perClass)}: ${nextSaid}.`
+        : `${more} more models in this class pay back behind these ${numberWord(perClass)}. The quickest of them is ${nextSaid}.`
       : '',
+    nextSaid,
     pairsSaid: counted.length ? `of the ${t.considered} machine-and-model pairs that fit, ${counted.join(' and ')}.` : '',
   };
 }
@@ -1554,6 +1602,45 @@ export function speedFrom(tp: { tokensPerSec: number | null; measurement: string
   const tps = roundTps(tp?.tokensPerSec);
   if (tps == null) return '<span class="dim">unknown</span>';
   return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(tp!.measurement)}</span>`;
+}
+
+/** A speed the way a table cell prints it, for a sentence about the table. */
+const tpsWord = (tps: number): string => `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+
+/**
+ * What a local speed is worth, said under the table of them.
+ *
+ * The machine pages print 661 speeds between them and the model pages another
+ * 334, and none of them said whether a figure in that column is quick. A reader
+ * meets "19 tok/s" with nothing to hold it against, and the thing they are
+ * actually choosing between is a hosted API. The site already holds that
+ * yardstick and only the calculator used it: `cloud.default_tokens_per_sec` in
+ * the data, which is what the calculator times a local answer against, and
+ * which a reader can change.
+ *
+ * The count is taken over the speeds as the page prints them rather than the
+ * full precision behind them, so a reader counting the rows gets the same
+ * answer the sentence gives.
+ */
+export function hostedSpeedLine(speeds: (number | null | undefined)[], data: Dataset): string {
+  const shown = speeds.map((s) => roundTps(s)).filter((t): t is number => t != null);
+  const hosted = data.defaults.cloud?.default_tokens_per_sec;
+  if (!shown.length || hosted == null) return '';
+  const reach = shown.filter((t) => t >= hosted).length;
+  const n = shown.length;
+  const slowest = tpsWord(Math.min(...shown));
+  const quickest = tpsWord(Math.max(...shown));
+  const verdict =
+    n === 1
+      ? reach
+        ? `The one above reaches it, at ${quickest}.`
+        : `The one above does not reach it, at ${quickest}.`
+      : reach === 0
+        ? `Nothing above reaches it, and the quickest is ${quickest}.`
+        : reach === n
+          ? `All ${n} above reach it, and the slowest is ${slowest}.`
+          : `${reach} of the ${n} above ${reach === 1 ? 'reaches' : 'reach'} it, and the slowest is ${slowest}.`;
+  return `For scale, the calculator starts from <b>${tpsWord(hosted)}</b> for a hosted API and times a local machine against it. ${verdict}`;
 }
 
 /** How a pair of speeds was arrived at, as a clause to hang off a sentence. */

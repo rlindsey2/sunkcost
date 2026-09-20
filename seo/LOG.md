@@ -36,6 +36,8 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       in a throwaway worktree and building there: 405 tests, typecheck clean, 307 pages with every
       guard passing. It gains no jump line from that push, because the line is written by the page
       builder and `index.html` is not one of its pages.
+      **It still merges clean with `main` at `1d7a98b`**, checked 2026-09-20 with `git merge-tree`
+      against a deepened history. This push goes nowhere near `index.html` or `src/styles.css`.
 
 - [ ] **Merge (or close) [PR #16](https://github.com/rlindsey2/sunkcost/pull/16), a new page at
       `/cost-per-month/`.** Opened 2026-09-19, and the only pull request open. It answers *how much
@@ -64,6 +66,20 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `seo/page-dates.json` rebuilt rather than chosen, which is the rule that already stood on this
       pull request. Verified on the merged tree: 406 tests, typecheck clean, 308 pages with every
       guard passing. GitHub reports it `clean`. Nothing about the page changed.
+      **It conflicted a fourth time at 00:47 on 2026-09-20 and is merged clean again**, as `ca9db20`.
+      Same file, same import line, and this time `tests/pagekit.test.ts`'s import list as well:
+      `main`'s new leaderboard helpers and this branch's monthly-cost helpers, with `MTOK` on a
+      different line on each side in both files. Both kept by hand, `MTOK` kept once, and
+      `seo/page-dates.json` rebuilt rather than chosen. Verified on the merged tree: 427 tests,
+      typecheck clean, 308 pages with every guard passing. Nothing about the page changed. One
+      thing to know before you merge: four hashes moved on `main` rather than one, so the rebuild
+      of `seo/page-dates.json` matters more than it did — `/leaderboard/`, `/best/`, `/compare/`
+      and `/hardware/`.
+      **It still merges clean with `main` at `1d7a98b`**, checked 2026-09-20 by merging it for real
+      in a throwaway worktree and building there: 427 tests, typecheck clean, 308 pages with every
+      guard passing. This time the ledger needed nothing — `npm run build:pages` on the merged tree
+      wrote no change at all, so there is no line to rebuild and nothing to pick a side of. Run it
+      anyway after merging; it is one command and it is the thing that goes wrong in silence.
       **It conflicted a third time at 17:51 on 2026-09-19 and is merged clean again**, as `a81e913`.
       Same file, same import line: `main`'s jump-line rule and this branch's monthly-cost helpers,
       with `MTOK` sitting on a different line on each side. Both kept by hand, `MTOK` kept once, and
@@ -120,6 +136,22 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       separately; closing them is a click and nobody should do it but you.
       **Ryan was notified about the queue at 01:55 on 2026-09-19**, before he asked for this; that
       was the first ping about it and it should not be repeated unless something changes.
+
+- [ ] **The leaderboard tells visitors 26 models carry an estimated score, and 15 do.** Found
+      2026-09-20 while holding the rest of that page to its data. `frontier_basis.estimated_note`
+      in `data/defaults.json` ends *26 of the models here carry that mark*, and the sentence is
+      printed whole under *How to read the scores* on `/leaderboard/` and again, in bold, in the
+      calculator's own panel whenever the selected model's score is estimated. Counted from
+      `data/models.json`: **16 models carry `estimated`**, and 15 of them have a row on the
+      leaderboard, where the page prints 15 asterisks. So the figure a reader can count on the page
+      and the figure the page states about itself differ by eleven.
+      Nothing about a score changes either way, and no model is marked wrongly — only the count of
+      them is stale, which is what happens to a figure written by hand into a data file. It is two
+      edits for you and neither is the agent's: end the sentence at *running the full v4.3 suite.*
+      and let the pages count the marks, or correct the number to 16. If you would rather the page
+      wrote the count itself, say so and the leaderboard can print it the way it now prints its own
+      row counts; the calculator's copy of the sentence is `src/render.ts` and would be a pull
+      request.
 
 - [ ] **Two one-line data faults, both surfaced on 2026-09-18 by naming the source links, and both
       in files the agent must not edit.**
@@ -571,6 +603,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **The sitemap knew when every page last changed and no page said so itself.** Done
+      2026-09-20, pushed as `ab123f2`. All 307 generated pages carry `dateModified` on their
+      `WebPage` node, the same day and out of the same ledger the sitemap reads. A sitemap is a file
+      the reader never sees and the crawler has to take on trust; the page repeating the claim is
+      what makes it checkable. The stamp goes on in `write()`, after the body is final, and lands in
+      the head, outside the title, the description and the `<main>` the fingerprint is taken over,
+      so dating a page cannot move the date it is given: `seo/page-dates.json` is unchanged by the
+      push and every page kept its day. `checkPageDates()` holds four more claims, read out of the
+      markup rather than out of the string that wrote it. The run entry below has the five breaks
+      and the two tests that were proved by breaking them.
+      **The home page is left out and it is not a gap.** `index.html` is fingerprinted whole rather
+      than by its `<main>`, so a date written into it would be inside its own fingerprint and would
+      make itself wrong. That is the difference between the build's two counts, 308 and 307.
+
 - [x] **The index of all 190 head-to-heads named five of the seven rules that cut it, and two of
       the three on its model side.** Done 2026-09-19, pushed as `a868268`. 50 of the 189 rows — the
       4 chip-step pairs, the 21 price neighbours and the 29 memory neighbours — sat under an
@@ -581,7 +627,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       170 words and six semicolons they are a list, one rule to a line. The run entry below has the
       table of rules, the four breaks and the measurement that says the other 306 pages did not move.
 
-- [ ] **Two of those three pages are left: `/hardware/` and `/leaderboard/`.** `/best/` is done,
+- [x] **All three of those pages are done: `/best/`, `/hardware/` and `/leaderboard/`.**
+      `/leaderboard/` was the last and the biggest, done 2026-09-20 and pushed as `57722ae`. What
+      it was not saying was not a drifted sentence either: the table keeps one row per model, and
+      the second build of a model — same weights, heavier quantisation, its own download, its own
+      page — was dropped in silence. Llama 3.1 8B Instruct at Q8_0 and Qwen3 32B at Q8_0 were in no
+      row, in no count and not in the note that lists the models the index has not scored. Both are
+      named in their own rows now, `leaderboardRows()` carries the cut and says why it keeps the
+      lightest build, and `checkLeaderboardBuilds()` holds four claims, three of them read back out
+      of the rendered page. The page's own print is the accounting: **all 55 models this site
+      prices are named on it, 48 ranked rows, 2 of them naming a heavier build, 5 in the unscored
+      note.** The run entry below has the five breaks and the three that proved the six new tests.
+      **What it leaves, deliberately.** Two sentences on that page are still hand-written claims
+      about the data and neither is wrong today: *the hosted models from Anthropic and OpenAI*,
+      which is true of all eight rows in `frontier_reference` and would quietly stop being true the
+      day a Gemini row is added; and the count of estimated scores, which is wrong today and is in
+      a file the agent must not edit, so it is on Ryan's side above.
+      The original item follows.
+
+- [ ] **Two of those three pages were left: `/hardware/` and `/leaderboard/`.** `/best/` is done,
       pushed as `5627008` on 2026-09-19, and the item's own guess about it was too kind: the sentence
       was not drifted, it had never been written. The page listed the three quickest models in a
       class and said neither that number nor that 23 other models pay back behind them. It now prints
@@ -614,7 +678,21 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       from the array that wrote it. One page's words moved and no figure, row or count changed. The
       run entry below has the four breaks and the two that proved the tests.
 
-- [ ] **A class on `/best/` counts the models it leaves out and names none of them.** Left
+- [x] **A class on `/best/` counted the models it left out and named none of them.** Done
+      2026-09-20, pushed as `1d7a98b`, and the item's own guess about the cheapest honest version
+      was the one that got built: the aside under each class names the next model down — the
+      quickest pay-back past the cut, with its machine and its figure — rather than the fourteen.
+      All 15 classes across the five levels leave one out, so all 15 name one. The count alone was
+      a dead end: it sent a reader who wanted the fourth-best buy to `/leaderboard/`, which is
+      ranked by score, a different order from the one they were reading. `checkBestCuts()` holds
+      four more claims, read out of the aside itself rather than out of the sentence written from
+      it, and the run entry below has the six breaks that proved them.
+      **One thing it had to fix to be worth doing.** Held on one line the longer aside took the
+      table to 1,263px against the 936px the page is given, and what went off the right edge was
+      the pay-back column — the one figure every row there is read for. `.board .c-note` wraps it.
+      Measured at four widths before and after: 936px at 1280 and 1440, unchanged at 900 and 390.
+      The original item follows.
+      Left
       deliberately by the 2026-09-19 run rather than missed, because naming them is a different page:
       14 models under one class, each wanting its machine and its figure to be worth reading, is the
       table again rather than a note under it. The lede points at `/leaderboard/`, where every model
@@ -861,6 +939,27 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       means, which the index's own note already words. It is `scripts/build-pages.ts`, so it is a
       push rather than a pull request. This is a trust fix rather than a traffic one, and it is the
       same fault the stand-in power figure had on the comparison pages two days ago.
+
+- [ ] **56 pages name in structured data what they are about. The other 251 name nothing.**
+      Measured 2026-09-20 while dating the pages. Only the machine pages carry an `about` node,
+      `hardwareProduct()`'s `Product`; the 55 model pages, the 190 head-to-heads and the 7 indexes
+      carry none. The mirror looks obvious and is not: schema.org has no type for a set of
+      open weights, and the nearest ones, `SoftwareApplication` and `CreativeWork`, would be the
+      site picking a name for a thing nobody has named. A head-to-head between two machines could
+      honestly carry both `Product` nodes, and that is 111 pages of markup for no rich result,
+      because `Product` without an offer or a rating draws none and this site sells nothing on
+      purpose. Written down so the asymmetry reads as considered. Worth revisiting only if
+      schema.org adds a type for a model, or if a `Product` pair starts earning something
+      measurable.
+
+- [ ] **`/models/` is a 404 and `/hardware/` is a page.** Measured 2026-09-20. All 55 model pages
+      sit under `/models/<id>/` and the directory above them has no index, where `/hardware/` and
+      `/compare/` both do. Nothing on the site links it, and the breadcrumb on a model page already
+      steps through *Models* to `/leaderboard/`, which is the model index in everything but its
+      address. So this costs nothing a crawler follows; it costs the reader who trims the address
+      bar. The cheap fix is a redirect to `/leaderboard/` rather than a page, which is one line of
+      Cloudflare Pages config and not something the build writes today. Worth doing with the next
+      change to `public/_headers` or whatever holds redirects; not worth a run of its own.
 
 - [ ] **The price-neighbour rule has a round number in it, and one day it will bite.** The cap
       is a tenth. On the data as it stands that is not a judgement call at all: the widest pair it
@@ -1619,6 +1718,339 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — the sitemap's date, said on the page as well
+
+**The watch was already done.** `npm run model-watch` printed `2026-09-20` as last checked against
+today, so an earlier run had it and the backlog was the job. The three candidates waiting on figures
+are unchanged and still need Ryan: Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B.
+
+**Why this item, when it was not on the backlog.** Every open item above it is parked or is not the
+agent's. The per-memory-size pages are parked by their own text behind Ryan's two pull requests, and
+queuing a third behind them is how PR #16 came to need four conflict repairs. The three below that,
+the price-neighbour cap, the 45 words 21 pages share and the home page's form labels, are all
+written down as considered rather than as work. So this run went looking, and the gap it found is in
+push territory: structured data.
+
+**What was missing.** `seo/page-dates.json` has dated every page in the sitemap since it was
+written, and the date is honest by construction: a page is dated only while its fingerprint still
+matches what the ledger recorded, so a page that changed and cannot prove when goes out with no date
+at all. None of that reached the page. A sitemap is a file the reader never sees and the crawler has
+to take on trust, and nothing in the markup repeated the claim. On a site whose subject is what a
+machine costs this week, freshness is the thing worth saying twice.
+
+**What it says now.** All 307 generated pages carry `dateModified` on their `WebPage` node, out of
+the same ledger and to the same day as the sitemap. `/leaderboard/` and `/best/` say 2026-09-20; the
+other 305 say 2026-09-19. `withModified()` in `src/pagekit.ts` reads the page's one structured-data
+block, puts the day on the node that is the page, and writes the block back through `jsonLd()`, so
+the escaping that stops a machine name closing the script tag survives the round trip.
+
+**The ordering problem, and why it is not one.** The date cannot be known until the body is final,
+because until then the ledger cannot recognise the page. So the stamp goes on inside `write()`,
+after the headings are anchored and the jump line is in. It lands in the head, outside the title,
+the description and the `<main>` the fingerprint is taken over, so **dating a page cannot move the
+date it is given**. Measured rather than argued: `seo/page-dates.json` is byte for byte unchanged by
+this push and all 307 pages kept the day they had. The fingerprint is now taken once, in `write()`,
+and carried on `meta`, so the day in the markup and the day in the sitemap cannot be two readings.
+
+**Four more claims in `checkPageDates()`, read back out of the markup rather than out of the string
+that wrote it.** A dated page carries the day once. It carries it on the `WebPage` node and not on
+the site or the breadcrumb. It carries the day the sitemap gives it. And a page the sitemap will not
+date carries nothing.
+
+**Five breaks, each run.** Stamp nothing: exit 1, 307 problems, *`/leaderboard/` is dated 2026-09-20
+in the sitemap and says nothing about it itself*. Stamp a day out: exit 1, 307, *dates itself
+2026-09-21 where the sitemap says 2026-09-20*. Stamp the `WebSite` node instead: exit 1, 307, *puts
+its date on a WebSite rather than on the page*. Corrupt one ledger hash so a page goes out undated,
+then stamp it anyway: exit 1, exactly one problem and the right page, *`/best-gpu/` dates itself
+2026-09-20 where the sitemap will not date it*. Stamp twice: exit 1, 307, *dates itself 2 times
+over*. The first cut of that fourth break used `sed`, which matched the sitemap's own line as well
+because the pattern was a substring of it; both guards then fired and the break proved less than it
+looked. Worth knowing: the two lines differ only in indentation.
+
+**Five tests in `tests/pagekit.test.ts`, two of them proved.** The load-bearing one takes the
+fingerprint of a shell before and after stamping and holds them equal; moving the stamp inside
+`</main>` fails it. The escaping one names a `WebPage` `</script><img src=x>` and holds the tag
+count at one; re-serialising with a bare `JSON.stringify` fails it. The other three hold the node it
+lands on, that every other node comes through untouched, and that a page with no structured data or
+no page node is refused rather than dated wrongly.
+
+**Nothing a visitor reads moved, measured against a build of the previous tree.** The pre-push tree
+was built in a throwaway worktree and every file compared: **all 307 pages differ only inside their
+JSON-LD**, none differs anywhere else, and `sitemap.xml` and `robots.txt` are byte for byte the
+same. Every date in the built site is a real day and none is in the future. **422 tests**, typecheck
+clean, the full `npm run build` end to end including `build:og`, `build:share` and `build:functions`,
+and 307 pages with every guard passing.
+
+**Pushed to `main` as `ab123f2`.** `scripts/build-pages.ts`, `src/pagekit.ts` and a test. No data
+file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts` is touched, and no visitor-facing file either,
+so this stays on the push side of the standing rule. `origin/main` was still at `d60c5a4` when this
+went up, so no sibling session had run.
+
+**The home page is the one page left out, and not by oversight.** `index.html` is a static file the
+calculator fills, so the ledger fingerprints it whole rather than by its `<main>`. A date written
+into it would be inside its own fingerprint, which would change the hash, which would drop its
+sitemap date, which would make the date it carries wrong. It is the difference between the build's
+two counts: 308 of 308 in the sitemap, 307 of 307 in the markup. Nothing to fix.
+
+**Both open pull requests were merged for real against this push and built there.** PR #16: 432
+tests, typecheck clean, 308 pages with every guard passing, and `/cost-per-month/` is dated in the
+ledger already so it takes a stamp like the rest. PR #17: 424 tests, typecheck clean, 307 pages, and
+its rebuilt `seo/page-dates.json` already carries the new `/` hash, so the home page keeps its
+sitemap date. **Neither needed the ledger rebuilt**, and `npm run build:pages` wrote no change on
+either merged tree. Run it after merging anyway; it is one command and it is the thing that goes
+wrong in silence. The clone here is shallow, so `git merge-tree` needs `git fetch --deepen=200
+origin main` first, and the local `main` branch is 348 commits stale: merge `origin/main`, not
+`main`, or the merge reports *Already up to date* and proves nothing.
+
+**Deploy run 265 went green at 02:53 on `f80af03`**, three minutes twenty-three from queue to
+published, so both commits are live on sunkcost.ai. Run 264 was cancelled rather than failed: the
+log commit followed the code commit inside three minutes and the workflow's concurrency group
+dropped the older of the two. That is the fifth time in a row and it is not a fault.
+
+**What to continue.** The backlog above this entry is unchanged in order. The per-memory-size pages
+are still the top open item with real traffic in them and still parked behind Ryan's two pull
+requests. Two new notes went in below them, both measured and both saying there is nothing to do.
+Ryan's side is unchanged: PR #16 and PR #17 both open, the leaderboard's estimated-score count still
+wrong by eleven in `data/defaults.json`, the `TODO:` still live in the calculator's assumptions
+panel, and Ternary Bonsai 2 27B still waiting on figures.
+
+### 2026-09-20 — the fourth-best buy, named
+
+**The watch was already done.** `npm run model-watch` printed `2026-09-20` as last checked against
+today, so an earlier run had it and the backlog was the job. The three candidates waiting on figures
+— Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B — still need Ryan and are unchanged.
+
+**Why this item.** The three-page item closed on the last run, and the next open one was the one the
+last three entries kept deferring: a class on `/best/` counted the models it left out and named none
+of them. Its own text said to weigh it once rather than drift into it, and named the cheapest honest
+version. That is what this is. The per-memory-size pages below it are still parked behind Ryan's two
+pull requests, which its own text says to leave until they are settled.
+
+**What was wrong.** A class listed the three quickest pay-backs and then said, in a grey line under
+them, *14 more models in this class pay back and are not listed.* The count is honest and it is a
+dead end. A reader looking at three rows and wanting the fourth was sent by the lede to
+`/leaderboard/`, which ranks every model by score — a different order from the one they were reading,
+on a page that does not say what anything pays back in. The fourth-best buy was computed, sorted and
+thrown away, at every one of the 15 class-and-level blocks on the page.
+
+**What it says now.** The aside names it:
+
+> 14 more models in this class pay back behind these three. The quickest of them is
+> **Qwen3.5 9B**, in 685 years on a **Mac mini M6, 16GB**. Of the 530 machine-and-model pairs that
+> fit, 57 never pay back.
+
+and where a class leaves exactly one out, it names it without the arithmetic: *One more model in this
+class pays back behind these three: DeepSeek V4-Flash, in 10,564 years on a Mac Studio M5 Ultra,
+256GB.* Both names link the way the rows above them link — the model to its page, the machine to
+its own — so the aside is the row the reader would have asked for next, written as a sentence.
+`bestLeftOut()` takes the first pick past the cut, which is what the sort already puts there, so
+**no row moved and no figure changed**: the page prints one more line per class out of numbers it
+had already computed. The lede says it does this, and says it only because a class really does.
+
+**Four more claims in `checkBestCuts()`, all read out of the aside rather than out of the sentence.**
+The helper writes the words the guard then looks for, so a claim checked against the helper's own
+string proves nothing — this was measured, not assumed: stripping the name out of the sentence
+passed the build clean until the check was moved onto the picks. The model named is now looked up as
+`t.picks[BEST_PER_CLASS]` and its page must be linked **inside the aside**, not merely somewhere in
+the block, because every row links a machine and three of them link models. It must have no row of
+its own in that class. The aside must carry the machine's page and the duration as well as the name.
+And `t.picks[BEST_PER_CLASS].days` must be no quicker than the row above it, which is what *the
+quickest of them* claims and what an unsorted pick list would make a lie.
+
+**Six breaks, each run.** Count them and name none → exit 1 with 20 problems, *leaves 8 models out
+of Haiku-class at 50k tokens a day and does not name Qwen3.6 35B-A3B, the quickest of them*. Name
+`picks[0]` instead of the first past the cut → exit 1, 30 problems, the same message plus the
+machine-and-duration one. Print the machine without linking it → exit 1, 15 problems, *names
+DeepSeek V4-Flash as the next model down in Sonnet-class at 50k tokens a day without the machine
+that pays it back and the 10,564 years it takes*. Drop the lede's promise → exit 1, exactly one
+problem, *names the next model down in 15 of its classes and does not say so in its first
+paragraph*. Reverse the pick order in `bestByTier()` → exit 1, 15 problems, *calls Qwen3.8 27B the
+quickest model left out of Sonnet-class at 50k tokens a day, and it pays back sooner than the last
+row listed*. And, to prove the row-clash branch is live rather than unreachable, render a fourth row
+under an unchanged cut → exit 1, *names deepseek-v4-flash-ud-q4 as the next model down in
+Sonnet-class at 50k tokens a day, and it already has a row there*.
+
+**The layout fault the longer sentence exposed, found by reading the page in a browser rather than
+in a file.** `.board` holds every cell on one line unless a class says otherwise, and the aside had
+no class. At 1,263px against the 936px the page is ever given, the table scrolled sideways and took
+*Pays back in* and *Open in the calculator* off the right edge — the exact fault `page.css` already
+has a comment about, on the tables it was fixed on. The aside is a sentence, not a column, so
+`.board .c-note { white-space: normal; }` and the cells carry the class. Measured in Chromium at
+four widths, before and after: 1263 → 936 at 1440 and 1280, and 856 and 358 unchanged at 900 and
+390, so nothing below a full-width page moved at all. Read rendered at 1280 and 390 out of `dist/`.
+
+**Nothing else on the site moved, measured rather than assumed.** Exactly one hash changed in
+`seo/page-dates.json`, `/best/`, and `c-note` appears on one page and in the stylesheet. The page is
+1,850 words. **417 tests**, typecheck clean, the full `npm run build` end to end including
+`build:og`, `build:share` and `build:functions`, and 307 pages with every guard passing.
+
+**Pushed to `main` as `1d7a98b`.** `scripts/build-pages.ts`, `src/pagekit.ts`, `public/page.css`, a
+test and the date ledger. `public/page.css` is the generated pages' stylesheet and not the
+calculator's — `index.html` does not link it, checked rather than assumed — so this stays on the
+push side of the standing rule. No data file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts` is
+touched. `origin/main` was still at `07e4baf` when this went up, so no sibling session had run.
+
+**Both open pull requests still merge clean, and #16 needs less than it did.** PR #16 was merged for
+real in a throwaway worktree and built there: 427 tests, typecheck clean, 308 pages with every guard
+passing, and — new this time — `npm run build:pages` on the merged tree wrote **no change to
+`seo/page-dates.json` at all**, so the rebuild the standing note asks for has nothing to rebuild.
+PR #17 is clean by `git merge-tree`; this push goes nowhere near `index.html` or `src/styles.css`.
+One thing worth knowing for the next session: this environment's clone is **shallow**, so
+`git merge-tree` against PR #17 failed with *refusing to merge unrelated histories* until
+`git fetch --deepen=200 origin main`. That is not a conflict and should not be read as one.
+
+**Deploy run 262 went green at 01:56 on `557aeee`**, two minutes fifty-six from queue to published,
+so both commits are live on sunkcost.ai. Run 261 was cancelled rather than failed: the log commit
+followed the code commit inside two minutes and the workflow's concurrency group dropped the older
+of the two, which is the fourth time in a row that has happened and is not a fault. Reading the
+published page back was refused by this environment's outbound proxy with a 403 rather than by the
+site, so the deploy's own green is the evidence here, as it was for run 259.
+
+**What to continue.** The next open backlog item is the per-memory-size pages — *what can I run with
+16 GB*, *24 GB*, *32 GB* — which its own text parks behind Ryan's two pull requests and gives two
+things to settle before a line is written. Below that: the round number in the price-neighbour rule,
+the 45 words 21 pages share, and the home page's 142 words of form labels. Ryan's side is unchanged
+apart from the notes above: PR #16 and PR #17 both still open, the leaderboard's estimated-score
+count still wrong by eleven in `data/defaults.json`, the `TODO:` still live in the calculator's
+assumptions panel, and Ternary Bonsai 2 27B still waiting on figures.
+
+### 2026-09-20 — a leaderboard of every open model, with two of them on it nowhere
+
+**The watch first, because it was due.** `npm run model-watch` printed `2026-09-19` as last checked
+against today, so the daily check in `seo/MODEL-WATCH.md` came before the backlog. It found nothing:
+the searches that file lists — releases this month, releases this week, each family the script
+prints, new quantisations — returned no open-weight model that is not already priced here or already
+on the candidate list. One new name turned up and is neither new nor runnable, **Inkling**, Thinking
+Machines Lab's 975B mixture of experts: released 2026-07-15, and at the four-bit sizes this site
+carries it lands far past the 119.5 GB the largest machine here addresses. Inkling Small is a
+different model and already has a row. It is written up under *Checked and left alone* so no later
+run spends an hour reaching the same answer, and the date at the top of the file is today's. The
+three candidates waiting on figures — Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B — are
+unchanged and still need Ryan.
+
+**Why this item.** The backlog's top open item is the per-memory-size pages, which its own text says
+to leave until Ryan's two pull requests are settled. The next is the one the last three runs have
+been working down: `/best/`, `/hardware/` and `/leaderboard/` each explain their own table in prose
+that nothing holds to the code. `/best/` and `/hardware/` are done. `/leaderboard/` was the one left
+and the one the last run called the bigger half.
+
+**What was wrong, and it was not a drifted sentence.** The table ranks by score and keeps one row
+per model, because two builds of one model are two rows carrying the same number in the Score
+column. The cut is right. What the page did with the build it cut was drop it: no row, no count, and
+not in the note under the table that lists the models the index has not scored. Two of them —
+
+| model | row | also priced here | on the page |
+| --- | --- | --- | --- |
+| Llama 3.1 8B Instruct | Q4_K_M, 4.9 GB | Q8_0, 8.5 GB | nowhere |
+| Qwen3 32B | Q4_K_M, 20 GB | Q8_0, 35 GB | nowhere |
+
+— each with a page of its own, a score, and machines that run it. So the page that ranks Qwen3 32B
+did not say the site also prices it at eight bits, which is the question a reader with 48 GB of
+memory arrives with. The lede counted 48 models, the note counted 5 unscored, and 48 + 5 is 53 of
+the 55 the site prices. Nothing on the page said which two were missing or that any were.
+
+**What it says now.** The lede prints the cut and the count from the rows themselves:
+
+> 48 open-weight models you can download and run at home, ranked on the Artificial Analysis
+> Intelligence Index v4.3, with the hosted models from Anthropic and OpenAI dropped into the same
+> table for scale. **Each model has one row, at the lightest build this site prices, and two of them
+> are also priced at a heavier quantisation, named in the row itself.**
+
+And the row names it, in the words the model pages already use: *Qwen3 32B · Q4_K_M · also at Q8_0,
+35 GB*, the quantisation linking to that build's own page. `leaderboardRows()` in `src/pagekit.ts`
+carries the cut and says why it keeps the lightest build rather than the first one the sort happens
+to hand it: the column that ends the row is the cheapest machine that runs it, and the smaller
+download runs on more of them. That is the build the old code kept by luck, so **no row moved** —
+the change is that it is now a rule, and that what it cuts is on the page. `leaderboardBuildsLine()`
+writes the lede's sentence from the rows, drops it entirely on a site where every model is priced
+once, and keeps its singular.
+
+**`checkLeaderboardBuilds()`, four claims, three of them read back out of the rendered page.** Every
+model in `data/models.json` is named on the page exactly once — as a row, beside one, or in the
+unscored note — and naming one twice is a fault of its own. No build named beside a row is lighter
+than the weights that row prints, compared between the two figures the page itself shows rather than
+the arrays that wrote them. The lede's count of models is the count of open rows really there. And
+the lede says how many rows carry a second build, or says nothing about builds at all where none
+does. Its print is the site's own accounting: *`/leaderboard/` names all 55 models this site prices:
+48 ranked rows, 2 of them naming a heavier build beside the one they rank, and 5 in the note about
+models the index has not scored.*
+
+**Five breaks, each run.** Stop naming the heavier build in the row → exit 1 with 3 problems, *gives
+Llama 3.1 8B Instruct at Q8_0 no row and names it beside none*, the same for Qwen3 32B, and *explains
+a cut between builds that its table does not make*, which is the lede left claiming what the table
+no longer does. Drop the lede's sentence → exit 1, *names a second build on 2 of its rows and does
+not say so in its first paragraph*. Multiply the weights column by ten on the doubled rows → exit 1,
+*prints 49 GB as the weights of Llama 3.1 8B Instruct and names a build of it beside them at 8.5 GB*.
+Drop one model from the unscored note → exit 1, *leaves Spark-X2.5 4B at Q4_K_M out of the note about
+models the index has not scored*. Let a row name the build it is already written about → exit 1,
+*names llama-3.1-8b-q4 twice, as a row of its own and beside llama-3.1-8b-q4*.
+
+**One break was thrown away rather than counted, and it is worth knowing why.** Inverting the rule so
+the table keeps the heaviest build does not reach this guard: `checkCanonicals()` stops the build
+long before it, because the head-to-head chain in the last column is built from the rows and a
+different row means a different address. So the rule itself is proved by tests rather than by the
+build, which is the right place for it, and the guard is left proving what the page says about the
+rows it really printed.
+
+**Three breaks proved the six new tests.** Keep the heaviest build → *keeps the lightest build and
+names the heavier one beside it* fails, alone. Drop the scored filter so an unscored build can take a
+row → *never gives the row to a build the index has not scored* fails, alone. Print the sentence
+where no model has a second build → *says nothing about builds where every model is priced once*
+fails, alone.
+
+**Nothing else on the site moved, measured rather than assumed.** `seo/page-dates.json` is the
+measurement: exactly one hash changed, `/leaderboard/`, and the other 306 pages are byte-for-byte
+what they were. The page is 1,493 words. **417 tests** (411 before), typecheck clean, the full
+`npm run build` end to end including `build:og`, `build:share` and `build:functions`, 307 pages with
+every guard passing, and the page read rendered out of `dist/` — the lede, both doubled rows and the
+unscored note.
+
+**Pushed to `main` as `57722ae`.** It is `scripts/build-pages.ts`, `src/pagekit.ts`, a test and the
+date ledger, which is the push side of the standing rule; no data file, `src/calc.ts`,
+`src/compute.ts` or `src/fit.ts` is touched. The environment starts on a **detached HEAD** as usual,
+so `git branch -f main HEAD && git checkout main` came first; nothing was forced, and `origin/main`
+was still at `6d97042` when this was pushed, so no sibling session had run.
+
+**One thing found on the same page and left for Ryan, because it is in a data file.** The note under
+*How to read the scores* ends *26 of the models here carry that mark*, and 16 models in
+`data/models.json` carry `estimated`, 15 of them with a row. A reader can count the asterisks. It is
+`frontier_basis.estimated_note` in `data/defaults.json`, printed whole here and again in bold in the
+calculator's assumptions panel, so it is one string in a file this agent must not edit and it is on
+Ryan's side above. **He was notified**, because a wrong figure a visitor can check is the one thing
+this site cannot afford.
+
+**Deploy run 259 went green at 00:54 on `062c736`**, three minutes thirty-three from queue to
+published, so both commits are live on sunkcost.ai. Run 258 was cancelled rather than failed: the
+log commit followed the code commit inside two minutes and the workflow's concurrency group dropped
+the older of the two, which is the same shape as runs 255 and 248.
+
+**And the Actions cache that has now caught three runs in a row has a way round it.** Six reads of
+the run and its jobs came back byte-identical, `updated_at` frozen at 00:51:13, while the build step
+was really finishing — the same trap the last two entries describe. What broke it was **asking a
+different question**: `list_workflow_runs` with `status: completed` is a separate cache key, and it
+returned the finished run immediately. Worth trying before another wait.
+
+**PR #16 conflicted with this push and is merged clean again, as `ca9db20`.** The fourth time, and
+the same line: `main`'s new leaderboard imports and this branch's monthly-cost helpers both extended
+the import list at the head of `scripts/build-pages.ts`, with `MTOK` on a different line on each
+side — and this time `tests/pagekit.test.ts`'s import list went the same way, which is new and is
+the shape this log has warned about five times now. Both sides kept by hand, `MTOK` kept once, and
+`seo/page-dates.json` rebuilt with `npm run build:pages` rather than chosen. Verified on the merged
+tree rather than assumed: **427 tests**, typecheck clean, 308 pages with every guard passing,
+including this branch's `/cost-per-month/` and this run's accounting of every build on the
+leaderboard. Nothing about the page the pull request adds has changed. The standing note on it still
+holds, and this push widened it: `/leaderboard/`, `/best/`, `/compare/` and `/hardware/` all moved
+in the ledger, so whoever merges it runs `npm run build:pages` and commits what it writes rather
+than picking a side of those lines. **PR #17 still merges clean**; it touches `index.html` and
+`src/styles.css`, which this change goes nowhere near.
+
+**What to continue.** The three-page item is closed, so the next open item is *a class on `/best/`
+counts the models it leaves out and names none of them*, which its own text says to weigh once
+rather than drift into — the cheapest honest version is the next model down in each class by name,
+one link and one figure. Below it, the per-memory-size pages are still parked behind Ryan's two
+pull requests. Ryan's side otherwise: PR #16 and PR #17 both still open, the Ternary Bonsai 2 27B
+figures, and now the estimated-score count.
 
 ### 2026-09-19 — a table of 56 machines under a sentence that priced all of them
 

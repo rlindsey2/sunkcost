@@ -13,14 +13,14 @@ import {
   DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
+  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -55,7 +55,18 @@ const paths: string[] = [];
 const cardFor = (hwId: string | undefined, modelId: string | null | undefined) =>
   hwId && modelId && hasShareCard(hwId, modelId, data) ? `/og/${hwId}--${modelId}.png` : '/og/default.png';
 
-const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string }[] = [];
+const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string; hash: string }[] = [];
+
+// A page's lastmod is the day its own words last changed, read out of
+// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
+// prices were checked, and why a page whose fingerprint has moved goes into the
+// sitemap without a date rather than with a guess at one. It is read here, before
+// the first page is built, because each page now carries that day itself.
+const datesFile = new URL('../seo/page-dates.json', import.meta.url);
+const recordedDates: PageDates | null = existsSync(datesFile)
+  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
+  : null;
+const today = new Date().toISOString().slice(0, 10);
 /** which pages link to each page, so the build can refuse to ship one nothing links to */
 const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
@@ -95,6 +106,15 @@ function write(path: string, html: string) {
   // on disk, the fingerprint the sitemap dates and the markup every guard below
   // reads are one and the same page. See anchorHeadings in src/pagekit.ts.
   html = anchorBody(html);
+  const title = unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
+  const description = unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? '');
+  // The page's own words, fingerprinted the moment they are final. Where the ledger
+  // still recognises them it can say which day they last moved, and the page says so
+  // itself rather than leaving the sitemap to claim it alone. Nothing withModified
+  // touches is inside the fingerprint, so the stamp cannot move the date it stamps.
+  const hash = fingerprint({ title, description, body: mainOf(html) });
+  const changed = publishedDate(recordedDates, path, hash);
+  if (changed) html = withModified(html, changed);
   const dir = new URL(`.${path}`, outRoot);
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
@@ -119,8 +139,9 @@ function write(path: string, html: string) {
     if (m[1] !== path) inbound.set(m[1], (inbound.get(m[1]) ?? new Set()).add(path));
   meta.push({
     path,
-    title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
-    description: unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? ''),
+    title,
+    description,
+    hash,
     canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
     ogImage: unesc(html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '').replace(site, ''),
     links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
@@ -2404,7 +2425,7 @@ function bestBuys(): string {
           const { moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
           const counted = pairsSaid ? sentenceCase(pairsSaid) : '';
           if (!t.picks.length) {
-            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
+            return `${header}<tr><td colspan="5" class="c-note dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
           }
           return header + t.picks
             .slice(0, BEST_PER_CLASS)
@@ -2421,7 +2442,7 @@ function bestBuys(): string {
   <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
-            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
+            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="c-note dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
         })
         .join('');
       return `<section id="${bestAnchor(l.usage)}">
@@ -2436,7 +2457,7 @@ ${stack(`<table class="board">
 
   const body = `<article class="prose">
 <h1>Best buys: the quickest pay-back at each level of capability</h1>
-<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; what a class leaves out is counted under its table. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
+<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; under each table, a class counts what it leaves out and names the next model down. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
 <p class="note">Jump to: ${levels.map((l) => `<a href="#${bestAnchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
@@ -2469,8 +2490,12 @@ ${sections}
  *
  * The cut is `BEST_PER_CLASS` and the lede prints it from there. This holds the page to
  * it, class by class and level by level: the rows a class carries, the models it says
- * it leaves out, and the pairs it counts. Raising the cut without changing the sentence,
- * listing a fourth model, or claiming a model is left out when none is, fails the build.
+ * it leaves out, the pairs it counts, and the one model past the cut it names. Raising
+ * the cut without changing the sentence, listing a fourth model, or claiming a model is
+ * left out when none is, fails the build. So does naming a model that already has a row
+ * in the same class, which is what a cut counted from the wrong end of the list would
+ * print, and so does calling it the quickest of the ones left out when a row above it
+ * pays back more slowly.
  */
 function checkBestCuts() {
   const page = meta.find((p) => p.path === '/best/');
@@ -2482,6 +2507,7 @@ function checkBestCuts() {
 
   let classes = 0;
   let left = 0;
+  let named = 0;
   const levels = bestUsageLevels(data);
   for (const l of levels) {
     const at = `${fmtTokens(l.usage)} tokens a day`;
@@ -2508,8 +2534,33 @@ function checkBestCuts() {
       if (more && !block.includes(moreSaid)) problems.push(`/best/ lists ${listed} of the ${t.picks.length} models that pay back in ${t.label} at ${at} and does not say the other ${more} ${more === 1 ? 'is' : 'are'} left out`);
       if (!more && /more model/.test(block)) problems.push(`/best/ says ${t.label} at ${at} leaves a model out, and every model in it that pays back is listed`);
       if (pairsSaid && !block.includes(sentenceCase(pairsSaid))) problems.push(`/best/ does not count what ${t.label} at ${at} leaves out: ${pairsSaid}`);
+      if (more) {
+        named++;
+        // the next model down is the first pick past the cut, so the claim is checked
+        // against the picks rather than against the sentence that was written from them
+        const next = t.picks[BEST_PER_CLASS];
+        const rowIds = [...block.matchAll(/class="[^"]*\bc-model\b[^"]*"><a href="\/models\/([^/]+)\//g)].map((m) => m[1]);
+        // the aside under the rows, not the rows themselves: a row links a machine too
+        const note = block.match(/<td[^>]*\bc-note\b[^>]*>([\s\S]*?)<\/td>/)?.[1] ?? '';
+        if (!note.includes(`/models/${next.model.id}/`))
+          problems.push(`/best/ leaves ${more} model${more === 1 ? '' : 's'} out of ${t.label} at ${at} and does not name ${next.model.display_name}, the quickest of them`);
+        else if (rowIds.includes(next.model.id))
+          problems.push(`/best/ names ${next.model.id} as the next model down in ${t.label} at ${at}, and it already has a row there`);
+        if (!note.includes(`/hardware/${next.hw.id}/`) || !note.includes(fmtDuration(next.days)))
+          problems.push(`/best/ names ${next.model.display_name} as the next model down in ${t.label} at ${at} without the machine that pays it back and the ${fmtDuration(next.days)} it takes`);
+        // the note calls it the quickest of the ones left out, so the picks have to be in that order
+        if (next.days < t.picks[BEST_PER_CLASS - 1].days)
+          problems.push(`/best/ calls ${next.model.display_name} the quickest model left out of ${t.label} at ${at}, and it pays back sooner than the last row listed`);
+      }
     }
   }
+
+  // the lede promises the note names one, so it says so only where one is named
+  const names = 'names the next model down';
+  if (named && !page.html.includes(names))
+    problems.push(`/best/ names the next model down in ${named} of its classes and does not say so in its first paragraph: "${names}"`);
+  if (!named && page.html.includes(names))
+    problems.push('/best/ says it names the next model down, and every class lists every model in it that pays back');
 
   if (problems.length) {
     console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
@@ -2519,7 +2570,7 @@ function checkBestCuts() {
         : `${problems.length} things /best/ says about its own lists do not hold`,
     );
   }
-  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, and counts the ${left} more that pay back behind them`);
+  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, counts the ${left} more that pay back behind them, and names the next one down in the ${named} classes that leave one out`);
 }
 
 /**
@@ -2705,6 +2756,10 @@ function modelPage(m: Model): string {
   const fastest = runners
     .filter((r) => r.view.throughput?.tokensPerSec != null)
     .sort((a, b) => b.view.throughput!.tokensPerSec! - a.view.throughput!.tokensPerSec!)[0];
+
+  // The same yardstick the machine pages put under their own speed column,
+  // over the machines this table shows rather than every one that runs it.
+  const hostedLine = hostedSpeedLine(perFamily.map((r) => r.view.throughput?.tokensPerSec), data);
 
   const caps = CAPABILITY_KEYS.map(
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
@@ -2894,7 +2949,7 @@ ${stack(`<table class="board">
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
 ${reachLine}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
@@ -3114,6 +3169,11 @@ function hardwarePage(hw: Hardware): string {
     return ` Each speed says how it was arrived at: ${memoryCount(measured)} of the ${known.length} here ${measured === 1 ? 'is' : 'are'} measured, from a published benchmark run on this machine, and the rest are estimated from its ${band}.`;
   })();
 
+  // What the speeds in that column are worth, against the hosted API the reader
+  // is choosing between. Taken over the rows this table shows rather than every
+  // model that fits, so it counts what is in front of them.
+  const hostedLine = hostedSpeedLine(shown.map((r) => r.throughput.tokensPerSec), data);
+
   const best = fits[0];
   // What the table leaves out: the models this machine misses at the context every
   // figure above is taken at, and holds at a shorter window.
@@ -3140,7 +3200,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
@@ -5487,20 +5547,13 @@ for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), compa
 // running it asks
 for (const [a, b] of modelPairs(data)) write(modelComparePath(a, b), modelComparePage(a, b));
 
-// A page's lastmod is the day its own words last changed, read out of
-// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
-// prices were checked, and why a page whose fingerprint has moved goes into the
-// sitemap without a date rather than with a guess at one.
-const datesFile = new URL('../seo/page-dates.json', import.meta.url);
-const recordedDates: PageDates | null = existsSync(datesFile)
-  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
-  : null;
 const fingerprints = [
   // the home page has no body of its own; the calculator draws it
   { path: '/', hash: fingerprint({ title: '', description: '', body: readFileSync(new URL('../index.html', import.meta.url), 'utf8') }) },
-  ...meta.map((p) => ({ path: p.path, hash: fingerprint({ title: p.title, description: p.description, body: mainOf(p.html) }) })),
+  // every other page was fingerprinted as it was written, so the day in its own
+  // markup and the day in the sitemap cannot be two different readings
+  ...meta.map((p) => ({ path: p.path, hash: p.hash })),
 ];
-const today = new Date().toISOString().slice(0, 10);
 const urls = fingerprints
   .map(({ path, hash }) => {
     const changed = publishedDate(recordedDates, path, hash);
@@ -6442,6 +6495,10 @@ function checkSourceLinks() {
  * its content. The last is the one worth a build failing over — a date left behind by a
  * page that has since changed is exactly the wrong signal, and it is the fault that
  * cannot be seen by reading the sitemap.
+ *
+ * Each page now says the same day in its own structured data, so the claim is made in
+ * two places and the two have to agree: the day, the node it sits on, and the fact of
+ * it at all. See withModified in src/pagekit.ts.
  */
 function checkPageDates() {
   const problems: string[] = [];
@@ -6466,6 +6523,26 @@ function checkPageDates() {
   for (const [path, was] of Object.entries(recordedDates?.pages ?? {})) {
     if (was.changed !== null && !/^\d{4}-\d{2}-\d{2}$/.test(was.changed)) problems.push(`${path} is recorded as changing "${was.changed}", which is not a day`);
   }
+  // The same day, said twice. A sitemap is a file the reader never sees and the crawler
+  // has to take on trust; the page repeating the claim out of the same ledger is what
+  // makes it checkable at all. So it is read back out of the markup rather than out of
+  // the string that wrote it: a dated page carries the day once, on the node that is
+  // the page, and an undated one carries nothing.
+  let stamped = 0;
+  for (const p of meta) {
+    const graph = (JSON.parse(p.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '{"@graph":[]}') as { '@graph': Record<string, unknown>[] })['@graph'];
+    const carrying = graph.filter((n) => n.dateModified !== undefined);
+    const want = publishedDate(recordedDates, p.path, p.hash);
+    if (carrying.length > 1) { problems.push(`${p.path} dates itself ${carrying.length} times over`); continue; }
+    const on = carrying[0];
+    if (want && !on) problems.push(`${p.path} is dated ${want} in the sitemap and says nothing about it itself`);
+    else if (!want && on) problems.push(`${p.path} dates itself ${String(on.dateModified)} where the sitemap will not date it`);
+    else if (want && on) {
+      stamped++;
+      if (on['@type'] !== 'WebPage') problems.push(`${p.path} puts its date on a ${String(on['@type'])} rather than on the page`);
+      if (on.dateModified !== want) problems.push(`${p.path} dates itself ${String(on.dateModified)} where the sitemap says ${want}`);
+    }
+  }
   if (problems.length) {
     console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
     throw new Error(`${problems.length} sitemap dates are wrong or cannot be read`);
@@ -6481,6 +6558,10 @@ function checkPageDates() {
     `  ${dated} of ${entries.length} sitemap entries carry the day that page's own words last changed` +
       (why.length ? `; ${why.join(', ')}` : ''),
   );
+  // the home page is the difference between the two counts: it is a static file the
+  // calculator fills, so it is fingerprinted whole and cannot carry a date without
+  // changing the words that date is taken over
+  console.log(`  ${stamped} of the ${meta.length} generated pages say that day in their own structured data as well`);
 }
 
 /**
@@ -6538,6 +6619,78 @@ function checkMachineLedes() {
  * reader lands: /hardware/ marked all 56 of its own, the head-to-heads marked
  * theirs, and the pages in between said nothing.
  */
+/**
+ * The yardstick under a speed column, held to the column above it.
+ *
+ * Every figure the sentence names is recomputed from the rendered table rather
+ * than from the helper that wrote it, because a claim checked against its own
+ * string proves nothing: the speeds are read back out of the first board table
+ * on the page, which is the one the note sits under, and the hosted figure is
+ * read out of the data.
+ */
+function checkHostedSpeed() {
+  const problems: string[] = [];
+  const hosted = data.defaults.cloud.default_tokens_per_sec;
+  let pages = 0;
+  for (const p of meta) {
+    if (!p.path.startsWith('/hardware/') && !p.path.startsWith('/models/')) continue;
+    if (p.path === '/hardware/' || p.path === '/models/') continue;
+    // The table the note belongs to: the first one on the page, which is what a
+    // machine runs or what runs a model. Anything below it is a different question.
+    const table = p.html.split('<table class="board')[1]?.split('</table>')[0] ?? '';
+    const speeds = [...table.matchAll(/([\d,]+(?:\.\d+)?) tok\/s/g)].map((m) => Number(m[1].replace(/,/g, '')));
+    const said = p.html.match(/For scale, the calculator starts from <b>([^<]+)<\/b> for a hosted API and times a local machine against it\. ([^<]+)</);
+    if (!speeds.length) {
+      if (said) problems.push(`${p.path} puts a hosted speed under a table with no speed in it`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${p.path} prints ${speeds.length} speeds and says nothing about what a speed is worth`);
+      continue;
+    }
+    pages += 1;
+    const seen = p.html.split('For scale, the calculator starts from').length - 1;
+    if (seen !== 1) problems.push(`${p.path} says what a speed is worth ${seen} times over`);
+    if (said[1] !== `${hosted} tok/s`)
+      problems.push(`${p.path} holds its speeds against ${said[1]} where the data says ${hosted} tok/s`);
+    const reach = speeds.filter((t) => t >= hosted).length;
+    const claimed = said[2].match(/^(\d+) of the (\d+)/);
+    if (claimed) {
+      if (Number(claimed[1]) !== reach || Number(claimed[2]) !== speeds.length)
+        problems.push(`${p.path} says ${claimed[1]} of ${claimed[2]} reach ${hosted} tok/s where the table has ${reach} of ${speeds.length}`);
+    } else if (/^All (\d+) above/.test(said[2])) {
+      const n = Number(said[2].match(/^All (\d+)/)![1]);
+      if (reach !== speeds.length || n !== speeds.length)
+        problems.push(`${p.path} says all ${n} reach ${hosted} tok/s where ${reach} of ${speeds.length} do`);
+    } else if (said[2].startsWith('Nothing above')) {
+      if (reach !== 0) problems.push(`${p.path} says nothing reaches ${hosted} tok/s where ${reach} of ${speeds.length} do`);
+    } else if (said[2].startsWith('The one above')) {
+      if (speeds.length !== 1) problems.push(`${p.path} says one row where the table has ${speeds.length}`);
+      if ((reach === 1) !== !said[2].includes('does not reach'))
+        problems.push(`${p.path} gets wrong whether its one speed reaches ${hosted} tok/s`);
+    } else {
+      problems.push(`${p.path} states its speeds against the hosted figure in words this check does not know`);
+    }
+    // The figure it names at the end is the slowest or quickest of the column,
+    // as the column prints it.
+    const named = said[2].match(/(?:at|is) ([\d,]+(?:\.\d+)?) tok\/s\.$/);
+    if (!named) {
+      problems.push(`${p.path} says how many rows reach the hosted speed and names none of them`);
+    } else {
+      const want = said[2].includes('the quickest is') || (speeds.length === 1)
+        ? Math.max(...speeds)
+        : Math.min(...speeds);
+      if (Number(named[1].replace(/,/g, '')) !== want)
+        problems.push(`${p.path} names ${named[1]} tok/s where the table's is ${want}`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} do not hold their speeds to the hosted figure`);
+  }
+  console.log(`  ${pages} pages hold their speed column against the ${hosted} tok/s the calculator starts from for a hosted API`);
+}
+
 function checkSpeedBasis() {
   const problems: string[] = [];
   let cells = 0;
@@ -7169,6 +7322,7 @@ checkPageSections();
 checkHeadingAnchors();
 checkJumpLines();
 checkSpeedBasis();
+checkHostedSpeed();
 checkTables();
 checkPairedColumns();
 checkArticles();
