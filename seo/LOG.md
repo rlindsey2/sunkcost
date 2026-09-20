@@ -11,6 +11,22 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 
 ## Ryan's side (needs the site owner)
 
+- [ ] **Merge (or close) [PR #18](https://github.com/rlindsey2/sunkcost/pull/18), twelve pages for
+      the twelve sizes of memory a machine here is sold in.** Opened 2026-09-20.
+      `/how-much-memory/12gb/` through `/how-much-memory/512gb/`, one page per size, each answering
+      *what can I run with N GB* from the machines actually sold at that size rather than from the
+      number on the box. It is a pull request rather than a push only because it is a new page type,
+      which is the standing rule. No data figure is touched and neither are `src/calc.ts`,
+      `src/compute.ts` or `src/fit.ts`, and nothing on the calculator itself changes: the pages sit
+      under the memory guide, so `index.html` and `FOOTER_LINKS` are untouched.
+      Verified on `main` at `090adee`: 445 tests, typecheck clean, the full `npm run build` with
+      `build:functions`, 320 pages with every guard passing, the six breaks that proved
+      `checkMemorySizes()` and the four that proved the tests, and all twelve pages read rendered.
+      **It does not collide with PR #17**, which touches `index.html` and `src/styles.css` and
+      nothing this branch goes near. Both branches rewrite `seo/page-dates.json`, and as ever the
+      resolution there is to take either side and run `npm run build:pages`, which rewrites the
+      ledger from the merged tree.
+
 - [ ] **Merge (or close) [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), the home page's
       missing heading.** Opened 2026-09-19. The root URL is the only page on this site with no `h1`:
       all 261 generated pages have exactly one, `index.html` has five `h2`s under nothing, and the
@@ -622,6 +638,18 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [ ] **The twelve size pages have one inbound link each from the machines, and none from the
+      models.** Written down 2026-09-20, the day they were built. Each size page is linked from
+      `/how-much-memory/` and from every machine sold at that size, which is 2 to 12 inbound pages
+      apiece and enough not to be an orphan. What has no link to them is the 55 model pages, and that
+      is where the natural sentence is: a model page already names the cheapest machine that holds
+      the model, and the size that machine comes in is the search a reader on that page is one step
+      away from typing. The cheap version is one clause in the sentence that already names that
+      machine, written from `unified_memory_gb` so it cannot drift. It is `scripts/build-pages.ts`,
+      so it is a push. Worth doing once the pull request that adds the pages is merged, and not
+      before: a second branch touching the same page builder is the collision this log has warned
+      about six times.
+
 - [x] **The site printed 995 speeds and never said whether one of them is quick.** Done
       2026-09-20, pushed as `6df11bd`. A reader meets *19 tok/s* in a column and has nothing to
       hold it against; the thing they are actually choosing between is a hosted API, and the site
@@ -810,7 +838,33 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       machine or count changed. The run entry below has the six breaks that proved the guard and the
       one thing the re-sort would have broken silently.
 
-- [ ] **The question now has a heading and still has no page of its own.** *What can I run with
+- [x] **The question has twelve pages of its own now.** Done 2026-09-20, as
+      [PR #18](https://github.com/rlindsey2/sunkcost/pull/18), because a new page type is a
+      pull request and that is the standing rule. `/how-much-memory/12gb/` through
+      `/how-much-memory/512gb/`: one page for every size a machine here is sold in, 1,215 to 1,604
+      words each against a site median of 1,024, and 320 pages on the site where there were 308.
+      **Both things the item said to settle are settled, and neither turned out the way it guessed.**
+      They are not top-level pages, so `index.html` is untouched and `FOOTER_LINKS` unchanged: a size
+      is a step below the memory guide and sits under it, which also gives every one of them a
+      breadcrumb that reads *Sunk Cost / How much memory / 16 GB*. And what stops them nesting inside
+      one another is not the *what this size adds* section alone, though each page carries one: it is
+      that the machines at a size are different machines with different prices, different bandwidths
+      and different shares of that memory, and the page is built from them rather than from the size.
+      **The split the item named as the risk is the page's own opening line.** Every lede says what a
+      model actually gets before it says anything else — *on the Mac mini M6, 24GB it gets 16 GB and
+      on the GeForce RTX 3090, 24GB it gets 23 GB* — and the count of models that fit is given as the
+      range across the machines at that size wherever it is one, 10 to 13 at 16 GB, 13 to 24 at 24 GB,
+      19 to 27 at 32 GB. The model table's fourth column is how many machines at that size hold that
+      model, which is the figure a size on its own cannot give.
+      **What the pages found, which no page here was saying.** Three sizes in a row buy no model at
+      all: the roomiest machine at 36, 48 and 64 GB holds the same 27 models as the roomiest at 32 GB,
+      because a 31 GB card hands a model more than a 36 GB Mac does. Each of those pages says so in
+      the words the data gives. And at 512 GB the larger size is the cheaper one, $9,499 against
+      $10,799 at 256 GB, which the section prints rather than steps around.
+      `checkMemorySizes()` holds six claims, all read back out of the rendered page, and the run entry
+      below has the six breaks that proved it and the four that proved the tests.
+
+- [ ] **The original item, kept for what it asked.** *What can I run with
       16 GB*, *what LLM fits in 24 GB of VRAM*, *is 32 GB enough for a local model* are three
       different searches, and one table under one heading on `/how-much-memory/` answers all three at
       once. Each is a page's worth of answer on its own: the models that fit at that size, what each
@@ -1806,6 +1860,98 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — the number printed on the box, answered twelve times
+
+**The watch was already done.** `npm run model-watch` printed `today 2026-09-20 · last checked
+2026-09-20 · done for today`, so an earlier run had it and the backlog was the job. The candidates
+waiting on figures are unchanged and still need Ryan.
+
+**What was open, and what was taken.** No item above the memory-size one is work: the home page's
+`og:url` is one line that is deliberately waiting for PR #17 to settle, the query-URL item and the
+structured-data item are both measurements written down as *nothing to do*, and the
+`/hardware/` and `/leaderboard/` prose item was finished on 2026-09-20. So the top open item that
+was work is the one that got done: **a page for every memory size**, pushed to the branch
+`seo/memory-size-pages` and opened as [PR #18](https://github.com/rlindsey2/sunkcost/pull/18). It is a pull request rather than a push
+because it is a new page type, which is the standing rule here.
+
+**What it is.** Twelve pages, `/how-much-memory/12gb/` through `/how-much-memory/512gb/`, one for
+every size a machine on this site is sold in. Each one opens by saying what a model actually gets
+from that size, which is never the number on the box, then heads five sections: the machines sold
+at that size and what each hands over, every current model that fits at 32k with what it needs and
+how many machines at that size hold it, what the next size up adds over this one, how many models
+fit at each context setting the calculator offers, and whether a machine at that size pays for
+itself. 1,215 to 1,604 words a page against a site median of 1,024. Every figure comes from the
+same helpers the machine pages use, so a count here and a count there cannot differ.
+
+**The findings the pages print, which nothing on this site was saying.**
+
+- **Three sizes in a row buy no model.** The roomiest machine at 36 GB, at 48 GB and at 64 GB each
+  holds the same 27 of the 39 current models as the roomiest at 32 GB, because a 31 GB graphics card
+  hands a model more than a 36 GB Mac does. Those pages say it plainly: what the step buys is a
+  longer window and room to work, not a model that was out of reach.
+- **At 512 GB the larger size is the cheaper one**, $9,499 against $10,799 at 256 GB, because the
+  cheapest machine at 512 GB is a discontinued Mac Studio priced at launch and the one at 256 GB is
+  current. The section prints both prices and says which is which.
+- **A size is two answers wherever two machines share it.** 16 GB hands a model 10.5 GB or 15 GB,
+  24 GB hands it 16 GB or 23 GB, 96 GB hands it 72 GB or 95 GB, and the model counts follow: 10 to
+  13, 13 to 24, 29 to 33. Every lede carries that split in its first two sentences.
+
+**Four things that were got wrong first and fixed before anything was committed**, all found by
+reading the pages rendered rather than by a guard. The lede said *the system keeps a share and a
+graphics card keeps a margin* on a page where neither machine was a card; it now says why from the
+two machines it names. The model table said it was ordered strongest first and was in data order.
+The speed column was the cheapest machine at the size, which left eleven rows on the 24 GB page
+reading *no room*; it is the machine the table is cut from now, named in the column heading and in
+the sentence above it, with each row still opening the calculator on the cheapest machine at that
+size that holds that model. And the step section divided a card's price by a whole computer's and
+called the difference the price of the step; where the two prices are different things it now says
+so instead of subtracting them.
+
+**One fault the reading also caught, which is the sort this site exists not to print.** At 16 GB the
+pay-back sentence said the machine pays back in 14 months at 20M tokens a day, and the machine
+cannot generate 20M tokens in a day: it manages 16.2M. The figure was the site's own capped one and
+the page was printing it bare, which is what every table here marks as *its ceiling*. It now says
+it in words, on the four pages where the cap bites.
+
+**`checkMemorySizes()`, and the breaks that proved it.** Six claims a run: a page for every size and
+no page for a size nothing is sold in; a row for every machine at that size, with the memory it hands
+a model and the model count its own page prints; the model table holding exactly what the roomiest
+machine at that size fits, each with its memory and its *n of m*; the context table counting fits the
+way the rest of the site counts them; the hosted-speed sentence recomputed from the speeds the table
+actually prints; and every page linked from the memory guide and from each of its machines. Proved by
+breaking it six ways: printing installed memory where usable belongs (56 faults), dropping the first
+model row (a leave-out and every *needs* figure off by one row), claiming every machine at a size
+holds every model, counting the context table at 32k on every row, taking the size pages' links off
+`/how-much-memory/`, and taking the line off the machine pages. The seventh break, writing eleven of
+the twelve pages, is caught one guard earlier by `checkCanonicals`, because the ladder then links a
+page nobody wrote.
+
+**The tests, and the four breaks that proved them.** Five in `tests/pagekit.test.ts` over the two new
+helpers: `machinesAtSize()` and `memoryLevels()`. Sorting the machines the other way, breaking a tie
+on the dearest rather than the cheapest, keeping a machine whose usable memory nobody has published,
+and changing the address a size page answers to each fail a test.
+
+**How it was verified.** 445 tests, typecheck clean, `npm run build:pages` with every guard passing
+at 320 pages, the full `npm run build` including `build:functions`, and all twelve pages read
+rendered out of `public/`. Titles 54 to 55 characters and descriptions 144 to 150, so nothing is cut
+in a search result, and all 24 are unique. Every page is linked from at least two others.
+
+**What it deliberately leaves, so the next run does not read it as a gap.** The pages sit under
+`/how-much-memory/`, not at the top level, so `index.html` and `FOOTER_LINKS` are untouched and the
+hub carries the list of them. There is no share card of its own: all twelve name the memory guide's
+card, which is the picture of the question they answer. And at 24 GB the two machines that hand a
+model the most of it are both discontinued graphics cards, so that page's speed column is a card
+nobody sells; the column says so, and the machine table marks every discontinued row, but a 24 GB
+card that is still on sale would be the better basis if one is ever added.
+
+**Continue next.** The backlog's top open item that is work is now the home page's `og:url`, one line
+that is waiting on PR #17 rather than on a run. Behind it, `/models/` is a 404 and wants a redirect
+with the next change to `public/_headers`. Both are cheap; neither is an hour. The fuller one is the
+new item this run adds: the size pages are twelve new pages with one internal link each from the
+machine pages, and nothing on the model pages points at them, where a model page saying *the
+cheapest 24 GB machine holds this* has a natural place for one.
+
 
 ### 2026-09-20 — PR #16 merged: what a month of it costs is live
 
