@@ -603,6 +603,20 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
+- [x] **The sitemap knew when every page last changed and no page said so itself.** Done
+      2026-09-20, pushed as `ab123f2`. All 307 generated pages carry `dateModified` on their
+      `WebPage` node, the same day and out of the same ledger the sitemap reads. A sitemap is a file
+      the reader never sees and the crawler has to take on trust; the page repeating the claim is
+      what makes it checkable. The stamp goes on in `write()`, after the body is final, and lands in
+      the head, outside the title, the description and the `<main>` the fingerprint is taken over,
+      so dating a page cannot move the date it is given: `seo/page-dates.json` is unchanged by the
+      push and every page kept its day. `checkPageDates()` holds four more claims, read out of the
+      markup rather than out of the string that wrote it. The run entry below has the five breaks
+      and the two tests that were proved by breaking them.
+      **The home page is left out and it is not a gap.** `index.html` is fingerprinted whole rather
+      than by its `<main>`, so a date written into it would be inside its own fingerprint and would
+      make itself wrong. That is the difference between the build's two counts, 308 and 307.
+
 - [x] **The index of all 190 head-to-heads named five of the seven rules that cut it, and two of
       the three on its model side.** Done 2026-09-19, pushed as `a868268`. 50 of the 189 rows — the
       4 chip-step pairs, the 21 price neighbours and the 29 memory neighbours — sat under an
@@ -925,6 +939,27 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       means, which the index's own note already words. It is `scripts/build-pages.ts`, so it is a
       push rather than a pull request. This is a trust fix rather than a traffic one, and it is the
       same fault the stand-in power figure had on the comparison pages two days ago.
+
+- [ ] **56 pages name in structured data what they are about. The other 251 name nothing.**
+      Measured 2026-09-20 while dating the pages. Only the machine pages carry an `about` node,
+      `hardwareProduct()`'s `Product`; the 55 model pages, the 190 head-to-heads and the 7 indexes
+      carry none. The mirror looks obvious and is not: schema.org has no type for a set of
+      open weights, and the nearest ones, `SoftwareApplication` and `CreativeWork`, would be the
+      site picking a name for a thing nobody has named. A head-to-head between two machines could
+      honestly carry both `Product` nodes, and that is 111 pages of markup for no rich result,
+      because `Product` without an offer or a rating draws none and this site sells nothing on
+      purpose. Written down so the asymmetry reads as considered. Worth revisiting only if
+      schema.org adds a type for a model, or if a `Product` pair starts earning something
+      measurable.
+
+- [ ] **`/models/` is a 404 and `/hardware/` is a page.** Measured 2026-09-20. All 55 model pages
+      sit under `/models/<id>/` and the directory above them has no index, where `/hardware/` and
+      `/compare/` both do. Nothing on the site links it, and the breadcrumb on a model page already
+      steps through *Models* to `/leaderboard/`, which is the model index in everything but its
+      address. So this costs nothing a crawler follows; it costs the reader who trims the address
+      bar. The cheap fix is a redirect to `/leaderboard/` rather than a page, which is one line of
+      Cloudflare Pages config and not something the build writes today. Worth doing with the next
+      change to `public/_headers` or whatever holds redirects; not worth a run of its own.
 
 - [ ] **The price-neighbour rule has a round number in it, and one day it will bite.** The cap
       is a tenth. On the data as it stands that is not a judgement call at all: the widest pair it
@@ -1683,6 +1718,97 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — the sitemap's date, said on the page as well
+
+**The watch was already done.** `npm run model-watch` printed `2026-09-20` as last checked against
+today, so an earlier run had it and the backlog was the job. The three candidates waiting on figures
+are unchanged and still need Ryan: Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B.
+
+**Why this item, when it was not on the backlog.** Every open item above it is parked or is not the
+agent's. The per-memory-size pages are parked by their own text behind Ryan's two pull requests, and
+queuing a third behind them is how PR #16 came to need four conflict repairs. The three below that,
+the price-neighbour cap, the 45 words 21 pages share and the home page's form labels, are all
+written down as considered rather than as work. So this run went looking, and the gap it found is in
+push territory: structured data.
+
+**What was missing.** `seo/page-dates.json` has dated every page in the sitemap since it was
+written, and the date is honest by construction: a page is dated only while its fingerprint still
+matches what the ledger recorded, so a page that changed and cannot prove when goes out with no date
+at all. None of that reached the page. A sitemap is a file the reader never sees and the crawler has
+to take on trust, and nothing in the markup repeated the claim. On a site whose subject is what a
+machine costs this week, freshness is the thing worth saying twice.
+
+**What it says now.** All 307 generated pages carry `dateModified` on their `WebPage` node, out of
+the same ledger and to the same day as the sitemap. `/leaderboard/` and `/best/` say 2026-09-20; the
+other 305 say 2026-09-19. `withModified()` in `src/pagekit.ts` reads the page's one structured-data
+block, puts the day on the node that is the page, and writes the block back through `jsonLd()`, so
+the escaping that stops a machine name closing the script tag survives the round trip.
+
+**The ordering problem, and why it is not one.** The date cannot be known until the body is final,
+because until then the ledger cannot recognise the page. So the stamp goes on inside `write()`,
+after the headings are anchored and the jump line is in. It lands in the head, outside the title,
+the description and the `<main>` the fingerprint is taken over, so **dating a page cannot move the
+date it is given**. Measured rather than argued: `seo/page-dates.json` is byte for byte unchanged by
+this push and all 307 pages kept the day they had. The fingerprint is now taken once, in `write()`,
+and carried on `meta`, so the day in the markup and the day in the sitemap cannot be two readings.
+
+**Four more claims in `checkPageDates()`, read back out of the markup rather than out of the string
+that wrote it.** A dated page carries the day once. It carries it on the `WebPage` node and not on
+the site or the breadcrumb. It carries the day the sitemap gives it. And a page the sitemap will not
+date carries nothing.
+
+**Five breaks, each run.** Stamp nothing: exit 1, 307 problems, *`/leaderboard/` is dated 2026-09-20
+in the sitemap and says nothing about it itself*. Stamp a day out: exit 1, 307, *dates itself
+2026-09-21 where the sitemap says 2026-09-20*. Stamp the `WebSite` node instead: exit 1, 307, *puts
+its date on a WebSite rather than on the page*. Corrupt one ledger hash so a page goes out undated,
+then stamp it anyway: exit 1, exactly one problem and the right page, *`/best-gpu/` dates itself
+2026-09-20 where the sitemap will not date it*. Stamp twice: exit 1, 307, *dates itself 2 times
+over*. The first cut of that fourth break used `sed`, which matched the sitemap's own line as well
+because the pattern was a substring of it; both guards then fired and the break proved less than it
+looked. Worth knowing: the two lines differ only in indentation.
+
+**Five tests in `tests/pagekit.test.ts`, two of them proved.** The load-bearing one takes the
+fingerprint of a shell before and after stamping and holds them equal; moving the stamp inside
+`</main>` fails it. The escaping one names a `WebPage` `</script><img src=x>` and holds the tag
+count at one; re-serialising with a bare `JSON.stringify` fails it. The other three hold the node it
+lands on, that every other node comes through untouched, and that a page with no structured data or
+no page node is refused rather than dated wrongly.
+
+**Nothing a visitor reads moved, measured against a build of the previous tree.** The pre-push tree
+was built in a throwaway worktree and every file compared: **all 307 pages differ only inside their
+JSON-LD**, none differs anywhere else, and `sitemap.xml` and `robots.txt` are byte for byte the
+same. Every date in the built site is a real day and none is in the future. **422 tests**, typecheck
+clean, the full `npm run build` end to end including `build:og`, `build:share` and `build:functions`,
+and 307 pages with every guard passing.
+
+**Pushed to `main` as `ab123f2`.** `scripts/build-pages.ts`, `src/pagekit.ts` and a test. No data
+file, `src/calc.ts`, `src/compute.ts` or `src/fit.ts` is touched, and no visitor-facing file either,
+so this stays on the push side of the standing rule. `origin/main` was still at `d60c5a4` when this
+went up, so no sibling session had run.
+
+**The home page is the one page left out, and not by oversight.** `index.html` is a static file the
+calculator fills, so the ledger fingerprints it whole rather than by its `<main>`. A date written
+into it would be inside its own fingerprint, which would change the hash, which would drop its
+sitemap date, which would make the date it carries wrong. It is the difference between the build's
+two counts: 308 of 308 in the sitemap, 307 of 307 in the markup. Nothing to fix.
+
+**Both open pull requests were merged for real against this push and built there.** PR #16: 432
+tests, typecheck clean, 308 pages with every guard passing, and `/cost-per-month/` is dated in the
+ledger already so it takes a stamp like the rest. PR #17: 424 tests, typecheck clean, 307 pages, and
+its rebuilt `seo/page-dates.json` already carries the new `/` hash, so the home page keeps its
+sitemap date. **Neither needed the ledger rebuilt**, and `npm run build:pages` wrote no change on
+either merged tree. Run it after merging anyway; it is one command and it is the thing that goes
+wrong in silence. The clone here is shallow, so `git merge-tree` needs `git fetch --deepen=200
+origin main` first, and the local `main` branch is 348 commits stale: merge `origin/main`, not
+`main`, or the merge reports *Already up to date* and proves nothing.
+
+**What to continue.** The backlog above this entry is unchanged in order. The per-memory-size pages
+are still the top open item with real traffic in them and still parked behind Ryan's two pull
+requests. Two new notes went in below them, both measured and both saying there is nothing to do.
+Ryan's side is unchanged: PR #16 and PR #17 both open, the leaderboard's estimated-score count still
+wrong by eleven in `data/defaults.json`, the `TODO:` still live in the calculator's assumptions
+panel, and Ternary Bonsai 2 27B still waiting on figures.
 
 ### 2026-09-20 — the fourth-best buy, named
 
