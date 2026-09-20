@@ -4,7 +4,10 @@ import {
   addJumpLine, anchoredHeading, anchorHeadings, headingSlug, JUMP_MIN_SECTIONS, sectionLink, SECTIONS, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
   bestLeftOut, contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
   machineIndexLine,
+  machinesAtSize,
   machinesThatHold,
+  memoryLevels,
+  memorySizePath,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
@@ -2731,5 +2734,52 @@ describe('what a local speed is worth', () => {
     expect(hosted([null, undefined])).toBe('');
     // a row with no speed is not a row this sentence counts
     expect(hosted([null, 116, undefined])).toContain('The one above reaches it, at 116 tok/s.');
+  });
+});
+
+describe('one size of memory, and the machines sold with it', () => {
+  // A size is a number somebody printed on a box, and the number that decides
+  // what runs is a different one. These two helpers are what keeps a page about
+  // a size honest: the machines sold at it, and the amounts of memory those
+  // machines actually hand a model.
+  it('addresses a size page by the size on the box', () => {
+    expect(memorySizePath(16)).toBe('/how-much-memory/16gb/');
+    expect(memorySizePath(512)).toBe('/how-much-memory/512gb/');
+  });
+
+  it('gathers every machine sold with that much memory, and nothing else', () => {
+    const at16 = machinesAtSize(16, data);
+    expect(at16.length).toBeGreaterThan(1);
+    expect(at16.every((h) => h.unified_memory_gb === 16)).toBe(true);
+    expect(at16.map((h) => h.id)).toContain('mac-mini-m6-16');
+    // the machines this site lists with 16 GB, current and discontinued alike
+    expect(at16.map((h) => h.id).sort()).toEqual(
+      data.hardware.filter((h) => h.unified_memory_gb === 16).map((h) => h.id).sort(),
+    );
+    expect(machinesAtSize(17, data)).toEqual([]);
+  });
+
+  it('puts the machine that hands a model the most of it first, and breaks a tie on price', () => {
+    const at16 = machinesAtSize(16, data);
+    expect(at16[0].id).toBe('geforce-rtx-4080-16');
+    for (let i = 1; i < at16.length; i++) expect(at16[i - 1].usable_memory_gb!).toBeGreaterThanOrEqual(at16[i].usable_memory_gb!);
+    const macs = at16.filter((h) => h.usable_memory_gb === 10.5);
+    expect(macs[0].id).toBe('mac-mini-m4-16');
+    for (let i = 1; i < macs.length; i++) expect(macs[i - 1].price_usd!).toBeLessThanOrEqual(macs[i].price_usd!);
+  });
+
+  it('counts the amounts a size is handed over in, tightest first', () => {
+    const levels = memoryLevels(16, data);
+    expect(levels.map((l) => l.usable)).toEqual([10.5, 15]);
+    expect(levels[0].machines.every((h) => h.usable_memory_gb === 10.5)).toBe(true);
+    expect(levels.flatMap((l) => l.machines).length).toBe(machinesAtSize(16, data).length);
+    // a size every machine hands over the same way is one level, not several
+    expect(memoryLevels(48, data).map((l) => l.usable)).toEqual([36]);
+  });
+
+  it('leaves out a machine whose usable memory nobody has published', () => {
+    const odd = { ...data, hardware: [...data.hardware, { ...hw('mac-mini-m6-16'), id: 'unknown-16', usable_memory_gb: null }] } as unknown as Dataset;
+    expect(machinesAtSize(16, odd).map((h) => h.id)).not.toContain('unknown-16');
+    expect(memoryLevels(16, odd).flatMap((l) => l.machines).map((h) => h.id)).not.toContain('unknown-16');
   });
 });
