@@ -1768,6 +1768,17 @@ calculator's assumptions panel, so it is one string in a file this agent must no
 Ryan's side above. **He was notified**, because a wrong figure a visitor can check is the one thing
 this site cannot afford.
 
+**Deploy run 259 went green at 00:54 on `062c736`**, three minutes thirty-three from queue to
+published, so both commits are live on sunkcost.ai. Run 258 was cancelled rather than failed: the
+log commit followed the code commit inside two minutes and the workflow's concurrency group dropped
+the older of the two, which is the same shape as runs 255 and 248.
+
+**And the Actions cache that has now caught three runs in a row has a way round it.** Six reads of
+the run and its jobs came back byte-identical, `updated_at` frozen at 00:51:13, while the build step
+was really finishing — the same trap the last two entries describe. What broke it was **asking a
+different question**: `list_workflow_runs` with `status: completed` is a separate cache key, and it
+returned the finished run immediately. Worth trying before another wait.
+
 **PR #16 conflicted with this push and is merged clean again, as `ca9db20`.** The fourth time, and
 the same line: `main`'s new leaderboard imports and this branch's monthly-cost helpers both extended
 the import list at the head of `scripts/build-pages.ts`, with `MTOK` on a different line on each
