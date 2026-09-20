@@ -64,6 +64,15 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       `seo/page-dates.json` rebuilt rather than chosen, which is the rule that already stood on this
       pull request. Verified on the merged tree: 406 tests, typecheck clean, 308 pages with every
       guard passing. GitHub reports it `clean`. Nothing about the page changed.
+      **It conflicted a fourth time at 00:47 on 2026-09-20 and is merged clean again**, as `ca9db20`.
+      Same file, same import line, and this time `tests/pagekit.test.ts`'s import list as well:
+      `main`'s new leaderboard helpers and this branch's monthly-cost helpers, with `MTOK` on a
+      different line on each side in both files. Both kept by hand, `MTOK` kept once, and
+      `seo/page-dates.json` rebuilt rather than chosen. Verified on the merged tree: 427 tests,
+      typecheck clean, 308 pages with every guard passing. Nothing about the page changed. One
+      thing to know before you merge: four hashes moved on `main` rather than one, so the rebuild
+      of `seo/page-dates.json` matters more than it did — `/leaderboard/`, `/best/`, `/compare/`
+      and `/hardware/`.
       **It conflicted a third time at 17:51 on 2026-09-19 and is merged clean again**, as `a81e913`.
       Same file, same import line: `main`'s jump-line rule and this branch's monthly-cost helpers,
       with `MTOK` sitting on a different line on each side. Both kept by hand, `MTOK` kept once, and
@@ -120,6 +129,22 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       separately; closing them is a click and nobody should do it but you.
       **Ryan was notified about the queue at 01:55 on 2026-09-19**, before he asked for this; that
       was the first ping about it and it should not be repeated unless something changes.
+
+- [ ] **The leaderboard tells visitors 26 models carry an estimated score, and 15 do.** Found
+      2026-09-20 while holding the rest of that page to its data. `frontier_basis.estimated_note`
+      in `data/defaults.json` ends *26 of the models here carry that mark*, and the sentence is
+      printed whole under *How to read the scores* on `/leaderboard/` and again, in bold, in the
+      calculator's own panel whenever the selected model's score is estimated. Counted from
+      `data/models.json`: **16 models carry `estimated`**, and 15 of them have a row on the
+      leaderboard, where the page prints 15 asterisks. So the figure a reader can count on the page
+      and the figure the page states about itself differ by eleven.
+      Nothing about a score changes either way, and no model is marked wrongly — only the count of
+      them is stale, which is what happens to a figure written by hand into a data file. It is two
+      edits for you and neither is the agent's: end the sentence at *running the full v4.3 suite.*
+      and let the pages count the marks, or correct the number to 16. If you would rather the page
+      wrote the count itself, say so and the leaderboard can print it the way it now prints its own
+      row counts; the calculator's copy of the sentence is `src/render.ts` and would be a pull
+      request.
 
 - [ ] **Two one-line data faults, both surfaced on 2026-09-18 by naming the source links, and both
       in files the agent must not edit.**
@@ -581,7 +606,25 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       170 words and six semicolons they are a list, one rule to a line. The run entry below has the
       table of rules, the four breaks and the measurement that says the other 306 pages did not move.
 
-- [ ] **Two of those three pages are left: `/hardware/` and `/leaderboard/`.** `/best/` is done,
+- [x] **All three of those pages are done: `/best/`, `/hardware/` and `/leaderboard/`.**
+      `/leaderboard/` was the last and the biggest, done 2026-09-20 and pushed as `57722ae`. What
+      it was not saying was not a drifted sentence either: the table keeps one row per model, and
+      the second build of a model — same weights, heavier quantisation, its own download, its own
+      page — was dropped in silence. Llama 3.1 8B Instruct at Q8_0 and Qwen3 32B at Q8_0 were in no
+      row, in no count and not in the note that lists the models the index has not scored. Both are
+      named in their own rows now, `leaderboardRows()` carries the cut and says why it keeps the
+      lightest build, and `checkLeaderboardBuilds()` holds four claims, three of them read back out
+      of the rendered page. The page's own print is the accounting: **all 55 models this site
+      prices are named on it, 48 ranked rows, 2 of them naming a heavier build, 5 in the unscored
+      note.** The run entry below has the five breaks and the three that proved the six new tests.
+      **What it leaves, deliberately.** Two sentences on that page are still hand-written claims
+      about the data and neither is wrong today: *the hosted models from Anthropic and OpenAI*,
+      which is true of all eight rows in `frontier_reference` and would quietly stop being true the
+      day a Gemini row is added; and the count of estimated scores, which is wrong today and is in
+      a file the agent must not edit, so it is on Ryan's side above.
+      The original item follows.
+
+- [ ] **Two of those three pages were left: `/hardware/` and `/leaderboard/`.** `/best/` is done,
       pushed as `5627008` on 2026-09-19, and the item's own guess about it was too kind: the sentence
       was not drifted, it had never been written. The page listed the three quickest models in a
       class and said neither that number nor that 23 other models pay back behind them. It now prints
@@ -1619,6 +1662,132 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-20 — a leaderboard of every open model, with two of them on it nowhere
+
+**The watch first, because it was due.** `npm run model-watch` printed `2026-09-19` as last checked
+against today, so the daily check in `seo/MODEL-WATCH.md` came before the backlog. It found nothing:
+the searches that file lists — releases this month, releases this week, each family the script
+prints, new quantisations — returned no open-weight model that is not already priced here or already
+on the candidate list. One new name turned up and is neither new nor runnable, **Inkling**, Thinking
+Machines Lab's 975B mixture of experts: released 2026-07-15, and at the four-bit sizes this site
+carries it lands far past the 119.5 GB the largest machine here addresses. Inkling Small is a
+different model and already has a row. It is written up under *Checked and left alone* so no later
+run spends an hour reaching the same answer, and the date at the top of the file is today's. The
+three candidates waiting on figures — Agnes 3.0-Flash, Nex-N2.5-mini, Ternary Bonsai 2 27B — are
+unchanged and still need Ryan.
+
+**Why this item.** The backlog's top open item is the per-memory-size pages, which its own text says
+to leave until Ryan's two pull requests are settled. The next is the one the last three runs have
+been working down: `/best/`, `/hardware/` and `/leaderboard/` each explain their own table in prose
+that nothing holds to the code. `/best/` and `/hardware/` are done. `/leaderboard/` was the one left
+and the one the last run called the bigger half.
+
+**What was wrong, and it was not a drifted sentence.** The table ranks by score and keeps one row
+per model, because two builds of one model are two rows carrying the same number in the Score
+column. The cut is right. What the page did with the build it cut was drop it: no row, no count, and
+not in the note under the table that lists the models the index has not scored. Two of them —
+
+| model | row | also priced here | on the page |
+| --- | --- | --- | --- |
+| Llama 3.1 8B Instruct | Q4_K_M, 4.9 GB | Q8_0, 8.5 GB | nowhere |
+| Qwen3 32B | Q4_K_M, 20 GB | Q8_0, 35 GB | nowhere |
+
+— each with a page of its own, a score, and machines that run it. So the page that ranks Qwen3 32B
+did not say the site also prices it at eight bits, which is the question a reader with 48 GB of
+memory arrives with. The lede counted 48 models, the note counted 5 unscored, and 48 + 5 is 53 of
+the 55 the site prices. Nothing on the page said which two were missing or that any were.
+
+**What it says now.** The lede prints the cut and the count from the rows themselves:
+
+> 48 open-weight models you can download and run at home, ranked on the Artificial Analysis
+> Intelligence Index v4.3, with the hosted models from Anthropic and OpenAI dropped into the same
+> table for scale. **Each model has one row, at the lightest build this site prices, and two of them
+> are also priced at a heavier quantisation, named in the row itself.**
+
+And the row names it, in the words the model pages already use: *Qwen3 32B · Q4_K_M · also at Q8_0,
+35 GB*, the quantisation linking to that build's own page. `leaderboardRows()` in `src/pagekit.ts`
+carries the cut and says why it keeps the lightest build rather than the first one the sort happens
+to hand it: the column that ends the row is the cheapest machine that runs it, and the smaller
+download runs on more of them. That is the build the old code kept by luck, so **no row moved** —
+the change is that it is now a rule, and that what it cuts is on the page. `leaderboardBuildsLine()`
+writes the lede's sentence from the rows, drops it entirely on a site where every model is priced
+once, and keeps its singular.
+
+**`checkLeaderboardBuilds()`, four claims, three of them read back out of the rendered page.** Every
+model in `data/models.json` is named on the page exactly once — as a row, beside one, or in the
+unscored note — and naming one twice is a fault of its own. No build named beside a row is lighter
+than the weights that row prints, compared between the two figures the page itself shows rather than
+the arrays that wrote them. The lede's count of models is the count of open rows really there. And
+the lede says how many rows carry a second build, or says nothing about builds at all where none
+does. Its print is the site's own accounting: *`/leaderboard/` names all 55 models this site prices:
+48 ranked rows, 2 of them naming a heavier build beside the one they rank, and 5 in the note about
+models the index has not scored.*
+
+**Five breaks, each run.** Stop naming the heavier build in the row → exit 1 with 3 problems, *gives
+Llama 3.1 8B Instruct at Q8_0 no row and names it beside none*, the same for Qwen3 32B, and *explains
+a cut between builds that its table does not make*, which is the lede left claiming what the table
+no longer does. Drop the lede's sentence → exit 1, *names a second build on 2 of its rows and does
+not say so in its first paragraph*. Multiply the weights column by ten on the doubled rows → exit 1,
+*prints 49 GB as the weights of Llama 3.1 8B Instruct and names a build of it beside them at 8.5 GB*.
+Drop one model from the unscored note → exit 1, *leaves Spark-X2.5 4B at Q4_K_M out of the note about
+models the index has not scored*. Let a row name the build it is already written about → exit 1,
+*names llama-3.1-8b-q4 twice, as a row of its own and beside llama-3.1-8b-q4*.
+
+**One break was thrown away rather than counted, and it is worth knowing why.** Inverting the rule so
+the table keeps the heaviest build does not reach this guard: `checkCanonicals()` stops the build
+long before it, because the head-to-head chain in the last column is built from the rows and a
+different row means a different address. So the rule itself is proved by tests rather than by the
+build, which is the right place for it, and the guard is left proving what the page says about the
+rows it really printed.
+
+**Three breaks proved the six new tests.** Keep the heaviest build → *keeps the lightest build and
+names the heavier one beside it* fails, alone. Drop the scored filter so an unscored build can take a
+row → *never gives the row to a build the index has not scored* fails, alone. Print the sentence
+where no model has a second build → *says nothing about builds where every model is priced once*
+fails, alone.
+
+**Nothing else on the site moved, measured rather than assumed.** `seo/page-dates.json` is the
+measurement: exactly one hash changed, `/leaderboard/`, and the other 306 pages are byte-for-byte
+what they were. The page is 1,493 words. **417 tests** (411 before), typecheck clean, the full
+`npm run build` end to end including `build:og`, `build:share` and `build:functions`, 307 pages with
+every guard passing, and the page read rendered out of `dist/` — the lede, both doubled rows and the
+unscored note.
+
+**Pushed to `main` as `57722ae`.** It is `scripts/build-pages.ts`, `src/pagekit.ts`, a test and the
+date ledger, which is the push side of the standing rule; no data file, `src/calc.ts`,
+`src/compute.ts` or `src/fit.ts` is touched. The environment starts on a **detached HEAD** as usual,
+so `git branch -f main HEAD && git checkout main` came first; nothing was forced, and `origin/main`
+was still at `6d97042` when this was pushed, so no sibling session had run.
+
+**One thing found on the same page and left for Ryan, because it is in a data file.** The note under
+*How to read the scores* ends *26 of the models here carry that mark*, and 16 models in
+`data/models.json` carry `estimated`, 15 of them with a row. A reader can count the asterisks. It is
+`frontier_basis.estimated_note` in `data/defaults.json`, printed whole here and again in bold in the
+calculator's assumptions panel, so it is one string in a file this agent must not edit and it is on
+Ryan's side above. **He was notified**, because a wrong figure a visitor can check is the one thing
+this site cannot afford.
+
+**PR #16 conflicted with this push and is merged clean again, as `ca9db20`.** The fourth time, and
+the same line: `main`'s new leaderboard imports and this branch's monthly-cost helpers both extended
+the import list at the head of `scripts/build-pages.ts`, with `MTOK` on a different line on each
+side — and this time `tests/pagekit.test.ts`'s import list went the same way, which is new and is
+the shape this log has warned about five times now. Both sides kept by hand, `MTOK` kept once, and
+`seo/page-dates.json` rebuilt with `npm run build:pages` rather than chosen. Verified on the merged
+tree rather than assumed: **427 tests**, typecheck clean, 308 pages with every guard passing,
+including this branch's `/cost-per-month/` and this run's accounting of every build on the
+leaderboard. Nothing about the page the pull request adds has changed. The standing note on it still
+holds, and this push widened it: `/leaderboard/`, `/best/`, `/compare/` and `/hardware/` all moved
+in the ledger, so whoever merges it runs `npm run build:pages` and commits what it writes rather
+than picking a side of those lines. **PR #17 still merges clean**; it touches `index.html` and
+`src/styles.css`, which this change goes nowhere near.
+
+**What to continue.** The three-page item is closed, so the next open item is *a class on `/best/`
+counts the models it leaves out and names none of them*, which its own text says to weigh once
+rather than drift into — the cheapest honest version is the next model down in each class by name,
+one link and one figure. Below it, the per-memory-size pages are still parked behind Ryan's two
+pull requests. Ryan's side otherwise: PR #16 and PR #17 both still open, the Ternary Bonsai 2 27B
+figures, and now the estimated-score count.
 
 ### 2026-09-19 — a table of 56 machines under a sentence that priced all of them
 

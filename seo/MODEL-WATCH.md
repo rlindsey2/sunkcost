@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-19
+Last checked: 2026-09-20
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -154,6 +154,20 @@ base model's score with a note. The first needs a number nobody has published ye
 prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
+
+### 2026-09-20
+
+Nothing new. The searches were the ones this file lists — releases this month, releases this
+week, each family the script prints, and new quantisations — and every open-weight model they
+returned is either already priced here or already on this list. The three candidates below still
+stand where they were, waiting on figures rather than on another search.
+
+- **Inkling** (Thinking Machines Lab), 975B total / 41B active, Apache 2.0, 1M context, released
+  2026-07-15. Turned up as a new name and is neither new nor runnable here: at the four-bit sizes
+  this site already carries, 975B lands far beyond the 119.5 GB the largest machine on the list can
+  address. **Inkling Small is a different model and is already on the leaderboard**, at 163 GB, so
+  the family is not missing from the site. Revisit only if a machine with that much usable memory
+  is priced.
 
 ### 2026-09-19
 
