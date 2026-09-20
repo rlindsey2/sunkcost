@@ -13,7 +13,7 @@ import {
   familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -2756,6 +2756,10 @@ function modelPage(m: Model): string {
     .filter((r) => r.view.throughput?.tokensPerSec != null)
     .sort((a, b) => b.view.throughput!.tokensPerSec! - a.view.throughput!.tokensPerSec!)[0];
 
+  // The same yardstick the machine pages put under their own speed column,
+  // over the machines this table shows rather than every one that runs it.
+  const hostedLine = hostedSpeedLine(perFamily.map((r) => r.view.throughput?.tokensPerSec), data);
+
   const caps = CAPABILITY_KEYS.map(
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
   ).join('');
@@ -2944,7 +2948,7 @@ ${stack(`<table class="board">
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
 ${reachLine}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
@@ -3164,6 +3168,11 @@ function hardwarePage(hw: Hardware): string {
     return ` Each speed says how it was arrived at: ${memoryCount(measured)} of the ${known.length} here ${measured === 1 ? 'is' : 'are'} measured, from a published benchmark run on this machine, and the rest are estimated from its ${band}.`;
   })();
 
+  // What the speeds in that column are worth, against the hosted API the reader
+  // is choosing between. Taken over the rows this table shows rather than every
+  // model that fits, so it counts what is in front of them.
+  const hostedLine = hostedSpeedLine(shown.map((r) => r.throughput.tokensPerSec), data);
+
   const best = fits[0];
   // What the table leaves out: the models this machine misses at the context every
   // figure above is taken at, and holds at a shorter window.
@@ -3190,7 +3199,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
 ${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
@@ -6364,6 +6373,78 @@ function checkMachineLedes() {
  * reader lands: /hardware/ marked all 56 of its own, the head-to-heads marked
  * theirs, and the pages in between said nothing.
  */
+/**
+ * The yardstick under a speed column, held to the column above it.
+ *
+ * Every figure the sentence names is recomputed from the rendered table rather
+ * than from the helper that wrote it, because a claim checked against its own
+ * string proves nothing: the speeds are read back out of the first board table
+ * on the page, which is the one the note sits under, and the hosted figure is
+ * read out of the data.
+ */
+function checkHostedSpeed() {
+  const problems: string[] = [];
+  const hosted = data.defaults.cloud.default_tokens_per_sec;
+  let pages = 0;
+  for (const p of meta) {
+    if (!p.path.startsWith('/hardware/') && !p.path.startsWith('/models/')) continue;
+    if (p.path === '/hardware/' || p.path === '/models/') continue;
+    // The table the note belongs to: the first one on the page, which is what a
+    // machine runs or what runs a model. Anything below it is a different question.
+    const table = p.html.split('<table class="board')[1]?.split('</table>')[0] ?? '';
+    const speeds = [...table.matchAll(/([\d,]+(?:\.\d+)?) tok\/s/g)].map((m) => Number(m[1].replace(/,/g, '')));
+    const said = p.html.match(/For scale, the calculator starts from <b>([^<]+)<\/b> for a hosted API and times a local machine against it\. ([^<]+)</);
+    if (!speeds.length) {
+      if (said) problems.push(`${p.path} puts a hosted speed under a table with no speed in it`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${p.path} prints ${speeds.length} speeds and says nothing about what a speed is worth`);
+      continue;
+    }
+    pages += 1;
+    const seen = p.html.split('For scale, the calculator starts from').length - 1;
+    if (seen !== 1) problems.push(`${p.path} says what a speed is worth ${seen} times over`);
+    if (said[1] !== `${hosted} tok/s`)
+      problems.push(`${p.path} holds its speeds against ${said[1]} where the data says ${hosted} tok/s`);
+    const reach = speeds.filter((t) => t >= hosted).length;
+    const claimed = said[2].match(/^(\d+) of the (\d+)/);
+    if (claimed) {
+      if (Number(claimed[1]) !== reach || Number(claimed[2]) !== speeds.length)
+        problems.push(`${p.path} says ${claimed[1]} of ${claimed[2]} reach ${hosted} tok/s where the table has ${reach} of ${speeds.length}`);
+    } else if (/^All (\d+) above/.test(said[2])) {
+      const n = Number(said[2].match(/^All (\d+)/)![1]);
+      if (reach !== speeds.length || n !== speeds.length)
+        problems.push(`${p.path} says all ${n} reach ${hosted} tok/s where ${reach} of ${speeds.length} do`);
+    } else if (said[2].startsWith('Nothing above')) {
+      if (reach !== 0) problems.push(`${p.path} says nothing reaches ${hosted} tok/s where ${reach} of ${speeds.length} do`);
+    } else if (said[2].startsWith('The one above')) {
+      if (speeds.length !== 1) problems.push(`${p.path} says one row where the table has ${speeds.length}`);
+      if ((reach === 1) !== !said[2].includes('does not reach'))
+        problems.push(`${p.path} gets wrong whether its one speed reaches ${hosted} tok/s`);
+    } else {
+      problems.push(`${p.path} states its speeds against the hosted figure in words this check does not know`);
+    }
+    // The figure it names at the end is the slowest or quickest of the column,
+    // as the column prints it.
+    const named = said[2].match(/(?:at|is) ([\d,]+(?:\.\d+)?) tok\/s\.$/);
+    if (!named) {
+      problems.push(`${p.path} says how many rows reach the hosted speed and names none of them`);
+    } else {
+      const want = said[2].includes('the quickest is') || (speeds.length === 1)
+        ? Math.max(...speeds)
+        : Math.min(...speeds);
+      if (Number(named[1].replace(/,/g, '')) !== want)
+        problems.push(`${p.path} names ${named[1]} tok/s where the table's is ${want}`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} do not hold their speeds to the hosted figure`);
+  }
+  console.log(`  ${pages} pages hold their speed column against the ${hosted} tok/s the calculator starts from for a hosted API`);
+}
+
 function checkSpeedBasis() {
   const problems: string[] = [];
   let cells = 0;
@@ -6995,6 +7076,7 @@ checkPageSections();
 checkHeadingAnchors();
 checkJumpLines();
 checkSpeedBasis();
+checkHostedSpeed();
 checkTables();
 checkPairedColumns();
 checkArticles();

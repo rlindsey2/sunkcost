@@ -1602,6 +1602,45 @@ export function speedFrom(tp: { tokensPerSec: number | null; measurement: string
   return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(tp!.measurement)}</span>`;
 }
 
+/** A speed the way a table cell prints it, for a sentence about the table. */
+const tpsWord = (tps: number): string => `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+
+/**
+ * What a local speed is worth, said under the table of them.
+ *
+ * The machine pages print 661 speeds between them and the model pages another
+ * 334, and none of them said whether a figure in that column is quick. A reader
+ * meets "19 tok/s" with nothing to hold it against, and the thing they are
+ * actually choosing between is a hosted API. The site already holds that
+ * yardstick and only the calculator used it: `cloud.default_tokens_per_sec` in
+ * the data, which is what the calculator times a local answer against, and
+ * which a reader can change.
+ *
+ * The count is taken over the speeds as the page prints them rather than the
+ * full precision behind them, so a reader counting the rows gets the same
+ * answer the sentence gives.
+ */
+export function hostedSpeedLine(speeds: (number | null | undefined)[], data: Dataset): string {
+  const shown = speeds.map((s) => roundTps(s)).filter((t): t is number => t != null);
+  const hosted = data.defaults.cloud?.default_tokens_per_sec;
+  if (!shown.length || hosted == null) return '';
+  const reach = shown.filter((t) => t >= hosted).length;
+  const n = shown.length;
+  const slowest = tpsWord(Math.min(...shown));
+  const quickest = tpsWord(Math.max(...shown));
+  const verdict =
+    n === 1
+      ? reach
+        ? `The one above reaches it, at ${quickest}.`
+        : `The one above does not reach it, at ${quickest}.`
+      : reach === 0
+        ? `Nothing above reaches it, and the quickest is ${quickest}.`
+        : reach === n
+          ? `All ${n} above reach it, and the slowest is ${slowest}.`
+          : `${reach} of the ${n} above ${reach === 1 ? 'reaches' : 'reach'} it, and the slowest is ${slowest}.`;
+  return `For scale, the calculator starts from <b>${tpsWord(hosted)}</b> for a hosted API and times a local machine against it. ${verdict}`;
+}
+
 /** How a pair of speeds was arrived at, as a clause to hang off a sentence. */
 function basisClause(a: ModelRow, b: ModelRow, la: string, lb: string): string {
   const ma = a.throughput.measurement;

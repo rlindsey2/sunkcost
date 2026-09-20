@@ -11,7 +11,7 @@ import {
   otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
+  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
 } from '../src/pagekit';
 import { fingerprint, mainOf } from '../src/page-dates';
 import {
@@ -2575,5 +2575,50 @@ describe('what a class on /best/ leaves out', () => {
     expect(bestLeftOut(wider, 5).moreSaid).toBe(
       `12 more models in this class pay back behind these five. The quickest of them is ${named}.`,
     );
+  });
+});
+
+describe('what a local speed is worth', () => {
+  // The reader meets a column of tok/s with nothing to hold it against. The only
+  // yardstick the site has is the one the calculator uses, and it is in the data.
+  const hosted = (speeds: (number | null | undefined)[], tps = 80) =>
+    hostedSpeedLine(speeds, { ...data, defaults: { ...data.defaults, cloud: { ...data.defaults.cloud, default_tokens_per_sec: tps } } } as unknown as Dataset);
+
+  it('names the figure out of the data rather than a number of its own', () => {
+    expect(hosted([10, 20])).toContain('<b>80 tok/s</b>');
+    expect(hosted([10, 20], 42)).toContain('<b>42 tok/s</b>');
+    expect(hosted([10, 20], 42)).not.toContain('80');
+  });
+
+  it('counts the rows that reach it, and names the slowest', () => {
+    expect(hosted([13, 19, 116, 51])).toBe(
+      'For scale, the calculator starts from <b>80 tok/s</b> for a hosted API and times a local machine against it. 1 of the 4 above reaches it, and the slowest is 13 tok/s.',
+    );
+    expect(hosted([90, 13, 116, 51])).toContain('2 of the 4 above reach it, and the slowest is 13 tok/s.');
+    expect(hosted([90, 100, 116])).toContain('All 3 above reach it, and the slowest is 90 tok/s.');
+    expect(hosted([13, 19, 51])).toContain('Nothing above reaches it, and the quickest is 51 tok/s.');
+  });
+
+  it('says one row as one row, either way', () => {
+    expect(hosted([92])).toContain('The one above reaches it, at 92 tok/s.');
+    expect(hosted([18])).toContain('The one above does not reach it, at 18 tok/s.');
+  });
+
+  // The load-bearing one. The sentence is read beside the table, so it has to count
+  // the figures the table prints: 79.6 tok/s is drawn as 80 and a reader counting
+  // the column counts it in. Comparing the full precision would print "2 of the 3"
+  // over a column where three rows say 80 or more.
+  it('counts the speeds as the table draws them, not the precision behind them', () => {
+    expect(hosted([79.6, 80.4, 120])).toContain('All 3 above reach it');
+    expect(hosted([79.4, 120])).toContain('1 of the 2 above reaches it, and the slowest is 79 tok/s.');
+    // under ten the column keeps a decimal, and so does the sentence
+    expect(hosted([8.92, 120])).toContain('the slowest is 8.9 tok/s.');
+  });
+
+  it('says nothing where there is nothing to hold against it', () => {
+    expect(hosted([])).toBe('');
+    expect(hosted([null, undefined])).toBe('');
+    // a row with no speed is not a row this sentence counts
+    expect(hosted([null, 116, undefined])).toContain('The one above reaches it, at 116 tok/s.');
   });
 });
