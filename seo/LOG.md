@@ -11,8 +11,18 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
 
 ## Ryan's side (needs the site owner)
 
-- [ ] **Merge (or close) [PR #18](https://github.com/rlindsey2/sunkcost/pull/18), twelve pages for
-      the twelve sizes of memory a machine here is sold in.** Opened 2026-09-20.
+- [x] **[PR #18](https://github.com/rlindsey2/sunkcost/pull/18), twelve pages for the twelve sizes
+      of memory a machine here is sold in. Merged**, as `a7acb84`. The 2026-09-21 run found it
+      merged and built on it. **What was checked on merged `main` itself, before a line of this
+      run's work was written: 445 tests green and typecheck clean.** The rest of the figures here
+      are from builds that also carried this run's change, which touches no size page:
+      `checkMemorySizes()` reports **12 sizes, 56 machine rows and 335 model rows** and every guard
+      passes at **320 pages**, through the full `npm run build` with `build:functions`. So the
+      pages are live and sound; nobody has re-run `build:pages` on a clean merged `main` to see
+      whether the merge left `seo/page-dates.json` needing a rewrite, and after this run's push the
+      question is moot, because the ledger has been rebuilt from the merged tree either way.
+      Nothing is left here. The item as it stood follows.
+      Opened 2026-09-20.
       `/how-much-memory/12gb/` through `/how-much-memory/512gb/`, one page per size, each answering
       *what can I run with N GB* from the machines actually sold at that size rather than from the
       number on the box. It is a pull request rather than a push only because it is a new page type,
@@ -28,7 +38,12 @@ has done it and the backlog is the job. Ryan asked for this on 2026-09-18.
       ledger from the merged tree.
 
 - [ ] **Merge (or close) [PR #17](https://github.com/rlindsey2/sunkcost/pull/17), the home page's
-      missing heading.** Opened 2026-09-19. The root URL is the only page on this site with no `h1`:
+      missing heading.** Opened 2026-09-19, and as of 2026-09-21 it is **the only pull request open**:
+      #16 and #18 are both merged, so nothing collides with it any more and the two collision notes
+      below are history rather than instructions. It has been open two days and it is one heading;
+      it is also the thing holding up the home page's `og:url`, which the backlog has parked on it
+      rather than opening a third branch against `index.html`. Worth a ping if it is still open
+      tomorrow. The root URL is the only page on this site with no `h1`:
       all 261 generated pages have exactly one, `index.html` has five `h2`s under nothing, and the
       only static prose inside its `<main>` is 142 words of form labels. The sentence already in the
       top bar becomes the heading, and below 900px, where the bar has no room to paint it, it is
@@ -638,8 +653,27 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
 
 ## Backlog (ordered; the agent keeps this list current)
 
-- [ ] **The twelve size pages have one inbound link each from the machines, and none from the
-      models.** Written down 2026-09-20, the day they were built. Each size page is linked from
+- [x] **The 54 model pages that have a machine now point at the size it is sold in.** Done
+      2026-09-21, pushed as `d3e2e22`. One note under each model page's machine table, written from
+      the cheapest machine's `unified_memory_gb` so it cannot drift: *The cheapest machine that runs
+      it is sold with 32 GB. There is a page on what 32 GB runs, machine by machine: it names the 6
+      machines here sold at that size, and the 27 current models the roomiest of them holds at 32k,
+      this one among them.* Both figures are claims about the other page, so `checkModelSizeLinks()`
+      reads both back out of that page's rendered tables rather than out of the helper that wrote
+      them, and the same for the clause that claims a row on it. **Six of the twelve sizes gain the
+      links**, because a model's cheapest machine is never sold at 12, 36, 48, 96, 192 or 512 GB:
+      19 model pages point at 32 GB, 13 at 16 GB, 10 at 128 GB, 6 at 256 GB, 5 at 24 GB and 1 at
+      64 GB. **Two cases get less than the full sentence, both deliberately.** A size page tables the
+      current models only, so the 16 legacy model pages stop at the count rather than claiming a row
+      they do not have. And Tencent Hy3 is the one model page of the 55 with no machine at all at
+      32k, so it has no cheapest machine and gets no sentence; the guard holds that too. No figure,
+      table, count or existing sentence moved, and the ledger re-dated exactly the 54 pages that
+      gained the note and nothing else. The run entry below has the six breaks that proved the guard.
+      The original item follows.
+
+- [ ] **The original item, kept for what it asked.** *The twelve size pages have one inbound link
+      each from the machines, and none from the models.* Written down 2026-09-20, the day they were
+      built. Each size page is linked from
       `/how-much-memory/` and from every machine sold at that size, which is 2 to 12 inbound pages
       apiece and enough not to be an orphan. What has no link to them is the 55 model pages, and that
       is where the natural sentence is: a model page already names the cheapest machine that holds
@@ -649,6 +683,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       so it is a push. Worth doing once the pull request that adds the pages is merged, and not
       before: a second branch touching the same page builder is the collision this log has warned
       about six times.
+
+- [ ] **Six of the twelve size pages are reached only from the machines and the memory guide.**
+      Written down 2026-09-21, the day the model pages started linking the other six. No model on
+      this site has its cheapest machine sold at 12, 36, 48, 96, 192 or 512 GB, so those six pages
+      gained nothing from that push and are the hardest of the twelve for a reader to arrive at.
+      Two of them are the interesting ones rather than the thin ones: at 36, 48 and 64 GB the
+      roomiest machine holds exactly what the roomiest 32 GB machine holds, which is a finding those
+      pages already print and nothing else on the site says, and 512 GB is where the larger size is
+      the cheaper one. **Worth one run's thought rather than a reflex.** A link written to fill a
+      gap is the doorway shape this site does not do, so the question is whether there is a sentence
+      somewhere that genuinely wants one of those six — the head-to-heads between two machines of
+      different sizes are the likeliest place, and `/how-much-memory/`'s own ladder is the next.
+      If the honest answer is no, write that here and close it.
 
 - [x] **The site printed 995 speeds and never said whether one of them is quick.** Done
       2026-09-20, pushed as `6df11bd`. A reader meets *19 tok/s* in a column and has nothing to
@@ -1860,6 +1907,81 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-21 — the model pages learn the size of the machine they name
+
+**The watch was due and was done first.** `npm run model-watch` printed `today 2026-09-21 · last
+checked 2026-09-20 · due`, so the watch came before the backlog, which is the standing rule at the
+top of this file. **Nothing new that this site can price**, and the three candidates waiting on
+figures are unchanged. `seo/MODEL-WATCH.md` is dated 2026-09-21 and carries the entry, including
+the two rulings-out worth not repeating: **MiniMax H3** is open, Apache-licensed and has GGUF
+builds down to a pruned 7.8 GB, and is the video model behind the Hailuo line — there is no token
+price to hold it against and no tok/s to print, so it is not this site's subject at any size. And
+**Kimi K3** at 2.8T parameters is the same arithmetic as Tencent Hy4: far past the 119.5 GB the
+largest machine here can address, which is why the site prices no Kimi model. Granite 4.2, Muse
+Glimmer 30B and Nemotron 3.5 Lightning all turned up as new names and all three are already priced
+here, checked against the script's own list rather than guessed.
+
+**What was taken.** PR #18 merged, so the backlog's top open item stopped being blocked: the twelve
+size pages had one inbound link each from the machines sold at that size and **none from the 55
+model pages**. It is `scripts/build-pages.ts`, so it is a push. Pushed as `d3e2e22`.
+
+**What it is.** One note under the machine table on every model page that has a machine, in the
+place the reader has just finished reading which machine is cheapest:
+
+> The cheapest machine that runs it is sold with 32 GB. There is [a page on what 32 GB runs, machine
+> by machine](/how-much-memory/32gb/): it names the 6 machines here sold at that size, and the 27
+> current models the roomiest of them holds at 32k, this one among them.
+
+The size is the cheapest runner's own `unified_memory_gb` and the two counts are the size page's
+own, so a machine added at a size or a model that stops being current moves both pages together.
+
+**Where the 54 links land.** Six of the twelve sizes get them and six get none, which is the data
+rather than a cut: **no model on this site has its cheapest machine sold at 12, 36, 48, 96, 192 or
+512 GB.** The rest divide 19 to 32 GB, 13 to 16 GB, 10 to 128 GB, 6 to 256 GB, 5 to 24 GB and 1 to
+64 GB. Those six pages had the machine pages and the memory guide pointing at them and now have the
+model pages too; the other six keep what they had.
+
+**Two things it deliberately does not say.** A size page's model table counts the **current** models
+only, so on the 16 legacy model pages the sentence stops after the count rather than claiming a row
+the reader will not find — *the 13 current models the roomiest of them holds at 32k*, full stop.
+And **Tencent Hy3 is the one model page of the 55 with no machine at all** at 32k: no cheapest
+machine, no size, no sentence. Both are held by the guard rather than left to hold themselves.
+
+**`checkModelSizeLinks()`, and the six breaks that proved it.** Four claims a page, and every one of
+them is read back out of the page being pointed at rather than out of the function that wrote the
+sentence: the link goes to the size its cheapest machine is sold in and to no other size; the
+machine count matches the rows in that page's *machines sold with N GB* table; the model count
+matches the rows in its *models that fit in N GB* table; and the clause claiming a row is there
+exactly when that table names this model. Proved by breaking it six ways: pointing every page at the
+smallest size (caught four ways at once, the wrong link named first), miscounting the machines by
+one, miscounting the models by one, claiming a row for every model (caught on the 16 legacy pages),
+claiming one for none (caught on the 38 current ones), and dropping the sentence altogether. A
+seventh shape needs no break: a model whose cheapest machine is sold at a size with no page gets no
+sentence, and a page that links one anyway is named.
+
+**How it was verified.** 445 tests, typecheck clean, `npm run build:pages` with every guard passing
+at 320 pages, and the full `npm run build` including `build:functions` and the 1,894 share pages.
+Three pages read rendered out of `dist/` — a current model, a legacy one and the 256 GB case — and
+the first wording was changed because of that reading: *What 32 GB runs, machine by machine names
+the 6 machines* is a garden path with the link styling stripped off, which is how a crawler and a
+screen reader both take it. It is *There is a page on what 32 GB runs, machine by machine: it names*
+now, which is also the shape the machine pages already use. **The ledger re-dated exactly the 54
+pages that gained the note**, all to 2026-09-21, and nothing else in `seo/page-dates.json` moved:
+no count, table, figure or existing sentence on any page changed.
+
+**No new test.** The sentence is written by `modelSizeLine()` in `scripts/build-pages.ts` and reads
+`sizeView()`, both of which are the page builder's own rather than `src/pagekit.ts` helpers, so the
+guard and its breaks are the whole of the proof. `machinesAtSize()` and `memoryLevels()`, which is
+what it reaches the data through, already have their five.
+
+**Continue next.** The backlog's top open item is the home page's `og:url`, one line that has been
+waiting on PR #17 rather than on a run — and **PR #17 is the only pull request still open**, so that
+item is now the one thing worth a ping if it stays open much longer. Behind it, `/models/` is a 404
+and wants a redirect with the next change to `public/_headers`. Both are cheap. A fuller one is new
+below: the six sizes no model page points at are the six a reader is least likely to reach, and the
+question of whether they want a different inbound link is worth one run's thought rather than a
+reflex.
 
 ### 2026-09-20 — the number printed on the box, answered twelve times
 

@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-20
+Last checked: 2026-09-21
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -154,6 +154,32 @@ base model's score with a note. The first needs a number nobody has published ye
 prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
+
+### 2026-09-21
+
+Nothing new that this site can price. The searches were the ones this file lists — releases this
+month, releases this week, each family the script prints, and new quantisations — and every
+open-weight model they returned is already here, already on the list above, too big for anything
+priced, or not a model in this site's sense. No candidate is added and none of the three above
+changed: all three still wait on figures rather than on another search.
+
+- **MiniMax H3** (2026-08-03), open weights, Apache-licensed, and with community GGUF builds
+  within a day, down to a pruned 7.8 GB. It is not this site's subject: H3 is the video model
+  behind the Hailuo line, generating up to 2K video with audio, so there is no token price to hold
+  it against and no tok/s to print. A machine's memory is not what decides whether it is worth
+  buying for one. Ruled out on what it is rather than on what it costs, so a later run need not
+  reach the same answer twice.
+- **Kimi K3** (2026-07-16), open weights, and at 2.8T parameters the largest of them. Same
+  arithmetic as Tencent Hy4 and Atria Dawn below: at the four-bit sizes this data already carries
+  it lands far past the 119.5 GB the largest machine here can address, so a row would be a page
+  saying no. The site prices no Kimi model, and this is why. Revisit only if a machine with that
+  much usable memory is priced.
+- **Granite 4.2** (2026-08-25), **Muse Glimmer 30B** (2026-08-10) and **Nemotron 3.5 Lightning
+  30B-A3B** all turned up as new names and all three are already priced here, at Q4_K_M. Checked
+  against the script's own list rather than guessed.
+- **Mistral** and **Llama** returned nothing released since the models already here. Mistral's
+  larger sparse family is in early access with no public parameter count or ship date, so there is
+  nothing to enter.
 
 ### 2026-09-20
 
