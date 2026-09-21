@@ -1962,7 +1962,8 @@ sentence, and a page that links one anyway is named.
 
 **How it was verified.** 445 tests, typecheck clean, `npm run build:pages` with every guard passing
 at 320 pages, and the full `npm run build` including `build:functions` and the 1,894 share pages.
-Three pages read rendered out of `dist/` — a current model, a legacy one and the 256 GB case — and
+Four pages read rendered — the whole machines section of a current model out of `dist/`, then
+that page, a legacy one and the 256 GB case out of `public/`, which holds the same bytes — and
 the first wording was changed because of that reading: *What 32 GB runs, machine by machine names
 the 6 machines* is a garden path with the link styling stripped off, which is how a crawler and a
 screen reader both take it. It is *There is a page on what 32 GB runs, machine by machine: it names*
@@ -1974,6 +1975,17 @@ no count, table, figure or existing sentence on any page changed.
 `sizeView()`, both of which are the page builder's own rather than `src/pagekit.ts` helpers, so the
 guard and its breaks are the whole of the proof. `machinesAtSize()` and `memoryLevels()`, which is
 what it reaches the data through, already have their five.
+
+**The deploy, and the clock read properly this time.** Run 279 on `44249c7` carries both of this
+run's commits and was still building when this entry was written: started `20:25:48Z`, and `date -u`
+in this environment read `20:27:33Z`, so **one minute forty-five**, which is inside the roughly three
+minutes this repository's deploys take end to end. Nothing is wrong with it and nothing was done to
+it. This is written down because the check very nearly went the other way — a first draft of this
+paragraph said *about four minutes* from counting tool calls rather than reading a clock, which is
+the exact mistake the 2026-09-20 entry below records a session making before it cancelled a healthy
+run. **Subtract the run's own `started_at` from `date -u`, every time**, and remember that an agent's
+sense of elapsed time between its own turns is worth nothing. Whoever reads this next: confirm run
+279 went green; if it did not, the tree it was building is the one verified above.
 
 **Continue next.** The backlog's top open item is the home page's `og:url`, one line that has been
 waiting on PR #17 rather than on a run — and **PR #17 is the only pull request still open**, so that
