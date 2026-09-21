@@ -1979,13 +1979,27 @@ what it reaches the data through, already have their five.
 **The deploy, and the clock read properly this time.** Run 279 on `44249c7` carries both of this
 run's commits and was still building when this entry was written: started `20:25:48Z`, and `date -u`
 in this environment read `20:27:33Z`, so **one minute forty-five**, which is inside the roughly three
-minutes this repository's deploys take end to end. Nothing is wrong with it and nothing was done to
-it. This is written down because the check very nearly went the other way — a first draft of this
-paragraph said *about four minutes* from counting tool calls rather than reading a clock, which is
-the exact mistake the 2026-09-20 entry below records a session making before it cancelled a healthy
-run. **Subtract the run's own `started_at` from `date -u`, every time**, and remember that an agent's
-sense of elapsed time between its own turns is worth nothing. Whoever reads this next: confirm run
-279 went green; if it did not, the tree it was building is the one verified above.
+minutes this repository's deploys take end to end. Nothing was wrong with it. This is written down
+because the check very nearly went the other way — a first draft of this paragraph said *about four
+minutes* from counting tool calls rather than reading a clock, which is the exact mistake the
+2026-09-20 entry below records a session making before it cancelled a healthy run. **Subtract the
+run's own `started_at` from `date -u`, every time**, and remember that an agent's sense of elapsed
+time between its own turns is worth nothing.
+
+**Run 279 was then cancelled anyway, by this session's own third push, and that is the lesson worth
+keeping.** Not by a misread clock this time: the commit above, correcting two claims in this very
+entry, went up while 279 was still building, and `concurrency: deploy-production` duly cancelled it.
+**Run 280 on `179d600` went green**, started `20:27:52Z` and completed inside three minutes, and it
+carries everything 279 was building plus the correction, so nothing was lost — which is exactly why
+a cancelled run here is never worth chasing. But it is the second time in two days this log records
+a healthy deploy killed by a follow-up commit, and the first time the follow-up was a log fix.
+**Push the log with the work, or after the deploy is green, not in between.**
+
+**What is verified, and what is not.** Green CI on `179d600` is the whole of it: the 445 tests,
+the typecheck, the full build and the 320 pages all ran on that tree in this environment and again
+on the runner. **The live pages were not read.** This environment's egress proxy blocks
+`sunkcost.ai` — the same block `seo/MODEL-WATCH.md` records for source fetches — so no run here can
+confirm what Cloudflare actually serves. Do not write an entry that claims otherwise.
 
 **Continue next.** The backlog's top open item is the home page's `og:url`, one line that has been
 waiting on PR #17 rather than on a run — and **PR #17 is the only pull request still open**, so that
