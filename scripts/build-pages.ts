@@ -2771,6 +2771,10 @@ function modelPage(m: Model): string {
   // over the machines this table shows rather than every one that runs it.
   const hostedLine = hostedSpeedLine(perFamily.map((r) => r.view.throughput?.tokensPerSec), data);
 
+  // The size the cheapest machine is sold in, which is the next search a reader
+  // here makes and had no link from this page. See modelSizeLine().
+  const sizeLine = cheapest ? modelSizeLine(m, cheapest.hw) : '';
+
   const caps = CAPABILITY_KEYS.map(
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
   ).join('');
@@ -2959,7 +2963,7 @@ ${stack(`<table class="board">
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
 ${reachLine}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
@@ -4280,6 +4284,31 @@ function sizeView(gb: number): SizeView {
 const MEMORY_SIZES = [...new Set(data.hardware.filter((h) => h.usable_memory_gb != null).map((h) => h.unified_memory_gb))]
   .sort((a, b) => a - b)
   .filter((gb) => sizeView(gb).most.fits.length > 0);
+
+/**
+ * A model page's way into the page about one size of memory.
+ *
+ * The answer box at the top of a model page names the cheapest machine that
+ * runs it, and the size that machine is sold in is the thing a reader there is
+ * one step from typing: *what else does 24 GB run*. The figures are the size
+ * page's own — the machines sold at that size, and what the roomiest of them
+ * holds — so a machine added at that size moves both pages at once.
+ *
+ * Two cases get no membership clause. A legacy model is not on a size page's
+ * table, which counts the current models only, so the sentence stops at the
+ * count. And a machine sold at a size nothing current fits in has no page to
+ * point at, so there is no sentence at all.
+ */
+function modelSizeLine(m: Model, hw: Hardware): string {
+  const gb = hw.unified_memory_gb;
+  if (!MEMORY_SIZES.includes(gb)) return '';
+  const v = sizeView(gb);
+  const machines =
+    v.machines.length === 1 ? 'the one machine here sold at that size' : `the ${v.machines.length} machines here sold at that size`;
+  const fits = v.most.fits.length;
+  const listed = v.most.fits.some((x) => x.id === m.id);
+  return `The cheapest machine that runs it is sold with ${gb} GB. There is <a href="${esc(memorySizePath(gb))}">a page on what ${gb} GB runs, machine by machine</a>: it names ${machines}, and the ${fits} current model${fits === 1 ? '' : 's'} the roomiest of them holds at ${ctxLabel(CTX)}${listed ? ', this one among them' : ''}.`;
+}
 
 /** the memory a model gets at one size, as one figure or as the spread across the machines */
 const usableSaid = (v: SizeView) =>
@@ -7762,6 +7791,80 @@ function checkMemorySizes() {
   );
 }
 
+/**
+ * The sentence a model page uses to send a reader to the size its cheapest
+ * machine is sold in, held to the page it points at rather than to the helper
+ * that wrote it.
+ *
+ * Both figures in it are claims about another page: how many machines are sold
+ * at that size, and how many models that size page tables. So both are read
+ * back out of that page's own rendered markup, and so is the clause that says
+ * this model is one of them. A model whose cheapest machine changes size, a
+ * machine added or dropped at a size, or a model that stops being current all
+ * come back here as a difference, named.
+ */
+function checkModelSizeLinks() {
+  const problems: string[] = [];
+  const kctx = ctxLabel(CTX);
+  let pages = 0;
+  const sizes = new Set<number>();
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const said = html.match(/<p class="note">The cheapest machine that runs it is sold with ([\s\S]*?)<\/p>/);
+    const cheapest = runnersFor(m, data)[0];
+    const gb = cheapest && MEMORY_SIZES.includes(cheapest.hw.unified_memory_gb) ? cheapest.hw.unified_memory_gb : null;
+    const pointsAt = [...html.matchAll(/href="(\/how-much-memory\/(\d+)gb\/)"/g)].map((x) => Number(x[2]));
+    if (gb == null) {
+      if (said) problems.push(`${path} names the size of a cheapest machine it does not have`);
+      if (pointsAt.length) problems.push(`${path} links the page about ${pointsAt[0]} GB and names no machine sold at it`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${path} is run cheapest by a machine sold with ${gb} GB and does not link the page about that size`);
+      continue;
+    }
+    pages++;
+    sizes.add(gb);
+    const text = unesc(said[1].replace(/<[^>]*>/g, ''));
+    const other = pointsAt.filter((x) => x !== gb);
+    if (other.length) problems.push(`${path} links the page about ${other[0]} GB, where its cheapest machine is sold with ${gb} GB`);
+    if (!said[0].includes(`href="${memorySizePath(gb)}"`))
+      problems.push(`${path} says its cheapest machine is sold with ${gb} GB and does not link that size's page`);
+
+    // the two figures, each read back out of the page they are about
+    const sizeHtml = meta.find((p) => p.path === memorySizePath(gb))?.html ?? '';
+    const rows = (heading: string) => {
+      const body = sizeHtml.split(anchoredHeading(heading))[1]?.split('<h2')[0]?.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+      return [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]);
+    };
+    const machines = rows(`The machines sold with ${gb} GB`).length;
+    const models = rows(`Models that fit in ${gb} GB`);
+    const machineSaid = machines === 1 ? 'the one machine here sold at that size' : `the ${machines} machines here sold at that size`;
+    if (!text.includes(machineSaid))
+      problems.push(`${path} miscounts the machines sold with ${gb} GB, which that size's page tables ${machines} of`);
+    if (!text.includes(`and the ${models.length} current model${models.length === 1 ? '' : 's'} the roomiest of them holds at ${kctx}`))
+      problems.push(`${path} miscounts the models on the page about ${gb} GB, which tables ${models.length} of them`);
+
+    // and the clause that claims a row on it, checked against the rows
+    const listed = models.some((r) => r.includes(`/models/${m.id}/`));
+    if (listed !== text.endsWith(', this one among them.'))
+      problems.push(
+        listed
+          ? `${path} has a row on the page about ${gb} GB and does not say so`
+          : `${path} says it is among the models the page about ${gb} GB tables, and it is not one of them`,
+      );
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} no longer agree with the size page they send a reader to`);
+  }
+  console.log(
+    `  ${pages} model pages send a reader to the size their cheapest machine is sold in, over ${sizes.size} of the ${MEMORY_SIZES.length} sizes`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkSectionLinks();
@@ -7824,6 +7927,7 @@ checkPageDates();
 checkTitleLabels();
 checkMemoryLadder();
 checkMemorySizes();
+checkModelSizeLinks();
 // Every guard has passed, so the three files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a
