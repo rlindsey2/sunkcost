@@ -2005,6 +2005,14 @@ which put `_redirects` into `dist/` where Cloudflare Pages reads it. **No page's
 `seo/page-dates.json` is byte for byte what it was, so not one of the 320 pages was re-dated, and
 `sitemap.xml` does not list `/models/` because it never was a page.
 
+**The deploy.** Run 282 on `fa2fdb2` carries both of this run's commits — they went up in one
+push, which is what the entry below told this run to do — and **went green**: started
+`20:29:11Z`, completed `20:31:50Z`, **two minutes thirty-nine**, read off the run's own timestamps
+rather than counted between turns. Nothing was cancelled. A third commit went up after it was
+green, correcting the count in `checkRedirects()`'s own doc comment from four claims to the six
+it makes and adding this paragraph; that one is deliberately after the deploy rather than during
+it, which is the whole of the lesson the 2026-09-21 entry below records.
+
 **What is verified, and what is not.** The build and the tests are the whole of it. **The live
 redirect was not followed.** This environment's egress proxy blocks `sunkcost.ai`, so no run here
 can confirm what Cloudflare actually serves; the next run can read the deploy's status but not the

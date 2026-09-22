@@ -7881,13 +7881,16 @@ function checkModelSizeLinks() {
  * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
  * model's address to see the list gets a 404 from a site that has the list.
  *
- * So this holds four claims about the redirect that fixes it, all of them read off the
- * pages this build is about to write rather than off a list kept by hand. A redirect
- * never shadows a real page. It never points at a page that is not there. Every
+ * So this holds six claims about the redirect that fixes it, all of them read off the
+ * pages this build is about to write rather than off a list kept by hand. Every
  * directory that holds pages and is not one has a redirect, so the next family of pages
- * added here cannot quietly repeat the fault. And the file says every address twice,
- * with and without its trailing slash, because the shorter form is what a reader
- * actually types and there is no directory here for Cloudflare to lengthen it into.
+ * added here cannot quietly repeat the fault. No redirect shadows a real page. None
+ * starts from an address that is above nothing, which is a rule written down for a page
+ * family that has since been renamed. None points at a page that is not there. No
+ * address is redirected twice, because the second line would never run. And the file
+ * says every address twice, with and without its trailing slash, because the shorter
+ * form is what a reader actually types and there is no directory here for Cloudflare to
+ * lengthen it into.
  */
 function checkRedirects() {
   const problems: string[] = [];
