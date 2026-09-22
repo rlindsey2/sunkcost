@@ -10,7 +10,7 @@ Raw CSVs live in seo/exports/ on Ryan's machine and are not committed. Next expo
 | Page with redirect | 333 | The `http://` and `www.` forms of indexed pages. All redirect once with a 301 to the https apex, checked live on deep pages. Roughly two per indexed page. | None. Benign. |
 | Excluded by noindex | 45 | The `/s/…` share pages, noindex on purpose. | None. |
 | Alternate page with proper canonical | 18 | Prefilled calculator links `/?hw=…`, canonical to `/`. | None. Working as designed. |
-| Crawled, currently not indexed | 58 | Google fetched them and chose not to index. URLs unknown until Ryan exports that issue's list. Most likely the head-to-heads, which are the site's most similar pages. | Wait for the URL list; then decide what to cut or merge. |
+| Crawled, currently not indexed | 58 | The URL list arrived 2026-09-23 (57 rows): 26 are prefilled calculator links `/?hw=…` and 2 are share pages, none of which should be indexed. The 29 real pages are a spread: 11 head-to-heads, 10 model pages, 8 machine pages including `/hardware/`, and `/local-llm-vs-api-cost/`, all first crawled 19 or 20 September. | This is a new site's pages waiting on authority, not a pattern in one page type. No cutting. Links from outside and time. |
 
 Google knew 619 URLs on 2026-09-18. The sitemap now lists 321 pages, of which 190 are head-to-heads.
 
@@ -23,6 +23,6 @@ Google knew 619 URLs on 2026-09-18. The sitemap now lists 321 pages, of which 19
 ## What this means for the work
 
 1. The site's search problem is not technical. Redirects, canonicals, sitemap and structured data are in order. Half of the known pages are simply not yet indexed, and none rank for anything but the brand.
-2. Adding pages makes that worse, not better. 190 head-to-heads that Google is already declining to index are a crawl-budget and quality signal. No new page types until the existing ones are indexed and at least one non-brand query shows clicks. Fewer, deeper pages beat more.
+2. Adding pages does not help. Google is indexing new pages slowly across every type, which is authority, not a fault in the pages. More pages dilute what little authority there is. No new page types until the existing ones are indexed and at least one non-brand query shows clicks. Fewer, deeper pages beat more.
 3. The model-name queries are the first foothold: people search the exact model name plus a machine or "tokens per second". Model pages should answer that search in their title and first paragraph.
 4. What moves this site now is links from outside, which no run here can do: the two news articles, the Hacker News thread, Reddit's r/LocalLLaMA, and hardware reviewers who publish tok/s. That is Ryan's side.

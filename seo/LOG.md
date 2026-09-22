@@ -20,8 +20,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Ryan's side
 
-- [ ] Export the URL list for "Crawled, currently not indexed" (Search Console → Pages → click the
-      row → Export) and drop it in seo/exports/. Until then the 58 pages are unknown.
 - [ ] Merge or close PR #17 (home page heading and og:url). **Un-conflicted 2026-09-23 as
       `fc49f08`**: main merged in, the one clash (`seo/page-dates.json`, the `"/"` hash) resolved by
       rebuilding. GitHub reports it `clean`. Verified on the merged tree: 447 tests, typecheck, full
@@ -34,10 +32,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       "tokens per second".** The only non-brand impressions so far are exact model names. Check that
       each model page's title and first paragraph carry the model's name as people write it and the
       tok/s on its cheapest machine. scripts/build-pages.ts, a push.
-- [ ] **Head-to-heads: when the crawled-not-indexed list arrives, decide which of the 190 earn a
-      page.** Candidates to keep are pairs people compare by name (Mac mini vs Mac Studio, RTX 3090
-      vs 4090, DGX Spark vs Strix Halo). The rest are better as rows on the /compare/ index than as
-      pages. Do not act before the list arrives.
 - [ ] **`/hardware/` and `/leaderboard/` still describe their tables in hand-written prose beside
       recomputed figures.** Hold each claim with a build check the way `/best/` is held.
 - [ ] **Six of the twelve size pages (12, 36, 48, 96, 192, 512 GB) are reached only from the machines
@@ -63,5 +57,7 @@ days ago — dated 2026-09-22, the build's UTC day. Verified on the merged tree:
 Next: the model-page title item.
 
 ### 2026-09-23 — Search Console read, log restarted
-Ryan exported Search Console. Findings in seo/SEARCH-CONSOLE.md; standing orders above.
-The old log moved to seo/archive/. No page changed. Next: the model-page title item.
+Ryan exported Search Console, including the crawled-not-indexed URL list. Findings in
+seo/SEARCH-CONSOLE.md; standing orders above. The not-indexed pages are spread across every page
+type and were first crawled on 19 or 20 September, so nothing is cut. The old log moved to
+seo/archive/. No page changed. Next: the model-page title item.
