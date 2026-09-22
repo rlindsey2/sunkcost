@@ -2,8 +2,8 @@
   "note": "When each page last changed, for sitemap lastmod. Written by npm run build:pages; commit it with the change it records. A date is published only while the page still hashes to what is recorded here, so a stale entry costs a lastmod rather than printing a wrong date. Generated — edit the build, not this file.",
   "pages": {
     "/": {
-      "hash": "eb2f546c5e896018",
-      "changed": "2026-09-19"
+      "hash": "d47470180e0b4932",
+      "changed": "2026-09-22"
     },
     "/best-gpu/": {
       "hash": "0a5baf96506a5175",
