@@ -20,10 +20,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Ryan's side
 
-- [ ] Merge or close PR #17 (home page heading and og:url). **Un-conflicted 2026-09-23 as
-      `fc49f08`**: main merged in, the one clash (`seo/page-dates.json`, the `"/"` hash) resolved by
-      rebuilding. GitHub reports it `clean`. Verified on the merged tree: 447 tests, typecheck, full
-      build, 320 pages, one `<h1>` in `dist/index.html`.
 - [ ] Links from outside: the two news articles, r/LocalLLaMA, hardware reviewers who publish tok/s.
 
 ## Backlog (ordered by expected traffic impact)
@@ -36,7 +32,8 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       recomputed figures.** Hold each claim with a build check the way `/best/` is held.
 - [ ] **Six of the twelve size pages (12, 36, 48, 96, 192, 512 GB) are reached only from the machines
       and the memory guide.** Either a sentence somewhere genuinely wants to link them, or close this.
-- [ ] **Home page `og:url`.** One line in index.html; rides PR #17.
+- [ ] **Home page `og:url`.** One line in index.html, so it wants a pull request of its own now
+      that PR #17 has merged; small enough to ride the next branch against the calculator's head.
 - [ ] **Structured data names what 56 pages are about; 251 pages name nothing.** Add the page's
       subject (model, machine or question) to its JSON-LD.
 - [ ] Seven head-to-head titles are still over 60 characters and cannot be cut without losing a name.
@@ -45,6 +42,18 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] The two Q8 model pages have two inbound pages each, the fewest on the site.
 
 ## Runs
+
+### 2026-09-22 — PR #17 merged, verified on main
+Merged at 23:20 UTC as `f26ac31`, so the home page has a heading on the live site. (The two entries
+below are dated a day ahead of UTC; this one is not.) Verified on merged main rather than assumed:
+447 tests, typecheck clean, validate clean but for the one null price, the full build, **320 pages**
+with every guard passing. The conflict the pull request warned about cost nothing: `/` carries
+`<lastmod>2026-09-22</lastmod>` and **321 of 321 sitemap entries carry a date**, so the rebuild was
+done properly and `seo/page-dates.json` is in sync with the tree. Read rendered in Chromium at 390,
+900 and 1280px: one `<h1>`, weight 400, in the document at all three and painted at the two where
+the bar has room. The duplicated `--ok-text` line is gone and the three that remain are the light,
+dark and forced-dark contexts, which is right.
+Next: the model-page title item at the top of the backlog.
 
 ### 2026-09-23 — PR #17 un-conflicted
 Ryan asked for the merge issue on PR #17 fixed. It was three days behind main. Merged main into
