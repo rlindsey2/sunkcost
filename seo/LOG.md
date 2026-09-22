@@ -1141,7 +1141,19 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       schema.org adds a type for a model, or if a `Product` pair starts earning something
       measurable.
 
-- [ ] **`/models/` is a 404 and `/hardware/` is a page.** Measured 2026-09-20. All 55 model pages
+- [x] **`/models/` is a 404 no longer.** Done 2026-09-22, pushed as `74dfd9a`. It redirects
+      to `/leaderboard/`, permanently, in both of its forms. The item guessed this would be one
+      line of hand-kept Cloudflare config; it is a generated file instead, `public/_redirects`,
+      written by `scripts/build-pages.ts` beside `robots.txt` and `sitemap.xml` and held by
+      `checkRedirects()`. That is what makes it worth more than the one address it fixes: the
+      guard finds **every directory that holds pages and is not one**, so the next family of pages
+      added here cannot repeat the fault in silence, and a redirect can neither shadow a real page
+      nor point at one that has gone. Today the list is exactly one entry long, which is the guard
+      agreeing with the measurement. Both forms of the address are written, with and without the
+      trailing slash, because there is no directory here for Cloudflare to add a slash to. No
+      page's words changed and the ledger did not move. The run entry below has the six breaks
+      that proved the guard and the two that proved the test.
+      The original item follows. Measured 2026-09-20. All 55 model pages
       sit under `/models/<id>/` and the directory above them has no index, where `/hardware/` and
       `/compare/` both do. Nothing on the site links it, and the breadcrumb on a model page already
       steps through *Models* to `/leaderboard/`, which is the model index in everything but its
@@ -1907,6 +1919,104 @@ Google's Rich Results Test has no public API and its page is a JavaScript app, s
       that tell two Macs apart. Probably leave, but worth a second look with query data.
 
 ## Runs
+
+### 2026-09-22 — the directory above the models stops being a dead end, and the watch's own ceiling was wrong by a factor of three
+
+**The watch was due and was done first.** `npm run model-watch` printed `today 2026-09-22 · last
+checked 2026-09-21 · due`. **Nothing new that this site can price**, and the three candidates
+waiting on figures are unchanged. `seo/MODEL-WATCH.md` is dated 2026-09-22 and carries the entry.
+
+**The watch found a fault in itself, and it is the part of this run worth reading.** The triage
+rule at the top of `MODEL-WATCH.md` — the one that decides whether a new model is even this
+site's subject — has said since the file was written that *the largest machine here holds 119.5
+GB usable*. **That is the DGX Spark.** The roomiest machine on this site is the Mac Studio M3
+Ultra, 512GB, at **384 GB usable** and a published $9,499. The rule was wrong by a factor of
+three, and the file contradicted itself two sections below: its own Inkling entry notes that
+Inkling Small is already on the leaderboard at 162.54 GB, which is larger than the ceiling the
+rule claimed, and `npm run model-watch` prints GLM-5.3-Flash at 188.99 GB every time it runs.
+**All four rulings-out on that page were re-checked against 384 GB and all four survive**, so no
+model has to be added back and no past run reached a wrong answer. But two of them read far more
+settled than they are: Tencent Hy4 near 450 GB and Atria Dawn behind it are a fifth too big, not
+four times too big, and the entry for Hy4 now says so and names it the first to revisit. Checked
+against `data/hardware.json` rather than remembered.
+
+**Two things were recorded in the watch besides.** **GSQ-RCO**, a non-uniform GGUF quantisation
+from ISTA-DASLab, now ships builds of three models this site already prices, and a new precision
+counts here as much as a new model because it changes what fits: Qwen3.8 Flash Next is entered at
+119.60 GB and the Spark hands a model 119.5 GB, so a tenth of a gigabyte is the whole of why the
+$4,699 machine does not run it. The candidate is blocked on one honest file size — search returned
+47.9 GB and 77.42 GB for the same download — which is exactly the sort of figure this site does not
+guess. And **Edge0-35B-A3B** is ruled out on what it is rather than on size: it streams experts off
+disk, so the memory it occupies is not weights plus a growing cache, which is this site's whole
+sum, and its 4-bit format is MLX-only and does not convert to GGUF at all.
+
+**What was taken from the backlog.** `/models/` was a 404. All 55 model pages sit under it, every
+model page's breadcrumb reads *Sunk Cost / Models / …*, and a reader who trimmed the address to
+see the list got nothing from a site that has the list. It is `scripts/build-pages.ts`, so it is a
+push. Pushed as `74dfd9a`.
+
+**What it is.** A generated `public/_redirects`, written at the foot of the build beside
+`robots.txt` and `sitemap.xml`, and today two lines long:
+
+```
+/models /leaderboard/ 301
+/models/ /leaderboard/ 301
+```
+
+Both forms, because a directory with no page of its own is not a directory Cloudflare will add a
+slash to, and the shorter form is the one a reader actually types. `/leaderboard/` rather than a
+new index page, because the leaderboard already **is** the model index: it names all 55 models
+this site prices, and the breadcrumb has pointed *Models* at it since the model pages were built.
+
+**`checkRedirects()`, and the six breaks that proved it.** The redirect is not a line kept by
+hand; it is checked against the pages the build is about to write, both ways. Every directory that
+is above a page and is not a page has a redirect. No redirect shadows a real page. No redirect
+points at a page this build does not write. No address is redirected twice. And both forms of
+every address are in the file. Proved by breaking it six ways: pointing `/models/` at a
+`/model-index/` that does not exist, redirecting `/hardware/` which is a real page, deleting the
+redirect altogether so `/models/` is an orphan again, adding a `/gpus/` that is above nothing,
+listing `/models/` twice, and writing only the slashed form. Each one named itself:
+
+```
+/models/ is sent to /model-index/, which is not a page this build writes
+/hardware/ is a page of its own, and a redirect would shadow it
+/models/ holds pages and is not one, and nothing sends a reader who trims to it anywhere
+/gpus/ is above no page on this site, so nobody arrives there by trimming an address
+one address is redirected twice, and the second line is dead
+/models is not in the redirects file, so only one of its two forms is answered
+```
+
+The guard's own print is the measurement: **`/models/` holds 55 pages and is not one, so it sends
+a reader to `/leaderboard/`** — and it is the only such directory on the site, which is the guard
+agreeing with the 2026-09-20 measurement rather than repeating it.
+
+**One test changed, and it was already there.** `tests/page-dates.test.ts` asserts that the build
+publishes exactly three files at the top level and writes none of them until the last guard has
+passed. It caught this change on the first run, which is the test doing its job; it names four
+files now. Proved by breaking it twice: dropping the `_redirects` write (*expected 3 to deeply
+equal 4*) and moving it above the guards (*new URL('\_redirects', outRoot), redirect is written
+before the guards run*). The ordering claim needed no editing to cover the new file — it reads
+every `writeFileSync` at the foot of the script — and that is why it caught the second break for
+free.
+
+**How it was verified.** 445 tests, typecheck clean, `npm run build:pages` with every guard passing
+at 320 pages, and the full `npm run build` including `build:functions` and the 1,894 share pages,
+which put `_redirects` into `dist/` where Cloudflare Pages reads it. **No page's words changed**:
+`seo/page-dates.json` is byte for byte what it was, so not one of the 320 pages was re-dated, and
+`sitemap.xml` does not list `/models/` because it never was a page.
+
+**What is verified, and what is not.** The build and the tests are the whole of it. **The live
+redirect was not followed.** This environment's egress proxy blocks `sunkcost.ai`, so no run here
+can confirm what Cloudflare actually serves; the next run can read the deploy's status but not the
+address. Do not write an entry that claims otherwise.
+
+**Continue next.** The backlog's top open item is still the home page's `og:url`, one line waiting
+on **PR #17**, which has now been open three days and is the only pull request open. It is one
+heading and it blocks that line; it is worth a ping. Behind it, the fuller open question is the
+one written down on 2026-09-21: six of the twelve size pages are reached only from the machines
+and the memory guide, and whether any sentence on this site genuinely wants to point at them is a
+run's thought rather than a reflex. If the honest answer is no, the item says to write that down
+and close it, and that is a fine way to spend a cheap run.
 
 ### 2026-09-21 — the model pages learn the size of the machine they name
 
