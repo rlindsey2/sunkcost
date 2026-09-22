@@ -28,3 +28,6 @@ public/_redirects
 
 # wrangler pages dev local state
 .wrangler/
+
+# raw Search Console exports stay local; commit only the summary
+seo/exports/*/
