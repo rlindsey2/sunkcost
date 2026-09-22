@@ -22,7 +22,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] Export the URL list for "Crawled, currently not indexed" (Search Console → Pages → click the
       row → Export) and drop it in seo/exports/. Until then the 58 pages are unknown.
-- [ ] Merge or close PR #17 (home page heading and og:url).
+- [ ] Merge or close PR #17 (home page heading and og:url). **Un-conflicted 2026-09-23 as
+      `fc49f08`**: main merged in, the one clash (`seo/page-dates.json`, the `"/"` hash) resolved by
+      rebuilding. GitHub reports it `clean`. Verified on the merged tree: 447 tests, typecheck, full
+      build, 320 pages, one `<h1>` in `dist/index.html`.
 - [ ] Links from outside: the two news articles, r/LocalLLaMA, hardware reviewers who publish tok/s.
 
 ## Backlog (ordered by expected traffic impact)
@@ -48,6 +51,16 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] The two Q8 model pages have two inbound pages each, the fewest on the site.
 
 ## Runs
+
+### 2026-09-23 — PR #17 un-conflicted
+Ryan asked for the merge issue on PR #17 fixed. It was three days behind main. Merged main into
+`seo/home-h1` as `fc49f08` (merge commit, not a rebase). One conflict, the one its own description
+predicted: `seo/page-dates.json`, the `"/"` hash. Resolved by taking a side and running
+`npm run build:pages`, which wrote `d47470180e0b4932` — the hash that description measured three
+days ago — dated 2026-09-22, the build's UTC day. Verified on the merged tree: 447 tests, typecheck clean, full build with
+`build:functions`, 320 pages every guard passing, and `dist/index.html` read back with exactly one
+`<h1>`. The merged tree against main is this PR and nothing else. GitHub reports `clean`.
+Next: the model-page title item.
 
 ### 2026-09-23 — Search Console read, log restarted
 Ryan exported Search Console. Findings in seo/SEARCH-CONSOLE.md; standing orders above.
