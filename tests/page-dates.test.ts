@@ -139,10 +139,11 @@ describe('what the build publishes, and when', () => {
   const guards = [...build.matchAll(/^check[A-Za-z]*\(\);$/gm)];
   const published = [...build.matchAll(/^writeFileSync\((.*)$/gm)];
 
-  it('publishes three files, once each, and nothing else at the top level', () => {
+  it('publishes four files, once each, and nothing else at the top level', () => {
     expect(guards.length).toBeGreaterThan(20);
     expect(published.map((m) => m[1].split(',')[0]).sort()).toEqual([
       'datesFile',
+      "new URL('_redirects'",
       "new URL('robots.txt'",
       "new URL('sitemap.xml'",
     ]);

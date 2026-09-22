@@ -5915,6 +5915,16 @@ const urls = fingerprints
 // and it is the string about to be published that has to be right.
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`;
+
+// Directories a reader reaches by trimming the address bar. /models/ holds all 55 model
+// pages and is not a page itself, so trimming a model's address lands on nothing; the
+// leaderboard is the model index in everything but its address. Both forms of each
+// address are written, because a directory with no page of its own is not a directory
+// Cloudflare will add a slash to. checkRedirects() holds the list to the pages this
+// build actually writes, both ways, so neither a redirect to a page that has gone nor a
+// new family of pages without one can ship.
+const PARENT_REDIRECTS: [from: string, to: string][] = [['/models/', '/leaderboard/']];
+const redirectsTxt = `${PARENT_REDIRECTS.map(([from, to]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`).join('\n')}\n`;
 const nextLedger = nextDates(recordedDates, fingerprints, today);
 
 /**
@@ -7865,6 +7875,51 @@ function checkModelSizeLinks() {
   );
 }
 
+/**
+ * Every page on this site sits under a directory, and most of those directories are a
+ * page in their own right: /hardware/ indexes the machines, /compare/ the head-to-heads,
+ * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
+ * model's address to see the list gets a 404 from a site that has the list.
+ *
+ * So this holds four claims about the redirect that fixes it, all of them read off the
+ * pages this build is about to write rather than off a list kept by hand. A redirect
+ * never shadows a real page. It never points at a page that is not there. Every
+ * directory that holds pages and is not one has a redirect, so the next family of pages
+ * added here cannot quietly repeat the fault. And the file says every address twice,
+ * with and without its trailing slash, because the shorter form is what a reader
+ * actually types and there is no directory here for Cloudflare to lengthen it into.
+ */
+function checkRedirects() {
+  const problems: string[] = [];
+  const pages = new Set(paths);
+  const parents = new Set<string>();
+  for (const p of paths) {
+    const parts = p.split('/').filter(Boolean);
+    for (let i = 1; i < parts.length; i++) parents.add(`/${parts.slice(0, i).join('/')}/`);
+  }
+  const orphans = [...parents].filter((d) => !pages.has(d));
+  const named = new Set(PARENT_REDIRECTS.map(([from]) => from));
+  for (const d of orphans)
+    if (!named.has(d)) problems.push(`${d} holds pages and is not one, and nothing sends a reader who trims to it anywhere`);
+  for (const [from, to] of PARENT_REDIRECTS) {
+    if (pages.has(from)) problems.push(`${from} is a page of its own, and a redirect would shadow it`);
+    else if (!orphans.includes(from)) problems.push(`${from} is above no page on this site, so nobody arrives there by trimming an address`);
+    if (!pages.has(to)) problems.push(`${from} is sent to ${to}, which is not a page this build writes`);
+    for (const form of [from.replace(/\/$/, ''), from])
+      if (!redirectsTxt.split('\n').includes(`${form} ${to} 301`))
+        problems.push(`${form} is not in the redirects file, so only one of its two forms is answered`);
+  }
+  if (named.size !== PARENT_REDIRECTS.length) problems.push('one address is redirected twice, and the second line is dead');
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in the redirects for the directories that are not pages`);
+  }
+  console.log(
+    `  ${PARENT_REDIRECTS.map(([from, to]) => `${from} holds ${paths.filter((p) => p.startsWith(from) && p !== from).length} pages and is not one, so it sends a reader to ${to}`).join('; ')}`,
+  );
+}
+
 checkMeta();
 checkLinks();
 checkSectionLinks();
@@ -7872,6 +7927,7 @@ checkFooter();
 checkHeadToHeads();
 checkMatchUpSiblings();
 checkCanonicals();
+checkRedirects();
 checkOgCards();
 checkFonts();
 checkCounts();
@@ -7928,7 +7984,7 @@ checkTitleLabels();
 checkMemoryLadder();
 checkMemorySizes();
 checkModelSizeLinks();
-// Every guard has passed, so the three files the build publishes rather than
+// Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a
 // page's words changed, and a page a guard refused is not a page that changed.
@@ -7936,6 +7992,7 @@ checkModelSizeLinks();
 // the build after that stamped those pages with the day the fault was fixed.
 writeFileSync(new URL('sitemap.xml', outRoot), sitemapXml);
 writeFileSync(new URL('robots.txt', outRoot), robotsTxt);
+writeFileSync(new URL('_redirects', outRoot), redirectsTxt);
 writeFileSync(datesFile, `${JSON.stringify(nextLedger, null, 2)}\n`);
 // /hardware/ is the index of the machines, not one of them, so it is not counted as one
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/').length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
