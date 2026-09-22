@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-19
+Last checked: 2026-09-22
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -36,7 +36,12 @@ not a reason to skip it.
    - the model pages on `artificialanalysis.ai` for anything newly scored
 3. For each hit, ask the three questions that decide whether this site cares:
    - **Are the weights downloadable?** A hosted-only model is not this site's subject.
-   - **Does it fit anything the site prices?** The largest machine here holds 119.5 GB usable.
+   - **Does it fit anything the site prices?** The roomiest machine here holds **384 GB usable**,
+     and it is priced: the Mac Studio M3 Ultra, 512GB, at $9,499 as a discontinued launch price.
+     The roomiest one Apple still sells is the Mac Studio M5 Ultra, 256GB, at 192 GB usable.
+     Weights alone are not the test — the KV cache has to fit above them — but a model whose
+     four-bit weights pass 384 GB runs on nothing here at any window. The largest this site
+     already prices is GLM-5.3-Flash at 188.99 GB, which is the check on that number.
    - **Is it already here?** The script prints all 55, including the quantisation, so this is a
      look rather than a guess.
 4. Write what you found under Candidates, with sources. Update the date at the top of this file
@@ -67,6 +72,63 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-09-22
+
+Nothing new that this site can price, and the three candidates below are unchanged: all three
+still wait on figures rather than on another search. Two things are worth recording anyway — one
+correction to this file, and one new name ruled out on what it is.
+
+**The correction, and it matters more than any candidate here.** The triage rule above has said
+since this file was written that *the largest machine here holds 119.5 GB usable*. That is the
+DGX Spark. The roomiest machine on this site is the Mac Studio M3 Ultra, 512GB, at **384 GB
+usable** and a published $9,499. The figure was wrong by a factor of three, and this file
+contradicted it in its own words further down: the Inkling entry notes that **Inkling Small is
+already on the leaderboard at 162.54 GB**, larger than the ceiling the rule two sections above it
+claimed, and the script prints GLM-5.3-Flash at 188.99 GB every time it runs. **Every ruling-out
+on this page was re-checked against 384 GB and all four survive it**, so nothing has to be added
+back. But two of them are much closer than they read: Tencent Hy4 near 450 GB and Atria Dawn just
+behind it are a fifth too big, not four times too big, and both are now the first things to
+revisit if a roomier machine is ever priced. Checked against `data/hardware.json` rather than
+remembered.
+
+**A new precision, shipping for three models already here.** ISTA-DASLab is publishing GSQ-RCO
+GGUF builds — GSQ quantises each tensor, RCO picks the per-tensor types under a size budget — and
+the files are standard GGUF that llama.cpp, Ollama and LM Studio run unmodified. Builds exist for
+Qwen3.8 27B, Qwen3.8 Flash Next and GLM-5.3-Flash, which are three of this site's own rows. The
+watch counts a new precision as much as a new model because it changes what fits, and here it
+plainly would: **Qwen3.8 Flash Next is entered at 119.60 GB at Q4_K_M, and the DGX Spark hands a
+model 119.5 GB.** A tenth of a gigabyte is why the $4,699 machine does not run it, and the
+cheapest machine its own page names is the Mac Studio M5 Ultra, 256GB at $10,799. A smaller build
+of the same model would put it on the Spark, which is $6,100 less.
+
+Sources, none of them opened from here: the [Qwen3.8-27B
+build](https://huggingface.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF), the [Flash-Next
+build](https://huggingface.co/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF), and MindStudio's
+[explainer on the GLM-5.3-Flash one](https://www.mindstudio.ai/blog/glm-5-3-flash-gguf-gsq-rco-local).
+
+**Still missing, and it is the whole of what stops this being a row today:** one file size that
+two sources agree on. Search returned 47.9 GB for the Flash-Next 3.5-bit file and 77.42 GB for the
+weights plus the quantised embedding shards, and those are two different claims about the same
+download; the 27B repo is described as four sizes with an IQ3_S at *just over one fifth of the
+BF16 size*, which is a ratio rather than a figure. This site names the quantisation it prices and
+prints the number, so it needs the file listing itself. Also missing: whether the quality claim
+holds, and what `kv_cache_gb_per_8k` does under a non-uniform scheme — the cache is computed from
+`architecture` and is unchanged by how the weights are quantised, so the existing rows' figures
+carry over, but that should be said out loud before a row is written.
+
+- **Edge0-35B-A3B preview** (Edge0), Apache 2.0, 35B total / 3B active, built on Qwen3.5-MoE and
+  reported at 15 to 18 tok/s on a Mac mini M4 Pro. **Not this site's subject, and not on size.**
+  It works by keeping most of its weights on disk and streaming the experts it needs, so the
+  memory it occupies is not weights plus a cache that grows with the window, which is the whole of
+  this site's sum. Its 4-bit format is a custom affine quantisation for the MLX-only edge0
+  framework and does not convert to GGUF at all. A row for it would print a memory figure that
+  means something different from every other row's. Ruled out on what it is, so a later run need
+  not reach the same answer twice.
+- **MiniCPM5-2B** (2026-09-07), **Mistral Small 4**, **Qwen3.8 27B**, **GLM-5.3-Flash** and
+  **Granite 4.2** all turned up in this week's searches and all five are already priced here,
+  checked against the script's own list rather than guessed. **MiniMax H3** and **Kimi K3** turned
+  up again and are already ruled out below.
 
 ### 2026-09-19 · Agnes 3.0-Flash (Agnes AI) — worth adding, needs figures
 
@@ -155,15 +217,57 @@ prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
 
+### 2026-09-21
+
+Nothing new that this site can price. The searches were the ones this file lists — releases this
+month, releases this week, each family the script prints, and new quantisations — and every
+open-weight model they returned is already here, already on the list above, too big for anything
+priced, or not a model in this site's sense. No candidate is added and none of the three above
+changed: all three still wait on figures rather than on another search.
+
+- **MiniMax H3** (2026-08-03), open weights, Apache-licensed, and with community GGUF builds
+  within a day, down to a pruned 7.8 GB. It is not this site's subject: H3 is the video model
+  behind the Hailuo line, generating up to 2K video with audio, so there is no token price to hold
+  it against and no tok/s to print. A machine's memory is not what decides whether it is worth
+  buying for one. Ruled out on what it is rather than on what it costs, so a later run need not
+  reach the same answer twice.
+- **Kimi K3** (2026-07-16), open weights, and at 2.8T parameters the largest of them. Same
+  arithmetic as Tencent Hy4 and Atria Dawn below: at the four-bit sizes this data already carries
+  it lands past 1 TB, against the 384 GB the roomiest machine here addresses, so a row would be a
+  page saying no. The site prices no Kimi model, and this is why. Revisit only if a machine with
+  that much usable memory is priced, which is not a near thing at this size.
+- **Granite 4.2** (2026-08-25), **Muse Glimmer 30B** (2026-08-10) and **Nemotron 3.5 Lightning
+  30B-A3B** all turned up as new names and all three are already priced here, at Q4_K_M. Checked
+  against the script's own list rather than guessed.
+- **Mistral** and **Llama** returned nothing released since the models already here. Mistral's
+  larger sparse family is in early access with no public parameter count or ship date, so there is
+  nothing to enter.
+
+### 2026-09-20
+
+Nothing new. The searches were the ones this file lists — releases this month, releases this
+week, each family the script prints, and new quantisations — and every open-weight model they
+returned is either already priced here or already on this list. The three candidates below still
+stand where they were, waiting on figures rather than on another search.
+
+- **Inkling** (Thinking Machines Lab), 975B total / 41B active, Apache 2.0, 1M context, released
+  2026-07-15. Turned up as a new name and is neither new nor runnable here: at the four-bit sizes
+  this site already carries, 975B lands well beyond the 384 GB the roomiest machine on the list can
+  address. **Inkling Small is a different model and is already on the leaderboard**, at 162.54 GB,
+  which the two Mac Studio Ultras hold comfortably, so the family is not missing from the site.
+  Revisit only if a machine with that much usable memory is priced.
+
 ### 2026-09-19
 
 - **Tencent Hy4 preview** (2026-08-28), 770B total / 49B active, Apache 2.0, 1M context. Genuinely
-  open and the cheapest of the flagship-tier open models to rent, but it is four times the size of
-  anything this site can hold: at the four-bit sizes the data already carries, 770B lands near
-  450 GB against the 119.5 GB the largest machine here can address. Nothing on the list runs it, so
-  a row would be a page saying no. Revisit only if a machine with that much usable memory is priced.
-- **Atria Dawn Preview**, 744B mixture of experts built on GLM-5.2, MIT, 256k context. Same reason,
-  same arithmetic.
+  open and the cheapest of the flagship-tier open models to rent, but it does not fit: at the
+  four-bit sizes the data already carries, 770B lands near 450 GB against the 384 GB the roomiest
+  machine here addresses. Nothing on the list runs it, so a row would be a page saying no. **This
+  is the closest of the four rulings-out on size and the one to check first**: 450 against 384 is
+  a fifth too big rather than a different order of magnitude, so a 768 GB machine, or a build of
+  this model under four bits, puts it back in play.
+- **Atria Dawn Preview**, 744B mixture of experts built on GLM-5.2, MIT, 256k context. Same reason
+  and the same arithmetic as Hy4, and at 744B it is the same distance from fitting.
 - **Sakana AI Fugu Max and Fugu Ultra v2** (2026-09-11). Not a model in this site's sense: Fugu is
   an orchestrator that routes a request to other models behind one API. There are no weights to
   download and nothing to fit in a machine.

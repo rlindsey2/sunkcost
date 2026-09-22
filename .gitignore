@@ -20,6 +20,7 @@ public/local-llm-vs-api-cost/
 public/cost-per-month/
 public/sitemap.xml
 public/robots.txt
+public/_redirects
 
 # built from data/*.json for scripts/build-share-pages.ts
 .generated/

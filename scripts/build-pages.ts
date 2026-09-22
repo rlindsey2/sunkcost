@@ -7,30 +7,33 @@
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
-  appleChip, bandFit, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
+  addJumpLine, anchoredHeading, anchorHeadings, andList, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
   computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
-  familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
+  DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  holdHyphens, indefiniteArticle, kvWorking, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineIndexLine, machineMatchUpsLine, machinesThatHold, machineVerdict, median, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict, MTOK,
+  headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
+  monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
-  pricePerUsableGb, priceWithScope, priceWithScopeText, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
+  pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
-  sourceLinks, sourceName, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  strongestShared, tierLabel, tierName, tierScale, TITLE_MAX, titleOf, verdictLine, widestHeadroom, type Runner,
+  SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
+  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
-  MODEL_GENERATION_SIZE_RATIO, modelComparePath, modelGenerationPairs, modelPairs, sameSiliconPairs, versusCardPath,
+  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, memoryTierPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
+  versusCardPath,
+  PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
-import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, TOKEN_COST_CARD } from '../src/list-card';
+import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, MONTHLY_CARD, TOKEN_COST_CARD } from '../src/list-card';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
-import { fit, footprintGb, kvCacheGb } from '../src/fit';
+import { fit, footprintGb, kvCacheGb, kvScaleFor } from '../src/fit';
 import { fingerprint, mainOf, nextDates, publishedDate, type PageDates } from '../src/page-dates';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 import type { ModelRow, View } from '../src/compute';
@@ -52,13 +55,66 @@ const paths: string[] = [];
 const cardFor = (hwId: string | undefined, modelId: string | null | undefined) =>
   hwId && modelId && hasShareCard(hwId, modelId, data) ? `/og/${hwId}--${modelId}.png` : '/og/default.png';
 
-const meta: { path: string; title: string; description: string; canonical: string; ogImage: string; links: string[]; html: string }[] = [];
+const meta: { path: string; title: string; description: string; canonical: string; ogUrl: string; ogImage: string; links: string[]; html: string; hash: string }[] = [];
+
+// A page's lastmod is the day its own words last changed, read out of
+// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
+// prices were checked, and why a page whose fingerprint has moved goes into the
+// sitemap without a date rather than with a guess at one. It is read here, before
+// the first page is built, because each page now carries that day itself.
+const datesFile = new URL('../seo/page-dates.json', import.meta.url);
+const recordedDates: PageDates | null = existsSync(datesFile)
+  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
+  : null;
+const today = new Date().toISOString().slice(0, 10);
 /** which pages link to each page, so the build can refuse to ship one nothing links to */
 const inbound = new Map<string, Set<string>>();
 const unesc = (s: string) =>
   s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 
+/**
+ * A section heading whose text begins this way, whatever id it was given. The
+ * guards that know a heading whole ask for it through `anchoredHeading`; these
+ * are the ones that know only its opening words, because the rest is a machine
+ * name or a number the guard is about to read out of the match.
+ */
+const headingLike = (start: string) => new RegExp(`<h2\\b[^>]*>${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+
+/**
+ * The names this site's own data holds, as a page prints them. A heading
+ * repeating one of these where the page's h1 already carries it is the page
+ * saying its subject twice, which is what decides whether a jump line reads as a
+ * contents page or as keyword stuffing. See addJumpLine in src/pagekit.ts.
+ */
+const subjectNames = [
+  ...data.hardware.map((hw) => esc(shortHardwareLabel(hw))),
+  ...data.models.map((m) => esc(m.display_name)),
+];
+
+/**
+ * The page with its body's headings anchored and its line of jumps into them
+ * written, and its header and footer untouched. The jumps go in after the
+ * anchors because each one lands on an id the anchoring has just made.
+ */
+function anchorBody(html: string): string {
+  const body = mainOf(html);
+  return body === html ? html : html.replace(body, () => addJumpLine(anchorHeadings(body), subjectNames));
+}
+
 function write(path: string, html: string) {
+  // Every section heading leaves here with the id a link can land on, so the file
+  // on disk, the fingerprint the sitemap dates and the markup every guard below
+  // reads are one and the same page. See anchorHeadings in src/pagekit.ts.
+  html = anchorBody(html);
+  const title = unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
+  const description = unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? '');
+  // The page's own words, fingerprinted the moment they are final. Where the ledger
+  // still recognises them it can say which day they last moved, and the page says so
+  // itself rather than leaving the sitemap to claim it alone. Nothing withModified
+  // touches is inside the fingerprint, so the stamp cannot move the date it stamps.
+  const hash = fingerprint({ title, description, body: mainOf(html) });
+  const changed = publishedDate(recordedDates, path, hash);
+  if (changed) html = withModified(html, changed);
   const dir = new URL(`.${path}`, outRoot);
   mkdirSync(dir, { recursive: true });
   writeFileSync(new URL('index.html', dir), html);
@@ -77,13 +133,17 @@ function write(path: string, html: string) {
   } catch (e) {
     throw new Error(`${path} has JSON-LD that does not parse: ${(e as Error).message}`);
   }
-  for (const m of (html.split('<body')[1] ?? '').matchAll(/href="(\/[^"#?]*\/)"/g))
+  // A link that lands on a section is still a link to the page the section is
+  // on, so the fragment comes off before the page is counted as reached.
+  for (const m of (html.split('<body')[1] ?? '').matchAll(/href="(\/[^"#?]*\/)(?:#[^"]*)?"/g))
     if (m[1] !== path) inbound.set(m[1], (inbound.get(m[1]) ?? new Set()).add(path));
   meta.push({
     path,
-    title: unesc(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''),
-    description: unesc(html.match(/<meta name="description" content="([\s\S]*?)" \/>/)?.[1] ?? ''),
+    title,
+    description,
+    hash,
     canonical: unesc(html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''),
+    ogUrl: unesc(html.match(/<meta property="og:url" content="([^"]*)"/)?.[1] ?? ''),
     ogImage: unesc(html.match(/<meta property="og:image" content="([^"]*)"/)?.[1] ?? '').replace(site, ''),
     links: [...(html.split('<body')[1] ?? '').matchAll(/href="([^"]+)"/g)].map((m) => unesc(m[1])),
     html,
@@ -317,9 +377,18 @@ function checkMatchUpSiblings() {
   // both rules reach keeps the ladder's address, and it is the address that decides
   // which of the two things the page says about it
   const generations = new Set(modelGenerationPairs(data).map(([old, now]) => modelComparePath(old, now)));
+  const ladder = new Set<string>();
+  const ranked = rankedModels(data);
+  for (let i = 0; i + 1 < ranked.length; i++) ladder.add(modelComparePath(ranked[i], ranked[i + 1]));
+  const memories = new Set(
+    memoryNeighbourPairs(data)
+      .map(([x, y]) => modelComparePath(x, y))
+      .filter((href) => !ladder.has(href)),
+  );
   for (const [a, b] of mPairs) {
     const path = modelComparePath(a, b);
     const reasons: string[] = [];
+    let saysMemory = false;
     const sides = [a, b].map((self) => {
       const want = new Map<string, string>();
       for (const [x, y] of mPairs) {
@@ -330,7 +399,13 @@ function checkMatchUpSiblings() {
         want.set(href, other.display_name);
         // and the clause that says why those two are on a page together. The ladder is
         // always written from the higher model to the lower, so the pair's own order
-        // says which side of this one the other model sits.
+        // says which side of this one the other model sits. A memory neighbour is the
+        // one reason that is the same for every model carrying it, so the page says it
+        // once for the group rather than after each name.
+        if (memories.has(href)) {
+          saysMemory = true;
+          continue;
+        }
         reasons.push(
           generations.has(href)
             ? `${esc(other.display_name)}</a>, the ${x.id === self.id ? 'current' : 'last-generation'} ${esc(self.family ?? '')} nearest it in size`
@@ -343,6 +418,8 @@ function checkMatchUpSiblings() {
     links += n;
     widest = Math.max(widest, n);
     const notes = notesOn(path).join(' ');
+    if (saysMemory && !notes.includes('much the same memory'))
+      problems.push(`${path} links a match-up cut by the memory rule and does not say the two models need much the same memory`);
     for (const reason of reasons)
       if (!notes.includes(reason)) problems.push(`${path} does not say why one of its other match-ups exists: ${reason.replace(/<[^>]*>/g, '')}`);
     if (sides.some((s) => s.want.size)) noted++;
@@ -358,12 +435,16 @@ function checkMatchUpSiblings() {
 
 /**
  * One page, one address. A search engine that reaches the same content at two
- * URLs splits it in two and ranks neither, so four things have to hold across
+ * URLs splits it in two and ranks neither, so five things have to hold across
  * every generated page:
  *
  *   - each page's canonical is its own address, and no two pages claim the same
  *     one, since a canonical pointing anywhere else takes the page out of the
  *     results it was written for;
+ *   - the page's og:url is that same address. A canonical settles it for a
+ *     search engine; og:url is what Facebook, LinkedIn and Slack read, and
+ *     without it a link shared with a tracking parameter on the end counts as
+ *     a page of its own;
  *   - a head-to-head exists in one direction only — A vs B and B vs A are the
  *     same table with the columns swapped;
  *   - the sitemap and the pages on disk are the same set, so nothing is
@@ -378,6 +459,11 @@ function checkCanonicals() {
   const own = new Set(paths);
   for (const p of meta) {
     if (p.canonical !== site + p.path) problems.push(`${p.path} says its address is ${p.canonical || '(none)'}`);
+    // A share counts as its own page unless the card says which page it is, so
+    // /page/?utm_source=x and /page/ are one object to Facebook, LinkedIn and
+    // Slack only while og:url says the same address the canonical does.
+    if (p.ogUrl !== p.canonical)
+      problems.push(`${p.path} shares as ${p.ogUrl || '(no og:url)'} and is canonically ${p.canonical}`);
     for (const href of p.links) {
       if (!href.startsWith('/')) continue;
       const target = href.split(/[?#]/)[0];
@@ -403,7 +489,7 @@ function checkCanonicals() {
     console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
     throw new Error(`${problems.length} pages are reachable at more than one address, or link to one`);
   }
-  console.log(`  ${meta.length} pages, one address each, ${announced.length} in the sitemap`);
+  console.log(`  ${meta.length} pages, one address each in the head and in the card, ${announced.length} in the sitemap`);
 }
 
 /**
@@ -602,6 +688,65 @@ function checkCompareIndex() {
 }
 
 /**
+ * The index says what cuts its two lists, and a rule added to `versus-card.ts` without
+ * a clause on the page leaves rows nothing on it explains. This holds the sentence to
+ * the rules in both directions: every match-up the page lists is reached by a kind the
+ * page names, every kind the page names reaches at least one match-up on it, and the
+ * page really carries each clause and the count of them.
+ *
+ * It is checked against the recut rules rather than against the table, so a kind whose
+ * pairs an earlier rule reached first still has to be named: the reader of a row cannot
+ * see which rule got there first, only whether the page explains why the two are on a
+ * page together.
+ */
+function checkMatchUpKinds() {
+  const index = meta.find((p) => p.path === '/compare/');
+  if (!index) throw new Error('no head-to-head index was written');
+  const problems: string[] = [];
+  let named = 0;
+
+  // a match-up is the same one whichever way round its address is written, and the
+  // address is written by whichever rule reached the pair first: four card pairs are
+  // cut by both grids and carry the flagship grid's order. So the two sides are matched
+  // on the pair rather than on the path.
+  const hold = <T extends { id: string }>(
+    what: string,
+    kinds: MatchUpKind<T>[],
+    all: [T, T][],
+    label: (a: T, b: T) => string,
+  ) => {
+    const key = (a: T, b: T) => [a.id, b.id].sort().join(' vs ');
+    const listed = new Map(all.map(([a, b]) => [key(a, b), label(a, b)]));
+    const explained = new Set<string>();
+    for (const kind of kinds) {
+      const onPage = kind.pairs.map(([a, b]) => key(a, b)).filter((k) => listed.has(k));
+      if (!onPage.length) problems.push(`the head-to-head index names a kind of ${what} match-up that cuts none of them: ${kind.clause}`);
+      for (const k of onPage) explained.add(k);
+      if (!index.html.includes(esc(kind.clause)))
+        problems.push(`the head-to-head index does not say what puts ${onPage.length} ${what} match-ups on it: ${kind.clause}`);
+      named++;
+    }
+    for (const [k, name] of listed)
+      if (!explained.has(k)) problems.push(`the head-to-head index lists ${name} and names no kind of match-up that cuts it`);
+    const count = `${sentenceCase(numberWord(kinds.length))} kinds of match-up cut this list.`;
+    if (!index.html.includes(count)) problems.push(`the head-to-head index does not say it lists ${kinds.length} kinds of ${what} match-up`);
+  };
+
+  hold('machine', machineMatchUpKinds(), hardwarePairs(data), (a, b) => `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`);
+  hold('model', modelMatchUpKinds(), modelPairs(data), (a, b) => `${a.display_name} vs ${b.display_name}`);
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing the head-to-head index says about its own lists does not hold'
+        : `${problems.length} things the head-to-head index says about its own lists do not hold`,
+    );
+  }
+  console.log(`  the head-to-head index names the ${named} rules that cut its ${hardwarePairs(data).length} machine and ${modelPairs(data).length} model match-ups, and every one of them is cut by a rule it names`);
+}
+
+/**
  * The machine index is a second place the site states what a machine costs, what
  * it holds and what that takes to pay back, and a second statement of a figure is
  * a second chance to be wrong. Every row is recomputed here from the same view the
@@ -673,6 +818,67 @@ function checkHardwareIndex() {
 }
 
 /**
+ * The machine index opens by saying what is in its table, and one clause of that
+ * was a count of what the site prices rather than of what it lists. Two of the 56
+ * configurations here have no published price, so the sentence was wrong by two
+ * and the rows it was wrong about are the two a reader most needs warning of:
+ * their price cell says "not published" and their pay-back cell says "needs a
+ * price".
+ *
+ * Four claims, and the first two are the ones that keep the sentence honest when
+ * the data moves. The count in the paragraph is the count of rows the table
+ * really prints a price on, read back out of the page rather than taken from the
+ * same array that wrote it. Every machine without a published price is named up
+ * there. No machine that has one is named among them. And each of those rows
+ * offers the calculator instead, which is what the sentence promises.
+ */
+function checkPricedRows() {
+  const index = meta.find((p) => p.path === '/hardware/');
+  if (!index) throw new Error('no machine index was written');
+  const problems: string[] = [];
+  const lede = index.html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '';
+  const said = publishedPriceLine(data);
+
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.filter((h) => h.price_usd != null);
+
+  const tbody = index.html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+  const rows = tbody.split('<tr').slice(1).map((r) => `<tr${r}`).filter((r) => r.includes('c-hw'));
+  const withPrice = rows.filter((r) => !r.includes('not published'));
+  if (withPrice.length !== priced.length)
+    problems.push(
+      `the machine index prints a price on ${withPrice.length} of its ${rows.length} rows, where ${priced.length} of the machines here have a published price`,
+    );
+  if (!lede.includes(said))
+    problems.push(
+      `the machine index does not open by saying that ${withPrice.length} of its ${rows.length} rows carry a published price`,
+    );
+  for (const hw of unpriced) {
+    if (!said.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`the machine index has no price for the ${shortHardwareLabel(hw)} and does not name it in its first paragraph`);
+    const row = rows.find((r) => r.includes(`href="/hardware/${esc(hw.id)}/"`));
+    if (!row) problems.push(`the machine index has no row for the ${shortHardwareLabel(hw)}`);
+    else if (!row.includes('price it yourself'))
+      problems.push(`the ${shortHardwareLabel(hw)} is named as a machine you price yourself and its row does not offer the calculator`);
+  }
+  for (const hw of priced)
+    if (said.includes(esc(shortHardwareLabel(hw))))
+      problems.push(`the machine index names the ${shortHardwareLabel(hw)} among the machines it has no price for, and it is priced at ${fmtUsd(hw.price_usd!)}`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing the machine index says about its own prices does not hold'
+        : `${problems.length} things the machine index says about its own prices do not hold`,
+    );
+  }
+  console.log(
+    `  the machine index says ${withPrice.length} of its ${rows.length} rows carry a published price, prints one on exactly those, and names the ${numberWord(unpriced.length)} it prices itself`,
+  );
+}
+
+/**
  * Every head-to-head answers pay-back at one usage above the fold, and the section
  * below it answers the same question across the five levels the calculator names.
  * Two things can go quietly wrong there: a page can lose the section, and a figure a
@@ -691,7 +897,7 @@ function checkPayback() {
   const problems: string[] = [];
   const check = (path: string, heading: string, exempt = false) => {
     const html = meta.find((m) => m.path === path)?.html ?? '';
-    const section = html.split(`<h2>${heading}</h2>`)[1]?.split('<h2>')[0];
+    const section = html.split(anchoredHeading(heading))[1]?.split('<h2')[0];
     if (!section) {
       if (!exempt) problems.push(`${path} does not say how much use it takes to pay back`);
       return 0;
@@ -708,7 +914,7 @@ function checkPayback() {
   for (const [a, b] of modelPairs(data)) {
     const path = modelComparePath(a, b);
     // no machine runs both, so there is no machine for either of them to pay for
-    const noShared = !(meta.find((m) => m.path === path)?.html ?? '').includes('<h2>Side by side on the ');
+    const noShared = !headingLike('Side by side on the ').test(meta.find((m) => m.path === path)?.html ?? '');
     priced += check(path, 'How much use it takes to pay for the machine', noShared);
   }
   if (problems.length) {
@@ -745,18 +951,18 @@ function checkMeetingPoint() {
     if (!meeting) {
       // nothing here holds both at any context the calculator offers, so there is no
       // race to run and the page says only what each model needs
-      if (html.includes('<h2>Side by side on the ')) problems.push(`${path} runs a side-by-side race on a machine that holds both at no context`);
+      if (headingLike('Side by side on the ').test(html)) problems.push(`${path} runs a side-by-side race on a machine that holds both at no context`);
       continue;
     }
     met++;
     const k = Math.round(meeting.ctx / 1024);
-    if (!html.includes(`<h2>Side by side on the ${esc(shortHardwareLabel(meeting.shared.hw))} at ${k}k of context</h2>`))
+    if (!html.includes(anchoredHeading(`Side by side on the ${esc(shortHardwareLabel(meeting.shared.hw))} at ${k}k of context`)))
       problems.push(`${path} meets at ${k}k on the ${shortHardwareLabel(meeting.shared.hw)} and its heading does not say so`);
     if (!html.includes(`are at ${k}k of context instead`))
       problems.push(`${path} runs its race at ${k}k and the assumptions still claim ${Math.round(data.defaults.context.default_tokens / 1024)}k`);
     // a link that opens the calculator at the default context would land the reader on
     // the configuration the page has just said does not fit
-    const sections = html.split('<h2>Side by side on the ')[1]?.split('<h2>Machines that run one')[0] ?? '';
+    const sections = html.split(headingLike('Side by side on the '))[1]?.split(headingLike('Machines that run one'))[0] ?? '';
     const links = [...sections.matchAll(/href="\/\?([^"]+)"/g)].map((m) => unesc(m[1]));
     if (!links.length) problems.push(`${path} runs its race at ${k}k with no link into the calculator`);
     for (const q of links)
@@ -793,15 +999,15 @@ function checkHeadroom() {
     const path = hardwareComparePath(a, b);
     const html = meta.find((m) => m.path === path)?.html ?? '';
     const rows = contextHeadroom(va.rows.map((r) => r.model), a, b, data);
-    const section = html.split('<h2>The same models, not to the same length</h2>')[1]?.split('<h2>')[0] ?? '';
+    const section = html.split(anchoredHeading('The same models, not to the same length'))[1]?.split('<h2')[0] ?? '';
     if (!rows.length) {
       flat++;
       if (section) problems.push(`${path} holds both machines to the same length everywhere and still claims a difference`);
       // a same-silicon pair says it under its own heading, where the equal memory is
       // one line of a longer answer rather than the whole of the finding
       const saidIt = sameSilicon(a, b)
-        ? html.includes('<h2>The same machine inside</h2>')
-        : html.includes('<h2>Memory is not what separates them</h2>');
+        ? html.includes(anchoredHeading('The same machine inside'))
+        : html.includes(anchoredHeading('Memory is not what separates them'));
       if (!saidIt) problems.push(`${path} does not say that memory separates the two machines nowhere`);
       if (!html.includes('there is no model one holds and the other does not')) problems.push(`${path} does not say the two machines hold the same models at every context`);
       continue;
@@ -959,7 +1165,7 @@ function checkModelContexts() {
     const perFamily = cheapestPerFamily(runnersFor(m, data));
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
-    const section = html.split('<h2>Machines that run it</h2>')[1]?.split('<h2>')[0] ?? '';
+    const section = sectionUnder(html, runnersHeading(m)) ?? '';
     if (!perFamily.length) {
       if (section) problems.push(`${path} has a machines table and no machine on the list runs it`);
       continue;
@@ -1042,11 +1248,11 @@ function checkMachineContexts() {
   for (const hw of data.hardware) {
     const path = `/hardware/${hw.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
-    const section = html.split('<h2>What it runs</h2>')[1]?.split('<h2>')[0] ?? '';
+    const section = sectionUnder(html, runsHeading(hw)) ?? '';
     const view = computeView({ ...defaultState(data), hw: hw.id }, data);
     const shown = view.rows.filter((r) => r.fit.status === 'fits').slice(0, 12);
     if (!shown.length) {
-      if (section) problems.push(`${path} has a "What it runs" table and nothing on the list fits it`);
+      if (section) problems.push(`${path} has a table of what it runs and nothing on the list fits it`);
       continue;
     }
     if (!section) {
@@ -1150,7 +1356,7 @@ function checkShorterMachines() {
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const runners = runnersFor(m, data);
     const want = runners.length ? machinesShorter(m, data) : [];
-    const found = html.match(/<h2>(\w+) more machines?, at a shorter window<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const found = html.match(/<h2\b[^>]*>(\w+) more machines?, at a shorter window<\/h2>([\s\S]*?)(?=<h2\b|<\/article>)/);
     // the answer box only promises a cheaper machine where the cheapest of these
     // undercuts the cheapest machine the page's own table names
     const undercuts =
@@ -1249,17 +1455,17 @@ function checkMissedMachines() {
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const want = cheapestPerFamily(runnersFor(m, data)).length <= 1 ? missedMachines(m, data) : [];
-    const found = html.match(/<h2>The machines that miss it, and what they run<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const found = sectionUnder(html, missedHeading(m));
     if (!want.length) {
-      if (found) problems.push(`${path} lists the machines that miss it, and it is not a model one machine runs`);
+      if (found != null) problems.push(`${path} lists the machines that miss it, and it is not a model one machine runs`);
       continue;
     }
-    if (!found) {
+    if (found == null) {
       problems.push(`${path} is a model one machine runs and says nothing about the ${want.length} families that miss it`);
       continue;
     }
     pages++;
-    const section = found[1];
+    const section = found;
     // the claim that a shorter window cannot close the gap, which is only true
     // where the weights on their own are bigger than the memory
     const weightsAlone = m.weights_gb != null && want.every((r) => r.hw.usable_memory_gb != null && m.weights_gb! > r.hw.usable_memory_gb!);
@@ -1323,7 +1529,7 @@ function checkShorterFits() {
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const view = computeView({ ...defaultState(data), hw: hw.id }, data);
     const want = fitsShorter(hw, view.rows.map((r) => r.model), data);
-    const found = html.match(/<h2>(\w+) more, at a shorter window<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const found = html.match(/<h2\b[^>]*>(\w+) more, at a shorter window<\/h2>([\s\S]*?)(?=<h2\b|<\/article>)/);
     const claimed = html.includes(`more if you keep the window shorter than ${ctxLabel(ctx)}`);
     if (!want.length) {
       if (found) problems.push(`${path} names models it holds at a shorter window, and there are none`);
@@ -1373,7 +1579,7 @@ function checkShorterFits() {
     const path = `/models/${m.id}/`;
     const html = meta.find((p) => p.path === path)?.html ?? '';
     const runners = runnersFor(m, data);
-    const heading = html.match(/<h2>It fits at (\d+k) of context<\/h2>([\s\S]*?)(?=<h2>|<\/article>)/);
+    const heading = [...html.matchAll(/<h2\b[^>]*>[^<]* fits at (\d+k) of context<\/h2>([\s\S]*?)(?=<h2\b|<\/article>)/g)][0] ?? null;
     if (runners.length) {
       if (heading) problems.push(`${path} says the window is what stops it, and machines here run it at ${ctxLabel(ctx)}`);
       continue;
@@ -1589,7 +1795,7 @@ function checkFamilyReach() {
  */
 function checkModelGenerations() {
   const problems: string[] = [];
-  const heading = '<h2>What the newer model changes</h2>';
+  const heading = anchoredHeading('What the newer model changes');
   const pairs = modelGenerationPairs(data);
   const considered = machinesConsidered(data).length;
   const isMoe = (m: Model) => m.active_params_b != null && m.active_params_b < m.params_b;
@@ -1718,15 +1924,15 @@ function checkModelGenerations() {
 function checkLeaderboardLinks() {
   const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
   const problems: string[] = [];
-  const seen = new Set<string>();
-  const ranked = data.models
-    .filter((m) => m.frontier_equivalent?.score != null)
-    .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!)
-    .filter((m) => {
-      if (seen.has(m.display_name)) return false;
-      seen.add(m.display_name);
-      return true;
-    });
+  // The same cut the page makes, from the same rule, so this guard never goes
+  // looking for a row the table was never going to print. What the cut itself
+  // is held to is `checkLeaderboardBuilds()`.
+  const ranked = leaderboardRows(
+    data.models
+      .filter((m) => m.frontier_equivalent?.score != null)
+      .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!),
+    data,
+  ).map((r) => r.model);
   const notes = html.split('<p class="note">').slice(1).map((p) => p.split('</p>')[0]);
   let linked = 0;
   let shortened = 0;
@@ -1806,6 +2012,126 @@ function checkLeaderboardLinks() {
   );
 }
 
+/**
+ * Every model this site prices is on the leaderboard somewhere, and the page's
+ * first paragraph counts what it shows.
+ *
+ * Two things sat outside both before this guard existed. The table keeps one
+ * row per model, so the second build of a model — the same weights at a heavier
+ * quantisation, its own download, its own memory bill, its own page — was
+ * dropped without a word: in no row, in no count, and not in the note below
+ * that lists the models the index has not scored. The page that ranks Qwen3 32B
+ * did not say the site also prices it at eight bits.
+ *
+ * So four claims, and three of them are read back out of the rendered page
+ * rather than taken from the arrays that wrote it. Every model in the data is
+ * named on the page exactly once, as a row or beside one or in the unscored
+ * note. The build a row keeps is the lightest of the builds that row names,
+ * checked against the gigabytes the page itself prints. The lede's count of
+ * models is the count of rows really there. And the lede says how many models
+ * carry a second build, or says nothing about builds at all where none does.
+ */
+function checkLeaderboardBuilds() {
+  const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
+  const problems: string[] = [];
+  const lede = html.split('<p class="lede">')[1]?.split('</p>')[0] ?? '';
+  // The jump line at the top of the page names this section too, so the note
+  // itself is what follows the last mention rather than the first.
+  const unscoredNote = html.split('Models the index has not scored yet').pop() ?? '';
+
+  // The open rows, as the page prints them: the head of each is the model whose
+  // link opens the model cell, the rest of that cell is what it also names, and
+  // the weights column is the gigabytes the reader is shown for the head. The
+  // stacking wrapper adds a class to every cell, so the cells are found by the
+  // one class the page's own markup gives them rather than by the whole
+  // attribute.
+  const cellOf = (row: string, name: string) =>
+    row.split(new RegExp(`<td class="[^"]*${name}"[^>]*>`))[1]?.split('</td>')[0] ?? '';
+  const rows = html
+    .split('<tr>')
+    .slice(1)
+    .map((r) => r.split('</tr>')[0])
+    .map((r) => ({ model: cellOf(r, 'c-model'), weights: cellOf(r, 'c-gb') }))
+    .filter((r) => r.model.includes('href="/models/'))
+    .map(({ model, weights }) => {
+      const ids = [...model.matchAll(/href="\/models\/([^"]+)\//g)].map((m) => m[1]);
+      return {
+        head: ids[0],
+        also: ids.slice(1),
+        headGb: Number(weights.replace(/<[^>]*>/g, '').match(/([\d.]+) GB/)?.[1] ?? NaN),
+        alsoGb: [...model.matchAll(/([\d.]+) GB/g)].map((m) => Number(m[1])),
+      };
+    });
+
+  const named = new Map<string, string>();
+  const claim = (id: string, where: string) => {
+    const already = named.get(id);
+    if (already) problems.push(`/leaderboard/ names ${id} twice, ${already} and ${where}`);
+    else named.set(id, where);
+  };
+  for (const r of rows) {
+    if (r.head) claim(r.head, 'as a row of its own');
+    for (const id of r.also) claim(id, `beside ${r.head}`);
+  }
+  for (const m of data.models) {
+    if (named.has(m.id)) continue;
+    if (unscoredNote.includes(`href="/models/${esc(m.id)}/"`)) {
+      named.set(m.id, 'in the note about unscored models');
+      continue;
+    }
+    problems.push(
+      m.frontier_equivalent?.score == null
+        ? `/leaderboard/ leaves ${m.display_name} at ${m.quantisation} out of the note about models the index has not scored`
+        : `/leaderboard/ gives ${m.display_name} at ${m.quantisation} no row and names it beside none`,
+    );
+  }
+
+  // The row keeps the lightest build, measured against the weights the cell
+  // itself prints rather than against the data that wrote it.
+  let doubled = 0;
+  for (const r of rows) {
+    if (!r.also.length) continue;
+    doubled++;
+    const head = data.models.find((m) => m.id === r.head);
+    const heavier = r.also
+      .map((id) => data.models.find((m) => m.id === id))
+      .filter((m): m is Model => m != null)
+      .filter((m) => (m.weights_gb ?? 0) < (head?.weights_gb ?? 0));
+    if (heavier.length)
+      problems.push(
+        `/leaderboard/ gives the row to ${head?.display_name} at ${head?.quantisation}, ${fmtGb(head?.weights_gb)}, where ${andList(heavier.map((m) => `${m.quantisation} is ${fmtGb(m.weights_gb)}`))}`,
+      );
+    const lighter = r.alsoGb.filter((gb) => gb < r.headGb);
+    if (lighter.length)
+      problems.push(
+        `/leaderboard/ prints ${fmtGb(r.headGb)} as the weights of ${head?.display_name} and names a build of it beside them at ${andList(lighter.map((gb) => fmtGb(gb)))}`,
+      );
+  }
+
+  const openRows = rows.length;
+  if (!lede.includes(`${openRows} open-weight models`))
+    problems.push(`/leaderboard/ prints ${openRows} rows of open models and does not open by saying so`);
+  if (doubled) {
+    const said = doubled === 1 ? 'one of them is' : `${numberWord(doubled)} of them are`;
+    if (!lede.includes(`${said} also priced at a heavier quantisation`))
+      problems.push(`/leaderboard/ names a second build on ${doubled} of its rows and does not say so in its first paragraph`);
+  } else if (/lightest build/.test(lede)) {
+    problems.push('/leaderboard/ explains a cut between builds that its table does not make');
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 claim about what /leaderboard/ lists does not match the page'
+        : `${problems.length} claims about what /leaderboard/ lists do not match the page`,
+    );
+  }
+  console.log(
+    `  /leaderboard/ names all ${named.size} models this site prices: ${openRows} ranked rows, ${doubled} of them naming a heavier build beside the one they rank, and ${named.size - openRows - doubled} in the note about models the index has not scored`,
+  );
+}
+
 function checkFonts() {
   const css = readFileSync(new URL('page.css', outRoot), 'utf8');
   const declared = [...css.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
@@ -1870,7 +2196,7 @@ function headToHeadNote(hw: Hardware): string {
         .map((l) => `<a href="${esc(l.href)}">${esc(l.label)}</a>`)
         .join(' \u00b7 ')}.`,
   );
-  return `<p class="note">${sentences.join(' ')} There are <a href="/compare/">${machineMatchUps} machine match-ups on the site</a>.</p>`;
+  return `<p class="note">${sentences.join(' ')} There are <a href="${SECTIONS.machineMatchUps}">${machineMatchUps} machine match-ups on the site</a>.</p>`;
 }
 
 /**
@@ -1902,26 +2228,48 @@ function machineSiblingNote(a: Hardware, b: Hardware): string {
 const modelGenerations = new Map<string, [Model, Model]>();
 for (const [old, now] of modelGenerationPairs(data)) modelGenerations.set(modelComparePath(old, now), [old, now]);
 
+// A pair more than one rule reaches keeps the address the first rule gave it, and the
+// address is what decides which of the three things the page says about it. Both the
+// ladder and the memory rule write the stronger model first, so four pairs are reached
+// by both, and on those the leaderboard is what a reader is already looking at.
+const ladderPaths = new Set<string>();
+const rankedForLadder = rankedModels(data);
+for (let i = 0; i + 1 < rankedForLadder.length; i++)
+  ladderPaths.add(modelComparePath(rankedForLadder[i], rankedForLadder[i + 1]));
+const modelMemoryPairs = new Map<string, [Model, Model]>();
+for (const [a, b] of memoryNeighbourPairs(data)) {
+  const href = modelComparePath(a, b);
+  if (!ladderPaths.has(href)) modelMemoryPairs.set(href, [a, b]);
+}
+
 type ModelMatchUp = { href: string; other: Model } & (
   | { kind: 'ladder'; side: 'above' | 'below' }
   // 'above' and 'below' name where the other model sits; 'is-older' and 'is-current'
   // name which side of the pair this model is, since neither is above the other on
-  // anything the reader can see.
+  // anything the reader can see. A memory neighbour is symmetrical: what puts the two
+  // on a page together is a figure they share, so both sides say the same thing.
   | { kind: 'generation'; side: 'is-older' | 'is-current' }
+  | { kind: 'memory'; side: 'same-memory' }
 );
 const modelHeadToHeads = new Map<string, ModelMatchUp[]>();
 for (const [a, b] of modelPairs(data)) {
   const href = modelComparePath(a, b);
   const gen = modelGenerations.get(href);
+  const mem = gen ? null : modelMemoryPairs.get(href);
   const sides: ModelMatchUp[] = gen
     ? [
         { href, other: gen[1], kind: 'generation', side: 'is-older' },
         { href, other: gen[0], kind: 'generation', side: 'is-current' },
       ]
-    : [
-        { href, other: b, kind: 'ladder', side: 'below' },
-        { href, other: a, kind: 'ladder', side: 'above' },
-      ];
+    : mem
+      ? [
+          { href, other: b, kind: 'memory', side: 'same-memory' },
+          { href, other: a, kind: 'memory', side: 'same-memory' },
+        ]
+      : [
+          { href, other: b, kind: 'ladder', side: 'below' },
+          { href, other: a, kind: 'ladder', side: 'above' },
+        ];
   const selves = gen ? [gen[0], gen[1]] : [a, b];
   selves.forEach((self, i) => modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), sides[i]]));
 }
@@ -1953,13 +2301,12 @@ function leaderboard(): string {
     .filter((m) => m.frontier_equivalent?.score != null)
     .sort((a, b) => b.frontier_equivalent!.score! - a.frontier_equivalent!.score!);
   const max = data.defaults.frontier_scale_max ?? 70;
-  const seen = new Set<string>();
-  const unique = scored.filter((m) => {
-    const key = m.display_name;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  // One row a model, at the lightest build, with the heavier one named in the
+  // row rather than dropped. `leaderboardRows()` carries the rule and the lede
+  // prints it; `checkLeaderboardBuilds()` holds the page to both.
+  const built = leaderboardRows(scored, data);
+  const unique = built.map((r) => r.model);
+  const alsoAt = new Map(built.map((r) => [r.model.id, r.alsoAt]));
 
   // What runs each model, worked out once: the row's own cell wants the cheapest, and
   // the note under the table wants the models where the cheapest answer needed a
@@ -1981,7 +2328,7 @@ function leaderboard(): string {
 
   const rows = placed
     .map(({ m, next, score, cheapest, shorter }) => `<tr>
-  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span></td>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span>${(alsoAt.get(m.id) ?? []).length ? `<br><span class="dim">also at ${andList((alsoAt.get(m.id) ?? []).map((o) => `<a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, ${fmtGb(o.weights_gb)}`))}</span>` : ''}</td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-caps">${dotRow(m)}</td>
@@ -2020,18 +2367,23 @@ function leaderboard(): string {
     .filter((m) => m.frontier_equivalent?.score == null)
     .sort((a, b) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0));
 
+  const buildsLine = leaderboardBuildsLine(built);
   const best = unique[0];
   const gap = best && refs[0] ? refs[0].score - best.frontier_equivalent!.score! : null;
   const body = `<article class="prose">
 <h1>Every open model, measured against the frontier</h1>
-<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
-${gap != null ? `<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
+<p class="lede">${unique.length} open-weight models you can download and run at home, ranked on the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}, with the hosted models from Anthropic and OpenAI dropped into the same table for scale. ${buildsLine ? `${buildsLine} ` : ''}Each row links to what it takes to run it, and each price opens the calculator on that machine running that model. For which machine pays back soonest at each level, see <a href="/best/">best buys by usage</a>; for two of them side by side, <a href="/compare/">every head-to-head</a>; for all of them at once, <a href="/hardware/">every machine on the site in one table</a>.</p>
+${gap != null ? `<h2>How far behind the frontier open models are</h2>
+<p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
+<h2>Every model here, ranked</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${hostedHeading}${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' }, pair: [3, 4] })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
-${unplaced.length ? `<p class="note">${unplaced.length} more open models on this site have no index score yet, so they are not in the table: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
+${unplaced.length ? `<h2>Models the index has not scored yet</h2>
+<p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
+<h2>How to read the scores</h2>
 <p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
 </article>`;
 
@@ -2053,10 +2405,22 @@ ${unplaced.length ? `<p class="note">${unplaced.length} more open models on this
 
 /* ------------------------------ best buys ------------------------------ */
 
+/**
+ * How many models a class on `/best/` lists. The rest of the class is counted rather
+ * than listed, which is a fair cut on a page about the quickest pay-back — but the page
+ * has to say so, and until now it did not: 23 of the 32 models that pay back somewhere
+ * sat in no row and in no count, at every one of the five levels of use.
+ *
+ * The number lives here, the lede prints it and `checkBestCuts()` holds the page to it,
+ * so changing the cut changes the sentence and the guard with it.
+ */
+const BEST_PER_CLASS = 3;
+
+const bestAnchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+
 function bestBuys(): string {
   const d = data.defaults;
-  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage) }));
-  const anchor = (usage: number) => `u-${fmtTokens(usage).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+  const levels = bestUsageLevels(data).map((l) => ({ ...l, tiers: bestByTier(data, l.usage, Infinity) }));
 
   // the headline: at the default usage, the most capable class with anything that pays back
   const headLevel = levels.find((l) => l.usage >= d.usage.default_tokens_per_day) ?? levels[0];
@@ -2068,11 +2432,13 @@ function bestBuys(): string {
       const rows = l.tiers
         .map((t) => {
           const header = `<tr class="is-frontier"><th colspan="5">${esc(t.label)}${t.hosted.length ? ` <span class="dim">· alongside ${esc(t.hosted.join(', '))}</span>` : ''}</th></tr>`;
-          const counts = `${t.never ? `${t.never} never pay back` : ''}${t.never && t.overCapacity ? '; ' : ''}${t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : ''}`;
+          const { moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
+          const counted = pairsSaid ? sentenceCase(pairsSaid) : '';
           if (!t.picks.length) {
-            return `${header}<tr><td colspan="5" class="dim">Nothing in this class pays back on any current machine at this usage${counts ? ` (${counts}, of ${t.considered} pairs that fit)` : ''}.</td></tr>`;
+            return `${header}<tr><td colspan="5" class="c-note dim">Nothing in this class pays back on any current machine at this usage.${counted ? ` ${counted}` : ''}</td></tr>`;
           }
           return header + t.picks
+            .slice(0, BEST_PER_CLASS)
             .map((c) => {
               const v = c.view;
               const tp = v.throughput;
@@ -2081,15 +2447,15 @@ function bestBuys(): string {
               return `<tr>
   <td class="c-model"><a href="/models/${esc(c.model.id)}/">${esc(c.model.display_name)}</a><span class="c-quant">score ${c.model.frontier_equivalent!.score}${c.model.frontier_equivalent?.estimated ? '*' : ''}</span>${ce.stand_in ? `<br><span class="dim">nobody rents it; priced as ${esc(ce.name)}</span>` : ''}</td>
   <td class="c-hw"><a href="/hardware/${esc(c.hw.id)}/">${esc(hardwareLabel(c.hw))}</a> <span class="dim">${fmtUsd(c.hw.price_usd)}${c.hw.price_scope === 'card_only' ? ', card only' : ''}</span></td>
-  <td>${tp?.tokensPerSec != null ? `${fmtNum(tp.tokensPerSec, 0)} tok/s` : '?'}${tp?.measurement && tp.measurement !== 'measured' ? ` <span class="dim">${esc(tp.measurement)}</span>` : ''}</td>
+  <td>${speedFrom(tp)}</td>
   <td><b>${esc(fmtDuration(c.days))}</b></td>
   <td><a href="${esc(calcLink(state, data))}">Open in the calculator</a></td>
 </tr>`;
             })
-            .join('') + (counts ? `<tr><td colspan="5" class="dim">Also in this class: ${counts}, of ${t.considered} pairs that fit.</td></tr>` : '');
+            .join('') + (moreSaid || counted ? `<tr><td colspan="5" class="c-note dim">${[moreSaid, counted].filter(Boolean).join(' ')}</td></tr>` : '');
         })
         .join('');
-      return `<section id="${anchor(l.usage)}">
+      return `<section id="${bestAnchor(l.usage)}">
 <h2>${esc(fmtTokens(l.usage))} tokens a day <span class="dim">· ${esc(l.label)}</span></h2>
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Machine</th><th>Speed</th><th>Pays back in</th><th></th></tr></thead>
@@ -2101,11 +2467,11 @@ ${stack(`<table class="board">
 
   const body = `<article class="prose">
 <h1>Best buys: the quickest pay-back at each level of capability</h1>
-<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each model appears once, on its quickest machine.</p>
+<p class="lede">For each amount of daily use, the machines and models that pay for themselves soonest, grouped by how capable the model is. Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest, one row per model, on the machine that pays it back quickest; under each table, a class counts what it leaves out and names the next model down. For every model on the site with its class beside it, see <a href="/leaderboard/">the leaderboard</a>.</p>
 ${head ? `<p>The short version: at ${esc(fmtTokens(headLevel.usage))} tokens a day (${esc(headLevel.label)}), the quickest ${esc(headTier!.label)} pay-back is ${esc(head.model.display_name)} on a ${esc(hardwareLabel(head.hw))}, in <b>${esc(fmtDuration(head.days))}</b>.</p>` : ''}
-<p class="note">Jump to: ${levels.map((l) => `<a href="#${anchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
+<p class="note">Jump to: ${levels.map((l) => `<a href="#${bestAnchor(l.usage)}">${esc(fmtTokens(l.usage))}/day</a>`).join(' · ')}</p>
 ${sections}
-<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="/best-gpu/">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="/local-llm-vs-api-cost/">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
+<p class="note">Current machines at list price and current models only. Graphics cards are priced as the card alone, so add the PC around it before comparing them with a complete computer; <a href="${SECTIONS.cardsSideBySide}">the cards are ranked against each other here</a>. Every row uses ${esc(String(d.usage.default_input_to_output_ratio))}:1 input to output, $${esc(String(d.electricity.default_price_per_kwh_usd))} per kWh, ${Math.round(d.context.default_tokens / 1024)}k of context, and today's API prices held flat; switch on falling API prices in the calculator and the years stretch. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Models nobody rents are priced as their closest hosted match and say so. Scores are the ${esc(d.frontier_basis?.name ?? 'intelligence index')}; * marks a score the index estimated. Open any row to change the assumptions, set two machines or two models against each other in <a href="/compare/">the head-to-heads</a>, or read <a href="${SECTIONS.millionTokens}">what a million tokens costs to rent against generating it</a>, which is the gap every figure here divides into.</p>
 </article>`;
 
   return pageShell(
@@ -2121,6 +2487,134 @@ ${sections}
     body,
     data,
   );
+}
+
+/* --------------------- headings that name their subject -------------------- */
+
+/**
+ * `/best/` is a page about the quickest pay-back, so it lists the quickest few in each
+ * class and counts the rest. That is a fair cut and it was an unstated one: three rows
+ * a class, four, eleven and seventeen models paying back behind them, and no sentence
+ * on the page saying any of the other 23 existed. A reader counting three rows under
+ * *Haiku-class* had no way to tell whether that was the whole class or the top of it.
+ *
+ * The cut is `BEST_PER_CLASS` and the lede prints it from there. This holds the page to
+ * it, class by class and level by level: the rows a class carries, the models it says
+ * it leaves out, the pairs it counts, and the one model past the cut it names. Raising
+ * the cut without changing the sentence, listing a fourth model, or claiming a model is
+ * left out when none is, fails the build. So does naming a model that already has a row
+ * in the same class, which is what a cut counted from the wrong end of the list would
+ * print, and so does calling it the quickest of the ones left out when a row above it
+ * pays back more slowly.
+ */
+function checkBestCuts() {
+  const page = meta.find((p) => p.path === '/best/');
+  if (!page) throw new Error('no best-buys page was written');
+  const problems: string[] = [];
+
+  const cut = `Each class lists the ${numberWord(BEST_PER_CLASS)} that pay back soonest`;
+  if (!page.html.includes(cut)) problems.push(`/best/ does not say that a class lists ${BEST_PER_CLASS} models: "${cut}"`);
+
+  let classes = 0;
+  let left = 0;
+  let named = 0;
+  const levels = bestUsageLevels(data);
+  for (const l of levels) {
+    const at = `${fmtTokens(l.usage)} tokens a day`;
+    const section = page.html.split(`<section id="${bestAnchor(l.usage)}">`)[1]?.split('</section>')[0];
+    if (!section) {
+      problems.push(`/best/ has no section for ${at}, which the calculator names as a level of use`);
+      continue;
+    }
+    const blocks = section.split('<tr class="is-frontier">').slice(1);
+    const tiers = bestByTier(data, l.usage, Infinity);
+    if (blocks.length !== tiers.length) {
+      problems.push(`/best/ heads ${blocks.length} classes at ${at}, where ${tiers.length} classes have a machine-and-model pair that fits`);
+      continue;
+    }
+    for (const [i, t] of tiers.entries()) {
+      classes++;
+      const block = blocks[i];
+      // `stack()` rewrites the class list on every cell, so a row is counted by its name cell rather than by the markup this file wrote
+      const listed = (block.match(/class="[^"]*\bc-model\b/g) ?? []).length;
+      const want = Math.min(t.picks.length, BEST_PER_CLASS);
+      if (listed !== want) problems.push(`/best/ lists ${listed} models in ${t.label} at ${at}, where the cut takes ${want} of the ${t.picks.length} that pay back`);
+      const { more, moreSaid, pairsSaid } = bestLeftOut(t, BEST_PER_CLASS);
+      left += more;
+      if (more && !block.includes(moreSaid)) problems.push(`/best/ lists ${listed} of the ${t.picks.length} models that pay back in ${t.label} at ${at} and does not say the other ${more} ${more === 1 ? 'is' : 'are'} left out`);
+      if (!more && /more model/.test(block)) problems.push(`/best/ says ${t.label} at ${at} leaves a model out, and every model in it that pays back is listed`);
+      if (pairsSaid && !block.includes(sentenceCase(pairsSaid))) problems.push(`/best/ does not count what ${t.label} at ${at} leaves out: ${pairsSaid}`);
+      if (more) {
+        named++;
+        // the next model down is the first pick past the cut, so the claim is checked
+        // against the picks rather than against the sentence that was written from them
+        const next = t.picks[BEST_PER_CLASS];
+        const rowIds = [...block.matchAll(/class="[^"]*\bc-model\b[^"]*"><a href="\/models\/([^/]+)\//g)].map((m) => m[1]);
+        // the aside under the rows, not the rows themselves: a row links a machine too
+        const note = block.match(/<td[^>]*\bc-note\b[^>]*>([\s\S]*?)<\/td>/)?.[1] ?? '';
+        if (!note.includes(`/models/${next.model.id}/`))
+          problems.push(`/best/ leaves ${more} model${more === 1 ? '' : 's'} out of ${t.label} at ${at} and does not name ${next.model.display_name}, the quickest of them`);
+        else if (rowIds.includes(next.model.id))
+          problems.push(`/best/ names ${next.model.id} as the next model down in ${t.label} at ${at}, and it already has a row there`);
+        if (!note.includes(`/hardware/${next.hw.id}/`) || !note.includes(fmtDuration(next.days)))
+          problems.push(`/best/ names ${next.model.display_name} as the next model down in ${t.label} at ${at} without the machine that pays it back and the ${fmtDuration(next.days)} it takes`);
+        // the note calls it the quickest of the ones left out, so the picks have to be in that order
+        if (next.days < t.picks[BEST_PER_CLASS - 1].days)
+          problems.push(`/best/ calls ${next.model.display_name} the quickest model left out of ${t.label} at ${at}, and it pays back sooner than the last row listed`);
+      }
+    }
+  }
+
+  // the lede promises the note names one, so it says so only where one is named
+  const names = 'names the next model down';
+  if (named && !page.html.includes(names))
+    problems.push(`/best/ names the next model down in ${named} of its classes and does not say so in its first paragraph: "${names}"`);
+  if (!named && page.html.includes(names))
+    problems.push('/best/ says it names the next model down, and every class lists every model in it that pays back');
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing /best/ says about its own list does not hold'
+        : `${problems.length} things /best/ says about its own lists do not hold`,
+    );
+  }
+  console.log(`  /best/ lists the ${numberWord(BEST_PER_CLASS)} quickest models in each of its ${classes} classes across ${levels.length} levels of use, counts the ${left} more that pay back behind them, and names the next one down in the ${named} classes that leave one out`);
+}
+
+/**
+ * A machine page and a model page are each about one thing, and until now their
+ * headings called it "it": *What it runs*, *Machines that run it*, *How good is
+ * it, really?*. The h1 above names the subject, so the sentence is grammatical
+ * and a reader from the top is never lost. A reader from a search result does
+ * not arrive at the top. They arrive at the heading that matched what they
+ * typed, which is the name of a machine or a model and a question about it, and
+ * a heading with a pronoun in it answers a question about nothing.
+ *
+ * So a heading that answers a question somebody asks in the subject's own name
+ * names it. A heading about the page's own furniture — the spec list, the models
+ * a shorter window brings into reach — keeps its wording, because it is not the
+ * answer to anything anybody searches for. The rule is one line long and
+ * checkSubjectHeadings() holds it: no heading on these 111 pages refers to the
+ * page's subject as "it".
+ *
+ * A machine is named the way the tables and the other pages name it, which is
+ * shortHardwareLabel(): the family prefix in hardwareLabel() belongs in the h1
+ * and the breadcrumb, not three times down one page.
+ */
+const runsHeading = (hw: Hardware) => `What the ${esc(shortHardwareLabel(hw))} runs`;
+const rivalsHeading = (hw: Hardware) => `Other machines to weigh against the ${esc(shortHardwareLabel(hw))}`;
+const qualityHeading = (m: Model) => `How good is ${esc(m.display_name)}, really?`;
+const costHeading = (m: Model) => `What ${esc(m.display_name)} costs either way`;
+const runnersHeading = (m: Model) => `Machines that run ${esc(m.display_name)}`;
+const missedHeading = (m: Model) => `The machines that miss ${esc(m.display_name)}, and what they run`;
+const shorterRunHeading = (m: Model, runCtx: number) => `${esc(m.display_name)} fits at ${ctxLabel(runCtx)} of context`;
+
+/** The section a heading opens, up to the next one. */
+function sectionUnder(html: string, heading: string): string | null {
+  const after = html.split(anchoredHeading(heading))[1];
+  return after == null ? null : after.split('<h2')[0];
 }
 
 /* ------------------------------ model pages ------------------------------ */
@@ -2140,7 +2634,7 @@ function shorterWindowRun(m: Model, run: { ctx: number; runner: Runner }, ctx: n
   const cost = view.calc?.breakevenDays == null
     ? `it never pays for itself against the API at ordinary usage`
     : `${lowerFirst(verdictLine(view))} at ${fmtTokens(defaultState(data).usage)} tokens a day`;
-  return `<h2>It fits at ${ctxLabel(run.ctx)} of context</h2>
+  return `<h2>${shorterRunHeading(m, run.ctx)}</h2>
 <p>Every figure above is taken at ${ctxLabel(ctx)}, where ${esc(m.display_name)} needs ${fmtGb((m.weights_gb ?? 0) + (cacheAt ?? 0))}. The weights are ${fmtGb(m.weights_gb)} of that and they do not move; the rest is the key-value cache, which grows with every token you keep. Ask for ${ctxLabel(run.ctx)} instead and the cache falls from ${fmtGb(cacheAt)} to ${fmtGb(cacheThere)}, so the model needs ${fmtGb((m.weights_gb ?? 0) + (cacheThere ?? 0))}, which the ${esc(hardwareLabel(hw))} holds in its ${hw.usable_memory_gb} GB. At ${priceWithScopeText(hw)}${tps == null ? '' : ` it runs at ${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`} and ${cost}.</p>
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: m.id, ctx: run.ctx }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(run.ctx)} on the ${esc(hardwareLabel(hw))}</a></p>
 
@@ -2251,7 +2745,7 @@ function missedMachinesSection(m: Model, rows: MissedMachine[], only: Hardware |
     ? `\n<p><a class="cta" href="${esc(calcLink({ hw: nearest.hw.id, model: top.id }, data))}">Price the ${esc(hardwareLabel(nearest.hw))} on ${esc(top.display_name)} instead</a></p>`
     : '';
 
-  return `<h2>The machines that miss it, and what they run</h2>
+  return `<h2>${missedHeading(m)}</h2>
 <p>${opening}${why}. ${near}${instead}</p>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Short by</th><th>Strongest model it holds</th></tr></thead>
@@ -2272,6 +2766,14 @@ function modelPage(m: Model): string {
   const fastest = runners
     .filter((r) => r.view.throughput?.tokensPerSec != null)
     .sort((a, b) => b.view.throughput!.tokensPerSec! - a.view.throughput!.tokensPerSec!)[0];
+
+  // The same yardstick the machine pages put under their own speed column,
+  // over the machines this table shows rather than every one that runs it.
+  const hostedLine = hostedSpeedLine(perFamily.map((r) => r.view.throughput?.tokensPerSec), data);
+
+  // The size the cheapest machine is sold in, which is the next search a reader
+  // here makes and had no link from this page. See modelSizeLine().
+  const sizeLine = cheapest ? modelSizeLine(m, cheapest.hw) : '';
 
   const caps = CAPABILITY_KEYS.map(
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
@@ -2409,7 +2911,20 @@ function modelPage(m: Model): string {
   const genLine = !gen
     ? ''
     : `${ladderLine ? 'Also head to head' : 'Head to head'}: ${versusLink(gen)}, the ${gen.side === 'is-older' ? 'current' : 'last-generation'} ${esc(m.family)} nearest it in size.`;
-  const versusLine = ladderLine || genLine ? `<p class="note">${[ladderLine, genLine].filter(Boolean).join(' ')}</p>` : '';
+  // And the third: the models from other families that ask a machine for the same
+  // memory. Neither of the lines above reaches them, because two models a year apart in
+  // the same family and two rungs of one index are both about what a model is rather
+  // than about what it takes to hold one.
+  const mem = versus.filter((v) => v.kind === 'memory');
+  const memLinks = mem.map((v) => versusLink(v)).join(', ');
+  const memLine = !mem.length
+    ? ''
+    : ladderLine || genLine
+      // a third sentence opening "Also head to head" after the second would be the same
+      // three words twice, so this one leads with the reason instead
+      ? `${mem.length === 1 ? 'One more model needs' : `${sentenceCase(numberWord(mem.length))} more models need`} much the same memory at ${Math.round(ctx / 1024)}k of context: ${memLinks}.`
+      : `Head to head with ${mem.length === 1 ? 'a model that needs' : 'the models that need'} much the same memory at ${Math.round(ctx / 1024)}k of context: ${memLinks}.`;
+  const versusLine = ladderLine || genLine || memLine ? `<p class="note">${[ladderLine, genLine, memLine].filter(Boolean).join(' ')}</p>` : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
 <p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}</p>
@@ -2419,7 +2934,7 @@ ${cheapest
   <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${priceWithScope(cheapest.hw)}</span></div>
   ${shorterMachines[0] && shorterMachines[0].hw.price_usd != null && cheapest.hw.price_usd != null && shorterMachines[0].hw.price_usd < cheapest.hw.price_usd ? `<div class="answer-row"><span class="answer-k">Cheaper at a shorter window</span><span class="answer-v"><a href="/hardware/${esc(shorterMachines[0].hw.id)}/">${esc(hardwareLabel(shorterMachines[0].hw))}</a> at ${priceWithScope(shorterMachines[0].hw)}, which holds it at ${ctxLabel(shorterMachines[0].ctx)}</span></div>
   ` : ''}${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
-  ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — ${fmtNum(fastest.view.throughput!.tokensPerSec, 0)} tok/s at ${Math.round(ctx / 1024)}k context</span></div>` : ''}
+  ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — at ${Math.round(ctx / 1024)}k context, ${speedFrom(fastest.view.throughput)}</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
 </div>`
       : `<div class="answer">
@@ -2430,7 +2945,7 @@ ${cheapest
         : ''}
 </div>`}
 
-<h2>How good is it, really?</h2>
+<h2>${qualityHeading(m)}</h2>
 <p>${fe?.score != null
       ? `On the ${fe.url ? `<a href="${esc(fe.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}</a>` : esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
       : 'It has not been placed on the intelligence index yet.'}
@@ -2438,17 +2953,17 @@ ${cheapest
 <ul class="caps">${caps}</ul>${note.ratings ? `
 <p class="note">${esc(note.ratings)}</p>` : ''}
 ${versusLine}
-<h2>What it costs either way</h2>
-<p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="/local-llm-vs-api-cost/">What a million tokens costs each way</a> puts the two prices side by side.</p>
+<h2>${costHeading(m)}</h2>
+<p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="${SECTIONS.millionTokens}">What a million tokens costs each way</a> puts the two prices side by side.</p>
 
-${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>Machines that run it</h2>
+${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>${runnersHeading(m)}</h2>
 ${lengthLine}
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Speed at ${Math.round(ctx / 1024)}k</th><th>Longest context</th><th>Pay-back</th><th></th></tr></thead>
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
 ${reachLine}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
@@ -2456,7 +2971,7 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${mi
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
   <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
-  <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="/how-much-memory/">How weights and cache add up</a>.</dd>
+  <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="${SECTIONS.weightsAndCache}">How weights and cache add up</a>.</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
   ${m.sources?.length ? `<dt>Sources</dt><dd>${sourceLinks(m.sources)}</dd>` : ''}
@@ -2617,7 +3132,7 @@ function hardwarePage(hw: Hardware): string {
       const memory = holds != null && contextCappedBy(r.model, holds, data) === 'memory';
       return `<tr>
   <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${holdHyphens(r.model.quantisation)}</span></td>
-  <td>${r.throughput.tokensPerSec == null ? '<span class="dim">unknown</span>' : `${fmtNum(r.throughput.tokensPerSec, r.throughput.tokensPerSec < 10 ? 1 : 0)} tok/s`}</td>
+  <td>${speedWithBasis(r)}</td>
   <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
   <td>${dotRow(r.model)}</td>
   <td>${fmtGb(r.fit.needGb)}</td>
@@ -2651,6 +3166,28 @@ function hardwarePage(hw: Hardware): string {
     return `<p>They do not all hold the same window. The weights are a fixed size, but the key-value cache grows with every token you keep, so what is left of ${spare} GB after the weights is how far the context goes. On ${memoryCount(stoppedByMemory.length)} of the ${shown.length} below, this machine's memory is what runs out first: ${esc(worst.model.display_name)} stops soonest, at ${ctxLabel(reach.get(worst.model.id)!)}.${others}</p>`;
   })();
 
+  // What the speed column's marks mean, on the page where a reader actually meets
+  // them. Every speed here says measured or estimated, the way /hardware/ and the
+  // head-to-heads have always said it, and on most machines every one of them is
+  // an estimate — so the sentence names this machine's own split rather than
+  // explaining a mark in the abstract.
+  const speedBasisLine = (() => {
+    const known = shown.filter((r) => r.throughput.tokensPerSec != null);
+    if (!known.length) return '';
+    const measured = known.filter((r) => r.throughput.measurement === 'measured').length;
+    const band = hw.memory_bandwidth_gbs ? `${hw.memory_bandwidth_gbs} GB/s of memory bandwidth` : 'memory bandwidth';
+    if (!measured)
+      return ` Each speed says how it was arrived at, and every one here is estimated from this machine's ${band} rather than taken from a published benchmark.`;
+    if (measured === known.length)
+      return ` Each speed says how it was arrived at, and every one here is measured: a published benchmark run on this machine.`;
+    return ` Each speed says how it was arrived at: ${memoryCount(measured)} of the ${known.length} here ${measured === 1 ? 'is' : 'are'} measured, from a published benchmark run on this machine, and the rest are estimated from its ${band}.`;
+  })();
+
+  // What the speeds in that column are worth, against the hosted API the reader
+  // is choosing between. Taken over the rows this table shows rather than every
+  // model that fits, so it counts what is in front of them.
+  const hostedLine = hostedSpeedLine(shown.map((r) => r.throughput.tokensPerSec), data);
+
   const best = fits[0];
   // What the table leaves out: the models this machine misses at the context every
   // figure above is taken at, and holds at a shorter window.
@@ -2660,27 +3197,27 @@ function hardwarePage(hw: Hardware): string {
   const note = splitHardwareNote(hw.notes);
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question, and the answer is usually no.${hw.price_scope === 'card_only' ? ` Its price here is the card on its own, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="/best-gpu/">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
   <div class="answer-row"><span class="answer-k">Memory</span><span class="answer-v">${hw.unified_memory_gb} GB${hw.usable_memory_gb != null ? `, about ${hw.usable_memory_gb} GB of it addressable by the GPU` : ''}${hw.memory_bandwidth_gbs ? ` at ${hw.memory_bandwidth_gbs} GB/s` : ''}</span></div>
-  ${best ? `<div class="answer-row"><span class="answer-k">Best model it runs</span><span class="answer-v"><a href="/models/${esc(best.model.id)}/">${esc(best.model.display_name)}</a> — ${esc(tierName(best.model, data))}${best.throughput.tokensPerSec ? `, ${fmtNum(best.throughput.tokensPerSec, 0)} tok/s` : ''}</span></div>` : ''}
+  ${best ? `<div class="answer-row"><span class="answer-k">Best model it runs</span><span class="answer-v"><a href="/models/${esc(best.model.id)}/">${esc(best.model.display_name)}</a> — ${esc(tierName(best.model, data))}${best.throughput.tokensPerSec ? `, ${speedFrom(best.throughput)}` : ''}</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Pay-back against the API</span><span class="answer-v">${view.calc ? esc(verdictLine(view)) : 'cannot be computed yet'}${view.calc?.breakevenDays != null ? ` at ${fmtTokens(state.usage)} tokens a day` : ''}</span></div>
 </div>
 
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id }, data))}">Run the numbers on this machine</a></p>
 
-${rows ? `<h2>What it runs</h2>
+${rows ? `<h2>${runsHeading(hw)}</h2>
 ${contextLine}
 ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
-<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it. There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
+<p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `, and <a href="${esc(memorySizePath(hw.unified_memory_gb))}">one on what ${hw.unified_memory_gb} GB runs, machine by machine</a>` : ''}. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
-${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>Other machines to weigh against it</h2>
+${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Memory</th><th>Models that fit</th><th>Pay-back</th></tr></thead>
 <tbody>
@@ -2990,6 +3527,52 @@ function standInPowerNote(a: Hardware, b: Hardware, explainedBelow: boolean): st
   return `<p class="note">The ${s.load_watts} W beside the ${esc(shortHardwareLabel(s))} is a stand-in, not a figure for that machine: the data borrows it from the nearest hardware it does have, and the machine's own page names which and why. So the two figures above are not like for like${other.load_watts === s.load_watts ? ', and their matching says nothing about either machine' : ''}, and the electricity in its pay-back here is priced from a borrowed number.</p>`;
 }
 
+/**
+ * Two machines from different families that cost about the same. Every other rule that
+ * cuts these pages holds a piece of the hardware equal — the same chip at two memory
+ * sizes, the same silicon in two boxes, the same box a generation apart — and spends the
+ * page on what the price gap buys. This one holds the price, so the page has the opposite
+ * shape and nothing else on it says so: the price row is the thing the two machines have
+ * in common rather than the thing that separates them.
+ *
+ * The rest of the page already prices what each one holds, how fast it runs it and how
+ * long it takes to pay back, so this section does not repeat a figure. It names the
+ * question, and where one side is a graphics card it says the one thing that stops the
+ * two prices being the same money at all.
+ */
+function sameMoneySection(x: Hardware, y: Hardware): string {
+  const [cheap, dear] = (x.price_usd ?? 0) <= (y.price_usd ?? 0) ? [x, y] : [y, x];
+  const lc = shortHardwareLabel(cheap);
+  const ld = shortHardwareLabel(dear);
+  const gap = (dear.price_usd ?? 0) - (cheap.price_usd ?? 0);
+  // the scope travels with the figure: on four of these pages one side is a graphics
+  // card, and $1,999 beside a machine name reads as a whole computer unless it says so
+  const priced = (h: Hardware) => `${fmtUsd(h.price_usd!, { cents: false })} for the ${esc(shortHardwareLabel(h))}${h.price_scope === 'card_only' ? ', card only' : ''}`;
+  const prices = gap === 0
+    ? `These two cost the same: ${priced(cheap)} and ${priced(dear)}.`
+    : `These two cost within ${fmtUsd(gap, { cents: false })} of each other: ${priced(cheap)} and ${priced(dear)}.`;
+
+  // the families differ by the rule that made the pair; the makers need not, and a
+  // sentence that says "different makers" of two Apple machines is wrong on eleven of
+  // these pages
+  const sameBrand = brandOf(cheap) === brandOf(dear);
+  const kinds = sameBrand
+    ? `Both are ${esc(brandOf(cheap))} machines, but a ${esc(cheap.family)} and a ${esc(dear.family)} are two different machines rather than two sizes of one.`
+    : `${esc(brandOf(cheap))} makes one and ${esc(brandOf(dear))} the other.`;
+
+  // the lede and the assumptions note both raise the card caveat already, so this says
+  // only the part neither of them does: what the reader should do with that column
+  const cards = [cheap, dear].filter((h) => h.price_scope === 'card_only');
+  const scope = cards.length === 2
+    ? ` Both figures are the card alone, so what they have in common is the money for the part that does the work and nothing to put it in.`
+    : cards.length === 1
+      ? ` The two are less equal than they look: the ${esc(shortHardwareLabel(cards[0]))}'s price buys the card alone, so read its column as the cost of the part that does the work on top of a machine you already own.`
+      : '';
+
+  return `<h2>The same money, two different machines</h2>
+<p>${prices} ${kinds} Every other head-to-head on this site holds a piece of the hardware equal and asks what the price gap buys. This one holds the price, so the row that usually carries the answer is the row the two machines agree on, and everything under it is what the same money buys twice.${scope}</p>`;
+}
+
 function comparePage(a: Hardware, b: Hardware): string {
   const st = defaultState(data);
   const va = computeView({ ...st, hw: a.id }, data);
@@ -3010,19 +3593,29 @@ function comparePage(a: Hardware, b: Hardware): string {
   // the entry-level box against the one above it: the same name on both sides, so the
   // heading says it once and spends the rest on the two sizes the configurator offers
   const step = chipStepNames(a, b) ?? chipStepNames(b, a);
+  // two machines from different families at about the same price: the price row is the
+  // one the two agree on, which is the opposite of every other pair on this site
+  const money = priceNeighbours(a, b, data);
   // both sides of a same-silicon pair carry the same memory, so a title that prints the
   // size twice spends a search result's 60 characters saying it again instead of naming
   // the second machine, which is the half of the pair the reader has not typed yet
-  const withoutSize = (h: Hardware) => shortHardwareLabel(h).replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
-  const heading = tiers
-    ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
-    : step
-    ? `${step.machine}, ${step.a} vs ${step.b}`
-    : gens
-    ? `${gens.machine} ${gens.a} vs ${gens.b}, ${gens.size}`
-    : twins
-      ? `${withoutSize(a)} vs ${shortHardwareLabel(b)}`
-      : `${shortHardwareLabel(a)} vs ${shortHardwareLabel(b)}`;
+  const withoutSize = (h: Hardware, label: string) => label.replace(new RegExp(`, ${h.unified_memory_gb}GB$`), '');
+  const headingFrom = (label: (h: Hardware) => string) =>
+    tiers
+      ? `${tiers.machine}: ${tiers.a} vs ${tiers.b}`
+      : step
+      ? `${step.machine}, ${step.a} vs ${step.b}`
+      : gens
+      ? `${gens.machine} ${gens.a} vs ${gens.b}, ${gens.size}`
+      : twins
+        ? `${withoutSize(a, label(a))} vs ${label(b)}`
+        : `${label(a)} vs ${label(b)}`;
+  const heading = headingFrom(shortHardwareLabel);
+  // the heading above is what the page says of itself and it keeps every machine's full
+  // name. A search result is 60 characters wide, and on the longest of these pairs the
+  // full names fill them before the second machine's memory size arrives, so the title
+  // falls back to names with a screen size that separates nothing dropped out of them
+  const shortHeading = headingFrom((h) => titleHardwareLabel(h, data.hardware));
   const ctxK = Math.round(st.ctx / 1024);
   const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
 
@@ -3184,13 +3777,14 @@ ${standInPowerNote(a, b, (!!gens && b.load_watts_status === 'stand_in') || (!!tw
 ${twins ? sameSiliconSection(a, b, va, ctxK, fa, fb) : ''}
 ${gens ? generationSection(a, b) : ''}
 ${step ? chipStepSection(...(chipStepNames(a, b) ? [a, b, step, va, fa, fb, ctxK] as const : [b, a, step, vb, fb, fa, ctxK] as const)) : ''}
+${money ? sameMoneySection(a, b) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
 ${machineSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b], data); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
-<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="/compare/">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
+<p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="${SECTIONS.machineMatchUps}">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
 </article>`;
   return pageShell(
     {
@@ -3198,6 +3792,7 @@ ${machineSiblingNote(a, b)}
         ...(step ? [`${heading}: the chip changes too`] : []),
         `${heading} for local LLMs`,
         heading,
+        ...(shortHeading === heading ? [] : [`${shortHeading} for local LLMs`, shortHeading]),
       ]),
       description: descOf(
         twins
@@ -3280,6 +3875,24 @@ ${machineSiblingNote(a, b)}
                   `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} models to the same length either way, so the memory buys nothing here.`,
                   `${tiers.machine}, ${tiers.a} or ${tiers.b}: the extra memory buys nothing local AI can use.`,
                 ]
+          : money
+          ? (() => {
+              const [cheap, dear, cf, df] = (a.price_usd ?? 0) <= (b.price_usd ?? 0) ? [a, b, fa, fb] : [b, a, fb, fa];
+              const lc = shortHardwareLabel(cheap);
+              const ld = shortHardwareLabel(dear);
+              const at = (cheap.price_usd === dear.price_usd
+                ? `At ${fmtUsd(cheap.price_usd!, { cents: false })} each`
+                : `At ${fmtUsd(cheap.price_usd!, { cents: false })} against ${fmtUsd(dear.price_usd!, { cents: false })}`);
+              const holds = cf.length === df.length
+                ? `both hold ${cf.length} of the ${va.rows.length} open models here`
+                : `the ${lc} holds ${cf.length} of the ${va.rows.length} open models here and the ${ld} ${df.length}`;
+              return [
+                `${at}, ${holds}. What the same money buys, and which pays back sooner.`,
+                `${at}, ${holds}. What the same money buys.`,
+                `${lc} or ${ld} for the same money: what each holds, how fast it runs it and which pays back sooner.`,
+                `${lc} or ${ld} for the same money: what each holds and which pays back sooner.`,
+              ];
+            })()
           : [
               `${fa.length} of the ${va.rows.length} open models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
               `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
@@ -3451,15 +4064,37 @@ function memoryPage(): string {
     .map((gb) => buyable.filter((h) => h.usable_memory_gb === gb).sort((a, b) => a.price_usd! - b.price_usd!)[0]);
 
   const plateau = strongestPlateau(ladder, CTX);
-  const ladderRows = ladder
+
+  // The plateau reads the ladder in order of what a model actually gets, which is
+  // the figure that decides. The table reads it in order of the number on the box,
+  // which is the only figure the reader knows before they look anything up, so the
+  // sizes a machine is sold in stay together instead of being split apart by the
+  // usable share.
+  const byInstalled = [...ladder].sort(
+    (a, b) => a.unified_memory_gb - b.unified_memory_gb || a.usable_memory_gb! - b.usable_memory_gb!,
+  );
+
+  // The size where reading the wrong row costs most: the one sold in the most
+  // shapes here, and among those the one whose two ends are furthest apart.
+  const splitSize = [...new Set(byInstalled.map((h) => h.unified_memory_gb))]
+    .map((installed) => byInstalled.filter((h) => h.unified_memory_gb === installed))
+    .filter((rows) => rows.length > 1)
+    .sort(
+      (a, b) =>
+        b.length - a.length ||
+        b[b.length - 1].usable_memory_gb! - b[0].usable_memory_gb! - (a[a.length - 1].usable_memory_gb! - a[0].usable_memory_gb!),
+    )[0];
+
+  const ladderRows = byInstalled
     .map((hw) => {
       const top = strongestThatFits(hw, CTX);
       return `<tr>
-  <td><b>${fmtGb1(hw.usable_memory_gb)}</b></td>
-  <td>${hw.unified_memory_gb} GB</td>
+  <td><b>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `<a href="${esc(memorySizePath(hw.unified_memory_gb))}">${hw.unified_memory_gb} GB</a>` : `${hw.unified_memory_gb} GB`}</b></td>
+  <td>${fmtGb1(hw.usable_memory_gb)}</td>
   <td class="c-hw">${machineLink(hw)}</td>
   <td>${fitCount(hw, CTX)}</td>
   <td class="c-model">${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> <span class="dim">${esc(tierName(top, data))}</span>` : '<span class="dim">none</span>'}</td>
+  <td>${top ? `<a href="${esc(calcLink({ hw: hw.id, model: top.id, ctx: CTX }, data))}">Run the numbers</a>` : ''}</td>
 </tr>`;
     })
     .join('');
@@ -3544,21 +4179,27 @@ ${
   }
 <p>You can also make the cache smaller. ${esc(kv?.note ?? '')}${kv?.source_url ? ` (<a href="${esc(kv.source_url)}" rel="noopener">${esc(sourceName(kv.source_url))}</a>)` : ''} The calculator has that switch, and every figure on this page is at the 16-bit default.</p>
 
-<h2>Installed memory is not usable memory</h2>
-<p>The number on the box is not the number a model gets. The system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. This is what each machine can actually hand a model, cheapest machine shown at each level, counted against the ${currentModels.length} current models.</p>
+<h2>What can you run with the memory you already have?</h2>
+<p>Every size a machine on sale here comes in is below, with how much of it a model actually gets, how many of the ${currentModels.length} current models fit in that at ${kctx} context, and the strongest of them.${
+    splitSize
+      ? ` The number on the box is not the number a model gets: the system takes a share, and on a machine with unified memory the GPU is only allowed to address part of the rest. ${splitSize[0].unified_memory_gb} GB appears ${splitSize.length} times below, handing a model anything from ${fmtGb1(splitSize[0].usable_memory_gb)} on the ${esc(hardwareLabel(splitSize[0]))} to ${fmtGb1(splitSize[splitSize.length - 1].usable_memory_gb)} on the ${esc(hardwareLabel(splitSize[splitSize.length - 1]))}. So find your size in the first column, then read down to the machine nearest yours.`
+      : ''
+  } The cheapest machine is shown at each level, and each row opens the calculator on that machine and that model.</p>
 ${stack(`<table class="board">
-<thead><tr><th>Usable</th><th>Installed</th><th>Cheapest machine at that level</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th></tr></thead>
+<thead><tr><th>Memory</th><th>Usable</th><th>Cheapest machine at this size</th><th>Models that fit at ${kctx}</th><th>Strongest of them</th><th></th></tr></thead>
 <tbody>${ladderRows}</tbody>
 </table>`, { fig: 3, labels: { 2: 'Cheapest', 4: 'Strongest' } })}
 ${
     plateau
-      ? `<p>Read the last column before you spend anything. From ${fmtGb1(plateau.from.usable_memory_gb)} of usable memory up to ${fmtGb1(plateau.to.usable_memory_gb)}, the strongest model on this list does not change: it is <a href="/models/${esc(plateau.model.id)}/">${esc(plateau.model.display_name)}</a> the whole way. More memory across that stretch buys more models, more context and more room to work, not a cleverer one.${
+      ? `<p>Read the strongest-model column before you spend anything. From ${fmtGb1(plateau.from.usable_memory_gb)} of usable memory up to ${fmtGb1(plateau.to.usable_memory_gb)}, the strongest model on this list does not change: it is <a href="/models/${esc(plateau.model.id)}/">${esc(plateau.model.display_name)}</a> the whole way. More memory across that stretch buys more models, more context and more room to work, not a cleverer one.${
           plateau.next && plateau.nextHw
             ? ` The next step up is <a href="/models/${esc(plateau.next.id)}/">${esc(plateau.next.display_name)}</a>, and the cheapest machine that holds it is the <a href="/hardware/${esc(plateau.nextHw.id)}/">${esc(hardwareLabel(plateau.nextHw))}</a> at ${fmtUsd(plateau.nextHw.price_usd)}.`
             : ''
         }</p>`
       : ''
   }
+
+<p>Every size in that first column has a page of its own, and so does every other size a machine here is sold in: the machines you can buy at it, what each of them hands a model, every model that fits, and what the next size up buys. ${MEMORY_SIZES.map((gb) => `<a href="${esc(memorySizePath(gb))}">${gb} GB</a>`).join(' · ')}.</p>
 
 <p class="note">Every figure is at ${kctx} context unless the row says otherwise, with the cache at 16 bits, at the quantisation named against each model. Weights are the published file sizes on each model's page; the cache is worked out from the architecture recorded there. Machines are the current ones at list price, with the memory their maker publishes and the usable share on each machine's page; graphics cards are priced as the card alone, so add the PC around one before comparing one with a complete computer. ${cardRankingLine(data)} The tables by size cover all ${data.models.length} models listed here, superseded ones included and marked, because people still run them. The two tables of what a machine holds count the ${currentModels.length} current ones instead, which is what every machine page and the calculator count. To change the context, the quantisation or the cache type, <a href="${esc(calcLink({}, data))}">open the calculator</a>.</p>
 </article>`;
@@ -3573,6 +4214,335 @@ ${
       canonical: '/how-much-memory/',
       ogImage: MEMORY_CARD,
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/how-much-memory/', label: 'How much memory' }],
+    },
+    body,
+    data,
+  );
+}
+
+/* ------------------------ what one memory size runs ------------------------ */
+
+/** One amount of memory a model actually gets at a size, and what it holds. */
+interface SizeLevel {
+  usable: number;
+  machines: Hardware[];
+  /** the machine a sentence names for this level: one still sold, where there is one */
+  example: Hardware;
+  fits: Model[];
+  strongest: Model | null;
+}
+
+interface SizeView {
+  gb: number;
+  machines: Hardware[];
+  /** tightest first: two machines at one level hold exactly the same models */
+  levels: SizeLevel[];
+  most: SizeLevel;
+  least: SizeLevel;
+  /** the machine the speed column is for: the one the model table is cut from */
+  reference: Hardware;
+  /** the cheapest machine at this size with a published price */
+  priced: Hardware | null;
+}
+
+function sizeView(gb: number): SizeView {
+  const machines = machinesAtSize(gb, data);
+  const levels: SizeLevel[] = memoryLevels(gb, data).map((l) => ({
+    ...l,
+    example: l.machines.find((h) => (h.generation ?? 'current') === 'current') ?? l.machines[0],
+    // strongest first, which is the order the page says its table is in; the
+    // unscored ones follow, heaviest first, because what they ask is all the
+    // site can rank them by
+    fits: currentModels
+      .filter((m) => holds(l.machines[0], m, CTX))
+      .sort(
+        (a, b) =>
+          (b.frontier_equivalent?.score ?? -1) - (a.frontier_equivalent?.score ?? -1) ||
+          (footprintGb(b, CTX) ?? 0) - (footprintGb(a, CTX) ?? 0),
+      ),
+    strongest: strongestThatFits(l.machines[0], CTX),
+  }));
+  const cheapest = (list: Hardware[]) =>
+    list.filter((h) => h.price_usd != null).sort((a, b) => a.price_usd! - b.price_usd!)[0] ?? null;
+  const now = machines.filter((h) => (h.generation ?? 'current') === 'current');
+  return {
+    gb,
+    machines,
+    levels,
+    most: levels[levels.length - 1],
+    least: levels[0],
+    reference: levels[levels.length - 1].example,
+    priced: cheapest(now) ?? cheapest(machines),
+  };
+}
+
+/**
+ * The sizes with a page of their own: every size a machine here is sold in that
+ * holds at least one current model at the default context. A size nothing fits
+ * in would be a page whose answer is an empty table.
+ */
+const MEMORY_SIZES = [...new Set(data.hardware.filter((h) => h.usable_memory_gb != null).map((h) => h.unified_memory_gb))]
+  .sort((a, b) => a - b)
+  .filter((gb) => sizeView(gb).most.fits.length > 0);
+
+/**
+ * A model page's way into the page about one size of memory.
+ *
+ * The answer box at the top of a model page names the cheapest machine that
+ * runs it, and the size that machine is sold in is the thing a reader there is
+ * one step from typing: *what else does 24 GB run*. The figures are the size
+ * page's own — the machines sold at that size, and what the roomiest of them
+ * holds — so a machine added at that size moves both pages at once.
+ *
+ * Two cases get no membership clause. A legacy model is not on a size page's
+ * table, which counts the current models only, so the sentence stops at the
+ * count. And a machine sold at a size nothing current fits in has no page to
+ * point at, so there is no sentence at all.
+ */
+function modelSizeLine(m: Model, hw: Hardware): string {
+  const gb = hw.unified_memory_gb;
+  if (!MEMORY_SIZES.includes(gb)) return '';
+  const v = sizeView(gb);
+  const machines =
+    v.machines.length === 1 ? 'the one machine here sold at that size' : `the ${v.machines.length} machines here sold at that size`;
+  const fits = v.most.fits.length;
+  const listed = v.most.fits.some((x) => x.id === m.id);
+  return `The cheapest machine that runs it is sold with ${gb} GB. There is <a href="${esc(memorySizePath(gb))}">a page on what ${gb} GB runs, machine by machine</a>: it names ${machines}, and the ${fits} current model${fits === 1 ? '' : 's'} the roomiest of them holds at ${ctxLabel(CTX)}${listed ? ', this one among them' : ''}.`;
+}
+
+/** the memory a model gets at one size, as one figure or as the spread across the machines */
+const usableSaid = (v: SizeView) =>
+  v.levels.length === 1 ? fmtGb1(v.least.usable) : `${fmtGb1(v.least.usable)} to ${fmtGb1(v.most.usable)}`;
+
+/** how many models fit at one size, likewise */
+const fitsSaid = (v: SizeView) =>
+  v.least.fits.length === v.most.fits.length
+    ? `${v.most.fits.length}`
+    : `${v.least.fits.length} to ${v.most.fits.length}`;
+
+const sizeMachineRow = (hw: Hardware) => {
+  const top = strongestThatFits(hw, CTX);
+  return `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a>${(hw.generation ?? 'current') === 'previous' ? '<span class="c-quant">previous</span>' : ''}</td>
+  <td><b>${fmtGb1(hw.usable_memory_gb)}</b></td>
+  <td>${priceWithScope(hw)}</td>
+  <td>${fitCount(hw, CTX)}</td>
+  <td class="c-model">${top ? `<a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a>` : '<span class="dim">none</span>'}</td>
+  <td>${top ? `<a href="${esc(calcLink({ hw: hw.id, model: top.id, ctx: CTX }, data))}">Run the numbers</a>` : ''}</td>
+</tr>`;
+};
+
+/**
+ * The machine a row hands the reader: the cheapest one at this size with room
+ * for that model, and one still sold where there is one. A link that opens the
+ * calculator on a machine nobody can buy is a worse answer than one that opens
+ * it on the machine they would.
+ */
+const opensOn = (m: Model, v: SizeView): Hardware => {
+  const able = [...v.machines].filter((h) => holds(h, m, CTX)).sort((a, b) => (a.price_usd ?? Infinity) - (b.price_usd ?? Infinity));
+  return able.find((h) => (h.generation ?? 'current') === 'current' && h.price_usd != null) ?? able.find((h) => (h.generation ?? 'current') === 'current') ?? able[0] ?? v.reference;
+};
+
+const sizeModelRow = (m: Model, v: SizeView, refView: View) => {
+  const row = rowFor(refView, m);
+  const opens = opensOn(m, v);
+  return `<tr>
+  <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span></td>
+  <td>${fmtNum(m.params_b, 1)}B</td>
+  <td><b>${fmtGb1(footprintGb(m, CTX))}</b></td>
+  <td>${v.machines.filter((h) => holds(h, m, CTX)).length} of ${v.machines.length}</td>
+  <td>${speedWithBasis(row)}</td>
+  <td><a href="${esc(calcLink({ hw: opens.id, model: m.id, ctx: CTX }, data))}">Run the numbers</a></td>
+</tr>`;
+};
+
+/** what changes between two sizes, read off the roomiest machine at each */
+function sizeStep(from: SizeView, to: SizeView) {
+  const had = new Set(from.most.fits.map((m) => m.id));
+  const has = new Set(to.most.fits.map((m) => m.id));
+  return {
+    gained: to.most.fits.filter((m) => !had.has(m.id)),
+    lost: from.most.fits.filter((m) => !has.has(m.id)),
+  };
+}
+
+const modelLinks = (ms: Model[], most = 4) =>
+  `${andList(ms.slice(0, most).map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`))}${
+    ms.length > most ? `, and ${numberWord(ms.length - most)} more` : ''
+  }`;
+
+/**
+ * A page for one size of memory, which is the question this site is asked in
+ * more forms than any other: what can I run with 16 GB, is 32 GB enough, what
+ * fits in 24 GB of VRAM.
+ *
+ * The memory ladder on /how-much-memory/ has answered all of them in one row
+ * each since it was built, and a row is not an answer to a question somebody
+ * types on its own. What a size needs saying about it is what the ladder has no
+ * room for: that the number on the box is not the number a model gets, which
+ * machines are sold at that size and what each of them hands over, every model
+ * that fits and what it leaves for context, what the next size up buys, and
+ * whether a machine at this size ever pays for itself.
+ *
+ * Every figure is computed the way every other page here computes it, so a page
+ * about a size cannot drift from the machine pages it is drawn from.
+ */
+function memorySizePage(gb: number): string {
+  const v = sizeView(gb);
+  const kctx = ctxLabel(CTX);
+  const st = defaultState(data);
+  const refView = computeView({ ...st, hw: v.reference.id, ctx: CTX }, data);
+  const refLabel = shortHardwareLabel(v.reference);
+  const split = v.levels.length > 1;
+  // why the figure on the box is not the figure a model gets, said about the two
+  // machines the lede actually names: a card keeps a margin free, a machine with
+  // unified memory keeps a share of it for everything else
+  const card = (h: Hardware) => h.price_scope === 'card_only';
+  const why = split
+    ? card(v.least.example) && card(v.most.example)
+      ? 'because a card keeps a margin free and these two do not start from the same memory'
+      : card(v.most.example) || card(v.least.example)
+        ? 'because the system keeps a share of one and the card keeps a margin free on the other'
+        : 'because the system keeps a share of it, and how much differs by machine'
+    : card(v.most.example)
+      ? 'because the card keeps a margin free'
+      : 'because the system keeps the rest';
+  const strongest = v.most.strongest;
+  const cta = strongest ? calcLink({ hw: opensOn(strongest, v).id, model: strongest.id, ctx: CTX }, data) : calcLink({ hw: v.reference.id, ctx: CTX }, data);
+
+  // the step up from this size, and on the largest size here the step up to it,
+  // because the reader on that page is asking the same question from the other end
+  const above = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) + 1];
+  const below = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) - 1];
+  const pair = above != null ? { from: v, to: sizeView(above) } : below != null ? { from: sizeView(below), to: v } : null;
+  const step = pair ? sizeStep(pair.from, pair.to) : null;
+
+  const sold = v.machines.filter((h) => (h.generation ?? 'current') === 'current');
+  const machineRows = v.machines.map(sizeMachineRow).join('\n');
+  const modelRows = v.most.fits.map((m) => sizeModelRow(m, v, refView)).join('\n');
+  const speeds = v.most.fits.map((m) => shownTps(rowFor(refView, m)));
+
+  const ctxRows = CTX_STEPS.map(
+    (c) => `<tr>
+  <th>${ctxLabel(c)}${c === CTX ? ' <span class="dim">default</span>' : ''}</th>
+  ${v.levels.map((l) => `<td>${fitCount(l.machines[0], c)}</td>`).join('')}
+</tr>`,
+  ).join('\n');
+
+  // the pay-back, on the cheapest machine at this size that has a price
+  const levels = bestUsageLevels(data);
+  const heavy = levels[levels.length - 1];
+  const payView = v.priced ? computeView({ ...st, hw: v.priced.id, ctx: CTX }, data) : null;
+  const payFits = payView ? fitsOf(payView) : [];
+  const soonest = v.priced && payView ? quickestPayback(v.priced, payFits, st.usage) : null;
+  const soonestHeavy = v.priced && payView ? quickestPayback(v.priced, payFits, heavy.usage) : null;
+  const launchPrice = v.priced && (v.priced.generation ?? 'current') === 'previous';
+
+  // A pay-back the machine cannot actually reach is the one figure here that
+  // reads well and misleads: where a level of use asks for more than the machine
+  // can generate in a day, the figure is for the most it can do, and the page has
+  // to say so in the same breath.
+  const ceilingNote = (best: { capped: boolean; max: number | null }, usage: number) =>
+    best.capped
+      ? ` The ${esc(shortHardwareLabel(v.priced!))} cannot generate ${esc(fmtTokens(usage))} tokens in a day${best.max != null ? `; it manages ${esc(fmtTokens(best.max))}` : ''}, so that figure is for the most it can do.`
+      : '';
+  const payback = !v.priced
+    ? `<p>No machine here with ${gb} GB has a published price, so nothing on this page can say what one pays back. The calculator takes yours: put what you would pay beside the machine and it prices the rest.</p>`
+    : soonest
+      ? `<p>On the <a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}, the cheapest machine at ${gb} GB with a published price, the model that pays it back soonest at ${esc(fmtTokens(st.usage))} tokens a day is <a href="/models/${esc(soonest.model.id)}/">${esc(soonest.model.display_name)}</a>, in ${esc(fmtDuration(soonest.days))}.${ceilingNote(soonest, st.usage)}${
+          soonestHeavy && heavy.usage !== st.usage
+            ? ` At ${esc(fmtTokens(heavy.usage))} tokens a day, ${esc(lowerFirst(heavy.label))}, it is <a href="/models/${esc(soonestHeavy.model.id)}/">${esc(soonestHeavy.model.display_name)}</a> in ${esc(fmtDuration(soonestHeavy.days))}.${ceilingNote(soonestHeavy, heavy.usage)}`
+            : ''
+        }${launchPrice ? ` The ${esc(shortHardwareLabel(v.priced))} is the previous generation, so that price is what it launched at.` : ''}</p>`
+      : `<p>On the <a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}, the cheapest machine at ${gb} GB with a published price, nothing pays the machine back at ${esc(fmtTokens(st.usage))} tokens a day: renting the same work costs less than the machine does. That is an answer rather than a gap, and the calculator says at what level of use it changes.</p>`;
+
+  const body = `<article class="prose">
+<h1>What can you run with ${gb} GB of memory?</h1>
+<p class="lede">A model does not get the ${gb} GB. ${
+    split
+      ? `On the ${esc(shortHardwareLabel(v.least.example))} it gets ${fmtGb1(v.least.usable)} and on the ${esc(shortHardwareLabel(v.most.example))} it gets ${fmtGb1(v.most.usable)}, ${why}. That is ${v.least.fits.length === v.most.fits.length ? `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context either way` : `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context on the first and ${v.most.fits.length === currentModels.length ? 'every one of them' : v.most.fits.length} on the second`}`
+      : `It gets ${fmtGb1(v.most.usable)} on ${v.machines.length === 1 ? `the one machine here sold with ${gb} GB` : v.machines.length === 2 ? `both machines here sold with ${gb} GB` : `all ${numberWord(v.machines.length)} machines here sold with ${gb} GB`}, ${why}. That holds ${v.most.fits.length === currentModels.length ? `every one of the ${currentModels.length} current models` : `${v.most.fits.length} of the ${currentModels.length} current models`} at ${kctx} of context`
+  }${strongest ? `, and the strongest of them is <a href="/models/${esc(strongest.id)}/">${esc(strongest.display_name)}</a>` : ''}.</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">What a model gets</span><span class="answer-v">${usableSaid(v)} of the ${gb} GB${split ? ', depending on the machine' : ''}. Each machine's page says where the rest goes.</span></div>
+  <div class="answer-row"><span class="answer-k">Models that fit at ${kctx}</span><span class="answer-v">${v.least.fits.length === currentModels.length ? `every one of the ${currentModels.length} current ones` : `${fitsSaid(v)} of the ${currentModels.length} current ones`}, at the quantisation this site lists each at.</span></div>
+  ${strongest ? `<div class="answer-row"><span class="answer-k">The strongest of them</span><span class="answer-v"><a href="/models/${esc(strongest.id)}/">${esc(strongest.display_name)}</a>, ${esc(lowerFirst(tierName(strongest, data)))}${v.least.strongest && v.least.strongest.id !== strongest.id ? `, and <a href="/models/${esc(v.least.strongest.id)}/">${esc(v.least.strongest.display_name)}</a> on the machines that hand over less` : ''}.</span></div>` : ''}
+  ${v.priced ? `<div class="answer-row"><span class="answer-k">Cheapest machine at this size</span><span class="answer-v"><a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}${launchPrice ? ', which is what it launched at' : ''}.</span></div>` : `<div class="answer-row"><span class="answer-k">Cheapest machine at this size</span><span class="answer-v">No machine here with ${gb} GB has a published price yet.</span></div>`}
+</div>
+
+<p><a class="cta" href="${esc(cta)}">Run the numbers on ${strongest ? `${esc(strongest.display_name)} at ${gb} GB` : `${gb} GB`}</a></p>
+
+<h2>The machines sold with ${gb} GB</h2>
+<p>${v.machines.length === 1 ? `One machine here comes with ${gb} GB, and the fourth column is what it holds at ${kctx} of context: the number its own page prints.` : `There are ${numberWord(v.machines.length)} machines here with ${gb} GB${split ? ', and what they hand a model is not the same figure' : ', and each hands a model the same amount'}. The fourth column is what each one holds at ${kctx} of context, and it is the number that machine's own page prints.`}${sold.length ? '' : ` No machine on sale here comes with ${gb} GB any more.`}</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>What a model gets</th><th>Price</th><th>Models it holds at ${kctx}</th><th>Strongest of them</th><th></th></tr></thead>
+<tbody>${machineRows}</tbody>
+</table>`, { fig: 1, labels: { 2: 'Price', 3: 'Models', 4: 'Strongest' } })}
+<p class="note">List prices, and the memory each maker publishes. A machine marked <i>previous</i> is one that is no longer sold, priced at what it launched at. ${cardScopeNote(v.machines, v.machines.some((h) => h.price_scope === 'card_only') ? data : undefined)}</p>
+
+<h2>Models that fit in ${gb} GB</h2>
+<p>Every current model ${v.machines.length === 1 ? `the one ${gb} GB machine here holds` : split ? `the roomiest ${gb} GB machine here holds` : `a ${gb} GB machine here holds`} at ${kctx} of context, strongest first. The third column is the whole job at once: the weights plus the cache for ${kctx} of context. The fourth says how many of the machines at this size have room for it, which is the part a size on its own cannot tell you. Speeds are on the ${esc(refLabel)}, the machine this list is cut from${(v.reference.generation ?? 'current') === 'previous' ? ', which is no longer sold' : ''}; speed follows memory bandwidth rather than memory size, so another machine at ${gb} GB runs the same model at its own rate, and <a href="/hardware/${esc(v.reference.id)}/">its page</a> gives every one of them.</p>
+${stack(`<table class="board">
+<thead><tr><th>Model</th><th>Parameters</th><th>Needs at ${kctx}</th><th>Machines at ${gb} GB</th><th>Speed on the ${esc(refLabel)}</th><th></th></tr></thead>
+<tbody>${modelRows}</tbody>
+</table>`, { fig: 2, labels: { 1: 'Parameters', 3: 'Machines', 4: 'Speed' } })}
+${hostedSpeedLine(speeds, data) ? `<p class="note">${hostedSpeedLine(speeds, data)}</p>` : ''}
+<p class="note">Superseded models are left out of the count, because what a machine is worth buying for is what you would run on it today; <a href="/leaderboard/">the leaderboard</a> ranks every model this site lists, older ones included. <a href="${esc(SECTIONS.weightsAndCache)}">Where the cache figure comes from</a> is one section of the memory guide.</p>
+
+${step && pair ? `<h2>What ${pair.to.gb} GB adds over ${pair.from.gb} GB</h2>
+<p>The machine here with ${pair.to.gb} GB that hands a model the most of it is the <a href="/hardware/${esc(pair.to.most.example.id)}/">${esc(shortHardwareLabel(pair.to.most.example))}</a>, at ${fmtGb1(pair.to.most.usable)}, and it holds ${pair.to.most.fits.length} of the ${currentModels.length}. At ${pair.from.gb} GB the most is ${fmtGb1(pair.from.most.usable)}, on the <a href="/hardware/${esc(pair.from.most.example.id)}/">${esc(shortHardwareLabel(pair.from.most.example))}</a>, holding ${pair.from.most.fits.length}. ${
+    step.gained.length
+      ? `The step adds ${modelLinks(step.gained)}.`
+      : 'Nothing new fits. What the step buys is a longer window and room to work, not a model that was out of reach.'
+  }${
+    step.lost.length
+      ? ` It also gives up ${modelLinks(step.lost)}: the larger number on the box hands a model less here, which is why the column to read is what a model gets rather than what the box says.`
+      : ''
+  }${
+    pair.to.most.strongest && pair.from.most.strongest
+      ? pair.to.most.strongest.id === pair.from.most.strongest.id
+        ? ` The strongest either way is <a href="/models/${esc(pair.from.most.strongest.id)}/">${esc(pair.from.most.strongest.display_name)}</a>.`
+        : ` The strongest goes from <a href="/models/${esc(pair.from.most.strongest.id)}/">${esc(pair.from.most.strongest.display_name)}</a> to <a href="/models/${esc(pair.to.most.strongest.id)}/">${esc(pair.to.most.strongest.display_name)}</a>.`
+      : ''
+  }</p>
+${pair.to.priced && pair.from.priced ? `<p>The cheapest machine at ${pair.to.gb} GB is the <a href="/hardware/${esc(pair.to.priced.id)}/">${esc(hardwareLabel(pair.to.priced))}</a> at ${esc(priceWithScopeText(pair.to.priced))}. The cheapest at ${pair.from.gb} GB is the <a href="/hardware/${esc(pair.from.priced.id)}/">${esc(hardwareLabel(pair.from.priced))}</a> at ${esc(priceWithScopeText(pair.from.priced))}${(pair.to.priced.price_scope === 'card_only') === (pair.from.priced.price_scope === 'card_only') && pair.to.priced.price_usd! > pair.from.priced.price_usd! ? `, so the step costs ${fmtUsd(pair.to.priced.price_usd! - pair.from.priced.price_usd!)}` : pair.to.priced.price_usd! < pair.from.priced.price_usd! ? ', so the larger size is the cheaper of the two here' : ''}.${(pair.to.priced.price_scope === 'card_only') !== (pair.from.priced.price_scope === 'card_only') ? ' One of those two is a card and the other is a whole computer, so the gap between them is not the price of the step.' : ''}</p>` : ''}
+<p class="note">Both sides are read off the machine at each size that hands a model the most, so the comparison is the best case against the best case. The table above has every machine at ${gb} GB and what each of them holds.</p>` : ''}
+
+<h2>How much context ${gb} GB leaves room for</h2>
+<p>The cache grows with the window you ask for, so the same machine holds fewer models the longer the context. ${split ? `One column here for each amount a ${gb} GB machine hands over.` : `Every machine at this size hands a model ${fmtGb1(v.most.usable)}, so one column covers all of them.`} A model is counted only where its own context ceiling reaches that far.</p>
+<table class="board compare">
+<thead><tr><th>Context</th>${v.levels.map((l) => `<th>${fmtGb1(l.usable)} to a model<span class="c-quant">${esc(shortHardwareLabel(l.example))}</span></th>`).join('')}</tr></thead>
+<tbody>${ctxRows}</tbody>
+</table>
+<p class="note">Counted over the ${currentModels.length} current models, at the quantisation each is listed at and with the cache at 16 bits. The calculator has a switch for a smaller cache, which changes both what fits and how fast a long window runs.</p>
+
+<h2>Does a ${gb} GB machine pay for itself?</h2>
+${payback}
+<p>The sum is the same everywhere on this site: what the same work costs to rent, less what the electricity costs to generate it, against the price of the machine. <a href="/best/">The best buys</a> rank the quickest pay-back at every level of use, and <a href="/cost-per-month/">what it costs a month</a> puts the machine and the API bill in the same shape.</p>
+<p><a class="cta" href="${esc(cta)}">Put your own usage in</a></p>
+
+<p class="note">Every figure is at ${kctx} of context unless the row says otherwise, with the cache at 16 bits and each model at the quantisation this site lists it at. Weights are the published file sizes on each model's page, and the cache is worked out from the architecture recorded there. What a model gets is the memory the GPU can address, which each machine's page explains. Speeds say whether anybody measured them; where they were not, they are worked out from memory bandwidth. To change the context, the quantisation or the price you would pay, <a href="${esc(calcLink({}, data))}">open the calculator</a>. For the sizes either side of this one, <a href="/how-much-memory/">the memory guide</a> has the ladder in full.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([
+        `What LLM can you run with ${gb} GB of memory?`,
+        `What can you run with ${gb} GB?`,
+      ]),
+      description: descOf([
+        `${fitsSaid(v)} of the ${currentModels.length} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, the machines that come with it, and what each one holds.`,
+        `${fitsSaid(v)} of the ${currentModels.length} models fit at ${kctx} of context. What a model really gets from ${gb} GB, and the machines that come with it.`,
+        `What fits in ${gb} GB at ${kctx} of context, machine by machine.`,
+      ]),
+      canonical: memorySizePath(gb),
+      ogImage: MEMORY_CARD,
+      crumbs: [
+        { href: '/', label: 'Sunk Cost' },
+        { href: '/how-much-memory/', label: 'How much memory' },
+        { href: '#', label: `${gb} GB` },
+      ],
     },
     body,
     data,
@@ -3742,7 +4712,7 @@ ${stack(`<table class="board">
 <h2>Memory is the gate</h2>
 <p>A card runs a model or it does not, and nothing about the card changes that except how much memory it has. ${
     ceiling ? `${esc(ceiling.display_name)} is ${fmtGb(ceiling.weights_gb)} of weights before a single token of context, and the cache on top grows with every token you keep.` : ''
-  } That sum, and not the price, is what puts a model on a card. <a href="/how-much-memory/">How the two add up</a> is a page of its own.</p>
+  } That sum, and not the price, is what puts a model on a card. <a href="${SECTIONS.weightsAndCache}">How the two add up</a> is a page of its own.</p>
 ${
     missed.length && best && bestRunner
       ? `<p>It is also where these cards stop. ${sentenceCase(numberWord(missed.length))} of the ${scored.length} current models with an index score fit none of the ${numberWord(cards.length)} cards, and ${(() => {
@@ -4129,7 +5099,7 @@ ${machinesSection}
 ${modelSiblingNote(a, b)}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat.${race?.shortened ? ` The two sections that need one machine to hold both models are at ${raceK}k of context instead, which is the longest on the calculator's list where one does.` : ''} Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them. Where nobody rents an open model by the token, its API prices are the nearest hosted model's, named beside them. Machines are the ${considered} here with a published price that are still sold. Change any of it in the calculator.</p>
-<p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="/compare/">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
+<p class="note">More head to head: ${modelLink(a, ra)} · ${modelLink(b, rb)} · <a href="${SECTIONS.modelMatchUps}">every other match-up</a> · <a href="/leaderboard/">both against the frontier</a> · <a href="/best/">the quickest pay-back at each level of use</a></p>
 </article>`;
   return pageShell(
     {
@@ -4155,6 +5125,98 @@ ${modelSiblingNote(a, b)}
 }
 
 /* ------------------------- the head-to-head index ------------------------- */
+
+/**
+ * What cuts the two lists on `/compare/`, one entry per rule, in the order
+ * `hardwarePairs()` and `modelPairs()` apply them.
+ *
+ * The sentence above each table is written from this list rather than by hand, because
+ * written by hand it drifted: seven rules cut the machine match-ups while the page said
+ * five, and three cut the model match-ups while it said two, so 50 of the 189 rows sat
+ * under an explanation that did not reach them. A reader who found *Mac mini M6, 32GB vs
+ * Radeon AI PRO R9700, 32GB* on a page naming five kinds none of them was had no way to
+ * tell why the two were on a page together.
+ *
+ * `checkMatchUpKinds()` holds the list to the rules: a rule added to `versus-card.ts`
+ * without a clause here fails the build naming the match-up nothing explains.
+ */
+interface MatchUpKind<T> {
+  /** every pair this rule cuts, whether or not an earlier rule reached it first */
+  pairs: [T, T][];
+  /** the clause the page gives it, mid-sentence and without its punctuation */
+  clause: string;
+}
+
+const gridOf = <T,>(xs: T[]): [T, T][] => {
+  const out: [T, T][] = [];
+  for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) out.push([xs[i], xs[j]]);
+  return out;
+};
+
+const machineMatchUpKinds = (): MatchUpKind<Hardware>[] => [
+  {
+    pairs: gridOf(flagshipMachines(data)),
+    clause: 'One machine per family, the middle of its range by price, against every other',
+  },
+  {
+    pairs: gridOf(graphicsCards(data)),
+    clause: 'Every graphics card against every other card, since a card is bought as a part and a part is what people put against another part',
+  },
+  {
+    pairs: memoryTierPairs(data),
+    clause: 'Every memory tier of one machine against the others, which is the question left once you have picked the box',
+  },
+  {
+    pairs: sameSiliconPairs(data),
+    clause: 'Each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top',
+  },
+  {
+    pairs: generationPairs(data),
+    clause: 'Every discontinued machine against the one that replaced it, which is the upgrade question',
+  },
+  {
+    pairs: chipStepPairs(data),
+    clause: 'The cheapest configuration of a box against the cheapest one with the better chip in it, since what a maker cuts to reach a headline price is the chip and the memory at once',
+  },
+  {
+    pairs: priceNeighbourPairs(data),
+    clause: `Each machine against the one from another family nearest it in price, within ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}%, which holds the price still and asks what the same money buys twice`,
+  },
+];
+
+const modelMatchUpKinds = (): MatchUpKind<Model>[] => {
+  const ranked = rankedModels(data);
+  const ladder: [Model, Model][] = [];
+  for (let i = 0; i + 1 < ranked.length; i++) ladder.push([ranked[i], ranked[i + 1]]);
+  return [
+    {
+      pairs: ladder,
+      clause: 'Each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds',
+    },
+    {
+      pairs: modelGenerationPairs(data),
+      clause: 'Each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it',
+    },
+    {
+      pairs: memoryNeighbourPairs(data),
+      clause: `Each model against the one from another family nearest it in the memory it needs, within ${Math.round(MODEL_MEMORY_GAP * 100)}%, which is where a reader with a machine already on the desk starts`,
+    },
+  ];
+};
+
+/**
+ * The kinds, as a line saying how many and one line each.
+ *
+ * They were a single sentence of clauses while there were two of them and five, and at
+ * seven that sentence ran to 170 words and six semicolons — a wall in front of the table
+ * it explains, on a page a reader comes to for one row. A list is what it always was.
+ */
+function matchUpKindsList(kinds: { clause: string }[]): string {
+  const items = kinds.map((k) => `<li>${k.clause}.</li>`).join('');
+  return `<p>${sentenceCase(numberWord(kinds.length))} kinds of match-up cut this list.</p>
+<ul class="rules">${items}</ul>`;
+}
+
 
 /**
  * One page listing every comparison this site writes. Somebody typing
@@ -4249,22 +5311,26 @@ function compareIndex(): string {
   const body = `<article class="prose">
 <h1>Every head-to-head: machine against machine, model against model</h1>
 <p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a>, the <a href="/leaderboard/">leaderboard</a> or <a href="/hardware/">every machine in one table</a>.</p>
-${most && cheapest ? `<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
+${most && cheapest ? `<h2>Does any machine here hold every model?</h2>
+<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
 
 <h2>Machine against machine</h2>
-<p>Five kinds of match-up: one machine per family, the middle of its range by price, against every other; every graphics card against every other card, since a card is bought as a part and a part is what people put against another part; every memory tier of one machine against the others, which is the question left once you have picked the box; each box against the cheapest box built on the same GPU with the same memory, where the whole question is what the dearer one charges on top; and every discontinued machine against the one that replaced it, which is the upgrade question. The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
+${matchUpKindsList(machineMatchUpKinds())}
+<p>The two speeds in a row are on the strongest model both machines in it can hold at ${ctxK}k of context, so they are running the same work.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Price</th><th>Memory</th><th>Models that fit, of ${modelCount}</th><th>Speed on a model both hold</th></tr></thead>
 <tbody>${machineRows}</tbody>
 </table>`, { fig: 3, labels: { 4: 'Both speeds' } })}
 
 <h2>Model against model</h2>
-<p>Two kinds of match-up: each model against the next one down the leaderboard, which is the choice you face once you know what your machine holds; and each last-generation model against the current one of its own family nearest it in size, which is the upgrade question, and one the leaderboard never puts side by side because a year of work separates the two on it. The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
+${matchUpKindsList(modelMatchUpKinds())}
+<p>The machine named in a row is the cheapest here that runs both, so the two can be weighed on one computer.</p>
 ${stack(`<table class="board">
 <thead><tr><th>Match-up</th><th>Score</th><th>Weights</th><th>Cheapest machine that runs both</th><th></th></tr></thead>
 <tbody>${modelRows}</tbody>
 </table>`, { fig: 1, labels: { 3: 'Cheapest' } })}
 
+<h2>The assumptions behind both tables</h2>
 <p class="note">Every figure here is the one the page behind it prints, at the same defaults: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. A speed that says <i>estimated</i> is worked out from memory bandwidth rather than measured. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} Scores are the ${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}. Each calculator link opens the machine in its row running the first model named; change any of it once you are there.</p>
 </article>`;
 
@@ -4417,13 +5483,17 @@ function hardwareIndex(): string {
 
   const body = `<article class="prose">
 <h1>Every machine that runs local models, priced</h1>
-<p class="lede">All ${data.hardware.length} configurations this site prices, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
-${plateau && quickest && slowest ? `<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<p class="lede">All ${data.hardware.length} configurations this site lists, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. ${publishedPriceLine(data)} Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
+${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
+<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<h2>How long each machine takes to pay for itself</h2>
 <p>Pay-back runs the other way, because the strongest model a machine holds is also the slowest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. Nothing here pays for itself inside a decade at that usage. What changes the answer is using the machine much harder, or running a smaller model on it, and <a href="/best/">best buys by usage</a> ranks both.${launchLine([quickest])}</p>` : ''}
+<h2>Every machine here, side by side</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 5, labels: { 2: 'Usable', 3: 'Models', 4: 'Strongest model' } })}
+<h2>The assumptions behind the table</h2>
 <p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
 </article>`;
 
@@ -4606,7 +5676,7 @@ ${stack(`<table class="board">
 <thead><tr><th>A day's use</th><th>Tokens to break even</th><th>How long that takes</th></tr></thead>
 <tbody>${levelRows}</tbody>
 </table>
-<p>That is the case for buying, and the case against it, in one table. The machine is cheap per token and expensive to own, so the only thing that makes it pay is volume you actually have.</p>
+<p>That is the case for buying, and the case against it, in one table. The machine is cheap per token and expensive to own, so the only thing that makes it pay is volume you actually have. What those months cost as a bill, with the machine divided over the months you keep it, is <a href="/cost-per-month/">on its own page</a>.</p>
 
 <h2>What you use it for moves the line further than what you buy</h2>
 <p>The mix matters because the two sides bill it differently. The API charges for every token you send; the machine spends its time and its watts on the tokens it writes. So work that sends a lot and writes a little is the cheapest to rent, and the slowest to justify a machine.</p>
@@ -4652,13 +5722,162 @@ ${stack(`<table class="board">
   );
 }
 
+/* --------------------- what a month of it costs --------------------- */
+
+/**
+ * The other way people ask this site's question: not how long the machine takes
+ * to pay for itself, but what running a local model costs each month, because
+ * that is the shape of every bill it would replace.
+ *
+ * The answer the data gives is worth the page on its own. The electricity is
+ * cents a month, and it barely moves between machines; what varies, by more than
+ * a factor of ten, is the price of the box divided by the months you keep it. So
+ * the page is built on that division, said out loud each time: a machine bought
+ * once has no monthly cost until you name the months.
+ */
+function monthlyCostPage(): string {
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const view = computeView({ ...st, hw: hw.id }, data);
+  const dm = view.model!;
+  const drow = rowFor(view, dm)!;
+  const base = monthlyCost(dm, hw, data)!;
+  const ce = dm.cloud_equivalent;
+  const label = hardwareLabel(hw);
+  const kctx = Math.round(st.ctx / 1024);
+  const n = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const standInPower = hw.load_watts_status === 'stand_in';
+  const spread = SPREAD_MONTHS.map((months) => ({
+    months,
+    owned: monthlyOwned(hw, months, base.electricity)!,
+    crossing: monthlyCrossing(dm, hw, data, months),
+  }));
+  const twoYears = spread.find((s) => s.months === 24) ?? spread[Math.min(1, spread.length - 1)];
+  const yearWord = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
+
+  // the working behind the electricity figure, in the page's own numbers
+  const outTokens = st.usage / (st.ratio + 1);
+  const inTokens = st.usage - outTokens;
+  const minutesPerDay = base.hoursPerDay * 60;
+  const kwhPerMonth = ((base.hoursPerDay * hw.load_watts!) / 1000) * DAYS_PER_MONTH;
+
+  // a month at each level of use, which is the axis the reader is on
+  const levels = bestUsageLevels(data).map((l) => ({ ...l, cost: monthlyCost(dm, hw, data, l.usage)! }));
+  const levelRows = levels
+    .map(
+      (l) => `<tr>
+  <th>${esc(fmtTokens(l.usage))}<span class="c-quant">${holdHyphens(l.label)}</span></th>
+  <td>${esc(fmtHours(l.cost.hoursPerDay))}${l.cost.capped ? '<span class="c-quant">its ceiling</span>' : ''}</td>
+  <td>${fmtUsd(l.cost.electricity)}</td>
+  <td>${fmtUsd(l.cost.rented)}</td>
+  <td>${esc(fmtDuration(l.cost.breakevenDays))}</td>
+</tr>`,
+    )
+    .join('\n');
+
+  // every current machine that runs the same model, priced by the month rather
+  // than by the pay-back, so the spread in the power sits beside the spread in
+  // the price it is dwarfed by
+  const runners = data.hardware
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .map((h) => ({ hw: h, cost: monthlyCost(dm, h, data) }))
+    .filter((r): r is { hw: Hardware; cost: MonthlyCost } => !!r.cost)
+    .sort((a, b) => a.hw.price_usd! - b.hw.price_usd!);
+  const elec = runners.map((r) => r.cost.electricity);
+  const owned = runners.map((r) => monthlyOwned(r.hw, twoYears.months, r.cost.electricity)!);
+  // Watts do not order the power bill, and where the data says so out loud it is
+  // worth saying with the two machines that prove it rather than in the abstract:
+  // a machine that generates faster is finished sooner, and spends less.
+  const byWatts = [...runners].sort((a, b) => a.hw.load_watts! - b.hw.load_watts!);
+  const thirsty = byWatts[byWatts.length - 1];
+  const frugal = byWatts[0];
+  const wattsLine =
+    thirsty.cost.electricity < frugal.cost.electricity
+      ? `Watts do not order the electricity: the ${esc(shortHardwareLabel(thirsty.hw))} draws ${thirsty.hw.load_watts} W and spends ${fmtUsd(thirsty.cost.electricity)} a month, where the ${esc(shortHardwareLabel(frugal.hw))} draws ${frugal.hw.load_watts} W and spends ${fmtUsd(frugal.cost.electricity)}. A machine that generates faster is finished sooner.`
+      : 'A machine that generates faster is finished sooner, so it can spend less on power even where it draws more watts.';
+
+  const runnerRows = runners
+    .map(
+      (r) => `<tr>
+  <td class="c-model"><a href="/hardware/${esc(r.hw.id)}/">${esc(shortHardwareLabel(r.hw))}</a>${r.hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</td>
+  <td>${fmtUsd(r.hw.price_usd)}</td>
+  <td>${fmtUsd(r.cost.electricity)}</td>
+  ${SPREAD_MONTHS.map((months) => `<td>${fmtUsd(monthlyOwned(r.hw, months, r.cost.electricity))}</td>`).join('\n  ')}
+</tr>`,
+    )
+    .join('\n');
+
+  const body = `<article class="prose">
+<h1>What does it cost to run a local LLM per month?</h1>
+<p class="lede">The power is cents. Running ${esc(dm.display_name)} on a ${esc(label)} at ${esc(fmtTokens(st.usage))} tokens a day costs ${fmtUsd(base.electricity)} a month in electricity. The monthly number that matters is the machine: ${fmtUsd(hw.price_usd)} once, which is ${fmtUsd(twoYears.owned)} a month if you keep it ${yearWord(twoYears.months)}. Renting the same month's work costs ${fmtUsd(base.rented)}.</p>
+
+<div class="answer">
+  <div class="answer-row"><span class="answer-k">Electricity a month</span><span class="answer-v">${fmtUsd(base.electricity)}, on a <a href="/hardware/${esc(hw.id)}/">${esc(label)}</a>: ${esc(fmtHours(base.hoursPerDay))} of generating a day at ${hw.load_watts} W${standInPower ? `<span class="c-quant">${holdHyphens('stand-in')}</span>` : ''} and ${fmtUsd(st.kwh, { cents: true })} per kWh</span></div>
+  <div class="answer-row"><span class="answer-k">The machine, by the month</span><span class="answer-v">${spread.map((s) => `${fmtUsd(s.owned)} over ${yearWord(s.months)}`).join(', ')}: ${fmtUsd(hw.price_usd)} divided by the months you keep it, plus the power</span></div>
+  <div class="answer-row"><span class="answer-k">The same month, rented</span><span class="answer-v">${fmtUsd(base.rented)} to rent ${ce.stand_in ? `${esc(ce.name)}, which is what ${esc(dm.display_name)} is priced as because nobody rents it` : ce.is_exact_match ? 'the same model' : `the nearest hosted equivalent, ${esc(ce.name)}`}, at ${fmtUsd(ce.input_price_per_mtok, { cents: true })} per million in and ${fmtUsd(ce.output_price_per_mtok, { cents: true })} out${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}</span></div>
+  ${twoYears.crossing ? `<div class="answer-row"><span class="answer-k">Where the two meet</span><span class="answer-v">the rental bill passes ${fmtUsd(twoYears.owned)} a month at <b>${esc(fmtTokens(twoYears.crossing))} tokens a day</b>. Below that, renting is the cheaper month.</span></div>` : ''}
+</div>
+
+<p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">Price your own month</a></p>
+
+<h2>Where the ${fmtUsd(base.electricity)} comes from</h2>
+<p>${esc(fmtTokens(st.usage))} tokens a day at ${esc(String(st.ratio))}:1 is ${n(inTokens)} you send and ${n(outTokens)} the model writes back. Only the ones it writes take time: at ${fmtNum(base.tokensPerSec, 1)} tok/s that is ${n(minutesPerDay)} minutes of generating a day. At ${hw.load_watts} W that comes to ${fmtNum(kwhPerMonth, 2)} kWh over a month, and at ${fmtUsd(st.kwh, { cents: true })} per kWh${data.defaults.electricity.source_url ? ` (the ${esc(data.defaults.electricity.country)} average, <a href="${esc(data.defaults.electricity.source_url)}" rel="noopener">${esc(sourceName(data.defaults.electricity.source_url))}</a>)` : ''} that is ${fmtUsd(base.electricity)} a month.</p>
+<p class="note">That is the power the machine draws while it is generating.${standInPower ? ` The ${hw.load_watts} W is a stand-in: nobody has put a meter on this machine, and <a href="/hardware/${esc(hw.id)}/">its own page</a> says what the figure borrows.` : ''} Left out, all of which favour the machine less than shown: the time and power that reading your prompt takes, the machine idling while you think, and API prompt caching, which cuts the price of context you send again. Left out in the machine's favour: what it is worth when you sell it, and every other job it does while you own it.</p>
+
+<h2>A month at each level of use</h2>
+<p>Use it harder and the electricity rises with the hours; the rental bill rises with it, from the same tokens, and a great deal faster. The last column is the machine's price divided by what the month leaves over.</p>
+${stack(`<table class="board">
+<thead><tr><th>A day's use</th><th>Generating</th><th>Electricity a month</th><th>Rented</th><th>Pays the machine back in</th></tr></thead>
+<tbody>${levelRows}</tbody>
+</table>`, { fig: 4, labels: { 2: 'Electricity' } })}
+<p>At ${esc(fmtTokens(levels[levels.length - 1].usage))} tokens a day, ${esc(lowerFirst(levels[levels.length - 1].label))}, the power bill is ${fmtUsd(levels[levels.length - 1].cost.electricity)} a month and the rental bill is ${fmtUsd(levels[levels.length - 1].cost.rented)}. That gap is the whole case for buying, and at ${esc(fmtTokens(st.usage))} tokens a day it is ${fmtUsd(base.gap)} a month against a ${fmtUsd(hw.price_usd)} machine.</p>
+
+<h2>The power is not the cost. The machine is.</h2>
+<p>Across the ${runners.length} current machines that run ${esc(dm.display_name)} at ${kctx}k context, a month of this work costs between ${fmtUsd(Math.min(...elec))} and ${fmtUsd(Math.max(...elec))} in electricity. Divide what they cost to buy over ${yearWord(twoYears.months)} and the same month runs from ${fmtUsd(Math.min(...owned))} to ${fmtUsd(Math.max(...owned))}. The machine you pick moves the monthly figure by ${fmtNum(Math.max(...owned) / Math.min(...owned), 0)} times; the power it draws moves it by cents.</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>Electricity a month</th>${SPREAD_MONTHS.map((months) => `<th>A month over ${yearWord(months)}</th>`).join('')}</tr></thead>
+<tbody>${runnerRows}</tbody>
+</table>`, { fig: 1, labels: { 2: 'Electricity' } })}
+<p class="note">List prices, current machines, each running ${esc(dm.display_name)} at ${kctx}k context and ${esc(fmtTokens(st.usage))} tokens a day. ${cardScopeNote(runners.map((r) => r.hw), data)} ${wattsLine}</p>
+
+<h2>If you pay a subscription instead</h2>
+<p>Every rental figure here is priced by the token, from the published rate for ${esc(ce.name)}, because that is a price this site can check. A subscription is a flat monthly bill, and the number to set against it is in the table above: ${fmtUsd(twoYears.owned)} a month for ${esc(fmtTokens(st.usage))} tokens a day on a ${esc(label)}${spread.length > 1 ? `, or ${fmtUsd(spread[spread.length - 1].owned)} if you keep it ${yearWord(spread[spread.length - 1].months)}` : ''}. If your bill is smaller than that, the machine does not pay for itself by replacing it.</p>
+<p>The calculator takes the bill directly: enter what you pay each month and it prices the machine against that instead of against per-token rates. Two things go with it, and both are in the small print there. A subscription buys the lab's own model, so the comparison only holds if ${esc(dm.display_name)} can do the work you are paying for. And a bill you pay whatever you use is not a bill that rises with use, so the falling-price assumption is switched off in that mode.</p>
+<p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">Put your own bill in</a></p>
+
+<p class="note">Every figure is ${esc(dm.display_name)} at ${esc(dm.quantisation)} unless the row names another machine, at ${kctx}k context, ${esc(String(st.ratio))}:1 input to output, ${fmtUsd(st.kwh, { cents: true })} per kWh, and today's API prices held flat. A month is ${fmtNum(DAYS_PER_MONTH, 2)} days, the year divided by twelve. The speed above is ${esc(drow.throughput.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth rather than measured')}, and each machine page says which of the two it has. For the same arithmetic counted in tokens rather than months, read <a href="/local-llm-vs-api-cost/">what a million tokens costs each way</a>; for the machine that pays back soonest at each level of use, <a href="/best/">the best buys</a>.</p>
+</article>`;
+
+  return pageShell(
+    {
+      title: titleOf([
+        'What does it cost to run a local LLM per month?',
+        'Local LLM cost per month',
+      ]),
+      description: descOf([
+        `${fmtUsd(base.electricity)} a month of electricity at ${fmtTokens(st.usage)} tokens a day, ${fmtUsd(base.rented)} to rent the same work, and ${fmtUsd(twoYears.owned)} a month for the machine itself. Every machine priced by the month.`,
+        `What a local model costs a month: the electricity, the machine spread over the months you keep it, and the API bill for the same work.`,
+      ]),
+      canonical: '/cost-per-month/',
+      ogImage: MONTHLY_CARD,
+      crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/cost-per-month/', label: 'Cost per month' }],
+    },
+    body,
+    data,
+  );
+}
+
 /* --------------------------------- build --------------------------------- */
 
 write('/leaderboard/', leaderboard());
 write('/best/', bestBuys());
 write('/how-much-memory/', memoryPage());
+// one page per size a machine here is sold in, because "what can I run with 16 GB"
+// is asked about a number on a box rather than about a machine
+for (const gb of MEMORY_SIZES) write(memorySizePath(gb), memorySizePage(gb));
 write('/best-gpu/', gpuPage());
 write('/local-llm-vs-api-cost/', tokenCostPage());
+write('/cost-per-month/', monthlyCostPage());
 for (const m of data.models) write(`/models/${m.id}/`, modelPage(m));
 write('/hardware/', hardwareIndex());
 for (const hw of data.hardware) write(`/hardware/${hw.id}/`, hardwarePage(hw));
@@ -4676,20 +5895,13 @@ for (const [a, b] of hardwarePairs(data)) write(hardwareComparePath(a, b), compa
 // running it asks
 for (const [a, b] of modelPairs(data)) write(modelComparePath(a, b), modelComparePage(a, b));
 
-// A page's lastmod is the day its own words last changed, read out of
-// seo/page-dates.json — see src/page-dates.ts for why it is not the day the
-// prices were checked, and why a page whose fingerprint has moved goes into the
-// sitemap without a date rather than with a guess at one.
-const datesFile = new URL('../seo/page-dates.json', import.meta.url);
-const recordedDates: PageDates | null = existsSync(datesFile)
-  ? (JSON.parse(readFileSync(datesFile, 'utf8')) as PageDates)
-  : null;
 const fingerprints = [
   // the home page has no body of its own; the calculator draws it
   { path: '/', hash: fingerprint({ title: '', description: '', body: readFileSync(new URL('../index.html', import.meta.url), 'utf8') }) },
-  ...meta.map((p) => ({ path: p.path, hash: fingerprint({ title: p.title, description: p.description, body: mainOf(p.html) }) })),
+  // every other page was fingerprinted as it was written, so the day in its own
+  // markup and the day in the sitemap cannot be two different readings
+  ...meta.map((p) => ({ path: p.path, hash: p.hash })),
 ];
-const today = new Date().toISOString().slice(0, 10);
 const urls = fingerprints
   .map(({ path, hash }) => {
     const changed = publishedDate(recordedDates, path, hash);
@@ -4703,6 +5915,16 @@ const urls = fingerprints
 // and it is the string about to be published that has to be right.
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`;
+
+// Directories a reader reaches by trimming the address bar. /models/ holds all 55 model
+// pages and is not a page itself, so trimming a model's address lands on nothing; the
+// leaderboard is the model index in everything but its address. Both forms of each
+// address are written, because a directory with no page of its own is not a directory
+// Cloudflare will add a slash to. checkRedirects() holds the list to the pages this
+// build actually writes, both ways, so neither a redirect to a page that has gone nor a
+// new family of pages without one can ship.
+const PARENT_REDIRECTS: [from: string, to: string][] = [['/models/', '/leaderboard/']];
+const redirectsTxt = `${PARENT_REDIRECTS.map(([from, to]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`).join('\n')}\n`;
 const nextLedger = nextDates(recordedDates, fingerprints, today);
 
 /**
@@ -4999,6 +6221,105 @@ function checkTokenCost() {
 
 /**
 /**
+ * The monthly page makes four claims the data can move underneath it, and every
+ * one of them reads well while being wrong. The electricity and the rental bill
+ * at each level of use; the machine's price divided over each span it offers;
+ * the level of use where the rental bill passes that; and the spread across the
+ * machines that run the same model, which is the page's own finding — that the
+ * box you buy moves the monthly figure by an order of magnitude and the watts it
+ * draws move it by cents.
+ *
+ * So it recomputes the lot and holds the page to it. A wattage, a rental price or
+ * a measured speed changing is enough to move any of them.
+ */
+function checkMonthlyCost() {
+  const path = '/cost-per-month/';
+  const yearWord = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
+  const page = meta.find((p) => p.path === path);
+  if (!page) throw new Error('no cost-per-month page was written');
+  const html = unesc(page.html);
+  const problems: string[] = [];
+  const st = defaultState(data);
+  const hw = costMachine(data);
+  const dm = computeView({ ...st, hw: hw.id }, data).model!;
+  const base = monthlyCost(dm, hw, data);
+  if (!base) throw new Error(`${path}: the ${hardwareLabel(hw)} cannot be priced on ${dm.display_name}`);
+
+  // the two sides of the headline month, and the hours the electricity is
+  for (const [what, v] of [['the electricity', base.electricity], ['the rental bill', base.rented]] as const)
+    if (!html.includes(fmtUsd(v))) problems.push(`${path} does not print ${fmtUsd(v)}, ${what} for a month at ${fmtTokens(st.usage)} tokens a day`);
+  if (!html.includes(fmtHours(base.hoursPerDay)))
+    problems.push(`${path} does not print ${fmtHours(base.hoursPerDay)}, what the machine spends generating a day`);
+
+  // a month at each level of use, both ways, and how long the machine takes at it
+  for (const l of bestUsageLevels(data)) {
+    const c = monthlyCost(dm, hw, data, l.usage);
+    if (!c) {
+      problems.push(`${path} prices ${fmtTokens(l.usage)} tokens a day, which cannot be priced`);
+      continue;
+    }
+    for (const [side, v] of [['costs in electricity', c.electricity], ['costs rented', c.rented]] as const)
+      if (!html.includes(`>${fmtUsd(v)}<`))
+        problems.push(`${path} does not print ${fmtUsd(v)}, what a month at ${fmtTokens(l.usage)} tokens a day ${side}`);
+    if (!html.includes(fmtDuration(c.breakevenDays)))
+      problems.push(`${path} does not print ${fmtDuration(c.breakevenDays)}, how long the machine takes at ${fmtTokens(l.usage)} a day`);
+  }
+
+  // the division the whole page rests on: the price over each span it offers,
+  // and the use at which renting stops being the cheaper month
+  for (const months of SPREAD_MONTHS) {
+    const owned = monthlyOwned(hw, months, base.electricity)!;
+    if (!html.includes(fmtUsd(owned)))
+      problems.push(`${path} does not print ${fmtUsd(owned)}, what the ${hardwareLabel(hw)} costs a month over ${months} months`);
+  }
+  const crossing = monthlyCrossing(dm, hw, data, SPREAD_MONTHS[Math.min(1, SPREAD_MONTHS.length - 1)]);
+  if (crossing != null && !html.includes(`${fmtTokens(crossing)} tokens a day`))
+    problems.push(`${path} does not print ${fmtTokens(crossing)} tokens a day, where the rental bill passes what the machine costs a month`);
+  if (crossing == null && html.includes('the rental bill passes'))
+    problems.push(`${path} says where the rental bill passes the machine's month, and there is no such level of use`);
+
+  // the spread the page's own finding is drawn from, and the power figure it rests on
+  const runners = data.hardware
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .map((h) => ({ hw: h, cost: monthlyCost(dm, h, data) }))
+    .filter((r): r is { hw: Hardware; cost: MonthlyCost } => !!r.cost);
+  const elec = runners.map((r) => r.cost.electricity);
+  const owned = runners.map((r) => monthlyOwned(r.hw, SPREAD_MONTHS[Math.min(1, SPREAD_MONTHS.length - 1)], r.cost.electricity)!);
+  for (const [what, v] of [
+    ['the cheapest month of electricity', Math.min(...elec)],
+    ['the dearest month of electricity', Math.max(...elec)],
+    ['the cheapest machine by the month', Math.min(...owned)],
+    ['the dearest machine by the month', Math.max(...owned)],
+  ] as const)
+    if (!html.includes(fmtUsd(v)))
+      problems.push(`${path} does not print ${fmtUsd(v)}, ${what} across the ${runners.length} machines that run ${dm.display_name}`);
+  for (const r of runners) {
+    if (!html.includes(`/hardware/${r.hw.id}/`))
+      problems.push(`${path} leaves out the ${hardwareLabel(r.hw)}, which runs ${dm.display_name}`);
+    // every machine over every span the page offers, so a column cannot quietly
+    // go missing: the spread is the page's answer and each row of it is a claim
+    for (const months of SPREAD_MONTHS) {
+      const v = monthlyOwned(r.hw, months, r.cost.electricity)!;
+      if (!html.includes(`>${fmtUsd(v)}<`))
+        problems.push(`${path} does not print ${fmtUsd(v)}, what the ${hardwareLabel(r.hw)} costs a month over ${months} months`);
+    }
+  }
+  for (const months of SPREAD_MONTHS)
+    if (!html.includes(`A month over ${yearWord(months)}`))
+      problems.push(`${path} prices the machines over ${months} months without a column that says so`);
+  if (hw.load_watts_status === 'stand_in' && !page.html.includes(`${hw.load_watts} W<span class="c-quant">${holdHyphens('stand-in')}</span>`))
+    problems.push(`${path} prices the electricity on ${hw.load_watts} W without saying that figure is a stand-in`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} figure${problems.length === 1 ? '' : 's'} on ${path} no longer match the data`);
+  }
+  console.log(
+    `  ${path} prices a month on ${runners.length} machines: ${fmtUsd(Math.min(...elec))} to ${fmtUsd(Math.max(...elec))} of electricity against ${fmtUsd(Math.min(...owned))} to ${fmtUsd(Math.max(...owned))} for the machines themselves`,
+  );
+}
+
+/**
  * Two ways a page can print a note out of the data and have it stop reading as
  * the page's own sentence, both of which shipped for weeks.
  *
@@ -5109,7 +6430,7 @@ function dd(page: string, label: string): string | null {
 
 /** The notes under the machine's own "What it runs" table, where the speed column is. */
 function speedNotes(page: string): string | null {
-  const after = page.split('<h2>What it runs</h2>')[1]?.split('<h2>')[0];
+  const after = page.split(/<h2\b[^>]*>What the [^<]+ runs<\/h2>/)[1]?.split('<h2')[0];
   return after == null ? null : [...after.matchAll(/<p class="note">([\s\S]*?)<\/p>/g)].map((m) => m[1]).join(' ');
 }
 
@@ -5238,7 +6559,7 @@ function checkBestGpu() {
   const problems: string[] = [];
 
   // the side-by-side table is the page's list of cards: every card in it, nothing else
-  const table = html.split('<h2>Every card here, side by side</h2>')[1]?.split('<h2>')[0] ?? '';
+  const table = html.split(anchoredHeading('Every card here, side by side'))[1]?.split('<h2')[0] ?? '';
   const listed = new Set([...table.matchAll(/\/hardware\/([a-z0-9.-]+)\//g)].map((m) => m[1]));
   for (const c of cards) if (!listed.has(c.id)) problems.push(`the table of cards leaves out the ${shortHardwareLabel(c)}`);
   for (const id of listed)
@@ -5275,7 +6596,7 @@ function checkBestGpu() {
   }
 
   // pay-back is priced at every level the calculator names, or not at all
-  const pay = html.split('<h2>How much use it takes for a card to pay for itself</h2>')[1]?.split('<h2>')[0] ?? '';
+  const pay = html.split(anchoredHeading('How much use it takes for a card to pay for itself'))[1]?.split('<h2')[0] ?? '';
   const levels = bestUsageLevels(data);
   const payRows = (pay.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1].match(/<tr>/g) ?? []).length;
   if (payRows !== cards.length) problems.push(`pay-back is priced for ${payRows} cards, not ${cards.length}`);
@@ -5437,7 +6758,8 @@ function checkCardRanking() {
     const html = meta.find((m) => m.path === path)?.html;
     if (html == null) return null;
     const body = mainOf(html);
-    return { n: (body.match(/href="\/best-gpu\/"/g) ?? []).length, body };
+    // the ranking is one page whether the link lands on it or on its table
+    return { n: (body.match(/href="\/best-gpu\/(?:#[^"]*)?"/g) ?? []).length, body };
   };
   const check = (path: string, prices: boolean, inNote: boolean) => {
     const got = links(path);
@@ -5462,6 +6784,8 @@ function checkCardRanking() {
     if (!rows.length) continue;
     said += check(`/hardware/${h.id}/`, !!cardScopeNote(rows), h.price_scope !== 'card_only');
   }
+  // a size page prices whatever machines are sold at that size, cards included
+  for (const gb of MEMORY_SIZES) said += check(memorySizePath(gb), !!cardScopeNote(machinesAtSize(gb, data)), true);
   for (const path of ['/best/', '/compare/', '/how-much-memory/', '/hardware/']) {
     const got = links(path);
     if (got == null || got.n !== 1) problems.push(`${path} raises what a card price leaves out and links the ranking ${got?.n ?? 0} times rather than once`);
@@ -5531,6 +6855,10 @@ function checkSourceLinks() {
  * its content. The last is the one worth a build failing over — a date left behind by a
  * page that has since changed is exactly the wrong signal, and it is the fault that
  * cannot be seen by reading the sitemap.
+ *
+ * Each page now says the same day in its own structured data, so the claim is made in
+ * two places and the two have to agree: the day, the node it sits on, and the fact of
+ * it at all. See withModified in src/pagekit.ts.
  */
 function checkPageDates() {
   const problems: string[] = [];
@@ -5555,6 +6883,26 @@ function checkPageDates() {
   for (const [path, was] of Object.entries(recordedDates?.pages ?? {})) {
     if (was.changed !== null && !/^\d{4}-\d{2}-\d{2}$/.test(was.changed)) problems.push(`${path} is recorded as changing "${was.changed}", which is not a day`);
   }
+  // The same day, said twice. A sitemap is a file the reader never sees and the crawler
+  // has to take on trust; the page repeating the claim out of the same ledger is what
+  // makes it checkable at all. So it is read back out of the markup rather than out of
+  // the string that wrote it: a dated page carries the day once, on the node that is
+  // the page, and an undated one carries nothing.
+  let stamped = 0;
+  for (const p of meta) {
+    const graph = (JSON.parse(p.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '{"@graph":[]}') as { '@graph': Record<string, unknown>[] })['@graph'];
+    const carrying = graph.filter((n) => n.dateModified !== undefined);
+    const want = publishedDate(recordedDates, p.path, p.hash);
+    if (carrying.length > 1) { problems.push(`${p.path} dates itself ${carrying.length} times over`); continue; }
+    const on = carrying[0];
+    if (want && !on) problems.push(`${p.path} is dated ${want} in the sitemap and says nothing about it itself`);
+    else if (!want && on) problems.push(`${p.path} dates itself ${String(on.dateModified)} where the sitemap will not date it`);
+    else if (want && on) {
+      stamped++;
+      if (on['@type'] !== 'WebPage') problems.push(`${p.path} puts its date on a ${String(on['@type'])} rather than on the page`);
+      if (on.dateModified !== want) problems.push(`${p.path} dates itself ${String(on.dateModified)} where the sitemap says ${want}`);
+    }
+  }
   if (problems.length) {
     console.error(problems.slice(0, 20).map((p) => `  ${p}`).join('\n'));
     throw new Error(`${problems.length} sitemap dates are wrong or cannot be read`);
@@ -5570,14 +6918,1019 @@ function checkPageDates() {
     `  ${dated} of ${entries.length} sitemap entries carry the day that page's own words last changed` +
       (why.length ? `; ${why.join(', ')}` : ''),
   );
+  // the home page is the difference between the two counts: it is a static file the
+  // calculator fills, so it is fingerprinted whole and cannot carry a date without
+  // changing the words that date is taken over
+  console.log(`  ${stamped} of the ${meta.length} generated pages say that day in their own structured data as well`);
+}
+
+/**
+ * A machine page's first paragraph is the sentence a search engine quotes and
+ * the first thing a reader gets, and it used to answer one question only: how
+ * much memory this machine has and what fits in it. Memory is the one figure
+ * two machines thousands of dollars apart can share, so the paragraph was
+ * character-identical to another page's on 50 of the 56, ten of them opening
+ * with the same words. What separates them is price and pay-back, and both
+ * were already on the page, in the answer block and in the description a
+ * search engine prints, but not in the paragraph above either.
+ *
+ * Three claims: every machine page opens with a paragraph, a machine whose
+ * pay-back can be computed names that pay-back and its own price in it, and no
+ * two machines open with the same words.
+ */
+function checkMachineLedes() {
+  const problems: string[] = [];
+  const seen = new Map<string, string>();
+  let priced = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    if (!paths.includes(path)) continue;
+    const lede = (meta.find((m) => m.path === path)?.html ?? '').match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1];
+    if (lede == null) {
+      problems.push(`the ${shortHardwareLabel(hw)} page opens with no paragraph`);
+      continue;
+    }
+    const view = hwViews.get(hw.id)!;
+    if (view.calc && hw.price_usd != null) {
+      priced += 1;
+      const verdict = lowerFirst(verdictLine(view));
+      if (!lede.includes(verdict))
+        problems.push(`the ${shortHardwareLabel(hw)} opens without the pay-back its own answer block prints, "${verdict}"`);
+      if (!lede.includes(fmtUsd(hw.price_usd)))
+        problems.push(`the ${shortHardwareLabel(hw)} opens without its own price, ${fmtUsd(hw.price_usd)}`);
+    }
+    const twin = seen.get(lede);
+    if (twin) problems.push(`the ${shortHardwareLabel(hw)} opens with the same paragraph as the ${twin}`);
+    else seen.set(lede, shortHardwareLabel(hw));
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} machine page${problems.length === 1 ? '' : 's'} do not open with an answer of their own`);
+  }
+  console.log(`  ${seen.size} machine pages open with a paragraph no other machine repeats, ${priced} of them naming that machine's own price and pay-back`);
+}
+
+/**
+ * No speed on this site prints bare. Of the 1,425 pairs where a machine here
+ * holds a model and has a speed for it, 1,397 are worked out from memory
+ * bandwidth rather than timed, so a figure with no word beside it reads as a
+ * measurement almost every time it is not one. The machine pages printed 661 of
+ * them that way until this guard was written, and a machine page is where a
+ * reader lands: /hardware/ marked all 56 of its own, the head-to-heads marked
+ * theirs, and the pages in between said nothing.
+ */
+/**
+ * The yardstick under a speed column, held to the column above it.
+ *
+ * Every figure the sentence names is recomputed from the rendered table rather
+ * than from the helper that wrote it, because a claim checked against its own
+ * string proves nothing: the speeds are read back out of the first board table
+ * on the page, which is the one the note sits under, and the hosted figure is
+ * read out of the data.
+ */
+function checkHostedSpeed() {
+  const problems: string[] = [];
+  const hosted = data.defaults.cloud.default_tokens_per_sec;
+  let pages = 0;
+  for (const p of meta) {
+    if (!p.path.startsWith('/hardware/') && !p.path.startsWith('/models/')) continue;
+    if (p.path === '/hardware/' || p.path === '/models/') continue;
+    // The table the note belongs to: the first one on the page, which is what a
+    // machine runs or what runs a model. Anything below it is a different question.
+    const table = p.html.split('<table class="board')[1]?.split('</table>')[0] ?? '';
+    const speeds = [...table.matchAll(/([\d,]+(?:\.\d+)?) tok\/s/g)].map((m) => Number(m[1].replace(/,/g, '')));
+    const said = p.html.match(/For scale, the calculator starts from <b>([^<]+)<\/b> for a hosted API and times a local machine against it\. ([^<]+)</);
+    if (!speeds.length) {
+      if (said) problems.push(`${p.path} puts a hosted speed under a table with no speed in it`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${p.path} prints ${speeds.length} speeds and says nothing about what a speed is worth`);
+      continue;
+    }
+    pages += 1;
+    const seen = p.html.split('For scale, the calculator starts from').length - 1;
+    if (seen !== 1) problems.push(`${p.path} says what a speed is worth ${seen} times over`);
+    if (said[1] !== `${hosted} tok/s`)
+      problems.push(`${p.path} holds its speeds against ${said[1]} where the data says ${hosted} tok/s`);
+    const reach = speeds.filter((t) => t >= hosted).length;
+    const claimed = said[2].match(/^(\d+) of the (\d+)/);
+    if (claimed) {
+      if (Number(claimed[1]) !== reach || Number(claimed[2]) !== speeds.length)
+        problems.push(`${p.path} says ${claimed[1]} of ${claimed[2]} reach ${hosted} tok/s where the table has ${reach} of ${speeds.length}`);
+    } else if (/^All (\d+) above/.test(said[2])) {
+      const n = Number(said[2].match(/^All (\d+)/)![1]);
+      if (reach !== speeds.length || n !== speeds.length)
+        problems.push(`${p.path} says all ${n} reach ${hosted} tok/s where ${reach} of ${speeds.length} do`);
+    } else if (said[2].startsWith('Nothing above')) {
+      if (reach !== 0) problems.push(`${p.path} says nothing reaches ${hosted} tok/s where ${reach} of ${speeds.length} do`);
+    } else if (said[2].startsWith('The one above')) {
+      if (speeds.length !== 1) problems.push(`${p.path} says one row where the table has ${speeds.length}`);
+      if ((reach === 1) !== !said[2].includes('does not reach'))
+        problems.push(`${p.path} gets wrong whether its one speed reaches ${hosted} tok/s`);
+    } else {
+      problems.push(`${p.path} states its speeds against the hosted figure in words this check does not know`);
+    }
+    // The figure it names at the end is the slowest or quickest of the column,
+    // as the column prints it.
+    const named = said[2].match(/(?:at|is) ([\d,]+(?:\.\d+)?) tok\/s\.$/);
+    if (!named) {
+      problems.push(`${p.path} says how many rows reach the hosted speed and names none of them`);
+    } else {
+      const want = said[2].includes('the quickest is') || (speeds.length === 1)
+        ? Math.max(...speeds)
+        : Math.min(...speeds);
+      if (Number(named[1].replace(/,/g, '')) !== want)
+        problems.push(`${p.path} names ${named[1]} tok/s where the table's is ${want}`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} do not hold their speeds to the hosted figure`);
+  }
+  console.log(`  ${pages} pages hold their speed column against the ${hosted} tok/s the calculator starts from for a hosted API`);
+}
+
+function checkSpeedBasis() {
+  const problems: string[] = [];
+  let cells = 0;
+  let answers = 0;
+  let notes = 0;
+  for (const p of meta) {
+    for (const m of p.html.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)) {
+      if (!m[1].includes('tok/s')) continue;
+      cells += 1;
+      if (!/\b(measured|estimated)\b/.test(m[1]))
+        problems.push(`${p.path} prints a speed in a table without saying whether anybody measured it`);
+    }
+    // The answer block is the machine's own headline figure and the model page's
+    // fastest machine. Everywhere else a speed sits in prose that says its basis
+    // in its own words, which no pattern should try to police.
+    if (!p.path.startsWith('/hardware/') && !p.path.startsWith('/models/')) continue;
+    for (const m of p.html.matchAll(/<div class="answer-row">([\s\S]*?)<\/div>/g)) {
+      if (!m[1].includes('tok/s')) continue;
+      answers += 1;
+      if (!/\b(measured|estimated)\b/.test(m[1]))
+        problems.push(`${p.path} answers with a speed without saying whether anybody measured it`);
+    }
+  }
+  // A mark only means something where the page says what it means.
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const html = meta.find((m) => m.path === path)?.html;
+    if (html == null || !html.includes(anchoredHeading(runsHeading(hw)))) continue;
+    if (!(speedNotes(html) ?? '').includes('Each speed says how it was arrived at')) {
+      problems.push(`the ${shortHardwareLabel(hw)} page marks its speeds and never says what the mark means`);
+      continue;
+    }
+    notes += 1;
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} speed${problems.length === 1 ? '' : 's'} print without saying how they were arrived at`);
+  }
+  console.log(`  ${cells} speeds in tables and ${answers} in answer blocks say whether they were measured or estimated; ${notes} machine pages say what the mark means`);
+}
+
+/**
+ * The pairs cut by price rather than by hardware. Recut from the rule rather than read
+ * off the list the pages were built from: a pair that is no longer anybody's nearest
+ * price, or that has drifted past a tenth as a price in data/*.json changes, should fail
+ * the build rather than keep a page that says two machines cost the same money.
+ *
+ * It also holds the other side of it, which is the one a template gets wrong: no page
+ * that is not such a pair may carry the section, and where one side is a graphics card
+ * the section has to say that its price is the card alone, because the whole claim the
+ * heading makes is that the two prices are the same money.
+ */
+function checkPriceNeighbours() {
+  const problems: string[] = [];
+  const heading = anchoredHeading('The same money, two different machines');
+  const sold = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current');
+  const nearest = (h: Hardware) =>
+    sold
+      .filter((o) => o.family !== h.family)
+      .sort(
+        (x, y) =>
+          Math.abs(x.price_usd! - h.price_usd!) - Math.abs(y.price_usd! - h.price_usd!) ||
+          x.id.localeCompare(y.id),
+      )[0];
+
+  let pages = 0;
+  let cards = 0;
+  const wanted = new Set<string>();
+  for (const [lo, hi] of priceNeighbourPairs(data)) {
+    pages++;
+    const path = hardwareComparePath(lo, hi);
+    wanted.add(path);
+    const html = unesc(meta.find((m) => m.path === path)?.html ?? '');
+    if (!html) {
+      problems.push(`${path} is a price-neighbour pair with no page`);
+      continue;
+    }
+    if (lo.family === hi.family) problems.push(`${path} sets two machines of one family against each other`);
+    if ((lo.generation ?? 'current') !== 'current' || (hi.generation ?? 'current') !== 'current')
+      problems.push(`${path} compares a machine that is no longer sold`);
+    if (lo.price_usd == null || hi.price_usd == null || lo.price_usd > hi.price_usd)
+      problems.push(`${path} does not put the cheaper machine first, or prices one of them at nothing`);
+    const spread = Math.abs(hi.price_usd! - lo.price_usd!) / Math.min(hi.price_usd!, lo.price_usd!);
+    if (spread > PRICE_NEIGHBOUR_GAP)
+      problems.push(`${path} is ${Math.round(spread * 100)}% apart in price, past the ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}% this rule allows`);
+    if (nearest(lo)?.id !== hi.id && nearest(hi)?.id !== lo.id)
+      problems.push(`${path} is neither machine's nearest price outside its own family`);
+    if (!html.includes(heading)) {
+      problems.push(`${path} costs the same money either way and does not say so`);
+      continue;
+    }
+    const section = html.slice(html.indexOf(heading), html.indexOf('</p>', html.indexOf(heading)));
+    for (const h of [lo, hi])
+      if (!section.includes(fmtUsd(h.price_usd!, { cents: false })))
+        problems.push(`${path} does not print the ${shortHardwareLabel(h)}'s price where it says the two are the same money`);
+    const card = [lo, hi].filter((h) => h.price_scope === 'card_only');
+    if (card.length) {
+      cards++;
+      if (!/card only|card alone/.test(section))
+        problems.push(`${path} calls a card's price the same money as a whole computer without saying what it buys`);
+    }
+  }
+  for (const m of meta)
+    if (m.html.includes(heading) && !wanted.has(m.path))
+      problems.push(`${m.path} says two machines cost the same money and is not a pair the rule cut`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} price-neighbour head-to-head${problems.length === 1 ? '' : 's'} do not hold to the rule that cut them`);
+  }
+  console.log(`  ${pages} head-to-heads between machines of different families within ${Math.round(PRICE_NEIGHBOUR_GAP * 100)}% of each other in price, ${cards} of them pricing a card against a whole computer`);
+}
+
+/**
+ * The model side of the same thing, and it is cut from the memory a model needs rather
+ * than from the money a machine costs. A pair that is no longer two models of different
+ * families, or that has drifted past a tenth as a figure in data/*.json changes, should
+ * fail the build rather than keep a page whose whole reason is that the two ask a machine
+ * for the same thing.
+ *
+ * It holds the other direction too: no page may say two models need much the same memory
+ * unless it links a pair this rule cut, and every one of these pages has to print what
+ * each model needs, because that figure is the claim.
+ */
+function checkMemoryNeighbours() {
+  const problems: string[] = [];
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const nearest = (m: Model) =>
+    ranked
+      .filter((o) => o.family !== m.family)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+
+  let pages = 0;
+  const cut = new Set<string>();
+  for (const [a, b] of memoryNeighbourPairs(data)) {
+    pages++;
+    const path = modelComparePath(a, b);
+    cut.add(path);
+    const html = unesc(meta.find((p) => p.path === path)?.html ?? '');
+    if (!html) {
+      problems.push(`${path} is a memory-neighbour pair with no page`);
+      continue;
+    }
+    if (a.family === b.family) problems.push(`${path} sets two models of one family against each other`);
+    const spread = Math.abs(need(a) - need(b)) / Math.min(need(a), need(b));
+    if (spread > MODEL_MEMORY_GAP)
+      problems.push(`${path} is ${Math.round(spread * 100)}% apart in what it needs at ${Math.round(ctx / 1024)}k, past the ${Math.round(MODEL_MEMORY_GAP * 100)}% this rule allows`);
+    if (nearest(a)?.id !== b.id && nearest(b)?.id !== a.id)
+      problems.push(`${path} is neither model's nearest in memory outside its own family`);
+    const [sa, sb] = [a.frontier_equivalent?.score ?? 0, b.frontier_equivalent?.score ?? 0];
+    if (sa < sb || (sa === sb && need(a) > need(b)))
+      problems.push(`${path} does not put the stronger model first, or the smaller where the two score the same`);
+    for (const m of [a, b])
+      if (!html.includes(fmtGb(need(m))))
+        problems.push(`${path} does not print what ${m.display_name} needs at ${Math.round(ctx / 1024)}k, which is the whole reason the two are on a page together`);
+  }
+
+  // and the only pages that may say it: a model in one of these pairs, or a head-to-head
+  // one of whose two sides is in one, which is where the sentence names the others
+  const inAPair = new Set(memoryNeighbourPairs(data).flatMap(([a, b]) => [a.id, b.id]));
+  const maySay = new Set<string>();
+  for (const m of data.models) if (inAPair.has(m.id)) maySay.add(`/models/${m.id}/`);
+  for (const [a, b] of modelPairs(data)) if (inAPair.has(a.id) || inAPair.has(b.id)) maySay.add(modelComparePath(a, b));
+  for (const p of meta)
+    if (p.html.includes('much the same memory') && !maySay.has(p.path))
+      problems.push(`${p.path} says two models need much the same memory and is not a page the rule reaches`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} memory-neighbour head-to-head${problems.length === 1 ? ' does' : 's do'} not hold to the rule that cut them`);
+  }
+  console.log(`  ${pages} head-to-heads between models of different families within ${Math.round(MODEL_MEMORY_GAP * 100)}% of each other in the memory they need at ${Math.round(ctx / 1024)}k`);
+}
+
+/**
+ * A pay-back sentence that hands one machine the win and then prints the same figure on
+ * both sides argues with the table under it. Two machines at the same price can come out
+ * days apart over decades, and days do not survive the rounding the pages print at, so
+ * the lede says both or it says which.
+ */
+function checkPayBackReads() {
+  const problems: string[] = [];
+  for (const p of meta) {
+    const m = unesc(p.html).match(/pays for itself sooner, in ([^<]{1,24}?) against ([^<]{1,24}?) at /);
+    if (m && m[1] === m[2]) problems.push(`${p.path} says one machine pays back sooner and prints ${m[1]} on both sides`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} head-to-head${problems.length === 1 ? '' : 's'} call a pay-back sooner than a figure equal to it`);
+  }
+}
+
+/**
+ * A search result shows about 60 characters of a title. On the longest
+ * head-to-heads here the two full machine names filled them before the second
+ * machine's memory size arrived, so the one figure the page turns on was the
+ * part a searcher never saw. The fix is narrow and it has to cut both ways: a
+ * title may leave the screen size out of a laptop's name only where no other
+ * machine here answers to the name without it, and a head-to-head still over
+ * the 60 characters has to be one where neither name had a bracket to lose.
+ */
+function checkTitleLabels() {
+  const problems: string[] = [];
+  // cut here rather than taken from the builder, so that a rule that stopped shortening
+  // anything at all fails this instead of quietly passing it
+  const bare = (h: Hardware) => shortHardwareLabel(h).replace(/ \([^()]*\)/g, '');
+  const answerTo = (name: string) => data.hardware.filter((o) => bare(o) === name);
+  const bracketed = data.hardware.filter((h) => bare(h) !== shortHardwareLabel(h));
+  // nothing anywhere on the site may name a machine by a name a second machine answers to
+  for (const h of bracketed.filter((h) => answerTo(bare(h)).length > 1))
+    for (const m of meta.filter((m) => m.title.includes(bare(h))))
+      problems.push(`${m.path} calls the ${shortHardwareLabel(h)} "${bare(h)}", and ${answerTo(bare(h)).length} machines here answer to that`);
+  // and a title still over the limit has to be one this rule could not shorten
+  let shortened = 0;
+  let over = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    const path = hardwareComparePath(a, b);
+    const title = meta.find((m) => m.path === path)?.title;
+    if (title == null) {
+      problems.push(`${path} is a head-to-head with no title`);
+      continue;
+    }
+    const loseable = [a, b].filter((h) => bare(h) !== shortHardwareLabel(h) && answerTo(bare(h)).length === 1);
+    const lost = loseable.filter((h) => title.includes(bare(h)));
+    if (lost.length) shortened++;
+    // and a screen size is only ever dropped where keeping it would not have fit
+    const full = lost.reduce((t, h) => t.replace(bare(h), shortHardwareLabel(h)), title);
+    if (lost.length && full.length <= TITLE_MAX)
+      problems.push(`${path} drops a screen size to reach ${title.length} characters where the full names fit in ${full.length}`);
+    if (title.length <= TITLE_MAX) continue;
+    over++;
+    if (loseable.length)
+      problems.push(`${path} is ${title.length} characters and still carries the screen size of the ${loseable.map((h) => shortHardwareLabel(h)).join(' and the ')}`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page titles name a machine by a name that is not its own or are longer than a search result shows`);
+  }
+  console.log(
+    `  ${meta.filter((m) => m.title.length <= TITLE_MAX).length} of ${meta.length} titles fit the ${TITLE_MAX} characters a search result shows; ` +
+      `${shortened} head-to-heads drop a screen size only this site's own range makes redundant`,
+  );
+}
+
+/**
+ * The table that answers "what can I run with 32 GB" is keyed on the number the
+ * reader knows before they look anything up, which is the one printed on the box.
+ * It used to be keyed on usable memory, and that split the sizes apart: the three
+ * rungs a 32 GB machine can land on sat at 21, 24 and 31 GB of usable memory with
+ * a 36 GB machine in between them, so a reader with 32 GB met their own size
+ * three times, never together, and had no way to tell which row was theirs.
+ *
+ * Four things hold, and the first is the one the paragraph above the table
+ * claims: every size a machine on sale here comes in has a row, so the sentence
+ * cannot quietly become false when a machine is added. Then that the rows read in
+ * order of that size and keep each size in one unbroken run; that every level of
+ * usable memory among those machines is there exactly once, which is what stops a
+ * machine being dropped rather than merely re-sorted; and that each row ends in a
+ * link opening the calculator on that row's own machine and the strongest model it
+ * holds.
+ */
+function checkMemoryLadder() {
+  const html = meta.find((m) => m.path === '/how-much-memory/')?.html ?? '';
+  const section = html.split(anchoredHeading('What can you run with the memory you already have?'))[1];
+  if (!section) throw new Error('/how-much-memory/ no longer asks what the memory you have runs');
+  const body = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1];
+  if (!body) throw new Error('/how-much-memory/ asks what your memory runs and answers with no table');
+
+  const problems: string[] = [];
+  const rows = [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => {
+    const cells = [...r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+    return {
+      installed: Number(cells[0]?.replace(/<[^>]*>/g, '').replace(/[^\d.]/g, '')),
+      usable: Number(cells[1]?.replace(/<[^>]*>/g, '').replace(/[^\d.]/g, '')),
+      hw: cells[2]?.match(/href="\/hardware\/([^/"]+)\//)?.[1] ?? '',
+      model: cells[4]?.match(/href="\/models\/([^/"]+)\//)?.[1] ?? '',
+      // the href is written through esc(), so its separators arrive as &amp;
+      link: (cells[5]?.match(/href="([^"]+)"/)?.[1] ?? '').replace(/&amp;/g, '&'),
+    };
+  });
+
+  const sizes = [...new Set(buyable.map((h) => h.unified_memory_gb))].sort((a, b) => a - b);
+  for (const gb of sizes)
+    if (!rows.some((r) => r.installed === gb))
+      problems.push(`${gb} GB is a size you can buy a machine in here and the table skips it`);
+
+  const runs: number[] = [];
+  for (const r of rows) if (runs[runs.length - 1] !== r.installed) runs.push(r.installed);
+  for (let i = 1; i < runs.length; i++)
+    if (runs[i] <= runs[i - 1])
+      problems.push(`the table reads ${runs[i - 1]} GB and then ${runs[i]} GB, so a reader looking for one size meets it in two places`);
+
+  const levels = [...new Set(buyable.map((h) => h.usable_memory_gb!))].sort((a, b) => a - b);
+  for (const gb of levels) {
+    const at = rows.filter((r) => r.usable === Number(gb.toFixed(1)));
+    if (at.length !== 1) problems.push(`${gb} GB of usable memory has ${at.length} rows where it should have one`);
+  }
+
+  for (const r of rows) {
+    const hw = data.hardware.find((h) => h.id === r.hw);
+    if (!hw) {
+      problems.push(`a row at ${r.installed} GB names no machine of this site's`);
+      continue;
+    }
+    const top = strongestThatFits(hw, CTX);
+    if (!top) {
+      if (r.link) problems.push(`the ${shortHardwareLabel(hw)} row holds no model and offers the calculator anyway`);
+      continue;
+    }
+    const want = calcLink({ hw: hw.id, model: top.id, ctx: CTX }, data);
+    if (r.model !== top.id)
+      problems.push(`the ${shortHardwareLabel(hw)} row names ${r.model || 'nothing'} where ${top.id} is the strongest it holds`);
+    if (r.link !== want)
+      problems.push(`the ${shortHardwareLabel(hw)} row opens the calculator on something other than its own machine and model`);
+  }
+
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what /how-much-memory/ says your own memory runs`);
+  }
+  console.log(
+    `  /how-much-memory/ answers ${sizes.length} memory sizes over ${rows.length} rows, each opening the calculator on the strongest model that size holds`,
+  );
+}
+
+/**
+ * The headings on the 111 pages that are about one thing: a machine or a model.
+ *
+ * Two claims, and the first is the rule the headings were rewritten to. **No
+ * heading on these pages refers to the page's subject as "it."** A heading is
+ * where a reader from a search result lands, and it has to say what it is the
+ * answer about without the h1 above it. The subject's own name is stripped out
+ * before the pronoun is looked for, because two models here are called *Gemma 3
+ * 12B it* and one machine could be named the same way tomorrow.
+ *
+ * The second is that a heading of the shape that names a subject names **this**
+ * page's subject. Every one of these headings is built from the page's own
+ * machine or model, so the fault it catches is a builder handed the wrong one —
+ * the neighbour's name under this page's table, which reads as a fact and is
+ * the one mistake a reader could not spot.
+ */
+function checkSubjectHeadings() {
+  const problems: string[] = [];
+  // each shape, and the name it holds: the heading a searcher's question lands on
+  const shapes: RegExp[] = [
+    /^What the (.+) runs$/,
+    /^Other machines to weigh against the (.+)$/,
+    /^How good is (.+), really\?$/,
+    /^What (.+) costs either way$/,
+    /^Machines that run (.+)$/,
+    /^The machines that miss (.+), and what they run$/,
+    /^(.+) fits at \d+k of context$/,
+  ];
+  const subjects = [
+    ...data.hardware.map((hw) => ({ path: `/hardware/${hw.id}/`, name: esc(shortHardwareLabel(hw)) })),
+    ...data.models.map((m) => ({ path: `/models/${m.id}/`, name: esc(m.display_name) })),
+  ];
+  let named = 0;
+  for (const { path, name } of subjects) {
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const headings = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((h) => h[1]);
+    if (!headings.length) problems.push(`${path} has no headings at all`);
+    for (const heading of headings) {
+      if (/\bits?\b/i.test(heading.split(name).join(' ')))
+        problems.push(`${path} heads a section "${heading}", which calls ${name} "it"`);
+      const shape = shapes.find((r) => r.test(heading));
+      if (!shape) continue;
+      const found = heading.match(shape)![1];
+      if (found === name) named++;
+      else problems.push(`${path} heads a section "${heading}", which names ${found} where the page is about ${name}`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} heading${problems.length === 1 ? '' : 's'} on a machine or model page do not name what the page is about`);
+  }
+  console.log(
+    `  ${subjects.length} machine and model pages name their subject in ${named} headings; none of the headings on them calls it "it"`,
+  );
+}
+
+/**
+ * Every page on this site is cut into sections, and no section is the page over
+ * again.
+ *
+ * A page with no `<h2>` on it is a page nothing can link into, a page no search
+ * result can offer a jump into, and a page a reader has to read from the top to
+ * find the part they came for. It is also the state `/hardware/` and
+ * `/leaderboard/` were in for weeks without anyone noticing: 56 machines and 55
+ * models under one heading each, while every other index on the site headed five
+ * sections or more. The floor is one section, and the print says what the
+ * thinnest page actually heads, so the next index written as one slab is caught
+ * by the build rather than by the next person to measure it.
+ *
+ * The second claim is what stops the floor being met with a heading that says
+ * nothing: a section headed in the page's own title is the page labelling itself
+ * inside itself, which buys the reader nothing and a jump line a repeated line.
+ */
+function checkPageSections() {
+  const problems: string[] = [];
+  const words = (h: string) => unesc(h.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  let fewest = { path: '', sections: Infinity };
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const h1 = words(body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '');
+    const sections = [...body.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => words(m[1]));
+    if (!sections.length) {
+      problems.push(`${path} heads no sections at all, so nothing can link into it and a reader has to start at the top`);
+      continue;
+    }
+    if (sections.length < fewest.sections) fewest = { path, sections: sections.length };
+    for (const heading of sections)
+      if (heading.toLowerCase() === h1.toLowerCase())
+        problems.push(`${path} heads a section "${heading}", which is the page's own title said twice`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 page does not cut itself into sections a reader can land on'
+        : `${problems.length} pages do not cut themselves into sections a reader can land on`,
+    );
+  }
+  console.log(
+    `  ${meta.length} pages head at least one section, the fewest being ${fewest.sections} on ${fewest.path}; none of them heads a section in the page's own title`,
+  );
+}
+
+/**
+ * Every section on this site can be linked to, and no two sections on one page
+ * answer to the same link.
+ *
+ * A heading with no id is a section another site has to send a reader to the top
+ * of, and a section a search engine cannot offer a jump link into. Two headings
+ * sharing one id is worse than neither having one: the browser honours the first
+ * and silently ignores the second, so a link that looks right lands wrong.
+ *
+ * It also holds the one thing the guards above depend on, which is that a slug is
+ * a function of the heading's own words. They ask for a heading through
+ * `anchoredHeading`, which slugs the text the same way the build did; if an id
+ * anywhere were set by hand instead, those guards would start missing sections
+ * that are really there and this one says so first.
+ *
+ * Answering to one link is not the same as reading differently, and until now
+ * this guard only held the first. `anchorHeadings` numbers a slug it has already
+ * used, so a page headed "The specifics" twice builds clean on ids
+ * `the-specifics` and `the-specifics-2`, and the jump line above those sections
+ * then offers the reader the same words twice pointing at two different places.
+ * Every id is unique and the line is useless. So the last claim is about the
+ * words rather than the addresses: no page heads two sections that read the same.
+ * Nothing on the site does it today, which is the point of saying so now rather
+ * than the day a template repeats a heading.
+ */
+function checkHeadingAnchors() {
+  const problems: string[] = [];
+  const words = (h: string) => unesc(h.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  let headings = 0;
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const seen = new Set<string>();
+    const read = new Set<string>();
+    for (const [, id, text] of body.matchAll(/<h2(?:\s+id="([^"]*)")?[^>]*>([\s\S]*?)<\/h2>/g)) {
+      headings++;
+      if (!id) {
+        problems.push(`${path} heads a section "${text.slice(0, 60)}" with no id, so nothing can link to it`);
+        continue;
+      }
+      if (seen.has(id)) problems.push(`${path} gives two sections the same id, "${id}", so a link to it lands on the first`);
+      seen.add(id);
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) problems.push(`${path} gives a section the id "${id}", which is not a slug`);
+      const expected = headingSlug(text);
+      if (read.has(expected))
+        problems.push(`${path} heads two sections "${words(text)}", so a jump into them offers the reader the same words twice`);
+      read.add(expected);
+      if (id !== expected && id !== `${expected}-2` && id !== `${expected}-3`)
+        problems.push(`${path} gives "${text.slice(0, 40)}" the id "${id}" where its own words slug to "${expected}"`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} section heading${problems.length === 1 ? '' : 's'} cannot be linked to`);
+  }
+  console.log(
+    `  ${headings} section headings across ${meta.length} pages, each with the id a link lands on, no id repeated on its page and no two of them reading the same`,
+  );
+}
+
+/**
+ * A page with more sections than fit on a screen says at the top what is in
+ * them, and every jump it offers lands on one of its own.
+ *
+ * Three claims, and the first is the one that keeps the line honest. A page
+ * carries the line where it heads four sections or more and at most one of those
+ * headings repeats a name its own h1 already carries — so the head-to-heads and
+ * the long indexes have one and the machine and model pages, whose every heading
+ * names the machine or the model, do not. Write a fourth section onto a machine
+ * page, or take the model's name out of a model page's headings, and the rule
+ * changes its mind about that page; this says so rather than leaving it to
+ * whoever next reads the page.
+ *
+ * The second is that the line covers the page: one jump per section, in the
+ * order the page puts them in, each landing on an id the page really heads. A
+ * line that names three of four sections is a contents page with a section
+ * missing, which is worse than none. The third is that it sits above the first
+ * section it points into, because a jump link below what it jumps to is a link
+ * the reader has already scrolled past.
+ *
+ * `/best/` writes its own line, shortening five headings that each carry a
+ * second clause, and this holds that one to the same three claims.
+ */
+function checkJumpLines() {
+  const problems: string[] = [];
+  let lines = 0;
+  let jumps = 0;
+  let quiet = 0;
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    const h1 = body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '';
+    const sections = [...body.matchAll(/<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => ({ id: m[1], heading: m[2] }));
+    const named = sections.filter((x) => subjectNames.some((n) => n && h1.includes(n) && x.heading.includes(n)));
+    const wanted = sections.length >= JUMP_MIN_SECTIONS && named.length <= 1;
+    const line = body.match(/<p class="note">Jump to: ([\s\S]*?)<\/p>/);
+    if (!line) {
+      if (wanted) problems.push(`${path} heads ${sections.length} sections and offers no way into them`);
+      else quiet++;
+      continue;
+    }
+    if (!wanted) {
+      problems.push(
+        sections.length < JUMP_MIN_SECTIONS
+          ? `${path} offers jump links into ${sections.length} sections, which is a contents line for what is already on the screen`
+          : `${path} offers jump links whose words name ${named[0]?.heading.slice(0, 40)} and ${named.length - 1} more heading${named.length === 2 ? '' : 's'} carrying the same name`,
+      );
+      continue;
+    }
+    lines++;
+    const hrefs = [...line[1].matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+    jumps += hrefs.length;
+    if (hrefs.length !== sections.length)
+      problems.push(`${path} jumps into ${hrefs.length} of the ${sections.length} sections it heads`);
+    const at = hrefs.map((h) => body.indexOf(`id="${h}"`));
+    for (const [i, x] of at.entries()) {
+      if (x < 0) problems.push(`${path} jumps to #${hrefs[i]}, which is not an id on the page`);
+      else if (i && at[i - 1] >= 0 && x <= at[i - 1])
+        problems.push(`${path} lists #${hrefs[i]} after #${hrefs[i - 1]}, where the page itself has them the other way round`);
+    }
+    if (body.indexOf(line[0]) > body.indexOf('<h2 id="'))
+      problems.push(`${path} puts its jump links below the first section they point into`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} offer the wrong way into their own sections`);
+  }
+  console.log(
+    `  ${lines} pages offer ${jumps} jumps into their own sections, one a section; ${quiet} pages carry none, each under ${JUMP_MIN_SECTIONS} sections or naming its own subject in more than one`,
+  );
+}
+
+/**
+ * A link that names a section has to land on it. The id it aims at is a
+ * function of that section's own heading, so the two ends of the link are
+ * written from the same words and a reworded heading moves both — but only on
+ * the pages this build writes. A section moved to another page, or a heading
+ * reworded in one place and linked from another, leaves a link that scrolls
+ * nowhere: the reader arrives at the top of the page and has to find the answer
+ * the link promised, which is the thing the link was there to save them.
+ *
+ * Three claims. Every fragment a page links to exists on the page it points at.
+ * Every one of them is the id of a section rather than of something the page
+ * happens to carry, so a link cannot quietly start landing on a table. And the
+ * five sections named in SECTIONS are each linked from somewhere, so a heading
+ * that stops being linked shows up here rather than sitting in the list.
+ */
+function checkSectionLinks() {
+  const problems: string[] = [];
+  const sectionsOn = new Map<string, Set<string>>();
+  for (const { path, html } of meta) {
+    const body = mainOf(html);
+    sectionsOn.set(
+      path,
+      new Set([...body.matchAll(/<(?:h2|section) id="([^"]+)"/g)].map((m) => m[1])),
+    );
+  }
+  const landed = new Set<string>();
+  let links = 0;
+  for (const { path, html } of meta) {
+    for (const [, href, hash] of mainOf(html).matchAll(/<a href="(\/[^"#]*\/|)#([^"]+)"/g)) {
+      links++;
+      const target = href || path;
+      landed.add(`${href}#${hash}`);
+      const ids = sectionsOn.get(target);
+      if (!ids) {
+        problems.push(`${path} links to ${target}#${hash}, and no page here is written at ${target}`);
+        continue;
+      }
+      if (!ids.has(hash)) problems.push(`${path} links to ${target}#${hash}, where ${target} heads no section with that id`);
+    }
+  }
+  for (const [name, href] of Object.entries(SECTIONS))
+    if (!landed.has(href)) problems.push(`${href} is the section SECTIONS calls ${name}, and no page on this site links to it`);
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(problems.length === 1 ? '1 link into a section lands nowhere' : `${problems.length} links into a section land nowhere`);
+  }
+  const pages = new Set([...landed].map((h) => h.split('#')[0]).filter(Boolean));
+  console.log(`  ${links} links name a section and land on it, across ${landed.size} sections of ${pages.size} other pages`);
+}
+
+/**
+ * A page about a memory size is the one page type here whose whole subject is a
+ * number somebody else printed on a box, and the figure that decides what runs
+ * is a different one. So every claim it makes is recomputed from the data and
+ * read back out of the rendered page rather than out of the strings that wrote
+ * it.
+ *
+ * Six things hold on each of them. There is a page for every size a machine
+ * here is sold in and for no other. The machine table has a row for every
+ * machine at that size, each printing the memory that machine hands a model and
+ * the count of models its own page prints. The model table holds exactly the
+ * current models the roomiest machine at that size fits at the default context,
+ * each with the memory it needs and the number of machines at that size with
+ * room for it. The context table counts the same fits the rest of the site
+ * counts. What a speed is worth is said against the speeds actually printed.
+ * And nothing is an orphan: the memory guide and every machine at that size
+ * link the page.
+ */
+function checkMemorySizes() {
+  const problems: string[] = [];
+  const kctx = ctxLabel(CTX);
+  const cells = (row: string) => [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((c) => c[1]);
+  const rowsOf = (html: string, heading: string) => {
+    const section = html.split(anchoredHeading(heading))[1]?.split('<h2')[0] ?? '';
+    const body = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1];
+    return body == null ? null : [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]);
+  };
+  const figure = (cell: string | undefined) => Number((cell ?? '').replace(/<[^>]*>/g, '').replace(/[^\d.]/g, ''));
+
+  // a page for every size and no page for a size that is not one
+  const written = paths.filter((p) => /^\/how-much-memory\/\d+gb\/$/.test(p));
+  for (const path of written)
+    if (!MEMORY_SIZES.some((gb) => memorySizePath(gb) === path))
+      problems.push(`${path} is a page about a size no machine here is sold in`);
+  for (const gb of MEMORY_SIZES)
+    if (!written.includes(memorySizePath(gb)))
+      problems.push(`${gb} GB is a size machines here are sold in and has no page`);
+
+  let machineRows = 0;
+  let modelRows = 0;
+  for (const gb of MEMORY_SIZES) {
+    const path = memorySizePath(gb);
+    const page = meta.find((m) => m.path === path);
+    if (!page) continue;
+    const html = page.html;
+    const v = sizeView(gb);
+
+    // the machines at this size, in full, each with what it hands a model and
+    // the count its own page prints
+    const machines = rowsOf(html, `The machines sold with ${gb} GB`);
+    if (machines == null) {
+      problems.push(`${path} does not table the machines sold with ${gb} GB`);
+    } else {
+      if (machines.length !== v.machines.length)
+        problems.push(`${path} tables ${machines.length} machines where ${v.machines.length} here are sold with ${gb} GB`);
+      for (const [i, hw] of v.machines.entries()) {
+        const row = machines[i] ?? '';
+        machineRows++;
+        if (!row.includes(`/hardware/${hw.id}/`))
+          problems.push(`${path} does not name the ${shortHardwareLabel(hw)} in row ${i + 1} of the machines with ${gb} GB`);
+        const c = cells(row);
+        if (figure(c[1]) !== Number(hw.usable_memory_gb!.toFixed(1)))
+          problems.push(`${path} says the ${shortHardwareLabel(hw)} hands a model ${figure(c[1])} GB where the data says ${hw.usable_memory_gb}`);
+        if (figure(c[3]) !== fitCount(hw, CTX))
+          problems.push(`${path} says the ${shortHardwareLabel(hw)} holds ${figure(c[3])} models at ${kctx} where its own page says ${fitCount(hw, CTX)}`);
+        if (hw.price_usd != null && !unesc(row).includes(fmtUsd(hw.price_usd)))
+          problems.push(`${path} leaves the ${shortHardwareLabel(hw)} without its ${fmtUsd(hw.price_usd)}`);
+      }
+    }
+
+    // every model the roomiest machine at this size holds, and nothing else
+    const models = rowsOf(html, `Models that fit in ${gb} GB`);
+    if (models == null) {
+      problems.push(`${path} does not table the models that fit in ${gb} GB`);
+    } else {
+      const listed = models.map((r) => r.match(/href="\/models\/([^/"]+)\//)?.[1] ?? '');
+      const want = v.most.fits.map((m) => m.id);
+      for (const id of want) if (!listed.includes(id)) problems.push(`${path} leaves out ${id}, which fits in ${gb} GB at ${kctx}`);
+      for (const id of listed)
+        if (!want.includes(id)) problems.push(`${path} lists ${id}, which does not fit the roomiest ${gb} GB machine at ${kctx}`);
+      for (const [i, m] of v.most.fits.entries()) {
+        const row = models[i] ?? '';
+        modelRows++;
+        const c = cells(row);
+        const need = footprintGb(m, CTX);
+        if (need != null && figure(c[2]) !== Number(need.toFixed(1)))
+          problems.push(`${path} says ${m.id} needs ${figure(c[2])} GB at ${kctx} where the sum is ${fmtGb1(need)}`);
+        const held = v.machines.filter((h) => holds(h, m, CTX)).length;
+        if (!(c[3] ?? '').includes(`${held} of ${v.machines.length}`))
+          problems.push(`${path} does not say ${held} of the ${v.machines.length} machines at ${gb} GB hold ${m.id}`);
+      }
+    }
+
+    // the context table, counted the way every other page here counts a fit
+    const ctxRows = rowsOf(html, `How much context ${gb} GB leaves room for`);
+    if (ctxRows == null) {
+      problems.push(`${path} does not say how much context ${gb} GB leaves room for`);
+    } else {
+      if (ctxRows.length !== CTX_STEPS.length)
+        problems.push(`${path} counts ${ctxRows.length} context settings where the calculator offers ${CTX_STEPS.length}`);
+      for (const [i, c] of CTX_STEPS.entries()) {
+        const got = cells(ctxRows[i] ?? '').slice(1);
+        if (got.length !== v.levels.length) {
+          problems.push(`${path} gives ${got.length} columns at ${ctxLabel(c)} where ${gb} GB is handed over in ${v.levels.length} amounts`);
+          continue;
+        }
+        for (const [j, level] of v.levels.entries())
+          if (figure(got[j]) !== fitCount(level.machines[0], c))
+            problems.push(
+              `${path} says ${figure(got[j])} models fit ${level.usable} GB at ${ctxLabel(c)} where the data says ${fitCount(level.machines[0], c)}`,
+            );
+      }
+    }
+
+    // what a local speed is worth, against the speeds the table actually prints
+    const printed = [...(models ?? []).join('').matchAll(/([\d,]+(?:\.\d+)?) tok\/s/g)].map((m) => Number(m[1].replace(/,/g, '')));
+    const said = html.includes('For scale, the calculator starts from');
+    const want = hostedSpeedLine(printed, data);
+    if (printed.length && !said) problems.push(`${path} prints ${printed.length} speeds and says nothing about what a speed is worth`);
+    if (said && !unesc(html).includes(unesc(want)))
+      problems.push(`${path} holds its speeds against something other than what the data says a hosted API does`);
+
+    // and nothing here is a page only the sitemap knows about
+    if (!inbound.get(path)?.has('/how-much-memory/'))
+      problems.push(`${path} is not linked from the memory guide the sizes belong to`);
+    for (const hw of v.machines)
+      if (!inbound.get(path)?.has(`/hardware/${hw.id}/`))
+        problems.push(`${path} is not linked from the ${shortHardwareLabel(hw)}, which is sold with ${gb} GB`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} claim${problems.length === 1 ? '' : 's'} on the pages about one memory size no longer match the data`);
+  }
+  console.log(
+    `  ${MEMORY_SIZES.length} sizes have a page of their own, tabling ${machineRows} machines and ${modelRows} models that fit them`,
+  );
+}
+
+/**
+ * The sentence a model page uses to send a reader to the size its cheapest
+ * machine is sold in, held to the page it points at rather than to the helper
+ * that wrote it.
+ *
+ * Both figures in it are claims about another page: how many machines are sold
+ * at that size, and how many models that size page tables. So both are read
+ * back out of that page's own rendered markup, and so is the clause that says
+ * this model is one of them. A model whose cheapest machine changes size, a
+ * machine added or dropped at a size, or a model that stops being current all
+ * come back here as a difference, named.
+ */
+function checkModelSizeLinks() {
+  const problems: string[] = [];
+  const kctx = ctxLabel(CTX);
+  let pages = 0;
+  const sizes = new Set<number>();
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const said = html.match(/<p class="note">The cheapest machine that runs it is sold with ([\s\S]*?)<\/p>/);
+    const cheapest = runnersFor(m, data)[0];
+    const gb = cheapest && MEMORY_SIZES.includes(cheapest.hw.unified_memory_gb) ? cheapest.hw.unified_memory_gb : null;
+    const pointsAt = [...html.matchAll(/href="(\/how-much-memory\/(\d+)gb\/)"/g)].map((x) => Number(x[2]));
+    if (gb == null) {
+      if (said) problems.push(`${path} names the size of a cheapest machine it does not have`);
+      if (pointsAt.length) problems.push(`${path} links the page about ${pointsAt[0]} GB and names no machine sold at it`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${path} is run cheapest by a machine sold with ${gb} GB and does not link the page about that size`);
+      continue;
+    }
+    pages++;
+    sizes.add(gb);
+    const text = unesc(said[1].replace(/<[^>]*>/g, ''));
+    const other = pointsAt.filter((x) => x !== gb);
+    if (other.length) problems.push(`${path} links the page about ${other[0]} GB, where its cheapest machine is sold with ${gb} GB`);
+    if (!said[0].includes(`href="${memorySizePath(gb)}"`))
+      problems.push(`${path} says its cheapest machine is sold with ${gb} GB and does not link that size's page`);
+
+    // the two figures, each read back out of the page they are about
+    const sizeHtml = meta.find((p) => p.path === memorySizePath(gb))?.html ?? '';
+    const rows = (heading: string) => {
+      const body = sizeHtml.split(anchoredHeading(heading))[1]?.split('<h2')[0]?.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+      return [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]);
+    };
+    const machines = rows(`The machines sold with ${gb} GB`).length;
+    const models = rows(`Models that fit in ${gb} GB`);
+    const machineSaid = machines === 1 ? 'the one machine here sold at that size' : `the ${machines} machines here sold at that size`;
+    if (!text.includes(machineSaid))
+      problems.push(`${path} miscounts the machines sold with ${gb} GB, which that size's page tables ${machines} of`);
+    if (!text.includes(`and the ${models.length} current model${models.length === 1 ? '' : 's'} the roomiest of them holds at ${kctx}`))
+      problems.push(`${path} miscounts the models on the page about ${gb} GB, which tables ${models.length} of them`);
+
+    // and the clause that claims a row on it, checked against the rows
+    const listed = models.some((r) => r.includes(`/models/${m.id}/`));
+    if (listed !== text.endsWith(', this one among them.'))
+      problems.push(
+        listed
+          ? `${path} has a row on the page about ${gb} GB and does not say so`
+          : `${path} says it is among the models the page about ${gb} GB tables, and it is not one of them`,
+      );
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} no longer agree with the size page they send a reader to`);
+  }
+  console.log(
+    `  ${pages} model pages send a reader to the size their cheapest machine is sold in, over ${sizes.size} of the ${MEMORY_SIZES.length} sizes`,
+  );
+}
+
+/**
+ * Every page on this site sits under a directory, and most of those directories are a
+ * page in their own right: /hardware/ indexes the machines, /compare/ the head-to-heads,
+ * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
+ * model's address to see the list gets a 404 from a site that has the list.
+ *
+ * So this holds six claims about the redirect that fixes it, all of them read off the
+ * pages this build is about to write rather than off a list kept by hand. Every
+ * directory that holds pages and is not one has a redirect, so the next family of pages
+ * added here cannot quietly repeat the fault. No redirect shadows a real page. None
+ * starts from an address that is above nothing, which is a rule written down for a page
+ * family that has since been renamed. None points at a page that is not there. No
+ * address is redirected twice, because the second line would never run. And the file
+ * says every address twice, with and without its trailing slash, because the shorter
+ * form is what a reader actually types and there is no directory here for Cloudflare to
+ * lengthen it into.
+ */
+function checkRedirects() {
+  const problems: string[] = [];
+  const pages = new Set(paths);
+  const parents = new Set<string>();
+  for (const p of paths) {
+    const parts = p.split('/').filter(Boolean);
+    for (let i = 1; i < parts.length; i++) parents.add(`/${parts.slice(0, i).join('/')}/`);
+  }
+  const orphans = [...parents].filter((d) => !pages.has(d));
+  const named = new Set(PARENT_REDIRECTS.map(([from]) => from));
+  for (const d of orphans)
+    if (!named.has(d)) problems.push(`${d} holds pages and is not one, and nothing sends a reader who trims to it anywhere`);
+  for (const [from, to] of PARENT_REDIRECTS) {
+    if (pages.has(from)) problems.push(`${from} is a page of its own, and a redirect would shadow it`);
+    else if (!orphans.includes(from)) problems.push(`${from} is above no page on this site, so nobody arrives there by trimming an address`);
+    if (!pages.has(to)) problems.push(`${from} is sent to ${to}, which is not a page this build writes`);
+    for (const form of [from.replace(/\/$/, ''), from])
+      if (!redirectsTxt.split('\n').includes(`${form} ${to} 301`))
+        problems.push(`${form} is not in the redirects file, so only one of its two forms is answered`);
+  }
+  if (named.size !== PARENT_REDIRECTS.length) problems.push('one address is redirected twice, and the second line is dead');
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in the redirects for the directories that are not pages`);
+  }
+  console.log(
+    `  ${PARENT_REDIRECTS.map(([from, to]) => `${from} holds ${paths.filter((p) => p.startsWith(from) && p !== from).length} pages and is not one, so it sends a reader to ${to}`).join('; ')}`,
+  );
 }
 
 checkMeta();
 checkLinks();
+checkSectionLinks();
 checkFooter();
 checkHeadToHeads();
 checkMatchUpSiblings();
 checkCanonicals();
+checkRedirects();
 checkOgCards();
 checkFonts();
 checkCounts();
@@ -5585,11 +7938,20 @@ checkCardPrices();
 checkCardScope();
 checkCardRanking();
 checkMachineIndex();
+checkMachineLedes();
+checkSubjectHeadings();
+checkPageSections();
+checkHeadingAnchors();
+checkJumpLines();
+checkSpeedBasis();
+checkHostedSpeed();
 checkTables();
 checkPairedColumns();
 checkArticles();
 checkCompareIndex();
+checkMatchUpKinds();
 checkHardwareIndex();
+checkPricedRows();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();
@@ -5597,6 +7959,9 @@ checkSharedHeadroom();
 checkSameSilicon();
 checkGenerationPairs();
 checkChipStepPairs();
+checkPriceNeighbours();
+checkMemoryNeighbours();
+checkPayBackReads();
 checkStandInPower();
 checkModelContexts();
 checkMachineContexts();
@@ -5607,15 +7972,22 @@ checkHiddenModels();
 checkFamilyReach();
 checkModelGenerations();
 checkLeaderboardLinks();
+checkLeaderboardBuilds();
 checkBestGpu();
+checkBestCuts();
 checkNotes();
 checkHardwareNotes();
 checkTierLabels();
 checkTokenCost();
+checkMonthlyCost();
 checkMarkerWords();
 checkSourceLinks();
 checkPageDates();
-// Every guard has passed, so the three files the build publishes rather than
+checkTitleLabels();
+checkMemoryLadder();
+checkMemorySizes();
+checkModelSizeLinks();
+// Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a
 // page's words changed, and a page a guard refused is not a page that changed.
@@ -5623,6 +7995,7 @@ checkPageDates();
 // the build after that stamped those pages with the day the fault was fixed.
 writeFileSync(new URL('sitemap.xml', outRoot), sitemapXml);
 writeFileSync(new URL('robots.txt', outRoot), robotsTxt);
+writeFileSync(new URL('_redirects', outRoot), redirectsTxt);
 writeFileSync(datesFile, `${JSON.stringify(nextLedger, null, 2)}\n`);
 // /hardware/ is the index of the machines, not one of them, so it is not counted as one
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/').length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);

@@ -7,10 +7,11 @@
  * read by someone arriving from a search, and to be indexable, so nothing here
  * may depend on JavaScript running.
  */
-import { calculate } from './calc';
+import { calculate, DAYS_PER_MONTH } from './calc';
+export { DAYS_PER_MONTH };
 import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
 import { footprintGb, kvCacheGb } from './fit';
-import { fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc } from './format';
+import { fmtDuration, fmtGb, fmtHours, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 // Four helpers that turn the data's own words into a reader's: they live in
 // format.ts because the calculator's assumptions panel prints the same fields
 // and cannot import this module, which is the build's rather than the bundle's.
@@ -78,6 +79,26 @@ export function shortHardwareLabel(h: Hardware): string {
   if (h.family === 'DGX Spark') return `${h.family}, ${h.unified_memory_gb}GB`;
   if (CHIP_NAMES_THE_PRODUCT.has(h.family)) return `${h.chip}, ${h.unified_memory_gb}GB`;
   return hardwareLabel(h);
+}
+
+/**
+ * The screen size in a laptop's name tells a reader which of two machines this
+ * is, and only where both are priced here. Where only one size of a chip is
+ * sold, those ten characters separate nothing, and in a title they cost the
+ * second machine's memory size, which is the figure the page is about. So a
+ * title may drop the bracket where nothing else here answers to the name
+ * without it, and must keep it where something does. Every other label on the
+ * site, and the page's own heading, keeps the full name.
+ */
+export function titleHardwareLabel(h: Hardware, fleet: Hardware[]): string {
+  const label = shortHardwareLabel(h);
+  const bare = withoutBracket(label);
+  if (bare === label) return label;
+  return fleet.some((o) => o.id !== h.id && withoutBracket(shortHardwareLabel(o)) === bare) ? label : bare;
+}
+
+export function withoutBracket(label: string): string {
+  return label.replace(/ \([^()]*\)/g, '');
 }
 
 /**
@@ -283,6 +304,34 @@ export function jsonLd(graph: LdNode[]): string {
   return `<script type="application/ld+json">${JSON.stringify(doc).replace(/</g, '\\u003c')}</script>`;
 }
 
+/** the one structured-data block a page carries, found in its head */
+const LD_TAG = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/;
+
+/**
+ * The day a page's own words last changed, written into the page as well as into
+ * the sitemap.
+ *
+ * `seo/page-dates.json` has dated every page in the sitemap since page-dates.ts was
+ * written, and a sitemap is a file a reader never sees and a crawler has to take on
+ * trust. This puts the same day, out of the same ledger, where the page itself can be
+ * read for it. On a site whose whole subject is what a machine costs this week, that
+ * is the claim most worth making twice.
+ *
+ * It goes on after the body is final, because until then the ledger cannot recognise
+ * the page. The node it lands in sits in the head, outside the title, the description
+ * and the `<main>` the fingerprint is taken over, so dating a page can never change
+ * the date the page is given.
+ */
+export function withModified(html: string, changed: string): string {
+  const found = html.match(LD_TAG);
+  if (!found) throw new Error('a page reached its date with no structured data to carry it');
+  const graph = (JSON.parse(found[1]) as { '@graph': LdNode[] })['@graph'];
+  const page = graph.find((n) => n['@type'] === 'WebPage');
+  if (!page) throw new Error('a page reached its date with nothing in its structured data that is the page');
+  page.dateModified = changed;
+  return html.replace(LD_TAG, () => jsonLd(graph));
+}
+
 /**
  * The machine a hardware page is about. Only figures that are somebody's
  * published specification go in: a stand-in or an estimate needs the sentence
@@ -380,6 +429,7 @@ export const FOOTER_LINKS: { href: string; label: string }[] = [
   { href: '/how-much-memory/', label: 'How much memory you need' },
   { href: '/best-gpu/', label: 'Which graphics card' },
   { href: '/local-llm-vs-api-cost/', label: 'What a token costs either way' },
+  { href: '/cost-per-month/', label: 'What it costs a month' },
 ];
 
 export function footerHtml(): string {
@@ -401,6 +451,7 @@ export function pageShell(c: PageChrome, body: string, data: Dataset): string {
 <meta name="theme-color" content="#0b1014" media="(prefers-color-scheme: dark)" />
 <link rel="canonical" href="${esc(site + c.canonical)}" />
 <meta property="og:type" content="article" />
+<meta property="og:url" content="${esc(site + c.canonical)}" />
 <meta property="og:site_name" content="Sunk Cost" />
 <meta property="og:title" content="${esc(c.title)}" />
 <meta property="og:description" content="${esc(c.description)}" />
@@ -439,6 +490,145 @@ ${footerHtml()}
 </html>
 `;
 }
+
+/**
+ * The id a section heading answers to, so a link can land on the section rather
+ * than on the top of the page.
+ *
+ * Two things want one. Another site linking to what a machine runs should be able
+ * to send a reader to that table, not to a page they then have to scan; and a
+ * search engine can only offer a jump straight into a section of a result if the
+ * section has somewhere to jump to.
+ *
+ * The slug reads the heading the way a person does: markup dropped, entities put
+ * back, accents folded, everything else that is not a letter or a digit becoming
+ * a hyphen. A heading with no letters or digits in it gets no slug, and
+ * `anchorHeadings` leaves it as it found it.
+ */
+export function headingSlug(heading: string): string {
+  return heading
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * One section heading as it is published. The build writes headings without an
+ * id and `anchorHeadings` puts them in, so this is also how a guard asks for the
+ * heading it wants: the slug is a function of the heading's own words, so the
+ * two cannot drift apart.
+ */
+export function anchoredHeading(heading: string): string {
+  const slug = headingSlug(heading);
+  return slug ? `<h2 id="${slug}">${heading}</h2>` : `<h2>${heading}</h2>`;
+}
+
+/**
+ * Every section heading in a page body, given the id a link can land on.
+ *
+ * Only a bare `<h2>` is touched, so a heading that already carries attributes —
+ * and an id of its own — keeps them. Where two headings on one page would slug
+ * the same, the second and any after it take a number, because an id that is not
+ * unique on the page is an id a browser cannot honour.
+ */
+export function anchorHeadings(html: string): string {
+  const used = new Map<string, number>();
+  return html.replace(/<h2>([\s\S]*?)<\/h2>/g, (whole, inner: string) => {
+    const slug = headingSlug(inner);
+    if (!slug) return whole;
+    const n = (used.get(slug) ?? 0) + 1;
+    used.set(slug, n);
+    return `<h2 id="${n === 1 ? slug : `${slug}-${n}`}">${inner}</h2>`;
+  });
+}
+
+/**
+ * How many sections a page needs before a line of jumps into them is worth the
+ * row it takes. Below four, the headings are on the screen the reader is
+ * already looking at.
+ */
+export const JUMP_MIN_SECTIONS = 4;
+
+/**
+ * A page body with a line of jumps into its own sections, where it should carry
+ * one.
+ *
+ * A reader from a search result does not arrive at the top of a page. They
+ * arrive at whatever matched what they typed, and then have to work out which of
+ * the sections below holds the rest of the answer. A search engine can offer a
+ * jump straight into a section of a result only where the page itself offers
+ * one. Both want the same line, and until now `/best/` was the only page on this
+ * site that had it.
+ *
+ * It is not worth having everywhere, and the reason is what the headings say.
+ * Where a page is about one machine or one model, every heading names it, so a
+ * line built from those headings prints that name three times in a row: the
+ * reader's own search term sold back to them, which is the keyword stuffing this
+ * site does not do. Where the headings name different things, the same line is a
+ * contents page.
+ *
+ * So the cut is two counts the build takes for itself. Four sections or more,
+ * and at most one heading repeating a name the page's own `h1` already carries.
+ * The head-to-heads pass, because their four headings name the pair once between
+ * them; the machine and model pages do not. A page that writes its own line, the
+ * way `/best/` shortens its usage bands, keeps the one it wrote.
+ *
+ * The line goes above the first section rather than under the lede, because the
+ * top of the page is the answer and a contents line in front of it pushes the
+ * answer down.
+ */
+export function addJumpLine(html: string, names: readonly string[]): string {
+  if (html.includes('Jump to:')) return html;
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+  if (!h1) return html;
+  const sections = [...html.matchAll(/<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => ({ id: m[1], heading: m[2] }));
+  if (sections.length < JUMP_MIN_SECTIONS) return html;
+  const subject = names.filter((n) => n && h1.includes(n));
+  if (sections.filter((s) => subject.some((n) => s.heading.includes(n))).length > 1) return html;
+  const line = `<p class="note">Jump to: ${sections
+    .map((s) => `<a href="#${s.id}">${s.heading.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}</a>`)
+    .join(' · ')}</p>`;
+  // In front of the first section, and in front of whatever wraps it, so the
+  // line belongs to the page rather than to the section it points into.
+  const at = html.search(/(?:<section\b[^>]*>\s*)?<h2 id="/);
+  return at < 0 ? html : `${html.slice(0, at)}${line}\n${html.slice(at)}`;
+}
+
+/**
+ * The address of one section of one page, built from that section's own heading.
+ *
+ * A link that names a section's subject should land on the section rather than
+ * the top of the page it is on. Both ends of such a link are a function of the
+ * same words — the heading's — so the link is written from the heading rather
+ * than from a hand-typed id, the way `anchoredHeading` writes the heading
+ * itself. Reword the heading and the two still agree; move the section to
+ * another page and `checkSectionLinks` in the build stops it, because the id
+ * will not be there to land on.
+ */
+export function sectionLink(path: string, heading: string): string {
+  return `${path}#${headingSlug(heading)}`;
+}
+
+/**
+ * The sections other pages link to by name. Each entry is the heading the build
+ * writes on that page, kept here so a reworded heading is one edit rather than
+ * a hunt through the emitters.
+ */
+export const SECTIONS = {
+  machineMatchUps: sectionLink('/compare/', 'Machine against machine'),
+  modelMatchUps: sectionLink('/compare/', 'Model against model'),
+  cardsSideBySide: sectionLink('/best-gpu/', 'Every card here, side by side'),
+  weightsAndCache: sectionLink('/how-much-memory/', 'Where the cache figure comes from'),
+  millionTokens: sectionLink('/local-llm-vs-api-cost/', 'A million tokens, model by model'),
+} as const;
 
 export function calcLink(state: Partial<State>, data: Dataset): string {
   return `/?${serializeState({ ...defaultState(data), ...state })}`;
@@ -814,7 +1004,7 @@ export function kvWorking(m: Model, contextTokens: number): string | null {
   return `2 (a key and a value) × ${a.n_kv_heads} key-value heads × ${a.head_dim} numbers per head × ${bytes} bytes = ${n(perLayer)} bytes per token, per layer. Over ${a.n_layers} layers that is ${n(perToken)} bytes for every token in the window. Fill ${n(contextTokens)} tokens of context and the cache is ${fmtGb1(total)}.`;
 }
 
-export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtNum, fmtTokens, fmtUsd, esc };
+export { computeView, hardwareLabel, modelLabel, fmtDuration, fmtGb, fmtHours, fmtNum, fmtTokens, fmtUsd, esc };
 
 /* --------------------- machine head-to-heads --------------------- */
 
@@ -1022,6 +1212,47 @@ export function machinesThatHold(m: Model, data: Dataset, ctx: number): Hardware
   return data.hardware.filter((hw) => memoryFit(m, hw, ctx, data.defaults.nearly_fits_ratio, kvScale).status === 'fits');
 }
 
+/* ---------------------------- one memory size ---------------------------- */
+
+/** The page about one size of memory, which is the size printed on the box. */
+export function memorySizePath(gb: number): string {
+  return `/how-much-memory/${gb}gb/`;
+}
+
+/**
+ * Every machine this site lists that is sold with a given amount of memory,
+ * the one that hands a model the most of it first.
+ *
+ * A size is not a machine. 16 GB on a Mac reaches a model as 10.5 GB and on a
+ * GeForce RTX 4080 as 15 GB, because the system keeps a share of unified memory
+ * and a card keeps a margin. So anything said about a size has to be said about
+ * the machines sold at it, and the order is the order that decides what runs.
+ */
+export function machinesAtSize(gb: number, data: Dataset): Hardware[] {
+  return data.hardware
+    .filter((h) => h.unified_memory_gb === gb && h.usable_memory_gb != null)
+    .sort(
+      (a, b) =>
+        b.usable_memory_gb! - a.usable_memory_gb! ||
+        (a.price_usd ?? Infinity) - (b.price_usd ?? Infinity) ||
+        a.id.localeCompare(b.id),
+    );
+}
+
+/**
+ * The amounts of memory a model actually gets at one size, tightest first, with
+ * the machines that hand it over. Two machines at the same level hold exactly
+ * the same models, because fit is the weights plus the cache against that
+ * figure and nothing else, so this is the smallest list a page about a size can
+ * answer from.
+ */
+export function memoryLevels(gb: number, data: Dataset): { usable: number; machines: Hardware[] }[] {
+  const machines = machinesAtSize(gb, data);
+  return [...new Set(machines.map((h) => h.usable_memory_gb!))]
+    .sort((a, b) => a - b)
+    .map((usable) => ({ usable, machines: machines.filter((h) => h.usable_memory_gb === usable) }));
+}
+
 /**
  * How far down each family a model reaches, counted over every machine the
  * site lists rather than the priced current ones the table is drawn from.
@@ -1085,6 +1316,55 @@ export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
  * that do not. Every machine that holds it is covered by one of these clauses,
  * which is the claim the guard checks.
  */
+/**
+ * What a class on `/best/` leaves out, each figure in the unit it is counted in.
+ * The page lists the few models in a class that pay back soonest, so two different
+ * things sit behind the rows: models that pay back on some machine and are not
+ * listed, and machine-and-model pairs that fit and never pay back at all. Counting
+ * them together would read as one number and be two.
+ *
+ * The count alone was a dead end for the reader it was written for. A class saying
+ * *14 more models in this class pay back and are not listed* sent someone who wanted
+ * the fourth-best buy to a leaderboard ranked by score, which is a different order
+ * from the one they were reading. So the sentence names the next model down: the
+ * quickest pay-back the cut left out, on the machine that gets it, which is the one
+ * row the reader would have asked for next. Naming all fourteen is the table again.
+ *
+ * The page prints these sentences and its guard checks for them, so the words under
+ * a table and the figures behind it cannot drift apart. It wants the uncut list of
+ * picks, which is what `bestByTier(data, usage, Infinity)` returns.
+ */
+export function bestLeftOut(
+  t: {
+    picks: { hw: Hardware; model: Model; days: number }[];
+    considered: number;
+    never: number;
+    overCapacity: number;
+  },
+  perClass: number,
+): { more: number; moreSaid: string; pairsSaid: string; nextSaid: string } {
+  const more = Math.max(0, t.picks.length - perClass);
+  const counted = [
+    t.never ? `${t.never} never pay back` : '',
+    t.overCapacity ? `${t.overCapacity} can’t produce this much in a day` : '',
+  ].filter(Boolean);
+  // the picks are sorted by pay-back, so the first one past the cut is the next one down
+  const next = more ? t.picks[perClass] : undefined;
+  const nextSaid = next
+    ? `<a href="/models/${esc(next.model.id)}/">${esc(next.model.display_name)}</a>, in ${esc(fmtDuration(next.days))} on a <a href="/hardware/${esc(next.hw.id)}/">${esc(hardwareLabel(next.hw))}</a>`
+    : '';
+  return {
+    more,
+    moreSaid: more
+      ? more === 1
+        ? `One more model in this class pays back behind these ${numberWord(perClass)}: ${nextSaid}.`
+        : `${more} more models in this class pay back behind these ${numberWord(perClass)}. The quickest of them is ${nextSaid}.`
+      : '',
+    nextSaid,
+    pairsSaid: counted.length ? `of the ${t.considered} machine-and-model pairs that fit, ${counted.join(' and ')}.` : '',
+  };
+}
+
 export function familyReachNote(reach: FamilyReach[], listed: number, rows: number, ctx: number): string {
   if (!reach.length) return '';
   const held = reach.reduce((n, r) => n + r.runs, 0);
@@ -1241,7 +1521,85 @@ export function cardScopeNote(machines: Hardware[], rankedIn?: Dataset): string 
  * what the reader finds on the other end of the link.
  */
 export function cardRankingLine(data: Dataset): string {
-  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="/best-gpu/">ranked by what each one holds</a>.`;
+  return `All ${numberWord(graphicsCards(data).length)} cards here are <a href="${SECTIONS.cardsSideBySide}">ranked by what each one holds</a>.`;
+}
+
+/**
+ * What the machine index says about its own prices. The table has a row for
+ * every machine on this site, and not every machine here has a price: a
+ * configuration can be announced before it is sold, and until somebody
+ * publishes a figure the site will not print one. A first paragraph that says
+ * the site prices all of them is a promise the table does not keep, and the
+ * reader who scrolls to the row finds out the hard way.
+ *
+ * So the split is counted from the data and the machines without a price are
+ * named, which is the part a reader can act on: those rows are the two the
+ * calculator wants a number for. A price published tomorrow rewrites the
+ * sentence rather than dating it.
+ */
+export function publishedPriceLine(data: Dataset): string {
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const priced = data.hardware.length - unpriced.length;
+  if (!unpriced.length) return 'Every one of them carries a published price.';
+  const count = priced === 1 ? 'One of them carries a published price.' : `${priced} of them carry a published price.`;
+  const names = andList(unpriced.map((h) => `the ${esc(shortHardwareLabel(h))}`));
+  const rest =
+    unpriced.length === 1
+      ? `${names} does not, so its row opens the calculator for you to put in what you would pay.`
+      : `${names} do not, so their rows open the calculator for you to put in what you would pay.`;
+  return `${count} ${rest[0].toUpperCase()}${rest.slice(1)}`;
+}
+
+/**
+ * One row a model on the leaderboard, and this is the rule that picks which
+ * build gets it. This site prices some models at two quantisations — the same
+ * weights, downloaded at a different precision, for a different memory bill —
+ * and they share a name, a score and a page each. The table ranks by score, so
+ * two builds of one model would be two rows with the same number in the Score
+ * column, one under the other, telling a reader nothing they can act on.
+ *
+ * So the table keeps one, and it keeps the lightest, because the column that
+ * ends the row is the cheapest machine that runs it: the smaller download runs
+ * on more of them, which is the answer the row exists to give. The heavier
+ * build is named in the row it was cut from rather than dropped, so every model
+ * this site prices is somewhere on the page.
+ *
+ * It wants the scored models already sorted by score, which is the order the
+ * rows come out in.
+ */
+export function leaderboardRows(scored: Model[], data: Dataset): { model: Model; alsoAt: Model[] }[] {
+  const out: { model: Model; alsoAt: Model[] }[] = [];
+  const done = new Set<string>();
+  const byWeight = (a: Model, b: Model) => (a.weights_gb ?? 0) - (b.weights_gb ?? 0);
+  for (const m of scored) {
+    if (done.has(m.display_name)) continue;
+    done.add(m.display_name);
+    const builds = [m, ...otherQuantisations(m, data)];
+    // An unscored build is never promoted into a table of scores; it is named
+    // alongside the row the same way, because it is still a download this site
+    // prices.
+    const model = builds.filter((b) => b.frontier_equivalent?.score != null).sort(byWeight)[0] ?? m;
+    out.push({ model, alsoAt: builds.filter((b) => b.id !== model.id).sort(byWeight) });
+  }
+  return out;
+}
+
+/**
+ * What the leaderboard says about that cut, in its own first paragraph. Without
+ * it the page opened by counting models and then printed a table with fewer
+ * rows than the site has builds, and the two it left out sat in no row and in
+ * no figure — a reader on a 48 GB machine wondering whether to run Qwen3 32B at
+ * eight bits found the question answered nowhere on the page that ranks it.
+ *
+ * The sentence is written from the rows themselves, so a second build entered
+ * tomorrow rewrites it rather than dating it, and a site that prices every
+ * model once drops it rather than printing a rule about nothing.
+ */
+export function leaderboardBuildsLine(rows: { alsoAt: Model[] }[]): string {
+  const doubled = rows.filter((r) => r.alsoAt.length).length;
+  if (!doubled) return '';
+  const which = doubled === 1 ? 'one of them is' : `${numberWord(doubled)} of them are`;
+  return `Each model has one row, at the lightest build this site prices, and ${which} also priced at a heavier quantisation, named in the row itself.`;
 }
 
 /**
@@ -1261,16 +1619,70 @@ export function powerWithSource(hw: Hardware): string {
  * dividing one figure on the page by another gets the third figure on the page.
  */
 export function shownTps(row: ModelRow | null | undefined): number | null {
-  const tps = row?.throughput.tokensPerSec;
+  return roundTps(row?.throughput.tokensPerSec);
+}
+
+function roundTps(tps: number | null | undefined): number | null {
   if (tps == null) return null;
   return tps < 10 ? Math.round(tps * 10) / 10 : Math.round(tps);
 }
 
 /** A speed, always with how it was arrived at, the way every other page shows one. */
 export function speedWithBasis(row: ModelRow | null | undefined): string {
-  const tps = shownTps(row);
+  return speedFrom(row?.throughput);
+}
+
+/**
+ * The same, for the places that hold a speed without the row it came from — an
+ * answer block naming the fastest machine, say. A speed on this site never
+ * prints without saying whether anybody measured it: of the 1,425 pairs where a
+ * machine here holds a model and has a speed for it, 1,397 are worked out from
+ * memory bandwidth, so a bare figure is almost always an estimate reading as a
+ * measurement.
+ */
+export function speedFrom(tp: { tokensPerSec: number | null; measurement: string } | null | undefined): string {
+  const tps = roundTps(tp?.tokensPerSec);
   if (tps == null) return '<span class="dim">unknown</span>';
-  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(row!.throughput.measurement)}</span>`;
+  return `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s <span class="dim">${esc(tp!.measurement)}</span>`;
+}
+
+/** A speed the way a table cell prints it, for a sentence about the table. */
+const tpsWord = (tps: number): string => `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+
+/**
+ * What a local speed is worth, said under the table of them.
+ *
+ * The machine pages print 661 speeds between them and the model pages another
+ * 334, and none of them said whether a figure in that column is quick. A reader
+ * meets "19 tok/s" with nothing to hold it against, and the thing they are
+ * actually choosing between is a hosted API. The site already holds that
+ * yardstick and only the calculator used it: `cloud.default_tokens_per_sec` in
+ * the data, which is what the calculator times a local answer against, and
+ * which a reader can change.
+ *
+ * The count is taken over the speeds as the page prints them rather than the
+ * full precision behind them, so a reader counting the rows gets the same
+ * answer the sentence gives.
+ */
+export function hostedSpeedLine(speeds: (number | null | undefined)[], data: Dataset): string {
+  const shown = speeds.map((s) => roundTps(s)).filter((t): t is number => t != null);
+  const hosted = data.defaults.cloud?.default_tokens_per_sec;
+  if (!shown.length || hosted == null) return '';
+  const reach = shown.filter((t) => t >= hosted).length;
+  const n = shown.length;
+  const slowest = tpsWord(Math.min(...shown));
+  const quickest = tpsWord(Math.max(...shown));
+  const verdict =
+    n === 1
+      ? reach
+        ? `The one above reaches it, at ${quickest}.`
+        : `The one above does not reach it, at ${quickest}.`
+      : reach === 0
+        ? `Nothing above reaches it, and the quickest is ${quickest}.`
+        : reach === n
+          ? `All ${n} above reach it, and the slowest is ${slowest}.`
+          : `${reach} of the ${n} above ${reach === 1 ? 'reaches' : 'reach'} it, and the slowest is ${slowest}.`;
+  return `For scale, the calculator starts from <b>${tpsWord(hosted)}</b> for a hosted API and times a local machine against it. ${verdict}`;
 }
 
 /** How a pair of speeds was arrived at, as a clause to hang off a sentence. */
@@ -1357,7 +1769,11 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
     else if (da === null || db === null) {
       const [payer, days] = da === null ? [lb, db!] : [la, da!];
       out.push(`At ${usage} tokens a day the ${payer} pays for itself in ${fmtDuration(days)}${sameModel ? '' : ', on its own strongest model'}; the other never does.`);
-    } else if (da === db) {
+    } else if (fmtDuration(da) === fmtDuration(db)) {
+      // two machines at the same price on the same model can come out days apart over
+      // decades, and "sooner, in 17 years against 17 years" is a sentence that argues
+      // with the table under it. Where the two figures print the same, they are the same
+      // answer at the precision this site gives, and the page says so.
       out.push(`Both pay for themselves in ${fmtDuration(da)} at ${usage} tokens a day${onEachOwn}.`);
     } else {
       out.push(`The ${da < db ? la : lb} pays for itself sooner, in ${fmtDuration(Math.min(da, db))} against ${fmtDuration(Math.max(da, db))} at ${usage} tokens a day${onEachOwn}.`);
@@ -1865,6 +2281,102 @@ export function fmtPerMtok(v: number | null | undefined): string {
   return `${cents >= 1 ? cents.toFixed(1) : cents.toFixed(2)}c`;
 }
 
+/* ------------------------ what a month of it costs ------------------------ */
+
+/**
+ * The spans a machine's price is spread over on the page that asks what a local
+ * model costs a month. A monthly figure for a thing you buy once is the price
+ * divided by the months you keep it, so the only honest way to print one is to
+ * say how many months the division used and to offer more than one of them.
+ */
+export const SPREAD_MONTHS = [12, 24, 36];
+
+export interface MonthlyCost {
+  /** the electricity the machine draws generating a month of this work */
+  electricity: number;
+  /** what the same month's work costs to rent from the hosted API */
+  rented: number;
+  /** what is left of the rental bill once the electricity is paid */
+  gap: number;
+  /** hours a day the machine spends generating, which is what the electricity is */
+  hoursPerDay: number;
+  /** days until the gap has covered the machine; null where it never does */
+  breakevenDays: number | null;
+  /** the day's tokens these figures price */
+  usage: number;
+  tokensPerSec: number;
+  /** true where the day's tokens are more than the machine can generate in a day */
+  capped: boolean;
+}
+
+/**
+ * A month on one machine and one model, both ways.
+ *
+ * Like `tokenCost` it is the calculator's own `computeView`, read at the month
+ * rather than at the day, so the page cannot drift from what the calculator
+ * shows anybody who opens the same pairing: `cloudCostPerMonth` and
+ * `localCostPerMonth` are the two figures its own figures panel prints.
+ */
+export function monthlyCost(m: Model, hw: Hardware, data: Dataset, usage?: number): MonthlyCost | null {
+  if (hw.price_usd == null || hw.load_watts == null) return null;
+  const st = defaultState(data);
+  const view = computeView({ ...st, hw: hw.id, model: m.id, usage: usage ?? st.usage }, data);
+  const row = view.model?.id === m.id ? view.rows.find((r) => r.model.id === m.id) : null;
+  if (!view.calc || !row || row.throughput.tokensPerSec == null) return null;
+  const c = view.calc;
+  return {
+    electricity: c.localCostPerMonth,
+    rented: c.cloudCostPerMonth,
+    gap: c.cloudCostPerMonth - c.localCostPerMonth,
+    hoursPerDay: c.localGenerationHoursPerDay,
+    breakevenDays: c.breakevenDays,
+    usage: view.capacity.effective,
+    tokensPerSec: row.throughput.tokensPerSec,
+    capped: view.capacity.capped,
+  };
+}
+
+/** The machine's price over `months`, plus the power it draws: what owning it costs a month. */
+export function monthlyOwned(hw: Hardware, months: number, electricity: number): number | null {
+  if (hw.price_usd == null) return null;
+  return hw.price_usd / months + electricity;
+}
+
+/**
+ * The day's use at which the rental bill for the same work passes what the
+ * machine costs a month. Below it renting is the cheaper month; above it the
+ * machine is, and the page's whole answer is which side of that line a reader
+ * is on.
+ *
+ * The rental bill rises with use and the machine's own monthly cost barely
+ * does, so there is one crossing and a bisection finds it. It is refused where
+ * the crossing needs more tokens in a day than the machine can generate in one,
+ * because a line the machine cannot reach is not a line a reader can cross.
+ */
+export function monthlyCrossing(m: Model, hw: Hardware, data: Dataset, months: number): number | null {
+  const u = data.defaults.usage;
+  const net = (usage: number) => {
+    const c = monthlyCost(m, hw, data, usage);
+    if (!c) return null;
+    const owned = monthlyOwned(hw, months, c.electricity);
+    return owned == null ? null : { diff: c.rented - owned, capped: c.capped };
+  };
+  const top = net(u.max_tokens_per_day);
+  const bottom = net(u.min_tokens_per_day);
+  if (!top || !bottom || top.diff <= 0 || bottom.diff >= 0) return null;
+  let lo = u.min_tokens_per_day;
+  let hi = u.max_tokens_per_day;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    const at = net(mid);
+    if (!at) return null;
+    if (at.diff < 0) lo = mid;
+    else hi = mid;
+  }
+  const crossing = (lo + hi) / 2;
+  return net(crossing)?.capped ? null : crossing;
+}
+
 /* ----------- the other match-ups the two on a head-to-head are in ----------- */
 
 /**
@@ -1907,7 +2419,7 @@ export function machineMatchUpsLine(self: string, groups: MatchUpGroup[]): strin
  * model being written about: a rung of the leaderboard above or below it, or the
  * model of its own family a generation away.
  */
-export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current';
+export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current' | 'same-memory';
 
 export interface ModelMatchUp {
   href: string;
@@ -1915,7 +2427,9 @@ export interface ModelMatchUp {
   name: string;
   /**
    * where the other model sits, or — for a generation pair, where neither is above
-   * the other on anything a reader can see — which side of it this model is.
+   * the other on anything a reader can see — which side of it this model is. A
+   * memory neighbour is the third case and symmetrical: the two need the same
+   * memory, so both sides say the same thing about each other.
    */
   side: ModelMatchUpSide;
   /** the family both sides share, which only the generation pairs name */
@@ -1923,15 +2437,19 @@ export interface ModelMatchUp {
 }
 
 /**
- * One model's other match-ups, as a sentence about that model. A model is in at
- * most three, so all of them fit and none is left for an index to carry. Each
- * arrives with the reason it exists, because "vs" on its own says nothing about
- * why these two are on a page together.
+ * One model's other match-ups, as a sentence about that model. Each arrives with
+ * the reason it exists, because "vs" on its own says nothing about why these two
+ * are on a page together.
+ *
+ * The memory neighbours go in a sentence of their own. A model can have three of
+ * them, and they all carry the same reason, so strung through the first sentence
+ * they would say "which needs much the same memory" three times.
  */
 export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
   if (!items.length) return '';
   const order: ModelMatchUpSide[] = ['above', 'below', 'is-older', 'is-current'];
-  const sorted = [...items].sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
+  const memory = items.filter((i) => i.side === 'same-memory');
+  const sorted = items.filter((i) => i.side !== 'same-memory').sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
   const hasAbove = sorted.some((i) => i.side === 'above');
   const phrases = sorted.map((i) => {
     const link = `<a href="${esc(i.href)}">${esc(i.name)}</a>`;
@@ -1947,9 +2465,12 @@ export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
       ? `${link}, the ${which} ${esc(i.family)} nearest it in size`
       : `${link}, the ${which} model of its family nearest it in size`;
   });
-  const list =
-    phrases.length === 1
-      ? phrases[0]
-      : `${phrases.slice(0, -1).join(', ')} and ${phrases[phrases.length - 1]}`;
-  return `${esc(self)} is also head to head with ${list}.`;
+  const join = (xs: string[]) => (xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  const memLinks = memory.map((i) => `<a href="${esc(i.href)}">${esc(i.name)}</a>`);
+  const needs = memory.length === 1 ? 'needs' : 'need';
+  if (!phrases.length) return `${esc(self)} is also head to head with ${join(memLinks)}, which ${needs} much the same memory.`;
+  const first = `${esc(self)} is also head to head with ${join(phrases)}.`;
+  if (!memory.length) return first;
+  const more = memory.length === 1 ? 'One more model needs' : `${numberWord(memory.length)} more models need`;
+  return `${first} ${more[0].toUpperCase()}${more.slice(1)} much the same memory: ${join(memLinks)}.`;
 }
