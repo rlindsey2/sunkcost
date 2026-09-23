@@ -2756,6 +2756,33 @@ ${stack(`<table class="board">
 `;
 }
 
+/**
+ * The question a model name is typed next to more often than any other, put
+ * where a search result can see it. The first paragraph said what the model
+ * weighs and stopped; the block under it named a machine and printed no speed
+ * beside it. So a page headed "what hardware do you need to run this" left "how
+ * fast does it run" to a table four screens down, and the one machine a reader
+ * with no budget in mind wants the figure for — the cheapest that holds it — was
+ * the one row of that table nothing on the page said out loud.
+ *
+ * This is that row in words: the cheapest machine, the speed at the context
+ * every other figure on the page is quoted at, and how the figure was arrived
+ * at. The price is left to the row directly under it, which already carries it
+ * with its scope, so the sentence is about the speed rather than a second copy
+ * of the block below. The basis is not optional. Nearly every speed on this site is
+ * worked out from memory bandwidth rather than measured, and a bare number in a
+ * sentence reads as a measurement in a way a number in a marked-up table does
+ * not.
+ */
+function cheapestSpeedLine(cheapest: Runner, ctx: number): string {
+  const where = `${indefiniteArticle(shortHardwareLabel(cheapest.hw))} ${esc(shortHardwareLabel(cheapest.hw))}`;
+  const tp = cheapest.view.throughput;
+  const tps = tp?.tokensPerSec ?? null;
+  if (tps == null) return `The cheapest machine that runs it is ${where}.`;
+  const basis = tp!.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth';
+  return `On the cheapest machine that runs it, ${where}, it generates ${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s at ${ctxLabel(ctx)} of context, ${basis}.`;
+}
+
 function modelPage(m: Model): string {
   const runners = runnersFor(m, data);
   const perFamily = cheapestPerFamily(runners);
@@ -2927,7 +2954,7 @@ function modelPage(m: Model): string {
   const versusLine = ladderLine || genLine || memLine ? `<p class="note">${[ladderLine, genLine, memLine].filter(Boolean).join(' ')}</p>` : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
-<p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}</p>
+<p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}${cheapest ? ` ${cheapestSpeedLine(cheapest, ctx)}` : ''}</p>
 
 ${cheapest
       ? `<div class="answer">
@@ -2987,8 +3014,26 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${mi
   // a terser way of saying the same thing, so a long model name or a price that
   // has to state its scope costs the pay-back clause rather than keeping the wording
   const shortLead = `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. Cheapest that runs it: ${cheapest ? `${shortHardwareLabel(cheapest.hw)} at ${priceWithScopeText(cheapest.hw)}` : ''}`;
+  // The speed goes in front of the weights where both will not fit, because the
+  // only non-brand queries this site has ever been shown for are model names,
+  // and what people put after a model name is a machine or "tokens per second".
+  // A description is 155 characters, so the choice is real: these variants trade
+  // the weights, then the pay-back, then the price, and the list falls back to
+  // the ones that say nothing about speed rather than to nothing at all.
+  const descTps = cheapest?.view.throughput?.tokensPerSec ?? null;
+  const speedTail =
+    cheapest && descTps != null
+      ? `runs at ${fmtNum(descTps, descTps < 10 ? 1 : 0)} tok/s on the cheapest machine that holds it, ${indefiniteArticle(shortHardwareLabel(cheapest.hw))} ${shortHardwareLabel(cheapest.hw)} at ${priceWithScopeText(cheapest.hw)}`
+      : null;
+  const speedLead = speedTail ? `${m.display_name} ${speedTail}.` : null;
+  const fullSpeedLead = speedTail ? `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights and ${speedTail}.` : null;
+  const payback = cheapest?.view.calc ? verdictLine(cheapest.view) : null;
   const desc = cheapest
     ? descOf([
+        ...(fullSpeedLead && payback ? [`${fullSpeedLead} ${payback} at ${usage} tokens a day.`, `${fullSpeedLead} ${payback}.`] : []),
+        ...(speedLead && payback ? [`${speedLead} ${payback} at ${usage} tokens a day.`, `${speedLead} ${payback}.`] : []),
+        ...(fullSpeedLead ? [fullSpeedLead] : []),
+        ...(speedLead ? [speedLead] : []),
         ...(verdict
           ? [`${lead}, where it ${verdict} at ${usage} tokens a day.`, `${lead}, where it ${verdict}.`, `${shortLead}, where it ${verdict}.`]
           : []),
@@ -6320,6 +6365,62 @@ function checkMonthlyCost() {
 }
 
 /**
+ * What the first paragraph of a model page now promises, held to the table it
+ * came from. Three claims, all read back out of the rendered page rather than
+ * taken from the array that wrote it.
+ *
+ * The paragraph names the cheapest machine that runs the model. It prints the
+ * speed that machine's row prints, to the digit, so a reader who scrolls to the
+ * table finds the figure they arrived with rather than one rounded differently.
+ * And no page invents one: a pair with no speed says nothing about speed, which
+ * is the case the site's honesty rule is actually about.
+ */
+function checkLedeSpeeds() {
+  const problems: string[] = [];
+  const text = (html: string) => unesc(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
+  let named = 0;
+  let quoted = 0;
+  let silent = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    const lede = text(html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '');
+    const cheapest = runnersFor(m, data)[0];
+    // A model no machine here holds has no cheapest machine and no speed, and
+    // its opening paragraph says so in the block under it. It may not claim one.
+    if (!cheapest) {
+      if (/tok\/s/.test(lede)) problems.push(`${path} opens with a speed and no machine on this site runs it`);
+      continue;
+    }
+    named++;
+    const label = shortHardwareLabel(cheapest.hw);
+    if (!lede.includes(label)) problems.push(`${path} does not name the ${label} in its first paragraph, the cheapest machine that runs it`);
+    const tps = cheapest.view.throughput?.tokensPerSec ?? null;
+    if (tps == null) {
+      silent++;
+      if (/tok\/s/.test(lede)) problems.push(`${path} opens with a speed and there is none for the ${label}`);
+      continue;
+    }
+    quoted++;
+    const said = `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+    if (!lede.includes(said)) problems.push(`${path} does not open with the ${said} the ${label} runs it at`);
+    // the same figure in the table's first row, which is that machine's own
+    const firstRow = text(html.split('<tbody>')[1]?.split('</tr>')[0] ?? '');
+    const printed = firstRow.match(/([\d,.]+) tok\/s/)?.[1];
+    if (printed == null) problems.push(`${path} opens with ${said} and its table's first row prints no speed`);
+    else if (`${printed} tok/s` !== said) problems.push(`${path} opens with ${said} and its table's first row says ${printed} tok/s`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} open with a speed the page itself does not bear out`);
+  }
+  console.log(
+    `  ${named} model pages open by naming the cheapest machine that runs them, ${quoted} of them with the speed that machine's own row prints${silent ? `, ${silent} with no speed to give` : ''}`,
+  );
+}
+
+/**
  * Two ways a page can print a note out of the data and have it stop reading as
  * the page's own sentence, both of which shipped for weeks.
  *
@@ -7976,6 +8077,7 @@ checkLeaderboardBuilds();
 checkBestGpu();
 checkBestCuts();
 checkNotes();
+checkLedeSpeeds();
 checkHardwareNotes();
 checkTierLabels();
 checkTokenCost();

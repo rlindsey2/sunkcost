@@ -24,10 +24,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Model pages answer the search people actually type: model name + machine, or model name +
-      "tokens per second".** The only non-brand impressions so far are exact model names. Check that
-      each model page's title and first paragraph carry the model's name as people write it and the
-      tok/s on its cheapest machine. scripts/build-pages.ts, a push.
 - [ ] **`/hardware/` and `/leaderboard/` still describe their tables in hand-written prose beside
       recomputed figures.** Hold each claim with a build check the way `/best/` is held.
 - [ ] **Six of the twelve size pages (12, 36, 48, 96, 192, 512 GB) are reached only from the machines
@@ -42,6 +38,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] The two Q8 model pages have two inbound pages each, the fewest on the site.
 
 ## Runs
+
+### 2026-09-23 — Model pages open with the speed on their cheapest machine
+The only non-brand impressions this site has are exact model names, and what people put after one
+is a machine or "tokens per second". Model pages answered neither where a search result can see
+it: the first paragraph stopped at the weights, and the description spent its 155 characters on
+weights, machine and pay-back. Both now carry the speed on the cheapest machine that runs the
+model, at 32k, saying whether it was measured or worked out from bandwidth. 54 of the 55 model
+pages gained it; Tencent Hy3 has no machine here and so claims nothing.
+Verified: 447 tests, typecheck clean, the full build including `build:functions`, 320 pages with
+every guard passing plus a new one — `checkLedeSpeeds()` holds each first paragraph's figure to
+the speed that machine's own row in the table prints, to the digit, and refuses a speed on a page
+with no machine. All 54 descriptions fit 155 characters. Five pages read back rendered.
+Model watch done, nothing new: Grok 4.7 ruled out, no weights. Next: the `/hardware/` and
+`/leaderboard/` prose, the next backlog item.
 
 ### 2026-09-22 — PR #17 merged, verified on main
 Merged at 23:20 UTC as `f26ac31`, so the home page has a heading on the live site. (The two entries

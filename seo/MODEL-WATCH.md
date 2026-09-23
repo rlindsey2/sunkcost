@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-22
+Last checked: 2026-09-23
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -216,6 +216,28 @@ base model's score with a note. The first needs a number nobody has published ye
 prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
+
+### 2026-09-23
+
+Nothing new that this site can price. The searches were the ones this file lists — releases this
+month, releases this week, each family the script prints, and new quantisations — and every
+open-weight model they returned is already here, already on this page, or not a model in this
+site's sense. No candidate is added and none of the three above changed: all three still wait on
+figures rather than on another search.
+
+- **Grok 4.7** (SpaceXAI, released 2026-09-21) is the week's one genuinely new flagship and is
+  **not this site's subject**. The weights are not published and neither is a parameter count, so
+  there is nothing to download, nothing to size and nothing to fit. Grok-1 was opened in 2024 and
+  nothing since has been. Ruled out on what it is rather than on what it costs, so a later run
+  need not reach the same answer twice. Sources, neither opened from here: the [model
+  card](https://media.x.ai/v1/website/4p7card-5eccc980.pdf) and [Unite.AI's
+  write-up](https://www.unite.ai/spacexai-releases-grok-4-7-for-coding-and-knowledge-work/).
+- **Gemma 4**, **DeepSeek V4-Flash**, **GLM-5.3-Flash**, **Granite 4.2** and **Qwen3.8 27B** turned
+  up again in this week's round-ups and all five are already priced here, checked against the
+  script's own list rather than guessed. **Kimi K3** and **MiniMax H3** turned up again and are
+  already ruled out below.
+- The GSQ-RCO builds recorded on 2026-09-22 are unchanged: still one file size two sources agree
+  on away from being a row, and still the thing that would put Qwen3.8 Flash Next on a DGX Spark.
 
 ### 2026-09-21
 
