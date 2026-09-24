@@ -879,6 +879,178 @@ function checkPricedRows() {
 }
 
 /**
+ * The two index tables each open with a paragraph that reads the table for you, and
+ * until now nothing held those paragraphs to it. Two sentences on `/hardware/` were
+ * simply wrong: it said the strongest model a machine holds is *the slowest thing it
+ * can run*, which is true of none of the 56 machines, and that a smaller model on the
+ * same machine *pays back sooner*, which is false on 39 of the 54 that pay back at
+ * all. Both had been written once from a fair guess and left there while the data
+ * moved under them, beside figures that are recomputed every build.
+ *
+ * So every claim in those paragraphs is a figure now, and this holds each one to the
+ * table printed underneath it — the rows are parsed back out of the rendered page
+ * rather than taken from the arrays that wrote them. On `/hardware/`: the row count,
+ * the number of steps in the model ladder, the step most machines are stuck on and
+ * the cheapest and dearest machine on it, the machines above it, the ones that hold
+ * everything, the quickest and slowest pay-back, the decade sentence, and the count
+ * of machines a different model pays back sooner on. On `/leaderboard/`: the best
+ * open model's score, name and weights against its own top row, the best hosted score
+ * against the hosted block, and the gap as the difference of the two.
+ *
+ * Every one of them is checked in both directions where the sentence is conditional,
+ * the way `/best/` is: a page that stops being able to say "nothing here pays for
+ * itself inside a decade" has to stop saying it, and a page that can say it has to.
+ */
+function checkBoardLedes() {
+  const problems: string[] = [];
+
+  /* ---- the machine index ---- */
+  const hardware = meta.find((p) => p.path === '/hardware/');
+  if (!hardware) throw new Error('no machine index was written');
+  const hwBody = hardware.html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+  const hwCells = hwBody.split('<tr').slice(1).map((r) => `<tr${r}`);
+  const hwRows = hwCells
+    .filter((r) => r.includes('c-hw'))
+    .map((r) => ({
+      id: r.match(/href="\/hardware\/([^/"]+)\//)?.[1] ?? '',
+      price: r.includes('not published') ? null : Number((r.match(/data-label="Price">[\s\S]*?>\$([\d,]+)</)?.[1] ?? '').replace(/,/g, '')) || null,
+      fits: Number(r.match(/data-label="Models">(\d+)</)?.[1] ?? NaN),
+      model: r.match(/data-label="Strongest model"[^>]*><a href="\/models\/([^/"]+)\//)?.[1] ?? null,
+    }));
+  const say = (claim: string, why: string) => {
+    if (!hardware.html.includes(claim)) problems.push(`/hardware/ does not say ${why}: "${claim.replace(/<[^>]*>/g, '')}"`);
+  };
+
+  if (hwRows.length !== data.hardware.length)
+    problems.push(`/hardware/ prints ${hwRows.length} machine rows where the site lists ${data.hardware.length} configurations`);
+  say(`All ${hwRows.length} configurations this site lists`, `how many machines its table carries`);
+
+  // the ladder: one step per model any machine tops out at, and the step most of them stop on
+  const onStep = new Map<string, typeof hwRows>();
+  for (const r of hwRows) if (r.model) onStep.set(r.model, [...(onStep.get(r.model) ?? []), r]);
+  const scoreOf = (id: string) => data.models.find((m) => m.id === id)?.frontier_equivalent?.score ?? 0;
+  say(`in only ${numberWord(onStep.size)} steps`, `how many models its table's last-but-one column names`);
+
+  const plateauId = [...onStep.entries()].sort((a, b) => b[1].length - a[1].length)[0]?.[0];
+  if (plateauId) {
+    const on = onStep.get(plateauId)!;
+    const name = data.models.find((m) => m.id === plateauId)!.display_name;
+    say(`Of the ${hwRows.length} machines here, ${on.length} top out at the same model, ${esc(name)}`, `how many of its rows name ${name}`);
+    const onPriced = on.filter((r) => r.price != null).sort((a, b) => a.price! - b.price!);
+    const ends = [onPriced[0], onPriced[onPriced.length - 1]].filter(Boolean);
+    if (ends.length === 2) {
+      const hwOf = (r: (typeof hwRows)[number]) => data.hardware.find((h) => h.id === r.id)!;
+      say(
+        `everything from the ${esc(shortHardwareLabel(hwOf(ends[0])))} at ${priceWithScopeText(hwOf(ends[0]))} to the ${esc(shortHardwareLabel(hwOf(ends[1])))} at ${priceWithScopeText(hwOf(ends[1]))}`,
+        `which is the cheapest and which the dearest of the machines that stop at ${name}`,
+      );
+    }
+    const above = hwRows.filter((r) => r.model && scoreOf(r.model) > scoreOf(plateauId));
+    if (above.length) {
+      say(`${sentenceCase(numberWord(above.length))} hold something stronger`, `how many of its rows name a model scored above ${name}`);
+      const cheapestAbove = above.filter((r) => r.price != null).sort((a, b) => a.price! - b.price!)[0];
+      if (cheapestAbove) {
+        const hw = data.hardware.find((h) => h.id === cheapestAbove.id)!;
+        say(`the cheapest of those is the ${esc(shortHardwareLabel(hw))} at ${priceWithScopeText(hw)}`, `which is the cheapest machine on its table that holds something stronger`);
+      }
+    } else if (/hold something stronger/.test(hardware.html)) {
+      problems.push(`/hardware/ says some machines hold something stronger than ${name}, and every row on its table stops there`);
+    }
+  }
+
+  const total = hwViews.values().next().value!.rows.length;
+  const holdAll = hwRows.filter((r) => r.fits === total);
+  if (holdAll.length)
+    say(
+      `${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list`,
+      `how many of its rows hold every model`,
+    );
+
+  // pay-back: the two ends of the column, the decade sentence, and the swap count
+  const paying = data.hardware
+    .map((hw) => ({ hw, days: hwViews.get(hw.id)!.calc?.breakevenDays ?? null }))
+    .filter((x): x is { hw: Hardware; days: number } => typeof x.days === 'number')
+    .sort((a, b) => a.days - b.days);
+  if (paying.length) {
+    const [first] = paying;
+    const last = paying[paying.length - 1];
+    say(
+      `the quickest figure in the table is <b>${esc(fmtDuration(first.days))}</b>, on the ${esc(shortHardwareLabel(first.hw))}, and the slowest is ${esc(fmtDuration(last.days))}`,
+      `which machine on its table pays back soonest and which last`,
+    );
+    const decade = 'Nothing here pays for itself inside a decade at that usage.';
+    const inside = paying.filter((x) => x.days < DAYS_PER_DECADE);
+    if (!inside.length) say(decade, 'that nothing on its table pays back inside ten years');
+    else if (hardware.html.includes(decade))
+      problems.push(
+        `/hardware/ says nothing here pays for itself inside a decade, and the ${shortHardwareLabel(inside[0].hw)} does it in ${fmtDuration(inside[0].days)}`,
+      );
+  }
+  const swap = paybackBeaten();
+  if (swap.paying !== paying.length)
+    problems.push(`/hardware/ counts ${swap.paying} machines that pay back where its own table prints ${paying.length}`);
+  say(
+    `Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table.`,
+    'on how many of its machines another model pays back sooner than the one in the table',
+  );
+  const fastest = strongestAlsoFastest();
+  if (!fastest.length) say('the strongest model a machine holds is never the fastest thing it can run', 'why a dearer machine takes longer to pay for itself');
+  else
+    problems.push(
+      `/hardware/ says the strongest model a machine holds is never the fastest thing it can run, and on the ${shortHardwareLabel(fastest[0])} it is`,
+    );
+
+  // the lede promises the family order the table is built in
+  const from = hwCells
+    .filter((r) => r.includes('is-frontier'))
+    .map((r) => Number((r.match(/from \$([\d,]+)/)?.[1] ?? '').replace(/,/g, '')) || Infinity);
+  const outOfOrder = from.findIndex((x, i) => i > 0 && x < from[i - 1]);
+  if (outOfOrder > 0) problems.push(`/hardware/ says its families are in price order and its ${numberWord(outOfOrder + 1)} heading opens under the one above it`);
+  else say('Families are in order of what the cheapest of them costs', 'that its headings run from the cheapest family up');
+
+  /* ---- the leaderboard ---- */
+  const board = meta.find((p) => p.path === '/leaderboard/');
+  if (!board) throw new Error('no leaderboard was written');
+  const boardBody = board.html.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+  const boardRows = boardBody.split('<tr').slice(1).map((r) => `<tr${r}`);
+  const scoreIn = (r: string) => Number(r.match(/c-score[^>]*>[\s\S]*?<b>(\d+)<\/b>/)?.[1] ?? NaN);
+  const openRows = boardRows.filter((r) => r.includes('c-gb'));
+  const hostedRows = boardRows.filter((r) => r.includes('is-hosted'));
+
+  if (!board.html.includes(`<p class="lede">${openRows.length} open-weight models`))
+    problems.push(`/leaderboard/ prints ${openRows.length} rows of open models and does not open by counting them`);
+
+  const best = openRows[0];
+  const bestHosted = hostedRows[0];
+  if (best && bestHosted) {
+    const score = scoreIn(best);
+    const hosted = scoreIn(bestHosted);
+    const top = Math.max(...openRows.map(scoreIn));
+    const topHosted = Math.max(...hostedRows.map(scoreIn));
+    if (score !== top) problems.push(`/leaderboard/ heads its open rows with a model scored ${score} and carries one scored ${top} below it`);
+    if (hosted !== topHosted) problems.push(`/leaderboard/ heads its hosted rows with a model scored ${hosted} and carries one scored ${topHosted} below it`);
+    const id = best.match(/href="\/models\/([^/"]+)\//)?.[1] ?? '';
+    const model = data.models.find((m) => m.id === id);
+    const gb = best.match(/data-label="Weights">([^<]+)</)?.[1] ?? '';
+    const claim = `the best open model here scores <b>${score}</b> — that is ${esc(model?.display_name ?? '')}, and it wants ${gb} of memory. The best hosted model scores <b>${hosted}</b>. That gap of ${hosted - score} points`;
+    if (!board.html.includes(claim))
+      problems.push(`/leaderboard/ does not open on its own top row: "${claim.replace(/<[^>]*>/g, '')}"`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      problems.length === 1
+        ? '1 thing an index page says about its own table does not hold'
+        : `${problems.length} things the index pages say about their own tables do not hold`,
+    );
+  }
+  console.log(
+    `  /hardware/ reads its own ${hwRows.length} rows back in its first three paragraphs — ${numberWord(onStep.size)} steps of model, the two ends of the pay-back column and the ${swap.beaten} machines another model pays back sooner on — and /leaderboard/ opens on the top row of each half of its table`,
+  );
+}
+
+/**
  * Every head-to-head answers pay-back at one usage above the fold, and the section
  * below it answers the same question across the five levels the calculator names.
  * Two things can go quietly wrong there: a page can lose the section, and a figure a
@@ -2161,6 +2333,55 @@ const sharedNames = new Set(
 // it, how much fits and whether it pays back.
 const hwViews = new Map(data.hardware.map((hw) => [hw.id, computeView({ ...defaultState(data), hw: hw.id }, data)]));
 const fitsOn = (hw: Hardware) => hwViews.get(hw.id)!.rows.filter((r) => r.fit.status === 'fits');
+
+/** Ten years, in the days `fmtDuration` counts them in, for the one sentence that says "a decade". */
+const DAYS_PER_DECADE = DAYS_PER_MONTH * 120;
+
+/**
+ * The machine index prices every machine on the strongest model it holds, and used
+ * to tell the reader that a smaller model on the same box pays back sooner. It does
+ * not. On 39 of the 54 machines with a pay-back figure, nothing else the machine
+ * holds beats that model: the extra memory goes on a model with a dearer API
+ * equivalent more often than not, and the saving is what pays the box off.
+ *
+ * So the page counts the machines instead of assuming them. `beaten` is the machines
+ * where some other model the machine holds pays back sooner than the one in the
+ * table; `paying` is the machines with a figure at all. The two paragraphs print both
+ * and `checkBoardLedes()` holds them to this.
+ */
+function paybackBeaten(): { beaten: number; paying: number } {
+  let beaten = 0;
+  let paying = 0;
+  for (const hw of data.hardware) {
+    const view = hwViews.get(hw.id)!;
+    const days = view.calc?.breakevenDays;
+    if (!view.model || days == null) continue;
+    paying++;
+    const sooner = fitsOf(view).some((r) => {
+      if (r.model.id === view.model!.id) return false;
+      const d = computeView({ ...defaultState(data), hw: hw.id, model: r.model.id }, data).calc?.breakevenDays;
+      return d != null && d < days;
+    });
+    if (sooner) beaten++;
+  }
+  return { beaten, paying };
+}
+
+/**
+ * The machines where the strongest model the box holds is also the fastest thing on
+ * it. The pay-back paragraph says there are none, which is why a dearer machine takes
+ * longer to pay for itself: the memory it buys goes on a model that generates more
+ * slowly than everything below it.
+ */
+function strongestAlsoFastest(): Hardware[] {
+  return data.hardware.filter((hw) => {
+    const view = hwViews.get(hw.id)!;
+    const rows = fitsOf(view).filter((r) => r.throughput?.tokensPerSec != null);
+    if (!view.model || rows.length < 2) return false;
+    const fastest = rows.reduce((a, b) => (b.throughput!.tokensPerSec! > a.throughput!.tokensPerSec! ? b : a));
+    return fastest.model.id === view.model.id;
+  });
+}
 
 // Which machines get a head-to-head: the middle of each family's range by price, the
 // one most people cross-shop; then every graphics card against every other, since a card
@@ -5492,6 +5713,18 @@ function hardwareIndex(): string {
   const paying = entries.filter((e) => typeof e.days === 'number').sort((a, b) => (a.days as number) - (b.days as number));
   const quickest = paying[0];
   const slowest = paying[paying.length - 1];
+  // "Nothing here pays for itself inside a decade" was written once and left. It is
+  // true today and is a claim about the data rather than about the site, so the
+  // sentence is drawn from the figures and says something else the day one of them
+  // drops under ten years.
+  const insideDecade = paying.filter((e) => (e.days as number) < DAYS_PER_DECADE);
+  const decadeLine =
+    insideDecade.length === 0
+      ? 'Nothing here pays for itself inside a decade at that usage.'
+      : insideDecade.length === 1
+        ? `Only the ${esc(shortHardwareLabel(insideDecade[0].hw))} pays for itself inside a decade at that usage.`
+        : `${sentenceCase(numberWord(insideDecade.length))} of them pay for themselves inside a decade at that usage.`;
+  const swap = paybackBeaten();
 
   const steps = [...new Map(entries.filter((e) => e.model).map((e) => [e.model!.id, e.model!] as const)).values()]
     .map((model) => {
@@ -5532,14 +5765,14 @@ function hardwareIndex(): string {
 ${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
 <p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
 <h2>How long each machine takes to pay for itself</h2>
-<p>Pay-back runs the other way, because the strongest model a machine holds is also the slowest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. Nothing here pays for itself inside a decade at that usage. What changes the answer is using the machine much harder, or running a smaller model on it, and <a href="/best/">best buys by usage</a> ranks both.${launchLine([quickest])}</p>` : ''}
+<p>Pay-back runs the other way, because the strongest model a machine holds is never the fastest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. ${decadeLine} What changes the answer is using the machine much harder. Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table. <a href="/best/">Best buys by usage</a> ranks every pair.${launchLine([quickest])}</p>` : ''}
 <h2>Every machine here, side by side</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 5, labels: { 2: 'Usable', 3: 'Models', 4: 'Strongest model' } })}
 <h2>The assumptions behind the table</h2>
-<p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; a smaller model on the same machine pays back sooner, which is what <a href="/best/">best buys</a> ranks. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
+<p class="note">Usable memory is what the GPU can address, which is less than the memory fitted: on a Mac it follows the macOS wired limit, and on a graphics card it is the VRAM less the gigabyte llama.cpp leaves free. The count is of the ${total} current open models at ${ctxLabel(st.ctx)}; ask for a longer window and the cache grows, so fewer fit, and each machine's own page gives the length it takes every model to. Pay-back is that machine running the strongest model it holds, at ${esc(fmtTokens(st.usage))} tokens a day, ${st.ratio}:1 input to output, $${st.kwh} per kWh, and today's API prices held flat; <a href="/best/">best buys</a> ranks every machine-and-model pair by how soon it pays back instead. Graphics cards are priced as the card alone, so add the PC around one before comparing it with a complete computer. ${cardRankingLine(data)} A discontinued machine is priced at what it launched at, which is not a price you can pay today. Each price opens the calculator on that machine running the model beside it.</p>
 </article>`;
 
   return pageShell(
@@ -8053,6 +8286,7 @@ checkCompareIndex();
 checkMatchUpKinds();
 checkHardwareIndex();
 checkPricedRows();
+checkBoardLedes();
 checkPayback();
 checkMeetingPoint();
 checkHeadroom();

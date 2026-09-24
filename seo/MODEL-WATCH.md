@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-23
+Last checked: 2026-09-24
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,26 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-09-24
+
+Nothing new that this site can price, and nothing that changes what fits. The week's
+searches returned the same names the script already prints — GLM-5.3-Flash, Qwen3.8 27B,
+Granite 4.2 8B, Mistral Small 4, Kimi K3, DeepSeek V4 — plus retrospectives rather than
+releases. The three candidates below are unchanged and all three still wait on a file size
+from a repo worth citing, not on another search.
+
+One name worth ruling out so a later run does not look twice. **Gemma 4 12B Coder** turns up
+as a coding build of a model already here, and the builds search returns are community
+fine-tunes on Hugging Face, not a Google release: there is no official coder repo behind them
+and no `config.json` this site would take an architecture from. Gemma 4 12B is already priced
+at Q4_K_M, and a third-party fine-tune of it at the same precision is the same memory sum
+under a different name, which is a row that would teach a reader nothing.
+
+Sources, none of them opened from here: [Hugging Face's state-of-open-models
+report](https://huggingface.co/blog/state-of-open-models-summer-2026), [Google's own Gemma 4
+12B QAT GGUF repo](https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf), and one of the
+[community coder builds](https://huggingface.co/yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF).
 
 ### 2026-09-22
 

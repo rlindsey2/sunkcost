@@ -24,8 +24,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **`/hardware/` and `/leaderboard/` still describe their tables in hand-written prose beside
-      recomputed figures.** Hold each claim with a build check the way `/best/` is held.
 - [ ] **Six of the twelve size pages (12, 36, 48, 96, 192, 512 GB) are reached only from the machines
       and the memory guide.** Either a sentence somewhere genuinely wants to link them, or close this.
 - [ ] **Home page `og:url`.** One line in index.html, so it wants a pull request of its own now
@@ -38,6 +36,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] The two Q8 model pages have two inbound pages each, the fewest on the site.
 
 ## Runs
+
+### 2026-09-24 — Two false sentences on /hardware/, and a guard so there can be no more
+The machine index read its own table for you in prose nobody checked, and two claims in it were
+false: the strongest model a machine holds is *the slowest thing it can run* (true of none of
+the 56), and a smaller model on the same machine *pays back sooner* (false on 39 of the 54 that
+pay back at all, because the model the table prices usually saves the most a day). Both are
+figures now — 15 machines another model pays back sooner on, 39 where nothing does — and the
+decade line is drawn from the data, so it changes the day a machine pays back in nine years.
+`checkBoardLedes()` holds every claim in those three paragraphs to the rows parsed back out of
+the rendered table, and /leaderboard/'s opening to the top row of each half of its own.
+Straight to main. Verified: 447 tests, typecheck clean, full build with `build:functions`, 320
+pages every guard passing, 321 of 321 sitemap entries dated, eight mutations of the new figures
+all stopping the build. Model watch done, nothing new. Next: the six under-linked size pages.
 
 ### 2026-09-23 — Model pages open with the speed on their cheapest machine
 The only non-brand impressions this site has are exact model names, and what people put after one
