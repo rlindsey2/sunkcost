@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-24
+Last checked: 2026-09-25
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,52 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-09-25 · dots3-note Preview (dots studio) — worth adding, needs figures
+
+The first candidate in a week that this site could actually price. A 280B total / 16B active
+sparse mixture of experts, Apache 2.0, 512k context, taking text, images and audio. Size is why
+it matters: the two models this site already carries either side of 280B are DeepSeek V4-Flash at
+284B and 155.10 GB, and Tencent Hy3 at 295B and 182.16 GB, so a four-bit build of this lands in
+the band the two Mac Studio Ultras hold and the Strix Halo boxes do not. That is a row, not a
+rethink. The architecture is given as one dense layer and 45 mixture-of-experts layers, 256 routed
+experts plus one shared, eight active per token, 5,120 hidden size, and a separate 1.13B
+multi-token-prediction layer for speculative decoding. The repo ships BF16 and FP8.
+
+Sources, none of them opened from here: the [Hugging Face
+repo](https://huggingface.co/dots-studio/dots3-note-prev), the [FP8
+build](https://huggingface.co/dots-studio/dots3-note-prev-fp8), [the announcement write-up on
+36Kr](https://eu.36kr.com/en/p/3938759517896072) and [AI Weekly's
+note](https://aiweekly.co/alerts/xiaohongshu-opens-dots3-note-a-280b-moe-multimodal-model).
+
+**Still missing, and none of it is another search away:** `weights_gb` at the quantisation
+actually entered, from a named GGUF or MLX repo — searches turned up no four-bit build at all,
+official or community, so there is no file size to cite yet; `n_kv_heads` and `head_dim` from
+`config.json`, which the expert counts above do not give; and an Artificial Analysis score, which
+the index does not appear to carry for it. BenchLM ranks it 62.81 of 100, and that is a different
+index from the one this site's Score column uses, so it is not a substitute. OpenRouter lists a
+free endpoint, which is not a price: `cloud_equivalent` needs a paid one, or the closest hosted
+match marked as a stand-in.
+
+**Two flagships ruled out on size, so a later run need not look twice.**
+
+- **Qwen3.8 Max**, open-weighted as `Qwen/Qwen3.8-2.4T-A95B` on 2026-08-12 under a custom licence,
+  2.4T total and 95B active, 262k native context. Same arithmetic as Kimi K3: at the four-bit
+  sizes this data already carries, 2.4T lands well past 1 TB against the 384 GB the roomiest
+  machine here addresses, so a row would be a page saying no. Sources, neither opened from here:
+  [the repo](https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B) and [Qwen's own
+  post](https://qwen.ai/blog?id=qwen3.8).
+- **DeepSeek V4.1-Flash** (2026-09-10, MIT), a 552B backbone with a 196B Engram memory beside it,
+  748B of weight data in all. **This is now the closest of the rulings-out on size and the one to
+  check first**, ahead of Tencent Hy4: the best-compressed package search returned is **426.1 GB
+  at 3.0 bits per weight**, against 384 GB, so it misses by a ninth at a precision below anything
+  this site prices, and at four bits it is not close. The repo ships FP8 with the expert layers
+  already compressed, so the usual four-bit saving is not there to be had, and every GGUF search
+  returned is a community conversion. Revisit if a roomier machine is priced. Sources, none of
+  them opened from here: [one community
+  conversion](https://huggingface.co/ngquocvinh/DeepSeek-V4.1-Flash-GGUF), [a mixed-Q2
+  one](https://huggingface.co/apetersson/DeepSeek-V4.1-Flash-MixedQ2-GGUF) and [a hardware
+  write-up](https://www.modemguides.com/blogs/ai-infrastructure/run-deepseek-v4-1-flash-locally-hardware-reality-check).
 
 ### 2026-09-24
 

@@ -250,12 +250,12 @@
       "changed": "2026-09-19"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-mac-mini-m5-pro-48gb/": {
-      "hash": "64cab7a1d81b0a1a",
-      "changed": "2026-09-19"
+      "hash": "d9c44597914e86a1",
+      "changed": "2026-09-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-mac-mini-m5-pro-64gb/": {
-      "hash": "29224ea6e2b4c4e3",
-      "changed": "2026-09-19"
+      "hash": "fd47d75a7aba43a2",
+      "changed": "2026-09-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-mac-studio-m5-max-128gb/": {
       "hash": "5d80478366261972",
@@ -282,24 +282,24 @@
       "changed": "2026-09-19"
     },
     "/compare/mac-mini-m5-pro-48gb-vs-mac-mini-m5-pro-64gb/": {
-      "hash": "5d0ca21fda96db28",
-      "changed": "2026-09-19"
+      "hash": "48fc44bc7b4eb3f0",
+      "changed": "2026-09-25"
     },
     "/compare/mac-mini-m5-pro-48gb-vs-macbook-pro-m5-14-inch-32gb/": {
       "hash": "9302e7bd12e8beb8",
       "changed": "2026-09-19"
     },
     "/compare/mac-mini-m6-16gb-vs-mac-mini-m6-24gb/": {
-      "hash": "b35272aadab26251",
-      "changed": "2026-09-19"
+      "hash": "a8f1815e676b45f0",
+      "changed": "2026-09-25"
     },
     "/compare/mac-mini-m6-16gb-vs-mac-mini-m6-32gb/": {
-      "hash": "1437019b4795cfe6",
-      "changed": "2026-09-19"
+      "hash": "484ad891e7076a63",
+      "changed": "2026-09-25"
     },
     "/compare/mac-mini-m6-24gb-vs-mac-mini-m6-32gb/": {
-      "hash": "04fa20f7caacdcbe",
-      "changed": "2026-09-19"
+      "hash": "96d9df3c9bbd506a",
+      "changed": "2026-09-25"
     },
     "/compare/mac-mini-m6-32gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
       "hash": "9b52046a799c8d5f",
@@ -366,16 +366,16 @@
       "changed": "2026-09-19"
     },
     "/compare/mac-studio-m5-max-48gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "bffa997496a99a96",
-      "changed": "2026-09-19"
+      "hash": "3523db1a28b973a9",
+      "changed": "2026-09-25"
     },
     "/compare/mac-studio-m5-max-48gb-vs-mac-studio-m5-max-64gb/": {
-      "hash": "1ff311463663a832",
-      "changed": "2026-09-19"
+      "hash": "7b0490d5aa0b2873",
+      "changed": "2026-09-25"
     },
     "/compare/mac-studio-m5-max-64gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "12640d10d7a3afbd",
-      "changed": "2026-09-19"
+      "hash": "8c341060612db76e",
+      "changed": "2026-09-25"
     },
     "/compare/mac-studio-m5-max-64gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
       "hash": "b10e0fb326437442",
@@ -406,8 +406,8 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-14-inch-16gb-vs-macbook-pro-m5-14-inch-32gb/": {
-      "hash": "c0df99d892d503a2",
-      "changed": "2026-09-19"
+      "hash": "2b76b633c5d9b7ed",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-14-inch-32gb-vs-mac-studio-m5-max-36gb/": {
       "hash": "0de773594fa50df4",
@@ -418,36 +418,36 @@
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-macbook-pro-m5-max-16-inch-128gb/": {
-      "hash": "5f51d98689c8fd14",
-      "changed": "2026-09-19"
+      "hash": "ff79726a3ab13292",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-macbook-pro-m5-max-16-inch-64gb/": {
-      "hash": "c5d3887e64ecb33f",
-      "changed": "2026-09-19"
+      "hash": "e958f4ebc2743290",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-64gb-vs-mac-studio-m5-ultra-96gb/": {
       "hash": "0ca95ccaa581bbf3",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-max-16-inch-64gb-vs-macbook-pro-m5-max-16-inch-128gb/": {
-      "hash": "93a481c5ce4dbafe",
-      "changed": "2026-09-19"
+      "hash": "228a3f1af73241dc",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-mac-studio-m5-max-48gb/": {
       "hash": "a311f1f22cbe9c0d",
       "changed": "2026-09-19"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-macbook-pro-m5-pro-16-inch-48gb/": {
-      "hash": "25db28ecb9a8fa69",
-      "changed": "2026-09-19"
+      "hash": "b376dc40b185ff4a",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "8e811b60d8f08d39",
-      "changed": "2026-09-19"
+      "hash": "63d4dc8e82bb05fb",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-48gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "09c07967b060727c",
-      "changed": "2026-09-19"
+      "hash": "2d5a27c009604ac6",
+      "changed": "2026-09-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-48gb-vs-strix-halo-gmktec-evo-x3-128gb/": {
       "hash": "5c4165c8b6b309a1",
@@ -738,8 +738,8 @@
       "changed": "2026-09-19"
     },
     "/compare/strix-halo-framework-desktop-64gb-vs-strix-halo-framework-desktop-128gb/": {
-      "hash": "c9fda62a2cb96006",
-      "changed": "2026-09-19"
+      "hash": "e0ca0e1f81af89da",
+      "changed": "2026-09-25"
     },
     "/compare/strix-halo-framework-desktop-64gb-vs-strix-halo-gmktec-evo-x2-64gb/": {
       "hash": "bb7a5c062b738912",
@@ -766,8 +766,8 @@
       "changed": "2026-09-19"
     },
     "/compare/strix-halo-gmktec-evo-x2-64gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "e85a62cb796ef1f8",
-      "changed": "2026-09-19"
+      "hash": "a09fdcb2c2184eab",
+      "changed": "2026-09-25"
     },
     "/compare/strix-halo-minisforum-ms-s1-max-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
       "hash": "9e6f1ae8521cbccf",
@@ -1010,52 +1010,52 @@
       "changed": "2026-09-20"
     },
     "/how-much-memory/128gb/": {
-      "hash": "c36646a58e9ef61e",
-      "changed": "2026-09-20"
+      "hash": "caf24a2a6319c9a7",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/12gb/": {
-      "hash": "955c1044e4b3b44a",
-      "changed": "2026-09-20"
+      "hash": "f9db4a5702034a8c",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/16gb/": {
-      "hash": "932ffef97c7c1feb",
-      "changed": "2026-09-20"
+      "hash": "db9a569cdad58ee9",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/192gb/": {
-      "hash": "b504a548a078760a",
-      "changed": "2026-09-20"
+      "hash": "44354c58c2a5e958",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/24gb/": {
-      "hash": "835ae8cc90dddb8b",
-      "changed": "2026-09-20"
+      "hash": "4407d220aa64371f",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/256gb/": {
-      "hash": "02841e991d97f788",
-      "changed": "2026-09-20"
+      "hash": "71dc4c03d7dae325",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/32gb/": {
-      "hash": "b50356caaa199b95",
-      "changed": "2026-09-20"
+      "hash": "4f7853a3ea95d094",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/36gb/": {
-      "hash": "6773ec7e95a521a2",
-      "changed": "2026-09-20"
+      "hash": "4bdbc9e6c920731b",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/48gb/": {
-      "hash": "50721109a4e93019",
-      "changed": "2026-09-20"
+      "hash": "af846a2b994d89c5",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/512gb/": {
-      "hash": "1f7c2e5faf5fc602",
-      "changed": "2026-09-20"
+      "hash": "6dc0085ff602e725",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/64gb/": {
-      "hash": "6c634b9405d757ce",
-      "changed": "2026-09-20"
+      "hash": "2e9d8c0f6486268f",
+      "changed": "2026-09-25"
     },
     "/how-much-memory/96gb/": {
-      "hash": "970981920a501644",
-      "changed": "2026-09-20"
+      "hash": "c1cf6e26da343ba9",
+      "changed": "2026-09-25"
     },
     "/leaderboard/": {
       "hash": "b6cf97c0312fcf0f",

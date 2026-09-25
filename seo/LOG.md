@@ -24,8 +24,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Six of the twelve size pages (12, 36, 48, 96, 192, 512 GB) are reached only from the machines
-      and the memory guide.** Either a sentence somewhere genuinely wants to link them, or close this.
 - [ ] **Home page `og:url`.** One line in index.html, so it wants a pull request of its own now
       that PR #17 has merged; small enough to ride the next branch against the calculator's head.
 - [ ] **Structured data names what 56 pages are about; 251 pages name nothing.** Add the page's
@@ -33,9 +31,23 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] Seven head-to-head titles are still over 60 characters and cannot be cut without losing a name.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] The two Q8 model pages have two inbound pages each, the fewest on the site.
+- [ ] The two Q8 model pages have three inbound pages each, counted in the build: their Q4 sibling,
+      the memory guide and the leaderboard. Joint fewest on the site with /how-much-memory/12gb/.
 
 ## Runs
+
+### 2026-09-25 — The twelve size pages are a ladder you can walk
+Six of them (12, 36, 48, 96, 192, 512 GB) were reached from nothing but the machines sold at them and
+the index above, two pages in all on three of them. Two kinds of page are about a size rather than a
+machine and now link one: each size page names the rungs either side of it, where it had sent a reader
+back to the index to find them, and the 18 head-to-heads between two memory tiers of one box offer
+both sizes' pages. The least-linked page on the site goes from 2 inbound to 3, and the six to 3, 5,
+17, 6, 4 and 4. Straight to main. Verified: 447 tests, typecheck clean, the full build with
+`build:functions`, 320 pages every guard passing, 321 of 321 sitemap entries dated, three read back
+rendered. `checkSizeLadder()` holds every size link on a page to the set it is allowed, and six
+mutations of it all stop the build. Model watch done: dots3-note Preview, 280B/16B and Apache 2.0,
+could be priced here and waits on a four-bit file size; Qwen3.8 Max and DeepSeek V4.1-Flash are out
+on size. Next: the home page `og:url`, which wants its own pull request.
 
 ### 2026-09-24 — Two false sentences on /hardware/, and a guard so there can be no more
 The machine index read its own table for you in prose nobody checked, and two claims in it were

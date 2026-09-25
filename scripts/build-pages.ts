@@ -2441,6 +2441,24 @@ function machineSiblingNote(a: Hardware, b: Hardware): string {
   return lines.map((l) => `<p class="note">${l}</p>`).join('\n');
 }
 
+/**
+ * A memory-tier head-to-head is the one match-up on this site whose whole subject
+ * is an amount of memory: the box and the silicon in it are held equal, which is
+ * what separates these pairs from the two sizes a maker sells a box at when it
+ * cuts the chip to reach the cheaper one. So the
+ * two pages about those sizes are what the reader wants next, because the thing
+ * a configurator cannot tell them is whether another machine here comes with the
+ * larger size for less. Only a size with a page of its own is named, since a size
+ * nothing current fits in has none.
+ */
+function tierSizeNote(a: Hardware, b: Hardware): string {
+  const sizes = [a.unified_memory_gb, b.unified_memory_gb].filter((gb) => MEMORY_SIZES.includes(gb));
+  if (!sizes.length) return '';
+  const link = (gb: number) => `<a href="${esc(memorySizePath(gb))}">what ${gb} GB runs</a>`;
+  const lead = sizes.length === 2 ? 'Both sizes have a page of their own' : `${sizes[0]} GB has a page of its own`;
+  return `<p class="note">${lead}, with every machine here sold at that size, the models that fit it and what one step of memory buys: ${sizes.map(link).join(' · ')}.</p>`;
+}
+
 // The same thing for models, and here the two rules have to be told apart. A ladder pair
 // is always [higher, lower] on the index, so each model knows whether the one it is set
 // against is the rung above it or the rung below. A generation pair is always [older,
@@ -4047,7 +4065,7 @@ ${money ? sameMoneySection(a, b) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
-${machineSiblingNote(a, b)}
+${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b], data); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
 <p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="${SECTIONS.machineMatchUps}">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
@@ -4576,6 +4594,25 @@ function modelSizeLine(m: Model, hw: Hardware): string {
   return `The cheapest machine that runs it is sold with ${gb} GB. There is <a href="${esc(memorySizePath(gb))}">a page on what ${gb} GB runs, machine by machine</a>: it names ${machines}, and the ${fits} current model${fits === 1 ? '' : 's'} the roomiest of them holds at ${ctxLabel(CTX)}${listed ? ', this one among them' : ''}.`;
 }
 
+/**
+ * The pages for the sizes either side of this one.
+ *
+ * The step section above already answers what one step of memory buys; the
+ * reader who wants that answer from the other end had only the index to get it
+ * from, and half the sizes here were reached from nothing but the machines sold
+ * at them and the guide. Naming both neighbours makes the ladder a chain you
+ * can walk in either direction from any rung, which is how a buyer works
+ * through a configurator's memory options in the first place.
+ */
+function sizeNeighbourLine(gb: number): string {
+  const link = (n: number) => `<a href="${esc(memorySizePath(n))}">${n} GB</a>`;
+  const above = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) + 1];
+  const below = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) - 1];
+  if (above != null && below != null) return `The sizes either side of this one are ${link(below)} and ${link(above)}.`;
+  if (above != null) return `This is the smallest size any machine here is sold in; the next one up is ${link(above)}.`;
+  return `This is the largest size any machine here is sold in; the one below it is ${link(below!)}.`;
+}
+
 /** the memory a model gets at one size, as one figure or as the spread across the machines */
 const usableSaid = (v: SizeView) =>
   v.levels.length === 1 ? fmtGb1(v.least.usable) : `${fmtGb1(v.least.usable)} to ${fmtGb1(v.most.usable)}`;
@@ -4788,7 +4825,7 @@ ${payback}
 <p>The sum is the same everywhere on this site: what the same work costs to rent, less what the electricity costs to generate it, against the price of the machine. <a href="/best/">The best buys</a> rank the quickest pay-back at every level of use, and <a href="/cost-per-month/">what it costs a month</a> puts the machine and the API bill in the same shape.</p>
 <p><a class="cta" href="${esc(cta)}">Put your own usage in</a></p>
 
-<p class="note">Every figure is at ${kctx} of context unless the row says otherwise, with the cache at 16 bits and each model at the quantisation this site lists it at. Weights are the published file sizes on each model's page, and the cache is worked out from the architecture recorded there. What a model gets is the memory the GPU can address, which each machine's page explains. Speeds say whether anybody measured them; where they were not, they are worked out from memory bandwidth. To change the context, the quantisation or the price you would pay, <a href="${esc(calcLink({}, data))}">open the calculator</a>. For the sizes either side of this one, <a href="/how-much-memory/">the memory guide</a> has the ladder in full.</p>
+<p class="note">Every figure is at ${kctx} of context unless the row says otherwise, with the cache at 16 bits and each model at the quantisation this site lists it at. Weights are the published file sizes on each model's page, and the cache is worked out from the architecture recorded there. What a model gets is the memory the GPU can address, which each machine's page explains. Speeds say whether anybody measured them; where they were not, they are worked out from memory bandwidth. To change the context, the quantisation or the price you would pay, <a href="${esc(calcLink({}, data))}">open the calculator</a>. ${sizeNeighbourLine(gb)} <a href="/how-much-memory/">The memory guide</a> has the ladder in full.</p>
 </article>`;
 
   return pageShell(
@@ -8210,6 +8247,73 @@ function checkModelSizeLinks() {
 }
 
 /**
+ * The ladder of memory sizes, held to the pages that belong on it.
+ *
+ * Six of the twelve sizes were reached from nothing but the machines sold at
+ * them and the index above them, which on 12, 192 and 512 GB was two pages in
+ * all. Two kinds of page are about a size rather than a machine and so owe it a
+ * link: the size page either side of it on the ladder, and the head-to-head
+ * between two memory tiers of one box, whose whole subject is the choice between
+ * those two amounts.
+ *
+ * Both directions are checked, because a link that exists and points at the
+ * wrong rung reads as an answer and is not one. The neighbour sentence is read
+ * back out of the rendered page and matched against the sorted list of sizes,
+ * and every size link on a page is held to the set that page is allowed: its own
+ * two rungs on a size page, its own two machines' sizes on a tier match-up, and
+ * on every other head-to-head none at all.
+ */
+function checkSizeLadder() {
+  const problems: string[] = [];
+  const sizeLinks = (html: string) => new Set([...html.matchAll(/href="\/how-much-memory\/(\d+)gb\/"/g)].map((m) => Number(m[1])));
+  const htmlOf = (path: string) => meta.find((m) => m.path === path)?.html ?? '';
+
+  for (const [i, gb] of MEMORY_SIZES.entries()) {
+    const path = memorySizePath(gb);
+    const html = htmlOf(path);
+    if (!html) continue;
+    const want = [MEMORY_SIZES[i - 1], MEMORY_SIZES[i + 1]].filter((n) => n != null) as number[];
+    const said = sizeNeighbourLine(gb);
+    if (!html.includes(said))
+      problems.push(`${path} does not name the ${want.length === 1 ? 'size' : 'sizes'} next to it on the ladder: ${want.join(' and ')} GB`);
+    const got = [...sizeLinks(html)].sort((x, y) => x - y);
+    if (got.join() !== want.join())
+      problems.push(`${path} links the size pages ${got.join(', ') || 'none'} where the rungs beside it are ${want.join(', ')}`);
+  }
+
+  let matchUps = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    const path = hardwareComparePath(a, b);
+    const html = htmlOf(path);
+    if (!html) continue;
+    const tier = memoryTierNames(a, b);
+    const want = tier
+      ? [a.unified_memory_gb, b.unified_memory_gb].filter((gb) => MEMORY_SIZES.includes(gb)).sort((x, y) => x - y)
+      : [];
+    const got = [...sizeLinks(html)].sort((x, y) => x - y);
+    if (got.join() !== want.join())
+      problems.push(
+        tier
+          ? `${path} sets ${want.join(' GB against ')} GB and links the size pages ${got.join(', ') || 'none'}`
+          : `${path} is not a pair of memory tiers and links the size page for ${got.join(', ')} GB`,
+      );
+    if (tier) {
+      if (!html.includes(tierSizeNote(a, b))) problems.push(`${path} does not offer the pages about the two sizes it sets against each other`);
+      matchUps++;
+    }
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} about a memory size link the wrong rungs of the ladder`);
+  }
+  const inbounds = MEMORY_SIZES.map((gb) => inbound.get(memorySizePath(gb))?.size ?? 0);
+  console.log(
+    `  the ${MEMORY_SIZES.length} sizes link the rungs either side of them, and ${matchUps} tier match-ups link both of theirs; the least-linked size page now has ${Math.min(...inbounds)} pages pointing at it`,
+  );
+}
+
+/**
  * Every page on this site sits under a directory, and most of those directories are a
  * page in their own right: /hardware/ indexes the machines, /compare/ the head-to-heads,
  * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
@@ -8323,6 +8427,7 @@ checkTitleLabels();
 checkMemoryLadder();
 checkMemorySizes();
 checkModelSizeLinks();
+checkSizeLadder();
 // Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a
