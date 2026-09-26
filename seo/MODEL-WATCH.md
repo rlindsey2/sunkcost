@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-25
+Last checked: 2026-09-26
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -282,6 +282,30 @@ base model's score with a note. The first needs a number nobody has published ye
 prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
+
+### 2026-09-26
+
+Nothing new that this site can price, and nothing that changes what fits. The searches were the
+ones this file lists — releases this month, releases this week, each family the script prints, and
+new quantisations — and every open-weight model they returned is already priced here, already on
+this page, or already ruled out. The candidates above are unchanged.
+
+**The one search worth recording, because it is the thing standing between a candidate and a row.**
+dots3-note Preview still has no four-bit build, official or community, that a file size could be
+cited from: a search for one returned explainers on what Q4_K_M means and no repo for this model at
+any four-bit precision. That is the same answer yesterday's run got, so the candidate waits on a
+repo appearing rather than on another search, and a later run can skip straight past it until one
+does.
+
+- **DeepSeek V4.1-Flash** came back as the month's headline open release and is already ruled out
+  above on size, at 426.1 GB against 384 GB. **Qwen3.6 27B** and **Qwen3.6 35B-A3B** came back as
+  this week's GGUF builds and both are already priced here. **gpt-oss**, **Inkling**, **Qwen3.8
+  27B**, **Mistral Small 4**, **GLM-5.3** and **Kimi K3** all turned up in the round-ups and are
+  each already priced, already ruled out, or, for GLM-5.3, the larger sibling of the Flash build
+  this site carries at 188.99 GB. Checked against the script's own list rather than guessed.
+- The quantisation search returned format comparisons — GGUF against MLX, AWQ, GPTQ and EXL3 — and
+  no new format or build that changes what fits in a machine here. The GSQ-RCO builds recorded on
+  2026-09-22 are unchanged and still one citable file size away from being a row.
 
 ### 2026-09-23
 
