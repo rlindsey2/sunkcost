@@ -17,9 +17,9 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
   indexed and a non-brand query with clicks. Depth over count.
 - The model watch (`npm run model-watch`, seo/MODEL-WATCH.md) stays daily and comes first.
 - Deploys are not free: one push per run, with the log change in the same push as the work.
-- A run is not over until `git log --oneline -1 origin/main` shows the run's own commit. The
-  2026-09-25 work sat unpushed for a day while the log said it had shipped; committing is not
-  deploying, and an entry that claims a push nobody made is worse than no entry.
+- (agent, 2026-09-26) `git fetch origin main` before judging what main has. This container clones
+  shallow and stores a stale `origin/main`, a commit behind the branch actually deployed. Confirm a
+  push landed against the Actions run list, not the local ref.
 
 ## Ryan's side
 
@@ -39,18 +39,18 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Runs
 
-### 2026-09-26 — Yesterday's work was committed but never pushed, so the site did not have it
-`origin/main` was a commit behind the log: c4e3aeb, the twelve-size ladder, existed only in this
-repo while the 2026-09-25 entry said "Straight to main". Nothing was wrong with the work, only with
-its delivery, so this run checked it rather than take its word, and got it out.
-Re-verified on the fast-forwarded tree: 447 tests, typecheck clean, the full build with
-`build:functions`, 320 pages every guard passing, 321 of 321 sitemap entries dated, and
-`seo/page-dates.json` already in sync, so the 60 pages whose words changed go out dated. Read
-rendered: all three rung forms (12 GB has no rung below, 512 GB none above, 48 and 96 GB both) and a
-tier match-up, which offers both its sizes in one sentence, no maintainer language in any of them.
-`checkSizeLadder()` re-tested by hand — every rung pointed one size too far up fails the build on 11
-pages. That entry's claim is corrected and a standing order added: a run ends when `origin/main`
-shows its commit. Model watch done, nothing new. Next: the home page `og:url`, in its own PR.
+### 2026-09-26 — Model watch, and a false alarm about yesterday's deploy that I put in the log
+The run opened on a detached HEAD at c4e3aeb with `origin/main` reading 27c9bb0, and I took that for
+yesterday's work committed but never pushed. Wrong: the clone is shallow and its ref a day stale.
+c4e3aeb was pushed 2026-09-25 at 20:42 UTC, deploy #291 succeeded, the ladder has been live since,
+and yesterday's entry was accurate. I judged the remote without fetching. Commit 352e5d1 carries the
+false version — an edit to yesterday's entry, and a standing order built on a failure that never
+happened. Both reverted here; the order now says fetch and confirm against the Actions list. Two
+pushes this run, against the one-push rule, because a log that misreports its own history misleads
+every run after it. The re-verification was wasted but clean, on work already live: 447 tests,
+typecheck clean, full build with `build:functions`, 320 pages every guard passing, 321 of 321 sitemap
+entries dated, four size pages and a tier match-up read rendered, `checkSizeLadder()` failing on 11
+pages when a rung points too far up. Watch done, nothing new. Next: `og:url`, in its own PR.
 
 ### 2026-09-25 — The twelve size pages are a ladder you can walk
 Six of them (12, 36, 48, 96, 192, 512 GB) were reached from nothing but the machines sold at them and
@@ -58,7 +58,7 @@ the index above, two pages in all on three of them. Two kinds of page are about 
 machine and now link one: each size page names the rungs either side of it, where it had sent a reader
 back to the index to find them, and the 18 head-to-heads between two memory tiers of one box offer
 both sizes' pages. The least-linked page on the site goes from 2 inbound to 3, and the six to 3, 5,
-17, 6, 4 and 4. Committed 2026-09-25, pushed 2026-09-26. Verified: 447 tests, typecheck clean, the full build with
+17, 6, 4 and 4. Straight to main. Verified: 447 tests, typecheck clean, the full build with
 `build:functions`, 320 pages every guard passing, 321 of 321 sitemap entries dated, three read back
 rendered. `checkSizeLadder()` holds every size link on a page to the set it is allowed, and six
 mutations of it all stop the build. Model watch done: dots3-note Preview, 280B/16B and Apache 2.0,
