@@ -301,8 +301,19 @@ does.
   above on size, at 426.1 GB against 384 GB. **Qwen3.6 27B** and **Qwen3.6 35B-A3B** came back as
   this week's GGUF builds and both are already priced here. **gpt-oss**, **Inkling**, **Qwen3.8
   27B**, **Mistral Small 4**, **GLM-5.3** and **Kimi K3** all turned up in the round-ups and are
-  each already priced, already ruled out, or, for GLM-5.3, the larger sibling of the Flash build
-  this site carries at 188.99 GB. Checked against the script's own list rather than guessed.
+  each already priced or already ruled out. Checked against the script's own list rather than guessed.
+- **GLM-5.3 itself is ruled out on size, and that is this run's one new answer.** This site prices
+  GLM-5.3-Flash at 321.3B and 188.99 GB, which is a different model from the GLM-5.3 the round-ups
+  name: the base is reported at about 744B total and 40B active, the same count as Atria Dawn above,
+  so it lands by the same arithmetic near 450 GB at the four-bit sizes this data carries, against the
+  384 GB the roomiest machine here addresses. The official FP8 repo is reported as 755.7 GB over 141
+  shards and the BF16 at about 1.5 TB, which is the check on that. It is also not Apache 2.0 but a
+  custom "GLM-5.3 License". Nothing here runs it, so a row would be a page saying no, and a later run
+  need not look twice. Revisit only if a machine past 384 GB is priced — behind Tencent Hy4 and Atria
+  Dawn, which are the same distance away. Sources, none of them opened from here: [a specs
+  write-up](https://kingy.ai/blog/glm-5-3-specs-benchmarks-api-how-to-use/), [one on the weights drop
+  and the GGUF sizes](https://runaihome.com/blog/glm-5-3-open-weights-live-hardware-guide-2026/) and
+  [one on the Flash build this site does carry](https://www.progressiverobot.com/2026/08/28/glm-5-3-flash-open-weight-320b-model/).
 - The quantisation search returned format comparisons — GGUF against MLX, AWQ, GPTQ and EXL3 — and
   no new format or build that changes what fits in a machine here. The GSQ-RCO builds recorded on
   2026-09-22 are unchanged and still one citable file size away from being a row.

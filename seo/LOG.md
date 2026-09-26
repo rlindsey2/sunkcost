@@ -40,17 +40,17 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Runs
 
 ### 2026-09-26 — Model watch, and a false alarm about yesterday's deploy that I put in the log
-The run opened on a detached HEAD at c4e3aeb with `origin/main` reading 27c9bb0, and I took that for
-yesterday's work committed but never pushed. Wrong: the clone is shallow and its ref a day stale.
-c4e3aeb was pushed 2026-09-25 at 20:42 UTC, deploy #291 succeeded, the ladder has been live since,
-and yesterday's entry was accurate. I judged the remote without fetching. Commit 352e5d1 carries the
-false version — an edit to yesterday's entry, and a standing order built on a failure that never
-happened. Both reverted here; the order now says fetch and confirm against the Actions list. Two
-pushes this run, against the one-push rule, because a log that misreports its own history misleads
-every run after it. The re-verification was wasted but clean, on work already live: 447 tests,
-typecheck clean, full build with `build:functions`, 320 pages every guard passing, 321 of 321 sitemap
-entries dated, four size pages and a tier match-up read rendered, `checkSizeLadder()` failing on 11
-pages when a rung points too far up. Watch done, nothing new. Next: `og:url`, in its own PR.
+The run opened on a detached HEAD at c4e3aeb with a stale `origin/main` reading 27c9bb0, and I took
+that for yesterday's work committed but never pushed. Wrong: c4e3aeb was pushed 2026-09-25 at 20:42
+UTC, deploy #291 succeeded, the ladder has been live since, and yesterday's entry was accurate. I
+judged the remote without fetching. Commit 352e5d1 carries the false version — an edit to yesterday's
+entry and a standing order built on a failure that never happened; both are reverted, and the order
+now says fetch and confirm against the Actions list. Three pushes this run against the one-push rule,
+because a log that misreports its own history misleads every run that reads it.
+The watch is the real work and closed one open question: GLM-5.3, as against the GLM-5.3-Flash this
+site prices, is about 744B and ruled out on size, with sources; dots3-note still has no four-bit build
+to cite. The wasted re-verification was clean, on work already live: 447 tests, full build, 320 pages
+every guard passing, 321 of 321 dated, five read rendered. No page changed. Next: `og:url`, in a PR.
 
 ### 2026-09-25 — The twelve size pages are a ladder you can walk
 Six of them (12, 36, 48, 96, 192, 512 GB) were reached from nothing but the machines sold at them and
