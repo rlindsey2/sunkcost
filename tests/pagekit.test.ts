@@ -1897,6 +1897,20 @@ describe('the way back to the indexes', () => {
   });
 });
 
+describe('the calculator\u2019s own address', () => {
+  const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const meta = (key: string) => home.match(new RegExp(`<meta property="${key}" content="([^"]*)"`))?.[1];
+
+  // Every generated page is held to this by checkCanonicals in build-pages.ts,
+  // and the home page is the one page that script does not write. Without it a
+  // link shared as /?utm_source=x is a second object to Facebook, LinkedIn and
+  // Slack, with its own like count, and this is the page people share.
+  it('shares as the address it says is its own', () => {
+    expect(meta('og:url')).toBe(home.match(/<link rel="canonical" href="([^"]*)"/)?.[1]);
+    expect(meta('og:url')).toBe('https://sunkcost.ai/');
+  });
+});
+
 describe('the calculator\'s own foot', () => {
   const home = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const foot = home.match(/<footer class="site-foot">[\s\S]*?<\/footer>/)?.[0] ?? '';
