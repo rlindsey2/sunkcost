@@ -361,18 +361,54 @@ export function hardwareProduct(hw: Hardware, url: string): LdNode {
   };
 }
 
+/**
+ * The model a model page is about. The same rule as the machine above: only
+ * figures somebody published, and each one written the way the page's own
+ * specification list writes it, so the two can never drift apart. The
+ * quantisation is a property rather than part of the name, because the name
+ * belongs to whoever trained the model and the build is this site's choice.
+ *
+ * No score and no price. The index score is an estimate on most rows and the
+ * rental price is the cheapest endpoint on a stated day; both need the
+ * sentence beside them that says so, and a machine-readable property has
+ * nowhere to put it.
+ */
+export function modelSoftware(m: Model, url: string): LdNode {
+  const props: LdNode[] = [
+    { '@type': 'PropertyValue', name: 'Parameters', value: `${fmtNum(m.params_b, 1)}B` },
+  ];
+  if (m.active_params_b && m.active_params_b < m.params_b)
+    props.push({ '@type': 'PropertyValue', name: 'Active parameters per token', value: `${fmtNum(m.active_params_b, 1)}B` });
+  props.push({ '@type': 'PropertyValue', name: 'Quantisation', value: m.quantisation });
+  if (m.max_context_tokens)
+    props.push({ '@type': 'PropertyValue', name: 'Maximum context', value: `${Math.round(m.max_context_tokens / 1024)}k tokens` });
+  props.push({ '@type': 'PropertyValue', name: 'Licence', value: m.license });
+  return {
+    '@type': 'SoftwareApplication',
+    '@id': `${url}#model`,
+    name: m.display_name,
+    ...(m.weights_gb != null ? { fileSize: fmtGb(m.weights_gb) } : {}),
+    url,
+    additionalProperty: props,
+  };
+}
+
 export interface PageChrome {
   title: string;
   description: string;
   canonical: string;
   ogImage?: string | null;
   crumbs: { href: string; label: string }[];
-  /** The thing the page is about, as a schema.org node with an `@id`. */
-  about?: LdNode;
+  /**
+   * What the page is about, as one schema.org node with an `@id`, or as the
+   * several a page is about at once: a head-to-head is about both machines.
+   */
+  about?: LdNode | LdNode[];
 }
 
 export function pageGraph(c: PageChrome, data: Dataset): LdNode[] {
   const site = data.defaults.site_url.replace(/\/$/, '');
+  const subjects = c.about ? (Array.isArray(c.about) ? c.about : [c.about]) : [];
   const url = site + c.canonical;
   const website: LdNode = {
     '@type': 'WebSite',
@@ -401,9 +437,9 @@ export function pageGraph(c: PageChrome, data: Dataset): LdNode[] {
     isPartOf: { '@id': website['@id'] },
     breadcrumb: { '@id': breadcrumb['@id'] },
     ...(c.ogImage ? { primaryImageOfPage: { '@type': 'ImageObject', url: site + c.ogImage, width: 1200, height: 630 } } : {}),
-    ...(c.about ? { about: { '@id': c.about['@id'] } } : {}),
+    ...(subjects.length ? { about: subjects.length === 1 ? { '@id': subjects[0]['@id'] } : subjects.map((s) => ({ '@id': s['@id'] })) } : {}),
   };
-  return [website, page, breadcrumb, ...(c.about ? [c.about] : [])];
+  return [website, page, breadcrumb, ...subjects];
 }
 
 /**

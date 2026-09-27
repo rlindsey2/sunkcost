@@ -14,7 +14,7 @@ import {
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelVerdict,
+  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -490,6 +490,98 @@ function checkCanonicals() {
     throw new Error(`${problems.length} pages are reachable at more than one address, or link to one`);
   }
   console.log(`  ${meta.length} pages, one address each in the head and in the card, ${announced.length} in the sitemap`);
+}
+
+/**
+ * Structured data that names nothing is a page a crawler can read and still not
+ * know what it is about. Every page whose subject is something this site holds
+ * data for now says so: a model page is about the model, a machine page about
+ * the machine, and a head-to-head about both machines, each under the same
+ * `@id` its own page gives it, so the three pages that mention a machine name
+ * one thing between them rather than three.
+ *
+ * The check that matters is the second one. A subject's figures are only worth
+ * publishing while they are the figures the page prints, so every property on a
+ * subject has to be findable, word for word, in the text of the page that
+ * subject is the subject of. Change the way a specification list writes a
+ * number and this stops the build rather than leaving a machine-readable copy
+ * of the old one behind.
+ */
+function checkPageSubjects() {
+  const readable = (html: string) =>
+    unesc(
+      mainOf(html)
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/[\u00a0\u202f]/g, ' ')
+        .replace(/[\u2011]/g, '-'),
+    ).replace(/\s+/g, ' ');
+  const byPath = new Map(meta.map((p) => [p.path, p]));
+  const words = new Map<string, string>();
+  const textOf = (path: string) => {
+    if (!words.has(path)) words.set(path, readable(byPath.get(path)?.html ?? ''));
+    return words.get(path)!;
+  };
+  // the two pages a head-to-head sets against each other, so a comparison that
+  // names one side and forgets the other cannot ship as a page about one machine
+  const sides = new Map<string, string[]>();
+  for (const [a, b] of hardwarePairs(data)) sides.set(hardwareComparePath(a, b), [`/hardware/${a.id}/`, `/hardware/${b.id}/`]);
+  for (const [a, b] of modelPairs(data)) sides.set(modelComparePath(a, b), [`/models/${a.id}/`, `/models/${b.id}/`]);
+  const problems: string[] = [];
+  const subjects = new Map<string, string>();
+  let claims = 0;
+  for (const p of meta) {
+    const ld = p.html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    const graph = (JSON.parse(ld![1]) as { '@graph': Record<string, unknown>[] })['@graph'];
+    const page = graph.find((n) => n['@type'] === 'WebPage')!;
+    const about = page.about as { '@id': string } | { '@id': string }[] | undefined;
+    const ids = about ? (Array.isArray(about) ? about : [about]).map((a) => a['@id']) : [];
+    if (!/^\/(models|hardware|compare)\/./.test(p.path)) continue;
+    if (!ids.length) {
+      problems.push(`${p.path} says in its structured data what kind of page it is and not what it is about`);
+      continue;
+    }
+    const named: string[] = [];
+    for (const id of ids) {
+      const node = graph.find((n) => n['@id'] === id);
+      if (!node) {
+        problems.push(`${p.path} is about ${id}, which is not in its own structured data`);
+        continue;
+      }
+      const name = String(node.name ?? '');
+      const url = String(node.url ?? '');
+      const own = url.replace(site, '');
+      if (!name) problems.push(`${p.path} is about a ${String(node['@type'])} with no name`);
+      else if (!textOf(p.path).includes(name)) problems.push(`${p.path} is about "${name}" and never says so`);
+      if (!byPath.has(own)) {
+        problems.push(`${p.path} is about something whose own page is ${url || '(none)'}, which is not a page here`);
+        continue;
+      }
+      subjects.set(id, own);
+      named.push(own);
+      const stated: [string, string][] = [
+        ...(node.fileSize ? [['Weights on disk', String(node.fileSize)] as [string, string]] : []),
+        ...((node.additionalProperty as { name: string; value: string }[] | undefined) ?? []).map(
+          (v) => [v.name, String(v.value)] as [string, string],
+        ),
+      ];
+      for (const [what, value] of stated) {
+        claims++;
+        if (!textOf(own).includes(value))
+          problems.push(`${p.path} publishes ${what} as "${value}" for ${name}, which ${own} does not print`);
+      }
+    }
+    const both = sides.get(p.path);
+    if (both && [...named].sort().join() !== [...both].sort().join())
+      problems.push(`${p.path} sets ${both.join(' against ')} and is about ${named.join(' and ') || 'nothing'}`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 10).map((t) => `  ${t}`).join('\n'));
+    throw new Error(`${problems.length} pages name the wrong subject, or none`);
+  }
+  const saying = meta.filter((p) => /^\/(models|hardware|compare)\/./.test(p.path)).length;
+  console.log(
+    `  ${saying} pages name their subject in their structured data: ${subjects.size} machines and models between them, ${sides.size} head-to-heads naming both their sides, and every one of ${claims} figures printed on the subject's own page`,
+  );
 }
 
 /**
@@ -3312,6 +3404,7 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${mi
       canonical: `/models/${m.id}/`,
       ogImage: cardFor(cheapest?.hw.id, m.id),
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/leaderboard/', label: 'Models' }, { href: `/models/${m.id}/`, label: m.display_name }],
+      about: modelSoftware(m, `${site}/models/${m.id}/`),
     },
     body,
     data,
@@ -4192,6 +4285,9 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}
         { href: '/compare/', label: 'Head to head' },
         { href: '#', label: heading },
       ],
+      // a head-to-head is about both machines, and each is the same entity its
+      // own page describes, under the same `@id`, rather than a second one
+      about: [hardwareProduct(a, `${site}/hardware/${a.id}/`), hardwareProduct(b, `${site}/hardware/${b.id}/`)],
     },
     body,
     data,
@@ -5421,6 +5517,8 @@ ${modelSiblingNote(a, b)}
       canonical: modelComparePath(a, b),
       ogImage: versusCardPath(modelComparePath(a, b)),
       crumbs: [{ href: '/', label: 'Sunk Cost' }, { href: '/compare/', label: 'Head to head' }, { href: '#', label: `${a.display_name} vs ${b.display_name}` }],
+      // both models, each the same entity its own page describes
+      about: [modelSoftware(a, `${site}/models/${a.id}/`), modelSoftware(b, `${site}/models/${b.id}/`)],
     },
     body,
     data,
@@ -8368,6 +8466,7 @@ checkFooter();
 checkHeadToHeads();
 checkMatchUpSiblings();
 checkCanonicals();
+checkPageSubjects();
 checkRedirects();
 checkOgCards();
 checkFonts();

@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-26
+Last checked: 2026-09-27
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -282,6 +282,40 @@ base model's score with a note. The first needs a number nobody has published ye
 prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
+
+### 2026-09-27
+
+Nothing new that this site can price, and nothing that changes what fits. The searches were the
+ones this file lists — releases this month, releases this week, each family the script prints, and
+new quantisations — and every open-weight model they returned is already priced here, already on
+this page, or already ruled out. The candidates above are unchanged, and dots3-note Preview was
+not searched again: two runs have now returned no four-bit build for it, so it waits on a repo
+appearing rather than on a third search.
+
+- **Two new Qwen names, neither of them this site's subject.** **Qwen3.8-Omni-Flash** is served
+  through the API and the weights are not published, so there is nothing to download and nothing
+  to size; Qwen2.5-Omni was Apache 2.0 and this one has no announced release. **Qwen-Image-2.1**
+  is an image model under a non-commercial research licence, so there is no token price to hold
+  it against and no tok/s to print. Both are ruled out on what they are rather than on what they
+  cost, so a later run need not look twice. Sources, none of them opened from here: [one write-up
+  on running Omni-Flash locally](https://www.popularai.org/p/qwen3-8-omni-flash-local-gguf),
+  [a comparison with Qwen2.5-Omni](https://www.orcarouter.ai/blog/qwen-3-8-omni-flash-vs-qwen2-5-omni)
+  and [a release timeline](https://llmgateway.io/timeline).
+- **One new precision, and it is tooling rather than a build.** GPTQModel merged a native MLX
+  kernel for GGUF **NVFP4** on Apple Silicon, emitting the 64-value, 36-byte GGUF block, with a
+  second change for writing MLX GGUF Q6_K directly. The watch counts a new precision as much as a
+  new model because it changes what fits, but this is a way of making a file, not a file: no model
+  is published at NVFP4 yet, so there is no size to cite and nothing here changes. Worth revisiting
+  once a repo ships one, because four bits is what every row in this data is priced at. Sources,
+  neither opened from here: [the NVFP4 pull
+  request](https://github.com/ModelCloud/GPTQModel/pull/3224) and [the Q6_K
+  one](https://github.com/ModelCloud/GPTQModel/pull/3215).
+- **DeepSeek V4.1-Flash** came back again as the month's headline open release and is already
+  ruled out above on size. **Qwen3.8 Max**, **GLM-5.3**, **Kimi K3**, **MiniMax H3** and **Inkling**
+  turned up in the round-ups and are each already ruled out; **Qwen3.8 27B**, **Qwen3.8 Flash Next**,
+  **GLM-5.3-Flash**, **Granite 4.2**, **Mistral Small 4**, **Muse Glimmer 30B**, **Gemma 4** and
+  **DeepSeek V4-Flash** all turned up and are each already priced here. Checked against the
+  script's own list rather than guessed.
 
 ### 2026-09-26
 

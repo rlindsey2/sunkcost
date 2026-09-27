@@ -27,10 +27,9 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Home page `og:url`.** One line in index.html, so it wants a pull request of its own now
-      that PR #17 has merged; small enough to ride the next branch against the calculator's head.
-- [ ] **Structured data names what 56 pages are about; 251 pages name nothing.** Add the page's
-      subject (model, machine or question) to its JSON-LD.
+- [ ] **The 20 pages still naming no subject** are the indexes and the 12 memory-size pages, whose
+      subject is a question rather than a thing in data/*.json. Decide whether a schema.org node
+      for one of those says anything true, or leave them as they are and close the item.
 - [ ] Seven head-to-head titles are still over 60 characters and cannot be cut without losing a name.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
@@ -38,6 +37,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       the memory guide and the leaderboard. Joint fewest on the site with /how-much-memory/12gb/.
 
 ## Runs
+
+### 2026-09-27 — 300 pages now say what they are about, in the words they print
+Structured data named a subject on 56 pages and nothing on 264. A model page now carries its model
+as a SoftwareApplication (parameters, active parameters where they differ, quantisation, weights on
+disk, maximum context, licence), and the 189 head-to-heads carry both their sides, each under the
+`@id` its own page already gives it, so the three pages that mention one machine name one entity
+between them rather than three. No score and no rental price: both need their caveat, and a
+property has nowhere to put one. `checkPageSubjects()` holds every published figure to the text of
+the subject's own page, word for word, and every head-to-head to the two sides it sets. Straight to
+main. Verified: 451 tests, typecheck clean, the full build with `build:functions`, 320 pages every
+guard passing, 321 of 321 sitemap entries dated, no page's date moved, six mutations all stopping
+the build. Also PR #19, the home page's `og:url`, off the backlog. Model watch done: Qwen3.8-Omni-Flash
+is hosted only, Qwen-Image-2.1 is an image model, GGUF NVFP4 tooling merged with no build to price.
 
 ### 2026-09-26 — Model watch, and a false alarm about yesterday's deploy that I put in the log
 The run opened on a detached HEAD at c4e3aeb with a stale `origin/main` reading 27c9bb0, and I took

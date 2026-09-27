@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   addJumpLine, anchoredHeading, anchorHeadings, headingSlug, JUMP_MIN_SECTIONS, sectionLink, SECTIONS, brandOf, calcLink, cardRankingLine, cardScopeNote, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds, computeView, contextCappedBy,
-  bestLeftOut, contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb1, fmtNum,
+  bestLeftOut, contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum,
   machineIndexLine,
   machinesAtSize,
   machinesThatHold,
@@ -12,7 +12,7 @@ import {
   leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, nearestCompleteComputer, SPREAD_MONTHS,
-  otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
+  modelSoftware, otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
   sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
@@ -110,6 +110,59 @@ describe('structured data', () => {
     );
     expect(page).not.toHaveProperty('about');
     expect(page).not.toHaveProperty('primaryImageOfPage');
+  });
+
+  it('names both machines a head-to-head weighs, each by the id its own page gives it', () => {
+    const a = hardwareProduct(hw('mac-mini-m6-16'), 'https://sunkcost.ai/hardware/mac-mini-m6-16/');
+    const b = hardwareProduct(hw('framework-desktop-395-128'), 'https://sunkcost.ai/hardware/framework-desktop-395-128/');
+    const both = pageGraph(
+      {
+        title: 't',
+        description: 'd',
+        canonical: '/compare/mac-mini-m6-16gb-vs-framework-desktop-128gb/',
+        crumbs: [{ href: '/', label: 'Sunk Cost' }],
+        about: [a, b],
+      },
+      data,
+    );
+    expect(node(both, 'WebPage').about).toEqual([{ '@id': a['@id'] }, { '@id': b['@id'] }]);
+    expect(both.filter((n) => n['@type'] === 'Product')).toEqual([a, b]);
+  });
+
+  it('describes a model by what it is, in the words its own page prints', () => {
+    const m = data.models.find((x) => x.id === 'llama-3.1-8b-q4')!;
+    const subject = modelSoftware(m, 'https://sunkcost.ai/models/llama-3.1-8b-q4/');
+    expect(subject['@type']).toBe('SoftwareApplication');
+    expect(subject['@id']).toBe('https://sunkcost.ai/models/llama-3.1-8b-q4/#model');
+    // the name is whoever trained it; the build is this site's choice, so it is a property
+    expect(subject.name).toBe('Llama 3.1 8B Instruct');
+    expect(subject.fileSize).toBe(fmtGb(m.weights_gb));
+    expect((subject.additionalProperty as LdNode[]).map((v) => [v.name, v.value])).toEqual([
+      ['Parameters', '8B'],
+      ['Quantisation', 'Q4_K_M'],
+      ['Maximum context', '128k tokens'],
+      ['Licence', 'Llama 3.1 Community License'],
+    ]);
+  });
+
+  it('counts the active parameters of a mixture of experts and nothing else\u2019s', () => {
+    const named = (m: Model) =>
+      (modelSoftware(m, 'https://sunkcost.ai/x/').additionalProperty as LdNode[]).map((v) => v.name);
+    const moe = data.models.find((m) => m.active_params_b != null && m.active_params_b < m.params_b)!;
+    expect(named(moe)).toContain('Active parameters per token');
+    const dense = data.models.find((m) => m.active_params_b === m.params_b)!;
+    expect(named(dense)).not.toContain('Active parameters per token');
+  });
+
+  it('publishes no score and no rental price for a model, because both need their caveat', () => {
+    for (const m of data.models) {
+      const subject = modelSoftware(m, 'https://sunkcost.ai/x/');
+      expect(subject).not.toHaveProperty('offers');
+      expect(subject).not.toHaveProperty('aggregateRating');
+      const names = (subject.additionalProperty as LdNode[]).map((v) => v.name);
+      expect(names).not.toContain('Score');
+      expect(names).not.toContain('Price');
+    }
   });
 
   it('never claims to sell anything', () => {
