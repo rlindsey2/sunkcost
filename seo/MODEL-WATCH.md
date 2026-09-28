@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-27
+Last checked: 2026-09-28
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,61 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-09-28 · MiMo-V2.6-Flash (Xiaomi) — worth adding, needs one file size
+
+The first candidate since dots3-note that this site could price, and the furthest along any has
+been: the two fields candidates usually die on, the index score and a rental price, both exist.
+309B total / 15B active, MIT, released 2026-09-21, natively omnimodal — text, image, video and
+audio in one model — and stated at 1M context. Size is why it matters: the models this data
+already carries either side of it are Inkling Small at 162.54 GB and Tencent Hy3 at 182.16 GB, so
+a four-bit build lands in the band the two Mac Studio Ultras hold and the Strix Halo boxes do not.
+That is a row, not a rethink. No MiMo model is priced here, so the family would be new.
+
+- **Score**: Artificial Analysis carries a page for it and gives 38 on the index, which is the
+  index this site's Score column uses.
+- **Price**: $0.14 per million in and $0.28 out on Xiaomi's own API, also served on OpenRouter, so
+  `cloud_equivalent` would be a real endpoint rather than a stand-in.
+- **Architecture, from the technical report**: 39 sliding-window layers and 9 global-attention
+  layers; 64 query heads throughout, 8 key-value heads on the sliding-window layers and 4 on the
+  global ones; per-head 192 for queries and keys and 128 for values; hidden size 4,096; 256 routed
+  experts with 8 active per token; a separate lightweight multi-token-prediction layer for
+  speculative decoding.
+
+Sources, none of them opened from here — huggingface.co is refused by this environment's egress
+proxy, which is a reason to record the URL rather than to skip it: the [model
+card](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL), the [GGUF repo under the llama.cpp
+org](https://huggingface.co/ggml-org/MiMo-V2.6-Flash-RL-GGUF), which ships the multi-token
+prediction and DFlash drafter sidecars and a Q8_0 projector for the vision and audio encoders,
+[Artificial Analysis](https://artificialanalysis.ai/models/mimo-v2-6-flash), [OpenRouter's
+listing](https://openrouter.ai/xiaomi/mimo-v2.6-flash), the [MiMo-V2-Flash technical
+report](https://arxiv.org/html/2601.02780v2) and [one write-up of the
+release](https://datanorth.ai/news/xiaomi-releases-mimo-v2-6-pro-and-flash).
+
+**Still missing, and it is one field: `weights_gb` at the quantisation actually entered.** The
+sizes search returned do not agree and none is a four-bit figure from a listing worth citing:
+114 GB at IQ2_S, 108 GB at IQ2_M, 141 GB at IQ3_XXS, 175 GB described as MXFP4, a mixed-quant
+package given as 93.09 GB counting the projector and the separate DFlash weights, and two
+different BF16 numbers, 88.8 GB and 175 GB, which cannot both be the BF16 of one 309B model. This
+site names the quantisation it prices and prints the number, so the row waits on the file listing
+itself. Sources for the community four-bit build, neither opened from here: [the MXFP4
+one](https://huggingface.co/kernelpool/MiMo-V2.6-Flash-MXFP4-GGUF) and [a mixed-quant
+one](https://huggingface.co/Baekpica/MiMo-V2.6-Flash-RL-Mixed-Quant-GGUF).
+
+**Two things worth settling before the row is written.** The cache does not fit `n_kv_heads ×
+head_dim` twice over: the key-value head count differs between the two kinds of layer, 8 against
+4, and the key and value heads are not the same width, 192 against 128. `types.ts` already carries
+a bytes-per-token override for the models whose cache is not that product, and the fit logic caps
+sliding-window layers at their window, so this is expressible with a note on `architecture` saying
+why the numbers are not the model card's — but it is a judgement, not a transcription. And the
+sidecars are memory a machine has to find: the DFlash drafter and the projector are separate files
+this site's sum does not count today.
+
+**One hardware signal, and it is not a size.** The recipes published for running it locally are
+written for two DGX Sparks rather than one, at FP8 with a quantised cache. That is consistent with
+a four-bit build sitting above the 119.5 GB a single Spark hands a model, which is where the
+figures above would put it, but a recipe is not a file listing. Source, not opened from here:
+[the two-Spark recipe](https://github.com/tonyd2wild/MiMo-V2.6-Flash-2x-DGX-Spark).
 
 ### 2026-09-25 · dots3-note Preview (dots studio) — worth adding, needs figures
 
@@ -282,6 +337,26 @@ base model's score with a note. The first needs a number nobody has published ye
 prints a score the build did not earn. Worth deciding before the row is written.
 
 ## Checked and left alone
+
+### 2026-09-28
+
+The searches were the ones this file lists — releases this month, releases this week, each family
+the script prints, and new quantisations. One new candidate, above, and one new ruling-out.
+
+- **MiMo-V2.6-Pro** (Xiaomi, 2026-09-21, MIT) is the Flash model's larger sibling at 1.02T total
+  and 42B active, and is **ruled out on size**: the same arithmetic as Kimi K3 and Qwen3.8 Max puts
+  it past 1 TB at the four-bit sizes this data carries, against the 384 GB the roomiest machine
+  here addresses, so a row would be a page saying no. Revisit only if a machine with that much
+  usable memory is priced, which is behind Tencent Hy4 and Atria Dawn in the queue. Source, not
+  opened from here: [the release
+  write-up](https://datanorth.ai/news/xiaomi-releases-mimo-v2-6-pro-and-flash).
+- **DeepSeek V4.1-Flash** and **Qwen3.8 Max** came back as the month's headline open releases and
+  are each already ruled out above on size. **GLM-5.3-Flash**, **Qwen3.8 27B**, **Granite 4.2**,
+  **Mistral Small 4**, **Gemma 4** and **DeepSeek V4-Flash** all turned up and are each already
+  priced here, checked against the script's own list rather than guessed.
+- **dots3-note Preview** was not searched again: three runs have now returned no four-bit build, so
+  it waits on a repo appearing. The GSQ-RCO builds recorded on 2026-09-22 are unchanged, and the
+  NVFP4 tooling recorded on 2026-09-27 still has no model published at that precision.
 
 ### 2026-09-27
 

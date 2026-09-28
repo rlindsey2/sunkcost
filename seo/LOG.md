@@ -27,16 +27,27 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **The 20 pages still naming no subject** are the indexes and the 12 memory-size pages, whose
-      subject is a question rather than a thing in data/*.json. Decide whether a schema.org node
-      for one of those says anything true, or leave them as they are and close the item.
-- [ ] Seven head-to-head titles are still over 60 characters and cannot be cut without losing a name.
+- [ ] Three head-to-head titles are over 60 characters, at 61, 62 and 63, and cannot be cut without
+      losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
 - [ ] The two Q8 model pages have three inbound pages each, counted in the build: their Q4 sibling,
       the memory guide and the leaderboard. Joint fewest on the site with /how-much-memory/12gb/.
 
 ## Runs
+
+### 2026-09-28 — 78 model head-to-heads say in the result what separates the two models
+Every model-vs-model description ended in a list of the page's own columns — "Size, context, licence,
+API price and the cheapest machine that runs each" — 73 of the 155 characters a result shows, given to
+a table of contents. Each now ends in a figure that separates the two: the memory each one asks of a
+machine at 32k, or, on the pairs level in both score and memory, the speed each runs at where they
+meet. Straight to main. Verified: 452 tests, typecheck clean, the full build, 320 pages every guard
+passing, 321 of 321 dated with 78 moved and no others, two read rendered. The new
+`checkDescriptionFigures()` holds all 1,385 figures in 320 descriptions to the words of the page they
+describe, and five mutations of it stop the build. Closed: no schema.org node fits the 20 subject-less
+pages — a memory size is no type's thing, an index's ItemList restates its own links, and the home
+page's WebApplication wants an offer or a rating this site has not got. Watch done: MiMo-V2.6-Flash is
+the closest candidate yet, score and price sourced, one four-bit size short. Next: the Q8 pages' links.
 
 ### 2026-09-27 — 300 pages now say what they are about, in the words they print
 Structured data named a subject on 56 pages and nothing on 264. A model page now carries its model

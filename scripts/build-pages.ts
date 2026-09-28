@@ -179,6 +179,40 @@ function checkMeta() {
 }
 
 /**
+ * A description is the page in 155 characters, and a figure in one is a promise:
+ * a reader who clicks has to find the same number on the page. Nothing held the
+ * two together, so a description could go on quoting a figure the body had
+ * stopped printing, or round one differently, and the only person to notice
+ * would be the reader who came for it. Every number and price a description
+ * prints has to appear in the page's own words, to the character.
+ */
+function checkDescriptionFigures() {
+  const readable = (html: string) =>
+    unesc(
+      mainOf(html)
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/[\u00a0\u202f]/g, ' '),
+    ).replace(/\s+/g, ' ');
+  // a price or a plain number, and nothing that is part of a name: the 3.8 of
+  // Qwen3.8 and the 4 of Q4_K_M have no word boundary in front of them
+  const FIGURE = /\$?\b\d+(?:,\d{3})*(?:\.\d+)?\b/g;
+  const problems: string[] = [];
+  let figures = 0;
+  for (const p of meta) {
+    const text = readable(p.html);
+    for (const fig of p.description.replace(/[\u00a0\u202f]/g, ' ').match(FIGURE) ?? []) {
+      figures++;
+      if (!text.includes(fig)) problems.push(`${p.path} offers ${fig} in a search result and the page never prints it`);
+    }
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 10).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} figures in a search result are not on the page it leads to`);
+  }
+  console.log(`  ${figures} figures across ${meta.length} descriptions, every one printed on the page it describes`);
+}
+
+/**
  * A page in the sitemap that no other page links to is one a crawler is told
  * about and given no reason to want. Adding a machine or a model should not be
  * able to quietly produce one, so this is fatal rather than a warning.
@@ -5470,6 +5504,72 @@ ${only.length > shownRunners.length ? `<p class="note">${only.length - shownRunn
     : `<h2>Memory is not what separates them</h2>
 <p>${needLine}Every machine priced here that runs one runs the other, at ${ctxK}k of context. So the choice between them is what each is good at, how fast it runs and what the same work costs on an API, not what you have to buy to hold it.</p>`;
 
+  // What a search result has room for, and it was not being spent on an answer.
+  // Every one of these descriptions ended in a list of this page's own columns —
+  // "Size, context, licence, API price and the cheapest machine that runs each",
+  // 73 of the 155 characters a result shows, given to a table of contents. In its
+  // place goes the figure that separates the two models, and it has to be one that
+  // does: 25 of the 78 pairs score the same and 13 ask a machine for the same
+  // amount of memory, so a description that printed both figures whatever they
+  // were would spend itself saying twice over that the two are level. Memory
+  // first, because it decides whether a machine can hold the model at all; where
+  // that is equal too, how fast each one runs on the one machine both fit in.
+  const needA = needGb(a, ra);
+  const needB = needGb(b, rb);
+  const sameNeed = needA != null && needB != null && fmtGb(needA) === fmtGb(needB);
+  // the speeds the like-for-like table further down prints, in the same rounding,
+  // and only where the pair meets on a machine at the context this page is written at
+  const speedSaid = (() => {
+    const ta = shownTps(shared?.rowA);
+    const tb = shownTps(shared?.rowB);
+    if (!shared || ta == null || tb == null) return null;
+    const num = (t: number) => fmtNum(t, t < 10 ? 1 : 0);
+    if (num(ta) === num(tb)) return null;
+    const where = shortHardwareLabel(shared.hw);
+    return [
+      `On the ${where}, the cheapest machine here that runs both, ${a.display_name} runs at ${num(ta)} tok/s and ${b.display_name} at ${num(tb)}.`,
+      `${a.display_name} runs at ${num(ta)} tok/s on the ${where}, ${b.display_name} at ${num(tb)}.`,
+      `On the ${where}: ${num(ta)} tok/s against ${num(tb)}.`,
+    ];
+  })();
+  const memorySaid =
+    needA == null || needB == null
+      ? null
+      : sameNeed
+        ? [`Both need ${fmtGb(needA)} of memory at ${ctxK}k of context.`, `Both need ${fmtGb(needA)} at ${ctxK}k.`]
+        : [
+            `${a.display_name} needs ${fmtGb(needA)} of memory at ${ctxK}k of context, ${b.display_name} ${fmtGb(needB)}.`,
+            `${a.display_name} needs ${fmtGb(needA)} at ${ctxK}k, ${b.display_name} ${fmtGb(needB)}.`,
+            `Memory needed at ${ctxK}k of context: ${fmtGb(needA)} and ${fmtGb(needB)}.`,
+          ];
+  const separates = (sa != null && sa === sb && sameNeed ? [speedSaid, memorySaid] : [memorySaid, speedSaid]).find((x) => x) ?? [];
+  const scored: { long: string; short: string } =
+    sa != null && sb != null
+      ? sa === sb
+        ? {
+            long: `${a.display_name} and ${b.display_name} both score ${sa} on the intelligence index.`,
+            short: `Both score ${sa} on the intelligence index.`,
+          }
+        : {
+            long: `${a.display_name} scores ${sa} on the intelligence index, ${b.display_name} scores ${sb}.`,
+            short: `${a.display_name} scores ${sa}, ${b.display_name} scores ${sb}.`,
+          }
+      : // a model the index has not placed says so, in the words the first paragraph
+        // uses. It used to print a question mark, which is a figure nobody can read
+        // and this site would never put on a page.
+        sa != null || sb != null
+        ? (() => {
+            const [named, score, other] = sa != null ? [a.display_name, sa, b.display_name] : [b.display_name, sb!, a.display_name];
+            return {
+              long: `${named} scores ${score} on the intelligence index, and ${other} has not been placed on it.`,
+              short: `${named} scores ${score}; ${other} has not been placed on the index.`,
+            };
+          })()
+        : {
+            long: 'Neither model has been placed on the intelligence index.',
+            short: 'Neither model has been placed on the intelligence index.',
+          };
+
   const body = `<article class="prose">
 <h1>${esc(a.display_name)} vs ${esc(b.display_name)}</h1>
 <p class="lede">${modelVerdict(a, b, ra, rb, shared, data, meeting)}</p>
@@ -5507,12 +5607,14 @@ ${modelSiblingNote(a, b)}
         `${a.display_name} vs ${b.display_name}`,
       ]),
       description: descOf([
-        ...(sa != null && sa === sb
-          ? [`${a.display_name} and ${b.display_name} both score ${sa} on the intelligence index. Size, context, licence, API price and the cheapest machine that runs each.`]
-          : []),
-        `${a.display_name} scores ${sa ?? '?'} on the intelligence index, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence, API price and the cheapest machine that runs each.`,
-        `${a.display_name} scores ${sa ?? '?'}, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence, API price and the cheapest machine that runs each.`,
-        `${a.display_name} scores ${sa ?? '?'}, ${b.display_name} scores ${sb ?? '?'}. Size, context, licence and the cheapest machine for each.`,
+        // every one of these says both figures, so the richest that fits is simply
+        // the longest that fits, and the ladder is the combinations by length
+        ...[scored.long, scored.short]
+          .flatMap((s) => separates.map((f) => `${s} ${f}`))
+          .sort((x, y) => y.length - x.length),
+        `${scored.long} Size, context, licence, API price and the cheapest machine that runs each.`,
+        `${scored.short} Size, context, licence, API price and the cheapest machine that runs each.`,
+        `${scored.short} Size, context, licence and the cheapest machine for each.`,
       ]),
       canonical: modelComparePath(a, b),
       ogImage: versusCardPath(modelComparePath(a, b)),
@@ -8460,6 +8562,7 @@ function checkRedirects() {
 }
 
 checkMeta();
+checkDescriptionFigures();
 checkLinks();
 checkSectionLinks();
 checkFooter();
