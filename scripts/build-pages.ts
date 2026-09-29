@@ -4789,6 +4789,82 @@ const sizeModelRow = (m: Model, v: SizeView, refView: View) => {
 </tr>`;
 };
 
+/**
+ * The models this site lists twice: the same weights at two precisions, lightest
+ * build first. There is nothing else on the site that shows what precision costs
+ * in memory, because every other model is priced at one build only.
+ */
+function twoPrecisionPairs(): { light: Model; heavy: Model }[] {
+  const seen = new Set<string>();
+  const out: { light: Model; heavy: Model }[] = [];
+  for (const m of data.models) {
+    if (seen.has(m.display_name)) continue;
+    seen.add(m.display_name);
+    const builds = [m, ...otherQuantisations(m, data)]
+      .filter((b) => b.weights_gb != null)
+      .sort((a, b) => a.weights_gb! - b.weights_gb!);
+    if (builds.length < 2) continue;
+    out.push({ light: builds[0], heavy: builds[builds.length - 1] });
+  }
+  return out;
+}
+
+/** the smallest size on the ladder whose roomiest machine holds this build at the default context */
+const smallestSizeHolding = (m: Model): number | null =>
+  MEMORY_SIZES.find((gb) => holds(sizeView(gb).most.machines[0], m, CTX)) ?? null;
+
+/**
+ * What precision costs, said only where it decides the answer.
+ *
+ * A size page's table counts one build per model, so the two models this site
+ * lists at two precisions are the one case where the table cannot show what the
+ * reader is really choosing: the same model, the same machine, twice the weights.
+ * Saying so on all twelve sizes would be filler on ten of them, because at most
+ * sizes both builds fit or neither does. It is said on the two kinds of size where
+ * it changes what you can run — the size that holds the lighter build and not the
+ * heavier, and the smallest size that holds the heavier one — and nowhere else.
+ * `checkPrecisionBuilds()` holds every figure here to the pair and the machine it
+ * is about, and the set of pages that carry a line to the rule above.
+ */
+function precisionLines(gb: number, v: SizeView): string {
+  const machine = v.most.machines[0];
+  const split = v.levels.length > 1;
+  const hands = split
+    ? 'the roomiest machine at this size'
+    : v.machines.length === 1
+      ? `the one machine here with ${gb} GB`
+      : `every machine here with ${gb} GB`;
+  const pairs = twoPrecisionPairs();
+  const named = pairs.length === 1 ? 'the one model' : `one of ${numberWord(pairs.length)} models`;
+  const kctx = ctxLabel(CTX);
+  const link = (m: Model, text: string) => `<a href="/models/${esc(m.id)}/">${text}</a>`;
+  const out: string[] = [];
+  for (const { light, heavy } of pairs) {
+    // a build the default context is already past has no reading here: what stops
+    // it is its own ceiling rather than the memory this page is about
+    if ([light, heavy].some((m) => m.max_context_tokens != null && m.max_context_tokens < CTX)) continue;
+    const lightFits = holds(machine, light, CTX);
+    const heavyFits = holds(machine, heavy, CTX);
+    const lightGb = fmtGb1(footprintGb(light, CTX));
+    const heavyGb = fmtGb1(footprintGb(heavy, CTX));
+    const usable = fmtGb1(v.most.usable);
+    const opening = `${link(light, esc(light.display_name))} is ${named} this site lists at two precisions`;
+    if (lightFits && !heavyFits) {
+      const smallest = smallestSizeHolding(heavy);
+      out.push(
+        `<p>${opening}, and ${gb} GB holds only the lighter build. At ${esc(light.quantisation)} the weights plus the cache for ${kctx} come to ${lightGb}, inside the ${usable} ${hands} hands a model. ${link(heavy, `At ${esc(heavy.quantisation)}`)} the same model needs ${heavyGb}, so nothing here with ${gb} GB runs it.${smallest != null ? ` The smallest size here that does is ${smallest} GB.` : ''}</p>`,
+      );
+    } else if (heavyFits && smallestSizeHolding(heavy) === gb) {
+      out.push(
+        `<p>${opening}, and ${gb} GB is the smallest size here that holds both builds. At ${esc(light.quantisation)} the weights plus the cache for ${kctx} come to ${lightGb}; ${link(heavy, `at ${esc(heavy.quantisation)}`)} they come to ${heavyGb}, against the ${usable} ${hands} hands a model.</p>`,
+      );
+    }
+  }
+  // nothing at all where the size decides nothing, and not an empty line: the
+  // page's fingerprint is its words, and a blank one would move its lastmod
+  return out.length ? `\n${out.join('\n')}` : '';
+}
+
 /** what changes between two sizes, read off the roomiest machine at each */
 function sizeStep(from: SizeView, to: SizeView) {
   const had = new Set(from.most.fits.map((m) => m.id));
@@ -4921,7 +4997,7 @@ ${stack(`<table class="board">
 <tbody>${modelRows}</tbody>
 </table>`, { fig: 2, labels: { 1: 'Parameters', 3: 'Machines', 4: 'Speed' } })}
 ${hostedSpeedLine(speeds, data) ? `<p class="note">${hostedSpeedLine(speeds, data)}</p>` : ''}
-<p class="note">Superseded models are left out of the count, because what a machine is worth buying for is what you would run on it today; <a href="/leaderboard/">the leaderboard</a> ranks every model this site lists, older ones included. <a href="${esc(SECTIONS.weightsAndCache)}">Where the cache figure comes from</a> is one section of the memory guide.</p>
+<p class="note">Superseded models are left out of the count, because what a machine is worth buying for is what you would run on it today; <a href="/leaderboard/">the leaderboard</a> ranks every model this site lists, older ones included. <a href="${esc(SECTIONS.weightsAndCache)}">Where the cache figure comes from</a> is one section of the memory guide.</p>${precisionLines(gb, v)}
 
 ${step && pair ? `<h2>What ${pair.to.gb} GB adds over ${pair.from.gb} GB</h2>
 <p>The machine here with ${pair.to.gb} GB that hands a model the most of it is the <a href="/hardware/${esc(pair.to.most.example.id)}/">${esc(shortHardwareLabel(pair.to.most.example))}</a>, at ${fmtGb1(pair.to.most.usable)}, and it holds ${pair.to.most.fits.length} of the ${currentModels.length}. At ${pair.from.gb} GB the most is ${fmtGb1(pair.from.most.usable)}, on the <a href="/hardware/${esc(pair.from.most.example.id)}/">${esc(shortHardwareLabel(pair.from.most.example))}</a>, holding ${pair.from.most.fits.length}. ${
@@ -8514,6 +8590,86 @@ function checkSizeLadder() {
 }
 
 /**
+ * The lines about precision, held to the data they are drawn from.
+ *
+ * A size page says what a heavier build costs only where that decides what the
+ * size runs, so three things can go wrong and none of them would show on the
+ * page: the line could appear on a size where both builds fit, or be missing
+ * from one where only the lighter does; it could claim the wrong one of the two
+ * cases; and the figures in it could drift from the footprints and the usable
+ * memory the rest of the page computes. Every figure in the paragraph is read
+ * back out of the rendered page and matched against the pair and the machine it
+ * is about, and the set of pages carrying a paragraph at all is rebuilt from the
+ * rule rather than counted.
+ */
+function checkPrecisionBuilds() {
+  const problems: string[] = [];
+  const pairs = twoPrecisionPairs().filter(
+    ({ light, heavy }) => ![light, heavy].some((m) => m.max_context_tokens != null && m.max_context_tokens < CTX),
+  );
+  let lines = 0;
+  for (const gb of MEMORY_SIZES) {
+    const path = memorySizePath(gb);
+    const html = meta.find((m) => m.path === path)?.html;
+    if (!html) continue;
+    const v = sizeView(gb);
+    const machine = v.most.machines[0];
+    for (const { light, heavy } of pairs) {
+      const lightFits = holds(machine, light, CTX);
+      const heavyFits = holds(machine, heavy, CTX);
+      const want = lightFits && !heavyFits ? 'stops' : heavyFits && smallestSizeHolding(heavy) === gb ? 'both' : 'none';
+      // the paragraph is the one that links this heavier build's own page
+      const para = [...mainOf(html).matchAll(/<p>[\s\S]*?<\/p>/g)]
+        .map((m) => m[0])
+        .find((x) => x.includes(`href="/models/${heavy.id}/"`));
+      if (want === 'none') {
+        if (para) problems.push(`${path} names ${heavy.display_name} at ${heavy.quantisation}, where that size decides nothing between the two builds`);
+        continue;
+      }
+      if (!para) {
+        problems.push(`${path} ${want === 'stops' ? `holds ${light.display_name} at ${light.quantisation} and not at ${heavy.quantisation}` : `is the smallest size that holds ${heavy.display_name} at ${heavy.quantisation}`} and does not say so`);
+        continue;
+      }
+      lines++;
+      const text = unesc(para.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ');
+      const said = want === 'stops' ? `${gb} GB holds only the lighter build` : `${gb} GB is the smallest size here that holds both builds`;
+      if (!text.includes(said)) problems.push(`${path} says the wrong thing about ${heavy.display_name}: it should say ${said}`);
+      const lightGb = fmtGb1(footprintGb(light, CTX));
+      const heavyGb = fmtGb1(footprintGb(heavy, CTX));
+      const smallest = smallestSizeHolding(heavy);
+      // every gigabyte figure in the sentence, against the ones the page can honestly print
+      const allowed = new Set(
+        [lightGb, heavyGb, fmtGb1(v.most.usable), `${gb} GB`].concat(want === 'stops' && smallest != null ? [`${smallest} GB`] : []),
+      );
+      for (const fig of text.match(/\d+(?:\.\d+)? GB/g) ?? [])
+        if (!allowed.has(fig)) problems.push(`${path} prints ${fig} about ${heavy.display_name} and no figure on this page is that`);
+      for (const must of [lightGb, heavyGb, fmtGb1(v.most.usable)])
+        if (!text.includes(must)) problems.push(`${path} does not give ${must} where the pair and the machine say it should`);
+      // The set of figures being right is not the same as each one being against
+      // the build it belongs to, and the two swapped would read perfectly. The
+      // sentence puts the lighter build's footprint before the link to the heavier
+      // one and the heavier build's after it, so that is what is checked.
+      if (lightGb !== heavyGb) {
+        const [before, after] = text.split(`At ${heavy.quantisation}`).length > 1
+          ? text.split(`At ${heavy.quantisation}`)
+          : text.split(`at ${heavy.quantisation}`);
+        if (before == null || after == null) problems.push(`${path} does not name ${heavy.quantisation} where the figure for it should follow`);
+        else if (!before.includes(lightGb) || before.includes(heavyGb) || !after.includes(heavyGb) || after.includes(lightGb))
+          problems.push(`${path} gives ${light.display_name} the footprint of the other build: ${lightGb} is the ${light.quantisation} figure and ${heavyGb} the ${heavy.quantisation} one`);
+      }
+      if (!para.includes(`href="/models/${light.id}/"`)) problems.push(`${path} names ${light.display_name} at ${heavy.quantisation} without offering the lighter build it is set against`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} line${problems.length === 1 ? '' : 's'} about what precision costs do not hold to the data`);
+  }
+  console.log(
+    `  ${pairs.length} models are listed at two precisions, and the ${lines} size${lines === 1 ? '' : 's'} where that changes what runs say so, in the footprints the table beside them prints`,
+  );
+}
+
+/**
  * Every page on this site sits under a directory, and most of those directories are a
  * page in their own right: /hardware/ indexes the machines, /compare/ the head-to-heads,
  * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
@@ -8630,6 +8786,7 @@ checkMemoryLadder();
 checkMemorySizes();
 checkModelSizeLinks();
 checkSizeLadder();
+checkPrecisionBuilds();
 // Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a

@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-28
+Last checked: 2026-09-29
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,41 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-09-29 · MiMo-V2.6-Distill-Qwen-9B (Xiaomi) — worth adding, needs a score
+
+The first candidate whose `weights_gb` is already a citable four-bit figure: bartowski's GGUF
+listing gives Q4_K_M at 5.84 GB, the quantisation and the shape this site enters most models at.
+9B dense, MIT, 262,144 context, a supervised fine-tune of Qwen3.5-9B on data from the larger
+MiMo-V2.6 models, aimed at software engineering, agent work, visual coding and security. At 5.84 GB
+it lands beside Qwen3.5 9B (5.68 GB) and Ornith 1.5 9B (5.78 GB), so it runs on everything here down
+to the 12 GB card. That is a row rather than a rethink, and no MiMo model is priced here yet.
+
+- **Price**: $0.1078 per million in and $0.28 out on Featherless AI, which serves it. A real
+  endpoint, though a flat-rate host rather than a per-token one, so `cloud_equivalent` would want
+  a note saying which it is.
+- **Architecture, from the model card**: 32 layers, hidden size 4,096, FFN 12,288, 16 query heads
+  and 4 key-value heads, head dimension 256, vocabulary 248,320. It inherits Qwen3.5's hybrid
+  stack: three gated-delta linear-attention layers to one full-attention layer, so 8 of the 32
+  layers cache anything at all. `fit.ts` already ignores linear-attention layers and
+  `full_attention_layers` already exists, so this is expressible without a new field.
+
+**Still missing, and it is one field: `frontier_equivalent`.** Artificial Analysis scores
+MiMo-V2.6-Pro, at 46 on the index, and carries no page for the 9B distill. This site does not
+borrow a parent's score for a distill, so the row waits on the index scoring it. Sources, none
+opened from here — huggingface.co is refused by this environment's egress proxy, which is a reason
+to record the URL rather than to skip it: the [GGUF
+listing](https://huggingface.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF), the [model
+card](https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B), [Featherless's
+listing](https://featherless.ai/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B) and two secondhand
+spec write-ups, [ApX](https://apxml.com/models/mimo-v2-6-distill-qwen-9b) and
+[vast.ai](https://vast.ai/model/mimo-v26-distill-qwen-9b).
+
+**Ruled out this run.** Kimi K2.6 (Moonshot) is about 1T total / 32B active under a modified MIT
+licence and ships natively at INT4; at that size a four-bit build is far past the 384 GB the
+roomiest machine here hands a model, so it is out on size, as GLM-5.3 and Qwen3.8 Max already are.
+Nothing new turned up on the MiMo-V2.6-Flash four-bit file size, which is still what that candidate
+waits on.
 
 ### 2026-09-28 · MiMo-V2.6-Flash (Xiaomi) — worth adding, needs one file size
 

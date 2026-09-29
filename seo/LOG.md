@@ -31,10 +31,24 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] The two Q8 model pages have three inbound pages each, counted in the build: their Q4 sibling,
-      the memory guide and the leaderboard. Joint fewest on the site with /how-much-memory/12gb/.
+- [ ] /how-much-memory/12gb/ is now the least-linked page on the site on its own, at 3 inbound:
+      the memory guide, the index and the 16 GB rung above it. No machine sold at 12 GB is current.
 
 ## Runs
+
+### 2026-09-29 — Five size pages say what a heavier build costs
+Two models here are listed at two precisions, and a size page's table counts one build per model, so it
+could not show the thing a buyer is choosing: same model, same machine, twice the weights. Said now on
+the five sizes where it decides what runs. 12, 32 and 48 GB hold only the lighter build; 16 and 64 GB
+are the smallest that hold both; the other seven say nothing, because there both fit or neither does.
+Each line carries both footprints at 32k and the memory that size hands a model, from the figures the
+table beside it prints. The two Q8 pages go from 3 inbound to 5 and 6, closing the backlog item.
+Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages
+every guard passing, 321 of 321 dated with 5 moved, two read rendered. `checkPrecisionBuilds()` binds
+each figure to its own build; of six mutations, swapped footprints alone got through, and the guard
+was tightened until it did not.
+Watch done: MiMo-V2.6-Distill-Qwen-9B has a citable 5.84 GB at Q4_K_M and waits only on an index
+score; Kimi K2.6 is out on size at 1T. Next: /how-much-memory/12gb/, the least-linked page now.
 
 ### 2026-09-28 — 78 model head-to-heads say in the result what separates the two models
 Every model-vs-model description ended in a list of the page's own columns — "Size, context, licence,
