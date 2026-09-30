@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-29
+Last checked: 2026-09-30
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,28 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-09-30 · nothing new, and the one MiMo-V2.6-Flash file size on offer is a calculator's
+
+No open-weights model has come out since MiMo-V2.6-Pro and MiMo-V2.6-Flash on 2026-09-21. The releases
+dated 24 to 30 September are hosted: GPT-6.1 Sol, Claude Sonnet 5.5, GLM-5.3 Prime, Qwen3.8 Max Prime,
+Ember 1, Aion 3.5 and its Mini, Solar Mini4, and Perceptron MK1.5, which is served on OpenRouter and by
+approved partners only and is not a download. Qwen3.8 Flash Next appears again on the release trackers
+dated 2026-09-30 and is already priced here at 119.60 GB. Sources, none opened from here:
+[llm-stats' update list](https://llm-stats.com/llm-updates),
+[pricepertoken's release list](https://pricepertoken.com/news/model-releases) and
+[OpenRouter's page for Perceptron MK1.5](https://openrouter.ai/models/perceptron/perceptron-mk1.5).
+
+**The one thing that changed, and it is a warning rather than a figure.** A four-bit file size for
+MiMo-V2.6-Flash is now quoted: 185.40 GB at Q4_K_M, on
+[llmrun.dev](https://llmrun.dev/model/xiaomimimo-mimo-v2-6-flash-rl), which says the row is "verified
+against real community uploads" rather than estimated. It is not a listing. The whole column is a fixed
+multiple of the parameter count: 618.00 GB at BF16 is two bytes per parameter of 309B, 309.00 GB at Q8_0
+is one, and 185.40 GB is 0.6. Every other size it prints divides out the same way. So the candidate below
+still waits on the file listing itself, and this figure is not a substitute for it.
+
+Nothing new on MiMo-V2.6-Distill-Qwen-9B either: Artificial Analysis still carries no page for the
+distill, which is the one field that entry waits on.
 
 ### 2026-09-29 · MiMo-V2.6-Distill-Qwen-9B (Xiaomi) — worth adding, needs a score
 

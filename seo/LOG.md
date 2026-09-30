@@ -31,10 +31,23 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] /how-much-memory/12gb/ is now the least-linked page on the site on its own, at 3 inbound:
-      the memory guide, the index and the 16 GB rung above it. No machine sold at 12 GB is current.
+- [ ] /how-much-memory/512gb/ and /36gb/ are the least-linked pages now, at 4 inbound and 5. Both
+      are sizes one machine is sold in, and on 512 GB that machine is discontinued.
 
 ## Runs
+
+### 2026-09-30 — 46 model pages name the least memory anything here holds them in
+A model page named the cheapest machine that runs it, one still sold: that answers what to buy, not what
+a reader who already owns a card is asking. The roomiest machine at a size is often a discontinued card
+with more to give than a cheap new computer, so on 46 pages the smallest size here that holds the model
+is below the size its cheapest machine is sold in. Each now names that size, the machine there, what it
+hands a model, its price and whether it is still sold, every figure read off the size page it links.
+/how-much-memory/12gb/ goes from 3 inbound to 17, closing the backlog item. Straight to main. Verified:
+452 tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of
+321 dated with 46 moved, five read rendered, and nine mutations of the new `checkSmallestSizeLine()`,
+which binds each figure to that machine's own row, all stopping the build. Watch done: nothing
+open-weight since MiMo-V2.6, and the four-bit size now quoted for MiMo-V2.6-Flash is arithmetic on its
+parameter count, not a listing. Next: the 512 and 36 GB pages.
 
 ### 2026-09-29 — Five size pages say what a heavier build costs
 Two models here are listed at two precisions, and a size page's table counts one build per model, so it

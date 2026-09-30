@@ -3166,6 +3166,10 @@ function modelPage(m: Model): string {
   // The size the cheapest machine is sold in, which is the next search a reader
   // here makes and had no link from this page. See modelSizeLine().
   const sizeLine = cheapest ? modelSizeLine(m, cheapest.hw) : '';
+  // and the other end of the same question: the least memory anything here has
+  // held it in, which is what a reader who already owns a card is asking.
+  // See modelSmallestSizeLine().
+  const smallestLine = cheapest && sizeLine ? modelSmallestSizeLine(m, cheapest.hw.unified_memory_gb) : '';
 
   const caps = CAPABILITY_KEYS.map(
     (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
@@ -3355,7 +3359,7 @@ ${stack(`<table class="board">
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
 ${reachLine}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}${smallestLine ? `\n<p class="note">${smallestLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
@@ -4722,6 +4726,32 @@ function modelSizeLine(m: Model, hw: Hardware): string {
   const fits = v.most.fits.length;
   const listed = v.most.fits.some((x) => x.id === m.id);
   return `The cheapest machine that runs it is sold with ${gb} GB. There is <a href="${esc(memorySizePath(gb))}">a page on what ${gb} GB runs, machine by machine</a>: it names ${machines}, and the ${fits} current model${fits === 1 ? '' : 's'} the roomiest of them holds at ${ctxLabel(CTX)}${listed ? ', this one among them' : ''}.`;
+}
+
+/**
+ * The least memory this site has ever held the model in.
+ *
+ * The sentence above it names the cheapest machine that runs the model, and
+ * that machine is one still sold, because the question it answers is what to
+ * buy. It is not the question a reader who already owns a card asks, which is
+ * whether the memory in front of them is enough. The two have different
+ * answers: the roomiest machine at a size is often a discontinued card with
+ * more to give than a cheap new computer has, so on 46 of the 55 models the
+ * smallest size here that holds the model is below the size its cheapest
+ * machine is sold in.
+ *
+ * Said only on those 46. Where the cheapest machine is already at the smallest
+ * size that holds the model, this would repeat the sentence above it, and the
+ * machine is named rather than only the size because a size on its own would
+ * let a reader take a current 24 GB Mac for the 24 GB card that holds it.
+ */
+function modelSmallestSizeLine(m: Model, cheapestGb: number): string {
+  const gb = smallestSizeHolding(m);
+  if (gb == null || gb >= cheapestGb) return '';
+  const hw = sizeView(gb).most.example;
+  const price = hw.price_usd != null ? ` at ${priceWithScopeText(hw)}` : '';
+  const older = (hw.generation ?? 'current') === 'previous' ? ' and is no longer sold' : '';
+  return `It fits in less memory than that: the smallest size here that runs it at ${ctxLabel(CTX)} is <a href="${esc(memorySizePath(gb))}">${gb} GB</a>, on the <a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a>${price}, which hands a model ${fmtGb1(hw.usable_memory_gb)}${older}.`;
 }
 
 /**
@@ -8484,7 +8514,11 @@ function checkModelSizeLinks() {
     pages++;
     sizes.add(gb);
     const text = unesc(said[1].replace(/<[^>]*>/g, ''));
-    const other = pointsAt.filter((x) => x !== gb);
+    // two sizes may be linked from here and no others: the size the cheapest
+    // machine is sold in, and the smallest size anything here holds the model
+    // in. checkSmallestSizeLine() is what holds the second one to its figures.
+    const allowed = new Set([gb, smallestSizeHolding(m)].filter((x) => x != null) as number[]);
+    const other = pointsAt.filter((x) => !allowed.has(x));
     if (other.length) problems.push(`${path} links the page about ${other[0]} GB, where its cheapest machine is sold with ${gb} GB`);
     if (!said[0].includes(`href="${memorySizePath(gb)}"`))
       problems.push(`${path} says its cheapest machine is sold with ${gb} GB and does not link that size's page`);
@@ -8519,6 +8553,117 @@ function checkModelSizeLinks() {
   }
   console.log(
     `  ${pages} model pages send a reader to the size their cheapest machine is sold in, over ${sizes.size} of the ${MEMORY_SIZES.length} sizes`,
+  );
+}
+
+/**
+ * The line about the smallest size that holds a model, held to that size's own
+ * page.
+ *
+ * Three things could go wrong here and none of them would show on the page.
+ * The line could appear on a model whose cheapest machine is already at the
+ * smallest size that holds it, where it repeats the sentence above it, or go
+ * missing from one of the 46 where the two differ. It could name the wrong
+ * machine: the size page cuts its own table from the roomiest machine at the
+ * size, and a machine added there moves which one that is. And the figures in
+ * it could drift, which matters most on the clause about a machine no longer
+ * being sold, because a reader who takes a discontinued card for one on sale
+ * has been sent shopping for something nobody sells.
+ *
+ * So every part of it is read back out of the size page's own machine table:
+ * the usable memory, the price with its card-only marker, and the previous-
+ * generation tag that the clause is drawn from. A current model is held to a
+ * row on that page's list of what fits as well, because a size that holds the
+ * model and does not list it would mean the two pages disagree about what fits.
+ * A superseded model has no row there, since that list counts the current ones.
+ */
+function checkSmallestSizeLine() {
+  const problems: string[] = [];
+  const kctx = ctxLabel(CTX);
+  let pages = 0;
+  const sizes = new Set<number>();
+  let older = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    if (!html) continue;
+    const said = html.match(/<p class="note">It fits in less memory than that: ([\s\S]*?)<\/p>/);
+    const cheapest = runnersFor(m, data)[0];
+    const cheapestGb = cheapest && MEMORY_SIZES.includes(cheapest.hw.unified_memory_gb) ? cheapest.hw.unified_memory_gb : null;
+    const gb = smallestSizeHolding(m);
+    const want = cheapestGb != null && gb != null && gb < cheapestGb;
+    if (!want) {
+      if (said)
+        problems.push(
+          gb == null || cheapestGb == null
+            ? `${path} names a smallest size that holds it and has no pair of sizes to compare`
+            : `${path} says it fits in less than ${cheapestGb} GB, and ${gb} GB is where its cheapest machine is sold`,
+        );
+      continue;
+    }
+    if (!said) {
+      problems.push(`${path} is held at ${gb} GB, below the ${cheapestGb} GB its cheapest machine is sold with, and does not say so`);
+      continue;
+    }
+    pages++;
+    sizes.add(gb!);
+
+    // the machine the size page cuts its own table from, and its row on that page
+    const hw = sizeView(gb!).most.example;
+    const sizeHtml = meta.find((p) => p.path === memorySizePath(gb!))?.html ?? '';
+    const table = sizeHtml.split(anchoredHeading(`The machines sold with ${gb} GB`))[1]?.split('<h2')[0] ?? '';
+    const row = [...table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]).find((r) => r.includes(`/hardware/${hw.id}/`));
+    if (!row) {
+      problems.push(`${path} names the ${shortHardwareLabel(hw)} as what holds it at ${gb} GB, and that page does not table it`);
+      continue;
+    }
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+    // A marker the table hangs beside a figure is a comma in a sentence, so the
+    // two are compared in the sentence's shape rather than the table's.
+    const flat = (s: string) =>
+      unesc(s.replace(/<span class="c-quant">/g, ', ').replace(/<[^>]*>/g, ' ')).replace(/\s+([,.])/g, '$1').replace(/\s+/g, ' ').trim();
+    const linked = (cell: string) => flat(cell.match(/<a[^>]*>([\s\S]*?)<\/a>/)?.[1] ?? '');
+    const text = flat(said[1]);
+
+    if (!said[1].includes(`href="${memorySizePath(gb!)}"`)) problems.push(`${path} says ${gb} GB holds it and does not link that size's page`);
+    if (!said[1].includes(`href="/hardware/${hw.id}/"`))
+      problems.push(`${path} does not link the ${shortHardwareLabel(hw)}, the machine that holds it at ${gb} GB`);
+    if (!text.startsWith(`the smallest size here that runs it at ${kctx} is ${gb} GB, on the ${linked(cells[0])}`))
+      problems.push(`${path} does not open on the machine the page about ${gb} GB cuts its own table from: ${linked(cells[0])}`);
+    if (!text.endsWith(`which hands a model ${flat(cells[1])}.`) && !text.endsWith(`which hands a model ${flat(cells[1])} and is no longer sold.`))
+      problems.push(`${path} does not give the ${flat(cells[1])} the page about ${gb} GB says that machine hands a model`);
+
+    // the price, and the marker that says it buys a card and nothing to put it in
+    if (hw.price_usd != null && !text.includes(` at ${flat(cells[2])},`))
+      problems.push(`${path} does not price the ${shortHardwareLabel(hw)} at the ${flat(cells[2])} the page about ${gb} GB prints`);
+    if (hw.price_usd == null && /\$/.test(text))
+      problems.push(`${path} prices a machine the data has no price for`);
+
+    // a current model that fits is on that page's own list of what fits; a
+    // superseded one is not, because the list counts the current models only
+    if (currentModels.some((x) => x.id === m.id)) {
+      const listed = sizeHtml.split(anchoredHeading(`Models that fit in ${gb} GB`))[1]?.split('<h2')[0] ?? '';
+      if (!listed.includes(`/models/${m.id}/`))
+        problems.push(`${path} says ${gb} GB holds it, and the page about ${gb} GB leaves it off the models that fit`);
+    }
+
+    // and the clause a reader would go shopping on
+    const previous = /previous</.test(cells[0]);
+    if (previous !== text.endsWith('and is no longer sold.'))
+      problems.push(
+        previous
+          ? `${path} sends a reader to the ${shortHardwareLabel(hw)} without saying it is discontinued`
+          : `${path} calls the ${shortHardwareLabel(hw)} discontinued, and the page about ${gb} GB has it on sale`,
+      );
+    if (previous) older++;
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} disagree with the smallest size that holds them`);
+  }
+  console.log(
+    `  ${pages} model pages name the smallest size here that holds them, below the size their cheapest machine is sold in, over ${sizes.size} sizes; ${older} say the machine there is no longer sold`,
   );
 }
 
@@ -8785,6 +8930,7 @@ checkTitleLabels();
 checkMemoryLadder();
 checkMemorySizes();
 checkModelSizeLinks();
+checkSmallestSizeLine();
 checkSizeLadder();
 checkPrecisionBuilds();
 // Every guard has passed, so the four files the build publishes rather than
