@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-09-30
+Last checked: 2026-10-01
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,24 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-01 · Cloudflare Clef and Clef-flash are open weights, and not this site's subject
+
+Cloudflare released Clef (27B) and Clef-flash (9B) on 2026-10-01, Apache 2.0, weights on Hugging Face,
+and they are the first open-weights release since MiMo-V2.6 on 2026-09-21. They are ruled out on kind
+rather than on size. Both are decision models: Cloudflare's own announcement says they "derive schema
+choices directly from internal backbone representations" rather than generating intermediate text, so
+they return a probability per allowed answer and never emit a token stream. This site prices tokens a
+second against a per-million-token API bill, and a model with neither has no row here. Source, opened
+from this container: [Cloudflare's announcement](https://blog.cloudflare.com/clef-decision-models/).
+The backbones they freeze are Qwen 3.8-27B and Qwen 3.5-9B, both of which this site already prices.
+
+Nothing else is new. MiMo-V2.6-Distill-Qwen-9B still waits on the one field it has always waited on:
+Artificial Analysis scores MiMo-V2.6-Pro at 46 and carries no page for the distill. MiMo-V2.6-Flash now
+has several community GGUF repos (AesSedai, kernelpool at MXFP4, Baekpica mixed-quant), which is a
+change from the calculator-derived figure noted on 2026-09-30, but huggingface.co is refused by this
+environment's egress proxy, so no file listing has been read and the candidate still has no citable
+four-bit size.
 
 ### 2026-09-30 · nothing new, and the one MiMo-V2.6-Flash file size on offer is a calculator's
 

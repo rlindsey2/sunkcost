@@ -1074,8 +1074,8 @@
       "changed": "2026-09-23"
     },
     "/models/deepseek-v4-flash-ud-q4/": {
-      "hash": "3e1f095d9479303e",
-      "changed": "2026-09-30"
+      "hash": "a5ab37098465340a",
+      "changed": "2026-10-01"
     },
     "/models/devstral-2-123b-q4/": {
       "hash": "4b77807bd2630d90",
@@ -1118,8 +1118,8 @@
       "changed": "2026-09-30"
     },
     "/models/glm-5.3-flash-ud-q4/": {
-      "hash": "3b827bdbe05df2d1",
-      "changed": "2026-09-23"
+      "hash": "0c74120cb8ef48d4",
+      "changed": "2026-10-01"
     },
     "/models/gpt-oss-120b-mxfp4/": {
       "hash": "a7f230f07309beab",
@@ -1138,12 +1138,12 @@
       "changed": "2026-09-30"
     },
     "/models/hunyuan-hy3-q4/": {
-      "hash": "457af048429c5622",
-      "changed": "2026-09-19"
+      "hash": "acafc17dde31de91",
+      "changed": "2026-10-01"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "06a8c9ec5a17c6b2",
-      "changed": "2026-09-23"
+      "hash": "28d93dd4ac31d04f",
+      "changed": "2026-10-01"
     },
     "/models/kat-coder-v2.5-q4/": {
       "hash": "6287aa20c2d0afaa",
@@ -1186,8 +1186,8 @@
       "changed": "2026-09-30"
     },
     "/models/minimax-m2.7-q4/": {
-      "hash": "ab73b7f929fd8764",
-      "changed": "2026-09-30"
+      "hash": "640e2360c5e0dc5b",
+      "changed": "2026-10-01"
     },
     "/models/ministral-3-14b-q4/": {
       "hash": "e3f9a69a489ed935",
@@ -1226,8 +1226,8 @@
       "changed": "2026-09-30"
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "9274326ba57b7757",
-      "changed": "2026-09-30"
+      "hash": "ff26750f5d603af8",
+      "changed": "2026-10-01"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
       "hash": "2577c9d99dea9699",
@@ -1278,8 +1278,8 @@
       "changed": "2026-09-30"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "b4e68ff2548e5942",
-      "changed": "2026-09-30"
+      "hash": "6fe82ac39d4aed6e",
+      "changed": "2026-10-01"
     },
     "/models/spark-x2.5-4b-q4/": {
       "hash": "6554df7d4993f391",

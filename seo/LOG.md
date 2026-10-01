@@ -31,10 +31,23 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] /how-much-memory/512gb/ and /36gb/ are the least-linked pages now, at 4 inbound and 5. Both
-      are sizes one machine is sold in, and on 512 GB that machine is discontinued.
+- [ ] /how-much-memory/36gb/ is the least-linked page now, at 5 inbound. It is a size two Macs are
+      sold in and nothing here needs it: 32 GB holds every model it holds.
 
 ## Runs
+
+### 2026-10-01 — Seven model pages said nothing here holds a model that two machines do
+"Every machine here but the Mac Studio M5 Ultra, 256GB misses this model" was false on all seven pages
+that said it: between two and four machines on this site hold each of those models at 32k. They are left
+out of "cheapest machine that runs it" rightly, a discontinued box being no purchase and an unpriced one
+no match for an API bill, and that reason was stretched into a claim about all 56. Worst on Tencent Hy3,
+whose snippet read "more than any machine here offers" while two 512 GB Macs hold it to its 256k
+ceiling. Each page now scopes the claim and names what does hold it, with the size, the price and
+whether it is still sold. /how-much-memory/512gb/ goes from 4 inbound to 11, closing that half of the
+backlog item. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with 7 moved, three read rendered, and
+eight mutations of `checkOffMarketHolders()`, which works its machine set out from the data rather than
+from the helper that writes the sentence. Watch done: Clef is out on kind. Next: /how-much-memory/36gb/.
 
 ### 2026-09-30 — 46 model pages name the least memory anything here holds them in
 A model page named the cheapest machine that runs it, one still sold: that answers what to buy, not what

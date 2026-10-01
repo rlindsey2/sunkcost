@@ -3049,6 +3049,77 @@ ${stack(`<table class="board">
 }
 
 /**
+ * The machines here that hold a model and are not the answer to what to buy.
+ *
+ * Every "cheapest machine that runs it" on the site is chosen from the machines
+ * with a published price that are still sold, and that is right: a discontinued
+ * box is not a purchase and one with no price cannot be weighed against an API
+ * bill. But seven model pages went on to say that every machine here but one
+ * misses the model, and on all seven that was false. Between two and four of
+ * the machines outside that set hold the model at the context the page prices
+ * everything at, and on Tencent Hy3 — where nothing on the market holds it at
+ * all — the page said nothing here offers the memory while two of its own
+ * machine pages say otherwise.
+ *
+ * So they are named, with the reason each one is outside the set, and with the
+ * size each is sold in, because somebody who already owns a last-generation
+ * Ultra or is shopping for one used is asking exactly this.
+ */
+function offMarketHolders(m: Model, ctx: number): Hardware[] {
+  const buyable = new Set(machinesConsidered(data).map((h) => h.id));
+  return data.hardware
+    .filter((h) => !buyable.has(h.id) && h.usable_memory_gb != null && holds(h, m, ctx))
+    .sort((a, b) => a.usable_memory_gb! - b.usable_memory_gb! || a.unified_memory_gb - b.unified_memory_gb);
+}
+
+/**
+ * Why each of them is outside that set. A machine is in it when it has a
+ * published price and is still sold, so one outside it fails on one of those or
+ * on both, and a reader deciding whether to go looking for a used one needs to
+ * know which. The order is the order the clauses read in.
+ */
+const OFF_MARKET_REASONS = [
+  { has: (h: Hardware) => (h.generation ?? 'current') === 'previous' && h.price_usd != null, said: 'no longer sold', short: 'no longer sold' },
+  { has: (h: Hardware) => (h.generation ?? 'current') === 'previous' && h.price_usd == null, said: 'no longer sold, with no published price', short: 'no longer sold and never priced' },
+  { has: (h: Hardware) => (h.generation ?? 'current') !== 'previous' && h.price_usd == null, said: 'on sale with no published price', short: 'with no published price' },
+] as const;
+
+/** Those machines in a sentence: why each is outside the set, the sizes they are sold in, the memory they hand a model. */
+function offMarketHoldersLine(m: Model, ctx: number): string {
+  const rows = offMarketHolders(m, ctx);
+  if (!rows.length) return '';
+  const one = rows.length === 1;
+  const name = (h: Hardware) => `the <a href="/hardware/${esc(h.id)}/">${esc(hardwareLabel(h))}</a>`;
+  const clauses = OFF_MARKET_REASONS.map((r) => {
+    const kit = rows.filter(r.has);
+    if (!kit.length) return '';
+    // only the group that has one: the price a discontinued machine launched at
+    const at = kit.every((h) => h.price_usd != null)
+      ? `, at the ${andList(kit.map((h) => fmtUsd(h.price_usd!)))} ${kit.length === 1 ? 'it launched at' : 'they launched at'}`
+      : '';
+    return `${andList(kit.map(name))}, ${r.said}${at}`;
+  }).filter(Boolean);
+  const sizes = [...new Set(rows.map((h) => h.unified_memory_gb))].sort((a, b) => a - b);
+  const hands = gbRange(rows.map((h) => h.usable_memory_gb!));
+  const need = fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0));
+  const none = one ? 'it is not' : rows.length === 2 ? 'neither of them is' : 'none of them is';
+  return `${sentenceCase(numberWord(rows.length))} machine${one ? '' : 's'} here ${one ? 'does hold' : 'do hold'} ${esc(m.display_name)} at ${ctxLabel(ctx)}, and ${none} an answer to what to buy, which is the question the rest of this page asks: ${clauses.join(', and ')}. ${one ? 'It is' : 'They are'} sold with ${andList(sizes.map((gb) => `<a href="${esc(memorySizePath(gb))}">${gb} GB</a>`))} of memory and hand a model ${hands} of it, against the ${need} ${esc(m.display_name)} needs at ${ctxLabel(ctx)}.`;
+}
+
+/** The same machines in the answer box, where the question is only which and why not. */
+function offMarketAnswer(m: Model, rows: Hardware[], ctx: number): string {
+  const sizes = [...new Set(rows.map((h) => h.unified_memory_gb))].sort((a, b) => a - b);
+  const why = OFF_MARKET_REASONS.map((r) => {
+    const n = rows.filter(r.has).length;
+    return n ? `${numberWord(n)} ${r.short}` : '';
+  }).filter(Boolean);
+  const hands = gbRange(rows.map((h) => h.usable_memory_gb!));
+  return `${rows.length === 1 ? 'The one machine' : `The ${numberWord(rows.length)} machines`} here sold with ${andList(
+    sizes.map((gb) => `<a href="${esc(memorySizePath(gb))}">${gb} GB</a>`),
+  )}, which hand a model ${hands}: ${andList(why)}.`;
+}
+
+/**
  * Seven model pages name one machine and stop. That is the whole answer for a
  * reader who owns that machine and no answer at all for everyone else, who has
  * three questions the page never takes: how close does mine come, would a
@@ -3084,9 +3155,13 @@ function missedMachinesSection(m: Model, rows: MissedMachine[], only: Hardware |
   // prices everything at, the answer box above has already said nothing runs it,
   // so naming the machine without its window would read as a contradiction.
   const onlyAt = only ? longestContext(m, only, data) : null;
+  // The set this paragraph is about is the one every "cheapest machine that runs
+  // it" on the site is drawn from, and saying "every machine here" of it was a
+  // claim about all 56 that the machines outside it disprove. See offMarketHolders().
+  const sold = 'the machines here with a published price that are still sold';
   const opening = only
-    ? `Every machine here but the ${esc(hardwareLabel(only))}${onlyAt != null && onlyAt < ctx ? `, which holds it at ${ctxLabel(onlyAt)},` : ''} misses ${esc(m.display_name)}`
-    : `No machine here holds ${esc(m.display_name)} at any window`;
+    ? `Of ${sold}, every one but the ${esc(hardwareLabel(only))}${onlyAt != null && onlyAt < ctx ? `, which holds it at ${ctxLabel(onlyAt)},` : ''} misses ${esc(m.display_name)}`
+    : `None of ${sold} holds ${esc(m.display_name)} at any window`;
   const why = weightsAlone
     ? `, and none of them misses by a window: its ${fmtGb(m.weights_gb)} of weights are larger than the usable memory in every one of them, before a single token of key-value cache`
     : `, at every window the calculator offers`;
@@ -3110,8 +3185,10 @@ function missedMachinesSection(m: Model, rows: MissedMachine[], only: Hardware |
     ? `\n<p><a class="cta" href="${esc(calcLink({ hw: nearest.hw.id, model: top.id }, data))}">Price the ${esc(hardwareLabel(nearest.hw))} on ${esc(top.display_name)} instead</a></p>`
     : '';
 
+  const alsoHold = offMarketHoldersLine(m, ctx);
   return `<h2>${missedHeading(m)}</h2>
 <p>${opening}${why}. ${near}${instead}</p>
+${alsoHold ? `<p>${alsoHold}</p>\n` : ''}
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Short by</th><th>Strongest model it holds</th></tr></thead>
 <tbody>${body}</tbody>
@@ -3275,6 +3352,8 @@ function modelPage(m: Model): string {
   // page that has no machine at all is the case above, already answered in full,
   // so this is only for the pages that have both.
   const shorterMachines = runners.length ? machinesShorter(m, data) : [];
+  // Where nothing on the market holds it, what does. See offMarketHolders().
+  const offMarket = runners.length ? [] : offMarketHolders(m, ctx);
   // Where one family of machine runs a model, the table above is a single row
   // and the page has nothing for anyone who owns something else. That is the
   // seven thinnest pages on the site, and missedMachines() is the other half of
@@ -3334,8 +3413,9 @@ ${cheapest
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
 </div>`
       : `<div class="answer">
-  <div class="answer-row"><span class="answer-k">Nothing runs it at ${ctxLabel(ctx)}</span><span class="answer-v">At ${Math.round(ctx / 1024)}k context it needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))}, more than any machine here offers.</span></div>
-  ${shorterRun
+  <div class="answer-row"><span class="answer-k">Nothing on the market runs it at ${ctxLabel(ctx)}</span><span class="answer-v">At ${Math.round(ctx / 1024)}k context it needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))}, more than any machine here with a published price that is still sold hands a model.</span></div>
+  ${offMarket.length ? `<div class="answer-row"><span class="answer-k">What does hold it</span><span class="answer-v">${offMarketAnswer(m, offMarket, ctx)}</span></div>
+  ` : ''}${shorterRun
         ? `<div class="answer-row"><span class="answer-k">Shorten the window and it fits</span><span class="answer-v"><a href="/hardware/${esc(shorterRun.runner.hw.id)}/">${esc(hardwareLabel(shorterRun.runner.hw))}</a> holds it at ${ctxLabel(shorterRun.ctx)}, where it needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, shorterRun.ctx) ?? 0))}</span></div>
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${shorterRun.runner.view.calc?.breakevenDays == null ? `Against the API, buying ${priceWithScopeText(shorterRun.runner.hw)} of hardware for this model never pays for itself at ordinary usage.` : `${esc(verdictLine(shorterRun.runner.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>`
         : ''}
@@ -3409,20 +3489,31 @@ ${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${mi
         `${lead}.`,
         `${m.display_name} needs ${fmtGb(m.weights_gb)} of weights. Cheapest machine that runs it: ${shortHardwareLabel(cheapest.hw)}.`,
       ])
-    : descOf([
-        ...(shorterRun
-          ? (() => {
-              const where = `${indefiniteArticle(shortHardwareLabel(shorterRun.runner.hw))} ${shortHardwareLabel(shorterRun.runner.hw)}`;
-              const need = fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0));
-              return [
-                `${m.display_name} needs ${need} at ${ctxLabel(ctx)} context, more than any machine here offers. At ${ctxLabel(shorterRun.ctx)} it fits ${where}.`,
-                `${m.display_name} needs ${need} at ${ctxLabel(ctx)}, more than any machine here. At ${ctxLabel(shorterRun.ctx)} it fits ${where}.`,
-              ];
-            })()
-          : []),
-        `${m.display_name} needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))} at ${Math.round(ctx / 1024)}k context, more than any machine on this list offers. What it would take, and what renting it costs instead.`,
-        `${m.display_name} needs ${fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0))} at ${Math.round(ctx / 1024)}k context, more than any machine on this list offers.`,
-      ]);
+    : (() => {
+        const need = fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, ctx) ?? 0));
+        // A snippet saying nothing here offers the memory, on a model two of this
+        // site's own machine pages hold, is the one place the claim was read by
+        // more people than read the page. See offMarketHolders().
+        const sizes = andList(
+          [...new Set(offMarket.map((h) => h.unified_memory_gb))].sort((a, b) => a - b).map((gb) => `${gb} GB`),
+        );
+        const held = offMarket.length
+          ? `only the machines here sold with ${sizes} hold it`
+          : `more than any machine here offers`;
+        const where = shorterRun
+          ? `${indefiniteArticle(shortHardwareLabel(shorterRun.runner.hw))} ${shortHardwareLabel(shorterRun.runner.hw)}`
+          : '';
+        return descOf([
+          ...(shorterRun
+            ? [
+                `${m.display_name} needs ${need} at ${ctxLabel(ctx)} context, and ${held}. At ${ctxLabel(shorterRun.ctx)} it fits ${where}.`,
+                `${m.display_name} needs ${need} at ${ctxLabel(ctx)}, and ${held}. At ${ctxLabel(shorterRun.ctx)} it fits ${where}.`,
+              ]
+            : []),
+          `${m.display_name} needs ${need} at ${ctxLabel(ctx)} context, and ${held}. What it would take, and what renting it costs instead.`,
+          `${m.display_name} needs ${need} at ${ctxLabel(ctx)} context, and ${held}.`,
+        ]);
+      })();
   return pageShell(
     {
       title: titleOf(
@@ -8504,7 +8595,12 @@ function checkModelSizeLinks() {
     const pointsAt = [...html.matchAll(/href="(\/how-much-memory\/(\d+)gb\/)"/g)].map((x) => Number(x[2]));
     if (gb == null) {
       if (said) problems.push(`${path} names the size of a cheapest machine it does not have`);
-      if (pointsAt.length) problems.push(`${path} links the page about ${pointsAt[0]} GB and names no machine sold at it`);
+      // A page with no machine to buy may still link the sizes of the machines
+      // that hold the model and are not for sale at a published price, and those
+      // sizes only. checkOffMarketHolders() holds that sentence to its figures.
+      const offSizes = new Set(offMarketHolders(m, CTX).map((h) => h.unified_memory_gb));
+      const stray = pointsAt.filter((x) => !offSizes.has(x));
+      if (stray.length) problems.push(`${path} links the page about ${stray[0]} GB and names no machine sold at it`);
       continue;
     }
     if (!said) {
@@ -8514,10 +8610,14 @@ function checkModelSizeLinks() {
     pages++;
     sizes.add(gb);
     const text = unesc(said[1].replace(/<[^>]*>/g, ''));
-    // two sizes may be linked from here and no others: the size the cheapest
-    // machine is sold in, and the smallest size anything here holds the model
-    // in. checkSmallestSizeLine() is what holds the second one to its figures.
-    const allowed = new Set([gb, smallestSizeHolding(m)].filter((x) => x != null) as number[]);
+    // Three kinds of size may be linked from here and no others: the size the
+    // cheapest machine is sold in, the smallest size anything here holds the
+    // model in, and the sizes of the machines that hold it and are not for sale
+    // at a published price. checkSmallestSizeLine() holds the second to its
+    // figures and checkOffMarketHolders() the third.
+    const allowed = new Set(
+      [gb, smallestSizeHolding(m), ...offMarketHolders(m, CTX).map((h) => h.unified_memory_gb)].filter((x) => x != null) as number[],
+    );
     const other = pointsAt.filter((x) => !allowed.has(x));
     if (other.length) problems.push(`${path} links the page about ${other[0]} GB, where its cheapest machine is sold with ${gb} GB`);
     if (!said[0].includes(`href="${memorySizePath(gb)}"`))
@@ -8553,6 +8653,130 @@ function checkModelSizeLinks() {
   }
   console.log(
     `  ${pages} model pages send a reader to the size their cheapest machine is sold in, over ${sizes.size} of the ${MEMORY_SIZES.length} sizes`,
+  );
+}
+
+/**
+ * The machines that hold a model and are not for sale at a published price,
+ * held to the pages those machines and that model are on.
+ *
+ * This sentence exists because the paragraph above it used to be false, so the
+ * cheapest way for it to go wrong is to become false in turn. Four ways it
+ * could: it could name a machine that does not hold the model, or miss one that
+ * does; it could say a machine is no longer sold when it is on sale, or the
+ * reverse, which is the clause a reader would go shopping on; it could print a
+ * price or a usable-memory figure that the machine's own size page contradicts;
+ * and it could send a reader to a size page that does not have the machine on
+ * it. So the set of machines and the set of sizes are compared against the data
+ * exactly, every figure is read back out of the size page's own tables, and the
+ * footprint at the end is the one that page prints beside this model.
+ */
+function checkOffMarketHolders() {
+  const problems: string[] = [];
+  const kctx = ctxLabel(CTX);
+  let pages = 0;
+  let named = 0;
+  const sizes = new Set<number>();
+  const flat = (s: string) =>
+    unesc(s.replace(/<span class="c-quant">/g, ', ').replace(/<[^>]*>/g, ' ')).replace(/\s+([,.])/g, '$1').replace(/\s+/g, ' ').trim();
+  const num = (s: string) => Number(flat(s).replace(/[^\d.]/g, ''));
+
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    if (!html) continue;
+    // The set is worked out here rather than taken from offMarketHolders(), so a
+    // change in that helper has to agree with the fit and the two fields that
+    // decide what you can buy rather than quietly move both sides at once.
+    const rows = data.hardware
+      .filter(
+        (h) =>
+          h.usable_memory_gb != null &&
+          !(h.price_usd != null && (h.generation ?? 'current') === 'current') &&
+          fit(m, h, CTX, data.defaults.nearly_fits_ratio).status === 'fits',
+      )
+      .sort((a, b) => a.usable_memory_gb! - b.usable_memory_gb! || a.unified_memory_gb - b.unified_memory_gb);
+    // the sentence rides on the section about the machines that miss the model,
+    // which is only on the pages one family of machine runs
+    const wanted = rows.length > 0 && html.includes(missedHeading(m));
+    const said = html.match(/<p>([A-Z][a-z]+ machines? here do(?:es)? hold [\s\S]*?)<\/p>/);
+    if (!wanted) {
+      if (said) problems.push(`${path} names machines that hold it off the market, and ${rows.length ? 'has no section for them' : 'nothing here holds it that is off the market'}`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${path} says every machine but one misses it, and ${numberWord(rows.length)} off the market hold it`);
+      continue;
+    }
+    pages++;
+    named += rows.length;
+    const sentence = said[1];
+    const text = flat(sentence);
+
+    // the machines it names, and the sizes it sends a reader to, exactly
+    const linked = [...sentence.matchAll(/href="\/hardware\/([^"]+)\//g)].map((x) => x[1]).sort();
+    const want = rows.map((h) => h.id).sort();
+    if (linked.join(',') !== want.join(','))
+      problems.push(`${path} names ${linked.join(', ') || 'no machine'} as holding it off the market, and the data says ${want.join(', ')}`);
+    const sizesSaid = [...new Set([...sentence.matchAll(/href="\/how-much-memory\/(\d+)gb\//g)].map((x) => Number(x[1])))].sort((a, b) => a - b);
+    const sizesWant = [...new Set(rows.map((h) => h.unified_memory_gb))].sort((a, b) => a - b);
+    if (sizesSaid.join(',') !== sizesWant.join(','))
+      problems.push(`${path} sends a reader to ${sizesSaid.join(', ')} GB for machines sold with ${sizesWant.join(', ')} GB`);
+    if (!text.startsWith(`${sentenceCase(numberWord(rows.length))} machine${rows.length === 1 ? '' : 's'} here do`))
+      problems.push(`${path} miscounts the ${numberWord(rows.length)} machines off the market that hold it`);
+    for (const gb of sizesWant) sizes.add(gb);
+
+    // every figure, out of the tables on the size page each machine is sold at
+    const need = fmtGb((m.weights_gb ?? 0) + (kvCacheGb(m, CTX) ?? 0));
+    const usable: number[] = [];
+    for (const hw of rows) {
+      const gb = hw.unified_memory_gb;
+      const sizeHtml = meta.find((p) => p.path === memorySizePath(gb))?.html ?? '';
+      const table = sizeHtml.split(anchoredHeading(`The machines sold with ${gb} GB`))[1]?.split('<h2')[0] ?? '';
+      const row = [...table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]).find((r) => r.includes(`/hardware/${hw.id}/`));
+      if (!row) {
+        problems.push(`${path} names the ${shortHardwareLabel(hw)} and the page about ${gb} GB does not table it`);
+        continue;
+      }
+      const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
+      usable.push(num(cells[1]));
+      // the clause a reader would go shopping on, read off that page's own tag
+      const previous = /previous</.test(cells[0]);
+      if (previous && !text.includes('no longer sold'))
+        problems.push(`${path} names the ${shortHardwareLabel(hw)} without saying it is discontinued`);
+      if (!previous && !text.includes('on sale with no published price'))
+        problems.push(`${path} names the ${shortHardwareLabel(hw)}, which is on sale, and does not say why it is not an answer`);
+      if (hw.price_usd != null && !text.includes(flat(cells[2])))
+        problems.push(`${path} does not price the ${shortHardwareLabel(hw)} at the ${flat(cells[2])} the page about ${gb} GB prints`);
+      if (hw.price_usd == null && new RegExp(`${hardwareLabel(hw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^.]*\\$`).test(text))
+        problems.push(`${path} prices the ${shortHardwareLabel(hw)}, which the data has no price for`);
+      // and the footprint this page closes on, against that page's own row for
+      // this model. A superseded model has no row there, because those lists
+      // count the current ones, so on those the arithmetic below stands alone.
+      const listed = sizeHtml.split(anchoredHeading(`Models that fit in ${gb} GB`))[1]?.split('<h2')[0] ?? '';
+      const mine = [...listed.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((r) => r[1]).find((r) => r.includes(`/models/${m.id}/`));
+      if (!mine) {
+        if (currentModels.some((x) => x.id === m.id))
+          problems.push(`${path} says a machine sold with ${gb} GB holds it, and that page leaves it off the models that fit`);
+        continue;
+      }
+      const printed = fmtGb(num([...mine.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1])[2]));
+      if (printed !== need)
+        problems.push(`${path} needs ${need} at ${kctx} and the page about ${gb} GB says ${printed}`);
+    }
+    if (!text.endsWith(`against the ${need} ${m.display_name} needs at ${kctx}.`))
+      problems.push(`${path} does not close on the ${need} it needs at ${kctx}`);
+    const hands = gbRange(usable);
+    if (usable.length === rows.length && !text.includes(`hand a model ${hands} of it`))
+      problems.push(`${path} does not give the ${hands} those machines' own size pages say they hand a model`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} disagree about the machines off the market that hold them`);
+  }
+  console.log(
+    `  ${pages} model pages name the ${named} machines here that hold them and are not for sale at a published price, over ${sizes.size} sizes`,
   );
 }
 
@@ -8931,6 +9155,7 @@ checkMemoryLadder();
 checkMemorySizes();
 checkModelSizeLinks();
 checkSmallestSizeLine();
+checkOffMarketHolders();
 checkSizeLadder();
 checkPrecisionBuilds();
 // Every guard has passed, so the four files the build publishes rather than
