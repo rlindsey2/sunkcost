@@ -4996,6 +4996,66 @@ function sizeStep(from: SizeView, to: SizeView) {
   };
 }
 
+/**
+ * What a step up the ladder does to speed, which is the one figure the rest of
+ * this section leaves out.
+ *
+ * Both sides of the step are read off the machine at each size that hands a
+ * model the most, and the roomiest machine at the larger size is a different
+ * machine with its own memory bandwidth. On five of the eleven steps here it
+ * reads memory more slowly than the one a rung below, and on 96 to 128 GB the
+ * figure falls from 1,792 GB/s to 273. So "nothing new fits, what the step buys
+ * is a longer window" was a verdict on a step that can also cost a third of the
+ * speed, and a reader taking it was being told the half of the trade that
+ * favours spending more.
+ *
+ * Every figure is one the pages themselves print: the bandwidth each machine's
+ * own page gives it, and the speed quoted for the strongest model both machines
+ * hold, rounded the way the model table on each size page rounds it. The basis
+ * comes with each speed, because nearly every speed here is worked out from
+ * bandwidth rather than measured.
+ */
+function sizeStepSpeed(from: SizeView, to: SizeView): string {
+  const a = from.most.example;
+  const b = to.most.example;
+  if (a.memory_bandwidth_gbs == null || b.memory_bandwidth_gbs == null) return '';
+  const st = defaultState(data);
+  const shared = strongestShared(
+    computeView({ ...st, hw: a.id, ctx: CTX }, data),
+    computeView({ ...st, hw: b.id, ctx: CTX }, data),
+  );
+  if (!shared) return '';
+  const sFrom = shownTps(shared.a);
+  const sTo = shownTps(shared.b);
+  if (sFrom == null || sTo == null) return '';
+
+  const lead = sTo < sFrom
+    ? 'More memory is not more speed.'
+    : sTo > sFrom
+      ? 'The step buys speed as well as room.'
+      : 'Speed does not move with the step.';
+  const reads = a.memory_bandwidth_gbs === b.memory_bandwidth_gbs
+    ? `Both machines read memory at ${b.memory_bandwidth_gbs} GB/s`
+    : `The ${esc(shortHardwareLabel(b))} reads memory at ${b.memory_bandwidth_gbs} GB/s and the ${esc(shortHardwareLabel(a))} at ${a.memory_bandwidth_gbs} GB/s`;
+
+  const name = `<a href="/models/${esc(shared.model.id)}/">${esc(shared.model.display_name)}</a>`;
+  // the paragraph above has just called it the strongest either way, so the
+  // apposition goes only where this is a third model the reader has not met
+  const subject = shared.model.id === from.most.strongest?.id && shared.model.id === to.most.strongest?.id
+    ? name
+    : `${name}, the strongest model both of them hold,`;
+
+  const basis = (row: ModelRow) => (row.throughput.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth');
+  const num = (tps: number) => `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+  const clause = basis(shared.a) !== basis(shared.b)
+    ? `runs at ${num(sTo)} on the ${to.gb} GB machine, ${basis(shared.b)}, and ${num(sFrom)} on the ${from.gb} GB one, ${basis(shared.a)}`
+    : sTo === sFrom
+      ? `runs at ${num(sTo)} on either, ${basis(shared.b)}`
+      : `runs at ${num(sTo)} on the ${to.gb} GB machine and ${num(sFrom)} on the ${from.gb} GB one, both ${basis(shared.b)}`;
+
+  return `<p>${lead} ${reads}, so ${subject} ${clause}.</p>`;
+}
+
 const modelLinks = (ms: Model[], most = 4) =>
   `${andList(ms.slice(0, most).map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`))}${
     ms.length > most ? `, and ${numberWord(ms.length - most)} more` : ''
@@ -5046,6 +5106,7 @@ function memorySizePage(gb: number): string {
   const below = MEMORY_SIZES[MEMORY_SIZES.indexOf(gb) - 1];
   const pair = above != null ? { from: v, to: sizeView(above) } : below != null ? { from: sizeView(below), to: v } : null;
   const step = pair ? sizeStep(pair.from, pair.to) : null;
+  const stepSpeed = pair ? sizeStepSpeed(pair.from, pair.to) : '';
 
   const sold = v.machines.filter((h) => (h.generation ?? 'current') === 'current');
   const machineRows = v.machines.map(sizeMachineRow).join('\n');
@@ -5136,8 +5197,8 @@ ${step && pair ? `<h2>What ${pair.to.gb} GB adds over ${pair.from.gb} GB</h2>
         : ` The strongest goes from <a href="/models/${esc(pair.from.most.strongest.id)}/">${esc(pair.from.most.strongest.display_name)}</a> to <a href="/models/${esc(pair.to.most.strongest.id)}/">${esc(pair.to.most.strongest.display_name)}</a>.`
       : ''
   }</p>
-${pair.to.priced && pair.from.priced ? `<p>The cheapest machine at ${pair.to.gb} GB is the <a href="/hardware/${esc(pair.to.priced.id)}/">${esc(hardwareLabel(pair.to.priced))}</a> at ${esc(priceWithScopeText(pair.to.priced))}. The cheapest at ${pair.from.gb} GB is the <a href="/hardware/${esc(pair.from.priced.id)}/">${esc(hardwareLabel(pair.from.priced))}</a> at ${esc(priceWithScopeText(pair.from.priced))}${(pair.to.priced.price_scope === 'card_only') === (pair.from.priced.price_scope === 'card_only') && pair.to.priced.price_usd! > pair.from.priced.price_usd! ? `, so the step costs ${fmtUsd(pair.to.priced.price_usd! - pair.from.priced.price_usd!)}` : pair.to.priced.price_usd! < pair.from.priced.price_usd! ? ', so the larger size is the cheaper of the two here' : ''}.${(pair.to.priced.price_scope === 'card_only') !== (pair.from.priced.price_scope === 'card_only') ? ' One of those two is a card and the other is a whole computer, so the gap between them is not the price of the step.' : ''}</p>` : ''}
-<p class="note">Both sides are read off the machine at each size that hands a model the most, so the comparison is the best case against the best case. The table above has every machine at ${gb} GB and what each of them holds.</p>` : ''}
+${pair.to.priced && pair.from.priced ? `<p>The cheapest machine at ${pair.to.gb} GB is the <a href="/hardware/${esc(pair.to.priced.id)}/">${esc(hardwareLabel(pair.to.priced))}</a> at ${esc(priceWithScopeText(pair.to.priced))}. The cheapest at ${pair.from.gb} GB is the <a href="/hardware/${esc(pair.from.priced.id)}/">${esc(hardwareLabel(pair.from.priced))}</a> at ${esc(priceWithScopeText(pair.from.priced))}${(pair.to.priced.price_scope === 'card_only') === (pair.from.priced.price_scope === 'card_only') && pair.to.priced.price_usd! > pair.from.priced.price_usd! ? `, so the step costs ${fmtUsd(pair.to.priced.price_usd! - pair.from.priced.price_usd!)}` : pair.to.priced.price_usd! < pair.from.priced.price_usd! ? ', so the larger size is the cheaper of the two here' : ''}.${(pair.to.priced.price_scope === 'card_only') !== (pair.from.priced.price_scope === 'card_only') ? ' One of those two is a card and the other is a whole computer, so the gap between them is not the price of the step.' : ''}</p>` : ''}${stepSpeed ? `\n${stepSpeed}` : ''}
+<p class="note">Both sides are read off the machine at each size that hands a model the most, so the comparison is the best case against the best case${stepSpeed ? ' for room, which is not the same as the best case for speed' : ''}. The table above has every machine at ${gb} GB and what each of them holds.</p>` : ''}
 
 <h2>How much context ${gb} GB leaves room for</h2>
 <p>The cache grows with the window you ask for, so the same machine holds fewer models the longer the context. ${split ? `One column here for each amount a ${gb} GB machine hands over.` : `Every machine at this size hands a model ${fmtGb1(v.most.usable)}, so one column covers all of them.`} A model is counted only where its own context ceiling reaches that far.</p>
@@ -9039,6 +9100,148 @@ function checkPrecisionBuilds() {
 }
 
 /**
+ * The speed line on each size page's step section, held to the two pages it is
+ * drawn from.
+ *
+ * Four things could go wrong here and none of them would show on the page. The
+ * verdict word could disagree with its own two figures, so a step that costs
+ * speed reads as one that buys it. The model could be the wrong one: the
+ * sentence calls it the strongest both machines hold, and a weaker one that both
+ * hold would read just as well. The two bandwidths could be swapped, which also
+ * reads perfectly. And either speed could drift from the figure the table a
+ * reader will check it against prints.
+ *
+ * So nothing here is taken from the sentence's own helper. The shared model is
+ * rebuilt from the scores over what each machine holds at this context; each
+ * bandwidth is bound to the machine whose name precedes it; and each speed is
+ * parsed back out of the model table on the size page whose roomiest machine it
+ * belongs to, with the basis word beside it.
+ */
+function checkStepSpeeds() {
+  const problems: string[] = [];
+  const label = (h: Hardware) => shortHardwareLabel(h);
+  const flat = (html: string) => unesc(html.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+
+  /** the speed a size page's own model table prints for one model */
+  const tableSpeed = (gb: number, id: string): { tps: string; basis: string } | null => {
+    const html = meta.find((m) => m.path === memorySizePath(gb))?.html;
+    if (!html) return null;
+    // the machine table links a model too, in its strongest column, so the row
+    // wanted is the one in the model table: the one that also carries a speed
+    const row = [...html.matchAll(/<tr>[\s\S]*?<\/tr>/g)]
+      .map((m) => m[0])
+      .find((r) => r.includes(`href="/models/${id}/"`) && r.includes('tok/s'));
+    const hit = row ? /([\d,.]+) tok\/s <span class="dim">([a-z]+)<\/span>/.exec(row) : null;
+    return hit ? { tps: hit[1], basis: hit[2] } : null;
+  };
+
+  const LEADS = ['More memory is not more speed.', 'The step buys speed as well as room.', 'Speed does not move with the step.'];
+  let said = 0;
+  let costs = 0;
+  for (const gb of MEMORY_SIZES) {
+    const path = memorySizePath(gb);
+    const html = meta.find((m) => m.path === path)?.html;
+    if (!html) continue;
+    const i = MEMORY_SIZES.indexOf(gb);
+    const above = MEMORY_SIZES[i + 1];
+    const below = MEMORY_SIZES[i - 1];
+    const pair = above != null ? { from: sizeView(gb), to: sizeView(above) } : below != null ? { from: sizeView(below), to: sizeView(gb) } : null;
+    const para = [...mainOf(html).matchAll(/<p>[\s\S]*?<\/p>/g)].map((m) => m[0]).find((p) => LEADS.some((l) => flat(p).startsWith(l)));
+    if (!pair) {
+      if (para) problems.push(`${path} is on no step of the ladder and says what the step does to speed`);
+      continue;
+    }
+    const a = pair.from.most.example;
+    const b = pair.to.most.example;
+    // the strongest model both machines hold, from the scores rather than from the
+    // order a view happens to come back in; a tie is a real tie and either side of
+    // it is the strongest
+    const both = currentModels.filter((m) => holds(a, m, CTX) && holds(b, m, CTX));
+    const top = Math.max(...both.map((m) => m.frontier_equivalent?.score ?? -1));
+    const owed = both.length > 0 && a.memory_bandwidth_gbs != null && b.memory_bandwidth_gbs != null;
+    if (!owed || top < 0) {
+      if (para) problems.push(`${path} says what the step does to speed where ${both.length ? 'neither machine publishes a bandwidth' : 'the two machines hold no model in common'}`);
+      continue;
+    }
+    if (!para) {
+      problems.push(`${path} compares ${pair.from.gb} GB with ${pair.to.gb} GB on room and price and says nothing about speed`);
+      continue;
+    }
+    said++;
+    const text = flat(para);
+
+    const named = [...para.matchAll(/href="\/models\/([^"]+)\/"/g)].map((m) => m[1]);
+    if (named.length !== 1) {
+      problems.push(`${path} names ${named.length} models in the sentence about speed, where it is about one both machines hold`);
+      continue;
+    }
+    const model = both.find((m) => m.id === named[0]);
+    if (!model) {
+      problems.push(`${path} says ${named[0]} is held by both machines across the step and one of them does not hold it`);
+      continue;
+    }
+    if ((model.frontier_equivalent?.score ?? -1) < top)
+      problems.push(`${path} calls ${model.display_name} the strongest model both machines hold, and ${both.find((m) => (m.frontier_equivalent?.score ?? -1) === top)!.display_name} scores higher`);
+
+    const to = tableSpeed(pair.to.gb, model.id);
+    const from = tableSpeed(pair.from.gb, model.id);
+    if (!to || !from) {
+      problems.push(`${path} quotes a speed for ${model.display_name} that no size page's own table prints`);
+      continue;
+    }
+    const nTo = Number(to.tps.replace(/,/g, ''));
+    const nFrom = Number(from.tps.replace(/,/g, ''));
+    const want = nTo < nFrom ? LEADS[0] : nTo > nFrom ? LEADS[1] : LEADS[2];
+    if (!text.startsWith(want))
+      problems.push(`${path} should open the speed line "${want}": ${model.display_name} runs at ${to.tps} tok/s at ${pair.to.gb} GB and ${from.tps} tok/s at ${pair.from.gb} GB`);
+    if (want === LEADS[0]) costs++;
+
+    // each bandwidth against the machine whose name comes before it, and the one
+    // sentence that may carry a single figure is the one where the two agree
+    if (a.memory_bandwidth_gbs === b.memory_bandwidth_gbs) {
+      if (!text.includes(`Both machines read memory at ${b.memory_bandwidth_gbs} GB/s`))
+        problems.push(`${path} sets two machines that both read memory at ${b.memory_bandwidth_gbs} GB/s and does not say so`);
+    } else {
+      if (!text.includes(`The ${label(b)} reads memory at ${b.memory_bandwidth_gbs} GB/s`))
+        problems.push(`${path} does not give the ${label(b)} the ${b.memory_bandwidth_gbs} GB/s its own page does`);
+      if (!text.includes(`and the ${label(a)} at ${a.memory_bandwidth_gbs} GB/s`))
+        problems.push(`${path} does not give the ${label(a)} the ${a.memory_bandwidth_gbs} GB/s its own page does`);
+    }
+    for (const fig of text.match(/[\d,.]+ GB\/s/g) ?? [])
+      if (![`${a.memory_bandwidth_gbs} GB/s`, `${b.memory_bandwidth_gbs} GB/s`].includes(fig))
+        problems.push(`${path} prints ${fig} in the speed line and neither machine on the step reads memory at that`);
+
+    // each speed against its own side of the step, so the two swapped cannot pass
+    if (nTo === nFrom) {
+      if (!text.includes(`runs at ${to.tps} tok/s on either`))
+        problems.push(`${path} should say ${model.display_name} runs at ${to.tps} tok/s on either machine, which is what both tables print`);
+    } else {
+      if (!text.includes(`${to.tps} tok/s on the ${pair.to.gb} GB machine`))
+        problems.push(`${path} does not put ${to.tps} tok/s, the figure the ${pair.to.gb} GB table prints, on the ${pair.to.gb} GB machine`);
+      if (!text.includes(`${from.tps} tok/s on the ${pair.from.gb} GB one`))
+        problems.push(`${path} does not put ${from.tps} tok/s, the figure the ${pair.from.gb} GB table prints, on the ${pair.from.gb} GB machine`);
+    }
+    for (const fig of text.match(/[\d,.]+ tok\/s/g) ?? [])
+      if (![`${to.tps} tok/s`, `${from.tps} tok/s`].includes(fig))
+        problems.push(`${path} prints ${fig} in the speed line and no table on either size page gives ${model.display_name} that`);
+
+    // a bare speed reads as a measurement, and nearly none of these is one
+    const basis = (b2: string) => (b2 === 'measured' ? 'measured' : 'worked out from memory bandwidth');
+    for (const [side, b2] of [[pair.to.gb, to.basis], [pair.from.gb, from.basis]] as [number, string][])
+      if (!text.includes(basis(b2)))
+        problems.push(`${path} gives the ${side} GB speed without saying it is ${basis(b2)}`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} line${problems.length === 1 ? '' : 's'} about what a step of memory does to speed do not hold to the pages they are drawn from`);
+  }
+  console.log(
+    `  ${said} size pages say what the step up the ladder does to speed, in the bandwidths and the tok/s the two pages print; on ${costs} of them the roomier machine is the slower one`,
+  );
+}
+
+/**
  * Every page on this site sits under a directory, and most of those directories are a
  * page in their own right: /hardware/ indexes the machines, /compare/ the head-to-heads,
  * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
@@ -9158,6 +9361,7 @@ checkSmallestSizeLine();
 checkOffMarketHolders();
 checkSizeLadder();
 checkPrecisionBuilds();
+checkStepSpeeds();
 // Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a

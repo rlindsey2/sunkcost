@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-01
+Last checked: 2026-10-02
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,41 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-02 · Apodex 1.1 Mini is the best-sourced candidate this watch has had, and Ling 3.1 Flash has no weights
+
+**Ling 3.1 Flash (inclusionAI), out of scope.** It appeared on the release trackers dated 2026-10-02 and is
+the one new name of the day that matters, because this site already prices Ling 3.0 flash. It is 560B total
+with about 25B active, MoE, on a free 256k trial now and a paid 1M window to follow, and **nothing is
+downloadable**: no Hugging Face repository and no licence, with inclusionAI saying the weights open only
+after the trial ends. An announced open model is not an open model, so there is no row here until the files
+exist. Sources, none opened from this container:
+[orcarouter on the trial](https://www.orcarouter.ai/blog/ling-3-1-flash-free-trial-api) and
+[on its not being an open release](https://www.orcarouter.ai/blog/ling-3-1-flash-announced-not-open-weights).
+The other two names dated 1 October are Pareto 26.10 Preview, which is a harness over several models rather
+than one set of weights, and an Amazon decision model, which is the same kind of thing as Clef below.
+
+**Apodex 1.1 Mini (Apodex), worth adding, needs an index score.** This watch had never recorded Apodex at
+all, and the Mini is the first candidate whose every memory field comes from a file this container actually
+opened. 35.95B total with about 3B active, MoE, **Apache 2.0**, a fine-tune of Qwen3.5-35B-A3B, released
+2026-08-24 and listed free on OpenRouter on 2026-10-01. huggingface.co answered this run, against the
+refusals noted above, so there is a real listing rather than a quoted figure:
+[abenzerps/Apodex-1.1-mini-GGUF](https://huggingface.co/abenzerps/Apodex-1.1-mini-GGUF) gives **Q4_K_M at
+21.7 GB** and Q8_0 at 37.8 GB, a community upload rather than Apodex's own, and
+[the base repo's config.json](https://huggingface.co/apodex/Apodex-1.1-mini/blob/main/config.json) gives 40
+layers, 2 KV heads, a head dim of 256, 256 experts with 8 per token, and 262,144 positions. At 21.7 GB it
+sits between the two 35.95B models already here, Ornith 1.5 35B-A3B at 21.71 GB and Qwen3.6 35B-A3B at
+22.13 GB, so it fits everything from 32 GB of usable memory up.
+
+Two fields are missing and neither can be guessed. **`frontier_equivalent`**: Artificial Analysis scores the
+proprietary [Apodex 1.1](https://artificialanalysis.ai/models/apodex-1-1) at 44 and carries no page for the
+Mini, which is the same wall MiMo-V2.6-Distill-Qwen-9B is behind. **`cloud_equivalent`**: the $0.30 and
+$3.00 per million tokens on that page are Apodex's own API for the flagship, not for the Mini, and a free
+trial listing is not a price to time a machine against.
+
+One warning carried forward. [llmrun.dev quotes the Mini at 21.57 GB](https://llmrun.dev/model/apodex-apodex-1-1-mini),
+which is 35.95B × 0.6 exactly: the same fixed multiple of the parameter count flagged on 2026-09-30, not a
+listing. The 21.7 GB above is the listing. Nothing new on MiMo-V2.6-Distill-Qwen-9B or MiMo-V2.6-Flash.
 
 ### 2026-10-01 · Cloudflare Clef and Clef-flash are open weights, and not this site's subject
 

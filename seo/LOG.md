@@ -31,10 +31,27 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] /how-much-memory/36gb/ is the least-linked page now, at 5 inbound. It is a size two Macs are
-      sold in and nothing here needs it: 32 GB holds every model it holds.
+- [ ] /how-much-memory/36gb/ is the least-linked page, at 5 inbound, and the cause is now known. No
+      memory-tier head-to-head reaches it: `memoryTierPairs` groups by chip variant, and the only machines
+      sold at 36 GB are the base Mac Studio Max, whose chip is cut to 32 GPU cores and 460 GB/s where every
+      larger M5 Max has 40 and 614. So /compare/mac-studio-m5-max-36gb-vs-mac-studio-m5-max-48gb/ exists,
+      is the one page whose whole subject is 36 GB against 48, and offers neither size page. The exclusion
+      is right for "the memory is what the money bought" and wrong for offering the two pages.
 
 ## Runs
+
+### 2026-10-02 — Twelve size pages said what a step up the ladder buys and never that it can cost speed
+"What 48 GB adds over 36 GB" weighed room and price and stopped. On five of the eleven steps the roomiest
+machine at the larger size reads memory more slowly than the one a rung below, so the step costs speed, and
+the section read as a verdict with that half missing. The 36 GB page said the 48 GB Mac mini M5 Pro is $200
+cheaper and nothing new fits, not that Qwen3.8 27B runs 19 tok/s on the Mac Studio it had just named and 12
+on the cheaper box. Worst from 96 to 128 GB: 1792 GB/s down to 273, 78 tok/s to 11. All 12 pages now say
+which way the step goes, in both bandwidths and both speeds; four buy speed, three leave it alone. Straight
+to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages every guard
+passing, 321 of 321 sitemap entries dated with the 12 size pages moved and no others, all 12 read rendered,
+and six mutations of `checkStepSpeeds()`, which rebuilds the shared model from the scores and reads each
+speed off the table on the page it belongs to. Watch done: Ling 3.1 Flash is announced, not open; Apodex 1.1
+Mini, Apache 2.0 at 21.7 GB from a real listing, is the best-sourced candidate yet and wants a score.
 
 ### 2026-10-01 — Seven model pages said nothing here holds a model that two machines do
 "Every machine here but the Mac Studio M5 Ultra, 256GB misses this model" was false on all seven pages
