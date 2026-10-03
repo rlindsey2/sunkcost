@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-02
+Last checked: 2026-10-03
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,48 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-03 · MiMo-V2.6-Flash has a real four-bit file size at last, and it is not the one that was quoted
+
+**The field this candidate has waited on since 2026-09-28 exists.** Two Hugging Face repositories answered
+this run, and both give a listed four-bit file rather than a calculator's multiple of the parameter count:
+
+- [ggml-org/MiMo-V2.6-Flash-RL-GGUF](https://huggingface.co/ggml-org/MiMo-V2.6-Flash-RL-GGUF/tree/main),
+  the llama.cpp organisation's own upload, lists **MXFP4 split in two parts, 5.95 MB and 167 GB**, and Q2_K
+  the same way at 5.95 MB and 126 GB. Beside them: a vision encoder (`mmproj`) at 2.75 GB BF16 and 1.56 GB
+  Q8_0, a drafter (`dflash`) at 2.94 GB and 1.57 GB, and a multi-token-prediction head (`mtp`) at 4.48 GB
+  BF16, 2.38 GB Q8_0 and 1.26 GB Q4_0.
+- [kernelpool/MiMo-V2.6-Flash-MXFP4-GGUF](https://huggingface.co/kernelpool/MiMo-V2.6-Flash-MXFP4-GGUF)
+  lists one file, **MXFP4 at 157.4 GiB**, with a vision encoder at 2.7 GiB F32 and 0.7 GiB Q8_0 and a
+  drafter at 1.5 GiB. It states what it was converted from: `XiaomiMiMo/MiMo-V2.6-Flash-RL` at revision
+  `3b38d063180c3e4aed9691fdc735f3d10b266ee4`.
+
+**MXFP4 is not a problem.** It is the quantisation this site already prices gpt-oss-20b and gpt-oss-120b at,
+so it needs no new field and no new caveat. At 157 to 167 GB the model lands where the 2026-09-28 entry put
+it, between Inkling Small at 162.54 GB and Tencent Hy3 at 182.16 GB: inside what the two Mac Studio Ultras
+hand a model and outside every Strix Halo box.
+
+**The 185.40 GB figure is now refuted, not just doubted.** Neither repository has a Q4_K_M build at all, and
+the 2026-09-30 entry's arithmetic stands: 185.40 GB is 0.6 × 309B, which is what llmrun.dev prints for every
+model. Nobody should enter it.
+
+**Which repository, and three choices that are not this watch's to make.** The two listings disagree — 167 GB
+against 157.4 GiB, which is about 169 GB — because they are different quantisation recipes, so an entry has
+to name the repository it took its figure from rather than average them. Then the name: the first-party
+checkpoint is `XiaomiMiMo/MiMo-V2.6-Flash-RL`, the `-RL` is the post-training rather than an adapter over a
+base, there are no non-RL weights, and the API id is `mimo-v2.6-flash`, so the repository and the product are
+one model under two names. And `weights_gb`: this is the first candidate here that ships its vision encoder
+and its drafter as separate files, and no model in this data has ever had a part to leave out, so whether the
+2.7 GB encoder counts toward what has to fit in memory is a decision about what the figure means.
+Secondhand source for the naming, not opened here:
+[orcarouter on MiMo-V2.6-Flash against MiMo-V2.6](https://www.orcarouter.ai/blog/mimo-v2-6-flash-vs-mimo-v2-6).
+
+**Nothing else moved.** No open-weights release is dated 2026-10-02 or 2026-10-03 on either tracker;
+[pricepertoken](https://pricepertoken.com/news/model-releases) shows Apodex 1.1 Mini, Pareto 26.10 Preview and
+Gemini 4 Argon on 1 October, all three already settled by yesterday's entry, and
+[llm-stats](https://llm-stats.com/llm-updates) shows nothing after GPT-6.1 Sol on 29 September.
+Apodex 1.1 Mini still has no index score: `artificialanalysis.ai/models/apodex-1-1-mini` answered **404** this
+run, so the wall is the same one MiMo-V2.6-Distill-Qwen-9B is behind, and that distill has no page either.
 
 ### 2026-10-02 · Apodex 1.1 Mini is the best-sourced candidate this watch has had, and Ling 3.1 Flash has no weights
 

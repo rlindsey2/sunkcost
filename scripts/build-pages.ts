@@ -2585,6 +2585,54 @@ function tierSizeNote(a: Hardware, b: Hardware): string {
   return `<p class="note">${lead}, with every machine here sold at that size, the models that fit it and what one step of memory buys: ${sizes.map(link).join(' · ')}.</p>`;
 }
 
+/**
+ * A chip-step head-to-head's way into the two size pages.
+ *
+ * A memory tier holds the silicon equal, so its two sizes are the whole of its
+ * subject and the note above offers both rungs. The four chip steps are the
+ * pairs where the maker cut the chip as well as the memory to reach a headline
+ * price, so the tier rule refuses them, and that refusal took the size pages
+ * with it: /compare/mac-studio-m5-max-36gb-vs-mac-studio-m5-max-48gb/ is the
+ * one page on this site whose whole subject is 36 GB against 48 and it offered
+ * neither, which is most of why /how-much-memory/36gb/ was the least-linked
+ * page here.
+ *
+ * The step's own section above says what the chip change costs. What it cannot
+ * say is what else is sold at the size the step is buying, and that is the
+ * question: the dearer column is one box at that size, and on three of these
+ * four pairs another box here comes at it for less. The bandwidth goes in
+ * beside the price, because cheaper at the same size is usually slower, and a
+ * price on its own would read as a recommendation this site has not made.
+ */
+function stepSizeNote(a: Hardware, b: Hardware): string {
+  const [lo, hi] = (a.price_usd ?? 0) <= (b.price_usd ?? 0) ? [a, b] : [b, a];
+  const sizes = [lo.unified_memory_gb, hi.unified_memory_gb].filter((gb) => MEMORY_SIZES.includes(gb));
+  if (!sizes.length) return '';
+  const link = (gb: number) => `<a href="${esc(memorySizePath(gb))}">what ${gb} GB runs</a>`;
+  const lead = sizes.length === 2 ? 'Each size has a page of its own' : `${sizes[0]} GB has a page of its own`;
+  return `<p class="note">${lead}, listing every machine here sold at it and the models that fit: ${sizes.map(link).join(' · ')}.${stepSizeElsewhere(hi)}</p>`;
+}
+
+/** What else is sold at the size the step is buying, in that size page's own machines. */
+function stepSizeElsewhere(hi: Hardware): string {
+  const gb = hi.unified_memory_gb;
+  if (!MEMORY_SIZES.includes(gb)) return '';
+  const now = sizeView(gb).machines.filter((h) => (h.generation ?? 'current') === 'current' && h.price_usd != null);
+  if (now.length < 2) return ` The ${esc(shortHardwareLabel(hi))} is the only machine here still sold at ${gb} GB with a published price.`;
+  const cheapest = [...now].sort((x, y) => x.price_usd! - y.price_usd! || x.id.localeCompare(y.id))[0];
+  if (cheapest.id === hi.id)
+    return ` Of the ${now.length} machines here still sold at ${gb} GB, none comes at it for less than the ${priceWithScopeText(hi)} this one costs.`;
+  const bw = cheapest.memory_bandwidth_gbs;
+  const bwHi = hi.memory_bandwidth_gbs;
+  const band =
+    bw == null || bwHi == null
+      ? ''
+      : bw === bwHi
+        ? ` Both read memory at ${bwHi} GB/s.`
+        : ` It reads memory at ${bw} GB/s against that machine's ${bwHi}.`;
+  return ` The ${now.length} machines here still sold at ${gb} GB start with the <a href="/hardware/${esc(cheapest.id)}/">${esc(shortHardwareLabel(cheapest))}</a> at ${priceWithScopeText(cheapest)}, ${fmtUsd(hi.price_usd! - cheapest.price_usd!, { cents: false })} below the ${esc(shortHardwareLabel(hi))}.${band}`;
+}
+
 // The same thing for models, and here the two rules have to be told apart. A ladder pair
 // is always [higher, lower] on the index, so each model knows whether the one it is set
 // against is the rung above it or the rung below. A generation pair is always [older,
@@ -4287,7 +4335,7 @@ ${money ? sameMoneySection(a, b) : ''}
 ${likeForLike}
 ${usageSection}
 ${extraSection}
-${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}
+${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !tiers ? `\n${stepSizeNote(a, b)}` : ''}
 <h2>The assumptions behind both columns</h2>
 <p class="note">Both columns use the same usage: ${fmtTokens(st.usage)} tokens a day at ${st.ratio}:1 input to output, ${ctxK}k of context, $${st.kwh} per kWh, and today's API prices held flat. Speeds marked <i>estimated</i> are worked out from memory bandwidth rather than measured, and pay-back scales with them.${(() => { const n = cardScopeNote([a, b], data); return n ? ` ${n}` : ''; })()} Change any of it in the calculator.</p>
 <p class="note">More head to head: <a href="/hardware/${esc(a.id)}/">everything the ${esc(la)} runs</a> · <a href="/hardware/${esc(b.id)}/">everything the ${esc(lb)} runs</a> · <a href="${SECTIONS.machineMatchUps}">every other match-up</a> · <a href="/best/">the quickest pay-back at each level of use</a> · <a href="/leaderboard/">every model against the frontier</a></p>
@@ -8988,24 +9036,30 @@ function checkSizeLadder() {
   }
 
   let matchUps = 0;
+  let stepUps = 0;
   for (const [a, b] of hardwarePairs(data)) {
     const path = hardwareComparePath(a, b);
     const html = htmlOf(path);
     if (!html) continue;
     const tier = memoryTierNames(a, b);
-    const want = tier
+    const step = tier ? null : (chipStepNames(a, b) ?? chipStepNames(b, a));
+    const want = tier || step
       ? [a.unified_memory_gb, b.unified_memory_gb].filter((gb) => MEMORY_SIZES.includes(gb)).sort((x, y) => x - y)
       : [];
     const got = [...sizeLinks(html)].sort((x, y) => x - y);
     if (got.join() !== want.join())
       problems.push(
-        tier
+        tier || step
           ? `${path} sets ${want.join(' GB against ')} GB and links the size pages ${got.join(', ') || 'none'}`
-          : `${path} is not a pair of memory tiers and links the size page for ${got.join(', ')} GB`,
+          : `${path} is neither a pair of memory tiers nor a chip step and links the size page for ${got.join(', ')} GB`,
       );
     if (tier) {
       if (!html.includes(tierSizeNote(a, b))) problems.push(`${path} does not offer the pages about the two sizes it sets against each other`);
       matchUps++;
+    }
+    if (step) {
+      if (!html.includes(stepSizeNote(a, b))) problems.push(`${path} does not offer the pages about the two sizes the step moves between`);
+      stepUps++;
     }
   }
 
@@ -9015,8 +9069,79 @@ function checkSizeLadder() {
   }
   const inbounds = MEMORY_SIZES.map((gb) => inbound.get(memorySizePath(gb))?.size ?? 0);
   console.log(
-    `  the ${MEMORY_SIZES.length} sizes link the rungs either side of them, and ${matchUps} tier match-ups link both of theirs; the least-linked size page now has ${Math.min(...inbounds)} pages pointing at it`,
+    `  the ${MEMORY_SIZES.length} sizes link the rungs either side of them, and ${matchUps} tier match-ups and ${stepUps} chip steps link both of theirs; the least-linked size page now has ${Math.min(...inbounds)} pages pointing at it`,
   );
+}
+
+/**
+ * The chip steps' offer of the two size pages, held to the machines sold at the
+ * larger size.
+ *
+ * The note is one sentence of prose about a set this page does not table, so
+ * three things can go wrong and none of them would show on the page: the count
+ * could drift as machines are added at that size, the cheapest could stop being
+ * the cheapest, and the gap and the two bandwidths could belong to a different
+ * machine than the one named. So the paragraph is read back out of the rendered
+ * page and matched against a set rebuilt from `data.hardware` rather than from
+ * `sizeView`, which is what the note itself asks. A page carrying the note
+ * where no chip step exists, or missing it where one does, is a failure too.
+ */
+function checkStepSizeOffers() {
+  const problems: string[] = [];
+  const lead = /<p class="note">(?:Each size has a page of its own, listing|\d+ GB has a page of its own, listing)[^]*?<\/p>/;
+  const steps = new Map<string, [Hardware, Hardware]>();
+  for (const [a, b] of chipStepPairs(data)) steps.set(hardwareComparePath(a, b), [a, b]);
+
+  for (const m of meta) {
+    const found = m.html.match(lead)?.[0];
+    const pair = steps.get(m.path);
+    if (!pair) {
+      if (found && !m.path.startsWith('/how-much-memory/')) problems.push(`${m.path} offers the two size pages and is not a chip step`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${m.path} is a chip step and does not offer the pages about its two sizes`);
+      continue;
+    }
+    const [lo, hi] = pair[0].price_usd! <= pair[1].price_usd! ? pair : [pair[1], pair[0]];
+    const want: string[] = [];
+    for (const gb of [lo.unified_memory_gb, hi.unified_memory_gb])
+      if (MEMORY_SIZES.includes(gb)) want.push(`<a href="${memorySizePath(gb)}">what ${gb} GB runs</a>`);
+    if (want.length !== 2) problems.push(`${m.path} sets two sizes and only ${want.length} of them has a page`);
+
+    // the set the sentence is about, rebuilt from the hardware list itself
+    const sold = data.hardware
+      .filter((h) => h.unified_memory_gb === hi.unified_memory_gb && h.usable_memory_gb != null)
+      .filter((h) => (h.generation ?? 'current') === 'current' && h.price_usd != null)
+      .sort((x, y) => x.price_usd! - y.price_usd! || x.id.localeCompare(y.id));
+    if (!sold.some((h) => h.id === hi.id)) problems.push(`${m.path} names the ${shortHardwareLabel(hi)} and it is not sold at ${hi.unified_memory_gb} GB`);
+    const cheap = sold[0];
+    if (sold.length < 2) want.push(`The ${shortHardwareLabel(hi)} is the only machine here still sold at ${hi.unified_memory_gb} GB with a published price.`);
+    else if (cheap.id === hi.id) want.push(`Of the ${sold.length} machines here still sold at ${hi.unified_memory_gb} GB, none comes at it for less than the ${priceWithScopeText(hi)} this one costs.`);
+    else {
+      want.push(`The ${sold.length} machines here still sold at ${hi.unified_memory_gb} GB start with the`);
+      want.push(`<a href="/hardware/${cheap.id}/">${shortHardwareLabel(cheap)}</a> at ${priceWithScopeText(cheap)}`);
+      want.push(`${fmtUsd(hi.price_usd! - cheap.price_usd!, { cents: false })} below the ${shortHardwareLabel(hi)}.`);
+      if (cheap.memory_bandwidth_gbs != null && hi.memory_bandwidth_gbs != null)
+        want.push(
+          cheap.memory_bandwidth_gbs === hi.memory_bandwidth_gbs
+            ? `Both read memory at ${hi.memory_bandwidth_gbs} GB/s.`
+            : `It reads memory at ${cheap.memory_bandwidth_gbs} GB/s against that machine's ${hi.memory_bandwidth_gbs}.`,
+        );
+    }
+    for (const w of want) if (!found.includes(w)) problems.push(`${m.path} does not say ${JSON.stringify(w)} in its size offer`);
+    // no figure in the paragraph that the data did not put there
+    const said = [...found.matchAll(/\d+(?:,\d{3})*(?:\.\d+)?/g)].map((x) => x[0]);
+    const allowed = new Set(want.flatMap((w) => [...w.matchAll(/\d+(?:,\d{3})*(?:\.\d+)?/g)].map((x) => x[0])));
+    for (const n of said) if (!allowed.has(n)) problems.push(`${m.path} prints ${n} in its size offer and nothing in the data says it`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} chip step${problems.length === 1 ? '' : 's'} offer the wrong size pages`);
+  }
+  const n = steps.size;
+  console.log(`  the ${n} chip steps offer both their size pages, with the machines still sold at the size the step buys`);
 }
 
 /**
@@ -9360,6 +9485,7 @@ checkModelSizeLinks();
 checkSmallestSizeLine();
 checkOffMarketHolders();
 checkSizeLadder();
+checkStepSizeOffers();
 checkPrecisionBuilds();
 checkStepSpeeds();
 // Every guard has passed, so the four files the build publishes rather than

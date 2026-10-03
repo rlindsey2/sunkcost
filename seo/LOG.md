@@ -31,14 +31,26 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] /how-much-memory/36gb/ is the least-linked page, at 5 inbound, and the cause is now known. No
-      memory-tier head-to-head reaches it: `memoryTierPairs` groups by chip variant, and the only machines
-      sold at 36 GB are the base Mac Studio Max, whose chip is cut to 32 GPU cores and 460 GB/s where every
-      larger M5 Max has 40 and 614. So /compare/mac-studio-m5-max-36gb-vs-mac-studio-m5-max-48gb/ exists,
-      is the one page whose whole subject is 36 GB against 48, and offers neither size page. The exclusion
-      is right for "the memory is what the money bought" and wrong for offering the two pages.
+- [ ] /how-much-memory/192gb/ is reachable from 8 pages and can gain nothing from a head-to-head. Its only
+      machine, the Framework Desktop 495, has no published price, and every pair rule here needs one, so the
+      page appears in no match-up at all. The four models that fit, the guide and the two neighbouring rungs
+      are the whole of its inbound links.
 
 ## Runs
+
+### 2026-10-03 — The four chip-step head-to-heads offer the two size pages they are about
+A memory-tier pair holds the silicon equal and offers both its size pages. The four pairs where the maker cut
+the chip as well as the memory fall outside that rule and offered neither rung, so the one page here whose
+whole subject is 36 GB against 48 sent a reader to no size page at all. All four now offer both, and each
+says what else is sold at the size the step buys: 4 machines at 48 GB from the Mac mini M5 Pro at $2,299,
+$800 under the Mac Studio at 307 GB/s against 614; 7 at 64 GB and 10 at 128 GB, from $259 and $1,251 under
+their own box at 256 GB/s both ways; at 256 GB only the column itself. /how-much-memory/36gb/ goes from 5
+inbound to 6, closing the item; it stays the thinnest because one machine on sale sits at 36 GB. Straight to
+main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages every guard
+passing, 321 of 321 dated with those 4 moved, all four read rendered, and seven mutations of
+`checkStepSizeOffers()`, which rebuilds a size's machines from `data.hardware` and reads every figure back
+off the rendered paragraph. Watch done: MiMo-V2.6-Flash has its first real four-bit listing, MXFP4 at 157 to
+167 GB from two repos, and the 185.40 GB Q4_K_M once quoted for it does not exist. Next: the 192 GB page.
 
 ### 2026-10-02 — Twelve size pages said what a step up the ladder buys and never that it can cost speed
 "What 48 GB adds over 36 GB" weighed room and price and stopped. On five of the eleven steps the roomiest
