@@ -31,12 +31,22 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       losing a name a searcher typed. The build counts them every run.
 - [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
       who merges it.
-- [ ] /how-much-memory/192gb/ is reachable from 8 pages and can gain nothing from a head-to-head. Its only
-      machine, the Framework Desktop 495, has no published price, and every pair rule here needs one, so the
-      page appears in no match-up at all. The four models that fit, the guide and the two neighbouring rungs
-      are the whole of its inbound links.
 
 ## Runs
+
+### 2026-10-04 — Two unpriced machines and one size page say what they would have to cost
+Every pay-back here divides a price by a daily saving, so the two unpriced machines got the same non-answer,
+"cannot be computed yet", and /how-much-memory/192gb/, whose only machine is one, gave up on the question
+this site exists to answer. A saving needs no price, so the sum runs backwards. At 500k tokens a day the
+Framework Desktop, 192GB would have to cost $154 to come back inside two years, on Qwen3.8 27B at $0.21 a
+day; at 20M, agents most of the day, $5,191 on Qwen3.5 122B-A10B. The Mac Studio M5 Ultra, 512GB needs $175.
+Both mark the borrowed power behind the electricity. The item's link half is shut: no pair rule reaches an
+unpriced machine, and the 11 pages naming the Framework 192GB in a price table would be stuffing to link.
+Straight to main. Verified: 452 tests, typecheck clean, the full build, 320 pages every guard passing, 321
+of 321 dated with those 3 moved, three read rendered, and ten mutations of `checkPriceToBeat()`, which
+prices each machine at its own printed ceiling and asks the forward sum when it breaks even, all stopping
+the build. Watch done: Index-Translate-35B-A3B has 21.7 GB from two uploads and no index score. Next: no
+workflow in .github runs on pull_request.
 
 ### 2026-10-03 — The four chip-step head-to-heads offer the two size pages they are about
 A memory-tier pair holds the silicon equal and offers both its size pages. The four pairs where the maker cut

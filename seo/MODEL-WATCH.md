@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-03
+Last checked: 2026-10-04
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,43 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-04 · Index-Translate-35B-A3B is a well-sourced four-bit build with nowhere to get a score, and Strands Decider 2B is out on kind
+
+**Index-Translate-35B-A3B-preview (Bilibili Index team), the day's one open-weights release that emits
+tokens.** 36B total with about 3B active, MoE, **Apache 2.0**, built on the Qwen3.5 MoE architecture, dated
+2026-10-02, with `max_position_embeddings=262144` on the shipped config and the serving examples capped at
+32,768 for want of GPU memory. Two independent GGUF uploads agree on the four-bit size, which is better
+sourcing than any candidate here has had:
+[IndexTeam's own GGUF repo](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-GGUF/tree/main)
+lists **Q4_K_M at 21.7 GB** (Q8_0 37.8 GB, IQ4_XS 19.4 GB, Q2_K 13.2 GB, plus an `mmproj` at 611 MB Q8_0),
+and [mradermacher's](https://huggingface.co/mradermacher/Index-Translate-35B-A3B-preview-GGUF) gives
+**21.8 GB** for the same quantisation. At 21.7 GB it lands with the other three 35B-A3B models here — Ornith
+1.5 at 21.71 GB, Qwen3.6 at 22.13 GB, KAT-Coder V2.5 Dev at 21.39 GB — so it runs on everything from 32 GB
+of usable memory up, and the base card is
+[IndexTeam/Index-Translate-35B-A3B-preview](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview).
+
+**It waits on the same wall as the last two candidates, and on one more of its own.**
+`frontier_equivalent` needs an Artificial Analysis index score and a translation-only model is not something
+that index scores, so this is not a page that might appear next week the way a general model's might.
+`cloud_equivalent` needs an endpoint that rents it by the token, and the release is weights on Hugging Face
+and ModelScope rather than a hosted product. Both are missing and neither can be guessed. Worth recording
+because the memory fields are the best-sourced of any candidate here; worth saying plainly that the two
+fields it lacks are the two that make a row on this site mean anything.
+
+**Strands Decider 2B (Amazon Strands Labs), out on kind.** 2B, Apache 2.0, weights and training scripts
+released, dated 2026-10-01. It returns typed answers with probabilities and emits no text, so it is the same
+kind of thing as Cloudflare's Clef on 2026-10-01 and is ruled out for the same reason: this site prices
+tokens a second against a per-million-token bill and a model with neither has no row. Named in passing by
+yesterday's entry as "an Amazon decision model"; this closes it.
+
+**Nothing else, and the standing blockers have not moved.**
+[pricepertoken](https://pricepertoken.com/news/model-releases), updated 2026-10-04, shows nothing after Ling
+3.1 Flash on 2 October, and [llm-stats](https://llm-stats.com/llm-updates) nothing after GPT-6.1 Sol on 29
+September. `artificialanalysis.ai/models/apodex-1-1-mini` answered **404** again this run, so Apodex 1.1
+Mini still has every field but its score; MiMo-V2.6-Distill-Qwen-9B is behind the same wall; and the three
+choices MiMo-V2.6-Flash needs made — which repository's figure, which name, whether the vision encoder
+counts toward `weights_gb` — are still not this watch's to make.
 
 ### 2026-10-03 · MiMo-V2.6-Flash has a real four-bit file size at last, and it is not the one that was quoted
 

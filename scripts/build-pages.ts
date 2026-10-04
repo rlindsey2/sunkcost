@@ -30,6 +30,7 @@ import {
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
 import { BEST_CARD, COMPARE_CARD, GPU_CARD, HARDWARE_CARD, LEADERBOARD_CARD, MEMORY_CARD, MONTHLY_CARD, TOKEN_COST_CARD } from '../src/list-card';
+import { cumulativeSaving, DAYS_PER_YEAR } from '../src/calc';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
@@ -3646,6 +3647,8 @@ function hardwarePage(hw: Hardware): string {
   const label = hardwareLabel(hw);
   const short = shortHardwareLabel(hw);
   const hwVerdict = view.calc ? lowerFirst(verdictLine(view)) : null;
+  // an announced machine with no price: the sum runs backwards. See priceToBeat().
+  const beat = priceToBeat(hw, state.usage);
   const range = familyRange(hw, data);
   const rivals = priceRivals(hw, data);
 
@@ -3751,13 +3754,13 @@ function hardwarePage(hw: Hardware): string {
   const note = splitHardwareNote(hw.notes);
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
   <div class="answer-row"><span class="answer-k">Memory</span><span class="answer-v">${hw.unified_memory_gb} GB${hw.usable_memory_gb != null ? `, about ${hw.usable_memory_gb} GB of it addressable by the GPU` : ''}${hw.memory_bandwidth_gbs ? ` at ${hw.memory_bandwidth_gbs} GB/s` : ''}</span></div>
   ${best ? `<div class="answer-row"><span class="answer-k">Best model it runs</span><span class="answer-v"><a href="/models/${esc(best.model.id)}/">${esc(best.model.display_name)}</a> — ${esc(tierName(best.model, data))}${best.throughput.tokensPerSec ? `, ${speedFrom(best.throughput)}` : ''}</span></div>` : ''}
-  <div class="answer-row"><span class="answer-k">Pay-back against the API</span><span class="answer-v">${view.calc ? esc(verdictLine(view)) : 'cannot be computed yet'}${view.calc?.breakevenDays != null ? ` at ${fmtTokens(state.usage)} tokens a day` : ''}</span></div>
+  <div class="answer-row"><span class="answer-k">Pay-back against the API</span><span class="answer-v">${view.calc ? esc(verdictLine(view)) : beat ? `needs a price under ${esc(fmtUsd(beat.middle.usd, { cents: false }))} to come back inside ${esc(yearSpan(beat.middle.months))}` : 'cannot be computed yet'}${view.calc?.breakevenDays != null || beat ? ` at ${fmtTokens(state.usage)} tokens a day` : ''}</span></div>
 </div>
 
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id }, data))}">Run the numbers on this machine</a></p>
@@ -5185,8 +5188,27 @@ function memorySizePage(gb: number): string {
     best.capped
       ? ` The ${esc(shortHardwareLabel(v.priced!))} cannot generate ${esc(fmtTokens(usage))} tokens in a day${best.max != null ? `; it manages ${esc(fmtTokens(best.max))}` : ''}, so that figure is for the most it can do.`
       : '';
+  // Where no machine at this size carries a price, the sum runs backwards: what
+  // one would have to cost. See priceToBeat().
+  const beat = v.priced ? null : priceToBeat(v.most.example, st.usage);
+  const beatHeavy = v.priced ? null : priceToBeat(v.most.example, heavy.usage);
+  const unpriced = v.most.example;
+  // whole dollars: a price to beat in cents is a precision the sum has not got
+  const beatUsd = (usd: number) => esc(fmtUsd(usd, { cents: false }));
+  const spans = (b: PriceToBeat) => andList(b.ceilings.map((c) => `${beatUsd(c.usd)} inside ${esc(yearSpan(c.months))}`));
+  const beatCap = (b: PriceToBeat, usage: number) =>
+    b.capped
+      ? ` The ${esc(shortHardwareLabel(unpriced))} cannot generate ${esc(fmtTokens(usage))} tokens in a day${b.max != null ? `; it manages ${esc(fmtTokens(b.max))}` : ''}, so those are the figures for the most it can do.`
+      : '';
+
   const payback = !v.priced
-    ? `<p>No machine here with ${gb} GB has a published price, so nothing on this page can say what one pays back. The calculator takes yours: put what you would pay beside the machine and it prices the rest.</p>`
+    ? beat
+      ? `<p>No machine here with ${gb} GB has a published price, so this page cannot say what one pays back. It can say what one would have to cost. At ${esc(fmtTokens(st.usage))} tokens a day the model that saves the most of the ${v.most.fits.length} the <a href="/hardware/${esc(unpriced.id)}/">${esc(shortHardwareLabel(unpriced))}</a> holds is <a href="/models/${esc(beat.model.id)}/">${esc(beat.model.display_name)}</a>, at ${esc(fmtUsd(beat.saving, { cents: true }))} a day against renting the same work, so for the money to come back it would have to cost no more than ${spans(beat)}.${beatCap(beat, st.usage)}${
+          beatHeavy && heavy.usage !== st.usage
+            ? ` At ${esc(fmtTokens(heavy.usage))} tokens a day, ${esc(lowerFirst(heavy.label))}, it is <a href="/models/${esc(beatHeavy.model.id)}/">${esc(beatHeavy.model.display_name)}</a> at ${esc(fmtUsd(beatHeavy.saving, { cents: true }))} a day, and those figures become ${andList(beatHeavy.ceilings.map((c) => beatUsd(c.usd)))}.${beatCap(beatHeavy, heavy.usage)}`
+            : ''
+        } Those are prices to beat, not prices anyone has announced.${beatPowerNote(unpriced)} The calculator takes yours: put what you would pay beside the machine and it prices the rest.</p>`
+      : `<p>No machine here with ${gb} GB has a published price, so this page cannot say what one pays back, and no price would make it pay back at ${esc(fmtTokens(st.usage))} tokens a day: nothing the ${esc(shortHardwareLabel(unpriced))} holds costs more to rent than the electricity costs to generate. That is an answer rather than a gap, and the calculator says at what level of use it changes.</p>`
     : soonest
       ? `<p>On the <a href="/hardware/${esc(v.priced.id)}/">${esc(hardwareLabel(v.priced))}</a> at ${esc(priceWithScopeText(v.priced))}, the cheapest machine at ${gb} GB with a published price, the model that pays it back soonest at ${esc(fmtTokens(st.usage))} tokens a day is <a href="/models/${esc(soonest.model.id)}/">${esc(soonest.model.display_name)}</a>, in ${esc(fmtDuration(soonest.days))}.${ceilingNote(soonest, st.usage)}${
           soonestHeavy && heavy.usage !== st.usage
@@ -5316,6 +5338,76 @@ function quickestPayback(hw: Hardware, fits: ModelRow[], usage: number) {
     if (!v.calc || v.calc.breakevenDays == null) continue;
     if (!best || v.calc.breakevenDays < best.days)
       best = { model: r.model, days: v.calc.breakevenDays, capped: v.capacity.capped, max: v.capacity.maxTokensPerDay ?? null };
+  }
+  return best;
+}
+
+/**
+ * The electricity in a price to beat is the one figure in it that is borrowed:
+ * neither unpriced machine has been metered, so the draw is a stand-in, and the
+ * figures lean on it as every pay-back on this site does.
+ */
+const beatPowerNote = (hw: Hardware) =>
+  hw.load_watts_status === 'stand_in' && hw.load_watts != null
+    ? ` The ${hw.load_watts} W the electricity is priced at is a stand-in: nobody has put a meter on the ${esc(shortHardwareLabel(hw))}, and <a href="/hardware/${esc(hw.id)}/">its own page</a> says what the figure borrows.`
+    : '';
+
+/** A span of ownership in words: the site offers one, two and three years of it. */
+const yearSpan = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
+
+/**
+ * What a machine with no published price would have to cost.
+ *
+ * Every pay-back figure on this site divides a price by a daily saving, so the
+ * two machines here that are announced and not priced have always been given
+ * the same non-answer: the sum cannot be done. It can be done the other way
+ * round. The saving needs the model, the machine's speed and its power draw and
+ * nothing else, so a span of ownership gives the most the machine could cost
+ * and still come back inside it — the one figure a reader waiting on the price
+ * can use, and the site's own formula with the unknown left where it is.
+ *
+ * The model is the one that saves the most in a day, which is what the sentence
+ * naming it says and, at prices held flat, the model that would pay the machine
+ * back soonest at any price: the same rule quickestPayback() applies where there
+ * is a price to divide.
+ */
+interface PriceToBeat {
+  model: Model;
+  /** what running it saves in a day against renting the same work */
+  saving: number;
+  /** the most the machine could cost and still come back inside each span */
+  ceilings: { months: number; usd: number }[];
+  /** the middle span of the three, which is the one a sentence leads with */
+  middle: { months: number; usd: number };
+  capped: boolean;
+  max: number | null;
+}
+
+function priceToBeat(hw: Hardware, usage: number): PriceToBeat | null {
+  if (hw.price_usd != null) return null;
+  // computeView refuses the sum without a price, and the saving does not depend
+  // on one, so it is taken with the price set to nothing and never read back.
+  const st = { ...defaultState(data), hw: hw.id, ctx: CTX, usage, price: 0 };
+  const days = (months: number) => (months / 12) * DAYS_PER_YEAR;
+  let best: PriceToBeat | null = null;
+  for (const r of fitsOf(computeView(st, data))) {
+    const view = computeView({ ...st, model: r.model.id }, data);
+    const c = view.calc;
+    if (!c || c.dailySaving <= 0) continue;
+    const ceilings = SPREAD_MONTHS.map((months) => ({
+      months,
+      usd: cumulativeSaving(c.cloudCostPerDay, c.localCostPerDay, c.apiDeclinePerYear, days(months)),
+    }));
+    const middle = ceilings[Math.min(1, ceilings.length - 1)];
+    if (best && c.dailySaving <= best.saving) continue;
+    best = {
+      model: r.model,
+      saving: c.dailySaving,
+      ceilings,
+      middle,
+      capped: view.capacity.capped,
+      max: view.capacity.maxTokensPerDay ?? null,
+    };
   }
   return best;
 }
@@ -6574,7 +6666,6 @@ function monthlyCostPage(): string {
     crossing: monthlyCrossing(dm, hw, data, months),
   }));
   const twoYears = spread.find((s) => s.months === 24) ?? spread[Math.min(1, spread.length - 1)];
-  const yearWord = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
 
   // the working behind the electricity figure, in the page's own numbers
   const outTokens = st.usage / (st.ratio + 1);
@@ -6630,11 +6721,11 @@ function monthlyCostPage(): string {
 
   const body = `<article class="prose">
 <h1>What does it cost to run a local LLM per month?</h1>
-<p class="lede">The power is cents. Running ${esc(dm.display_name)} on a ${esc(label)} at ${esc(fmtTokens(st.usage))} tokens a day costs ${fmtUsd(base.electricity)} a month in electricity. The monthly number that matters is the machine: ${fmtUsd(hw.price_usd)} once, which is ${fmtUsd(twoYears.owned)} a month if you keep it ${yearWord(twoYears.months)}. Renting the same month's work costs ${fmtUsd(base.rented)}.</p>
+<p class="lede">The power is cents. Running ${esc(dm.display_name)} on a ${esc(label)} at ${esc(fmtTokens(st.usage))} tokens a day costs ${fmtUsd(base.electricity)} a month in electricity. The monthly number that matters is the machine: ${fmtUsd(hw.price_usd)} once, which is ${fmtUsd(twoYears.owned)} a month if you keep it ${yearSpan(twoYears.months)}. Renting the same month's work costs ${fmtUsd(base.rented)}.</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Electricity a month</span><span class="answer-v">${fmtUsd(base.electricity)}, on a <a href="/hardware/${esc(hw.id)}/">${esc(label)}</a>: ${esc(fmtHours(base.hoursPerDay))} of generating a day at ${hw.load_watts} W${standInPower ? `<span class="c-quant">${holdHyphens('stand-in')}</span>` : ''} and ${fmtUsd(st.kwh, { cents: true })} per kWh</span></div>
-  <div class="answer-row"><span class="answer-k">The machine, by the month</span><span class="answer-v">${spread.map((s) => `${fmtUsd(s.owned)} over ${yearWord(s.months)}`).join(', ')}: ${fmtUsd(hw.price_usd)} divided by the months you keep it, plus the power</span></div>
+  <div class="answer-row"><span class="answer-k">The machine, by the month</span><span class="answer-v">${spread.map((s) => `${fmtUsd(s.owned)} over ${yearSpan(s.months)}`).join(', ')}: ${fmtUsd(hw.price_usd)} divided by the months you keep it, plus the power</span></div>
   <div class="answer-row"><span class="answer-k">The same month, rented</span><span class="answer-v">${fmtUsd(base.rented)} to rent ${ce.stand_in ? `${esc(ce.name)}, which is what ${esc(dm.display_name)} is priced as because nobody rents it` : ce.is_exact_match ? 'the same model' : `the nearest hosted equivalent, ${esc(ce.name)}`}, at ${fmtUsd(ce.input_price_per_mtok, { cents: true })} per million in and ${fmtUsd(ce.output_price_per_mtok, { cents: true })} out${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}</span></div>
   ${twoYears.crossing ? `<div class="answer-row"><span class="answer-k">Where the two meet</span><span class="answer-v">the rental bill passes ${fmtUsd(twoYears.owned)} a month at <b>${esc(fmtTokens(twoYears.crossing))} tokens a day</b>. Below that, renting is the cheaper month.</span></div>` : ''}
 </div>
@@ -6654,15 +6745,15 @@ ${stack(`<table class="board">
 <p>At ${esc(fmtTokens(levels[levels.length - 1].usage))} tokens a day, ${esc(lowerFirst(levels[levels.length - 1].label))}, the power bill is ${fmtUsd(levels[levels.length - 1].cost.electricity)} a month and the rental bill is ${fmtUsd(levels[levels.length - 1].cost.rented)}. That gap is the whole case for buying, and at ${esc(fmtTokens(st.usage))} tokens a day it is ${fmtUsd(base.gap)} a month against a ${fmtUsd(hw.price_usd)} machine.</p>
 
 <h2>The power is not the cost. The machine is.</h2>
-<p>Across the ${runners.length} current machines that run ${esc(dm.display_name)} at ${kctx}k context, a month of this work costs between ${fmtUsd(Math.min(...elec))} and ${fmtUsd(Math.max(...elec))} in electricity. Divide what they cost to buy over ${yearWord(twoYears.months)} and the same month runs from ${fmtUsd(Math.min(...owned))} to ${fmtUsd(Math.max(...owned))}. The machine you pick moves the monthly figure by ${fmtNum(Math.max(...owned) / Math.min(...owned), 0)} times; the power it draws moves it by cents.</p>
+<p>Across the ${runners.length} current machines that run ${esc(dm.display_name)} at ${kctx}k context, a month of this work costs between ${fmtUsd(Math.min(...elec))} and ${fmtUsd(Math.max(...elec))} in electricity. Divide what they cost to buy over ${yearSpan(twoYears.months)} and the same month runs from ${fmtUsd(Math.min(...owned))} to ${fmtUsd(Math.max(...owned))}. The machine you pick moves the monthly figure by ${fmtNum(Math.max(...owned) / Math.min(...owned), 0)} times; the power it draws moves it by cents.</p>
 ${stack(`<table class="board">
-<thead><tr><th>Machine</th><th>Price</th><th>Electricity a month</th>${SPREAD_MONTHS.map((months) => `<th>A month over ${yearWord(months)}</th>`).join('')}</tr></thead>
+<thead><tr><th>Machine</th><th>Price</th><th>Electricity a month</th>${SPREAD_MONTHS.map((months) => `<th>A month over ${yearSpan(months)}</th>`).join('')}</tr></thead>
 <tbody>${runnerRows}</tbody>
 </table>`, { fig: 1, labels: { 2: 'Electricity' } })}
 <p class="note">List prices, current machines, each running ${esc(dm.display_name)} at ${kctx}k context and ${esc(fmtTokens(st.usage))} tokens a day. ${cardScopeNote(runners.map((r) => r.hw), data)} ${wattsLine}</p>
 
 <h2>If you pay a subscription instead</h2>
-<p>Every rental figure here is priced by the token, from the published rate for ${esc(ce.name)}, because that is a price this site can check. A subscription is a flat monthly bill, and the number to set against it is in the table above: ${fmtUsd(twoYears.owned)} a month for ${esc(fmtTokens(st.usage))} tokens a day on a ${esc(label)}${spread.length > 1 ? `, or ${fmtUsd(spread[spread.length - 1].owned)} if you keep it ${yearWord(spread[spread.length - 1].months)}` : ''}. If your bill is smaller than that, the machine does not pay for itself by replacing it.</p>
+<p>Every rental figure here is priced by the token, from the published rate for ${esc(ce.name)}, because that is a price this site can check. A subscription is a flat monthly bill, and the number to set against it is in the table above: ${fmtUsd(twoYears.owned)} a month for ${esc(fmtTokens(st.usage))} tokens a day on a ${esc(label)}${spread.length > 1 ? `, or ${fmtUsd(spread[spread.length - 1].owned)} if you keep it ${yearSpan(spread[spread.length - 1].months)}` : ''}. If your bill is smaller than that, the machine does not pay for itself by replacing it.</p>
 <p>The calculator takes the bill directly: enter what you pay each month and it prices the machine against that instead of against per-token rates. Two things go with it, and both are in the small print there. A subscription buys the lab's own model, so the comparison only holds if ${esc(dm.display_name)} can do the work you are paying for. And a bill you pay whatever you use is not a bill that rises with use, so the falling-price assumption is switched off in that mode.</p>
 <p><a class="cta" href="${esc(calcLink({ hw: hw.id, model: dm.id }, data))}">Put your own bill in</a></p>
 
@@ -7055,7 +7146,6 @@ function checkTokenCost() {
  */
 function checkMonthlyCost() {
   const path = '/cost-per-month/';
-  const yearWord = (months: number) => (months === 12 ? 'one year' : `${numberWord(months / 12)} years`);
   const page = meta.find((p) => p.path === path);
   if (!page) throw new Error('no cost-per-month page was written');
   const html = unesc(page.html);
@@ -7126,7 +7216,7 @@ function checkMonthlyCost() {
     }
   }
   for (const months of SPREAD_MONTHS)
-    if (!html.includes(`A month over ${yearWord(months)}`))
+    if (!html.includes(`A month over ${yearSpan(months)}`))
       problems.push(`${path} prices the machines over ${months} months without a column that says so`);
   if (hw.load_watts_status === 'stand_in' && !page.html.includes(`${hw.load_watts} W<span class="c-quant">${holdHyphens('stand-in')}</span>`))
     problems.push(`${path} prices the electricity on ${hw.load_watts} W without saying that figure is a stand-in`);
@@ -9488,6 +9578,188 @@ checkSizeLadder();
 checkStepSizeOffers();
 checkPrecisionBuilds();
 checkStepSpeeds();
+/**
+ * The prices to beat, held to the formula they invert.
+ *
+ * Two machines here are announced and not priced, and their pages now answer the
+ * pay-back question backwards: the most one could cost and still come back inside
+ * a year, two or three. Every one of those figures is an inverse, and an inverse
+ * is the easiest thing on this site to get quietly wrong — a sign, a span, a
+ * rounding, a model that is not the one the sentence names.
+ *
+ * So nothing here trusts priceToBeat(). Each dollar figure is read off the
+ * rendered page, put back into the machine as the price a buyer paid, and the
+ * site's own forward sum is asked when it breaks even: a ceiling for two years
+ * that does not break even in two years is not a ceiling. The model named is
+ * checked against every model the machine holds, scored by the same sum, so a
+ * sentence cannot name the second-best saver. And a machine with a price may not
+ * print any of it.
+ */
+function checkPriceToBeat() {
+  const problems: string[] = [];
+  const flat = (html: string) => unesc(html.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  const usd = (s: string) => Number(s.replace(/[$,]/g, ''));
+  const st = defaultState(data);
+  const levels = bestUsageLevels(data);
+  const heavy = levels[levels.length - 1];
+
+  /** the day a machine at this price breaks even on this model, from the forward sum */
+  const breaksEven = (hw: Hardware, model: Model, usage: number, price: number) =>
+    computeView({ ...st, hw: hw.id, ctx: CTX, usage, price, model: model.id }, data).calc?.breakevenDays ?? null;
+
+  /** every model the machine holds that saves anything, best saver first */
+  const savers = (hw: Hardware, usage: number) =>
+    fitsOf(computeView({ ...st, hw: hw.id, ctx: CTX, usage, price: 0 }, data))
+      .map((r) => ({ model: r.model, calc: computeView({ ...st, hw: hw.id, ctx: CTX, usage, price: 0, model: r.model.id }, data).calc }))
+      .filter((x) => x.calc != null && x.calc.dailySaving > 0)
+      .sort((a, b) => b.calc!.dailySaving - a.calc!.dailySaving);
+
+  const unpriced = data.hardware.filter((h) => h.price_usd == null);
+  const spans = new Map(SPREAD_MONTHS.map((months) => [yearSpan(months), months]));
+  let figures = 0;
+
+  /**
+   * One sentence that prices a span: every dollar figure in it, against the span
+   * each is claimed for and the model it is claimed on.
+   */
+  const holdSentence = (where: string, hw: Hardware, usage: number, text: string, named: string[], ceilings: number[]) => {
+    const best = savers(hw, usage)[0];
+    if (!best) {
+      problems.push(`${where} prices a span of ${shortHardwareLabel(hw)} ownership at ${fmtTokens(usage)} tokens a day, where nothing it holds saves anything`);
+      return;
+    }
+    if (named.length !== 1 || named[0] !== best.model.id)
+      problems.push(
+        `${where} names ${named.join(' and ') || 'no model'} as the best saver on the ${shortHardwareLabel(hw)} at ${fmtTokens(usage)} tokens a day, where it is ${best.model.id}`,
+      );
+    const model = data.models.find((m) => m.id === named[0]) ?? best.model;
+    const day = fmtUsd(best.calc!.dailySaving, { cents: true });
+    if (named[0] === best.model.id && !text.includes(`${day} a day`))
+      problems.push(`${where} does not print ${day} a day, which is what ${best.model.display_name} saves on the ${shortHardwareLabel(hw)} at ${fmtTokens(usage)} tokens a day`);
+    if (ceilings.length !== SPREAD_MONTHS.length)
+      problems.push(`${where} prices ${ceilings.length} spans of ownership where this site offers ${SPREAD_MONTHS.length}`);
+    // each ceiling against the span it is claimed for, in the order the site keeps
+    ceilings.forEach((price, i) => {
+      const months = SPREAD_MONTHS[i];
+      if (months == null) return;
+      figures++;
+      const owed = (months / 12) * DAYS_PER_YEAR;
+      const days = breaksEven(hw, model, usage, price);
+      if (days == null) {
+        problems.push(`${where} says the ${shortHardwareLabel(hw)} comes back inside ${yearSpan(months)} at ${fmtUsd(price, { cents: false })} and at that price it never comes back`);
+        return;
+      }
+      // a dollar's worth of days, which is what rounding to whole dollars costs
+      const slack = Math.max(1 / best.calc!.dailySaving, 1);
+      if (Math.abs(days - owed) > slack)
+        problems.push(
+          `${where} puts ${fmtUsd(price, { cents: false })} on the ${shortHardwareLabel(hw)} as the most it can cost and come back inside ${yearSpan(months)}, and at that price it comes back in ${fmtDuration(days)}`,
+        );
+      if (price <= 0) problems.push(`${where} prices ${yearSpan(months)} of the ${shortHardwareLabel(hw)} at nothing`);
+    });
+    for (let i = 1; i < ceilings.length; i++)
+      if (ceilings[i] <= ceilings[i - 1])
+        problems.push(`${where} does not raise the ceiling with the span: ${fmtUsd(ceilings[i - 1], { cents: false })} then ${fmtUsd(ceilings[i], { cents: false })}`);
+  };
+
+  // the size page whose machines carry no price between them
+  for (const gb of MEMORY_SIZES) {
+    const v = sizeView(gb);
+    const path = memorySizePath(gb);
+    const html = meta.find((m) => m.path === path)?.html;
+    if (!html) continue;
+    const para = [...mainOf(html).matchAll(/<p>[\s\S]*?<\/p>/g)]
+      .map((m) => m[0])
+      .find((x) => flat(x).startsWith(`No machine here with ${gb} GB has a published price`));
+    if (v.priced) {
+      if (para) problems.push(`${path} has a priced machine at ${gb} GB and says none of them carries a price`);
+      continue;
+    }
+    if (!para) {
+      problems.push(`${path} prices no machine at ${gb} GB and says nothing about what one would have to cost`);
+      continue;
+    }
+    const text = flat(para);
+    if (!savers(v.most.example, st.usage).length) {
+      if (/would have to cost/.test(text))
+        problems.push(`${path} prices a span of ownership where nothing the ${shortHardwareLabel(v.most.example)} holds saves anything`);
+      continue;
+    }
+    // the two sentences the page prices, split on the level of use each is at
+    const parts = text.split(`At ${fmtTokens(heavy.usage)} tokens a day`);
+    if (parts.length !== 2 && heavy.usage !== st.usage) {
+      problems.push(`${path} says what a ${gb} GB machine would have to cost and never at ${fmtTokens(heavy.usage)} tokens a day`);
+      continue;
+    }
+    const links = (seg: string) => [...seg.matchAll(/href="\/models\/([^"]+)\/"/g)].map((m) => m[1]);
+    const figs = (seg: string) => (flat(seg).match(/\$[\d,]+(?:\.\d\d)?/g) ?? []).map(usd);
+    const halves = para.split(`At ${esc(fmtTokens(heavy.usage))} tokens a day`);
+    for (const [i, lv] of [{ usage: st.usage }, { usage: heavy.usage }].entries()) {
+      if (i === 1 && heavy.usage === st.usage) break;
+      const seg = halves[i] ?? '';
+      // the daily saving leads each half and the ceilings follow it
+      const all = figs(seg);
+      holdSentence(path, v.most.example, lv.usage, flat(seg), links(seg), all.slice(1));
+    }
+    if (!/not prices anyone has announced/.test(text))
+      problems.push(`${path} prices a machine nobody has priced and does not say the figures are not a published price`);
+    if (v.most.example.load_watts_status === 'stand_in' && !text.includes('is a stand-in'))
+      problems.push(`${path} prices the electricity in those figures at a borrowed draw and does not say so`);
+  }
+
+  // each unpriced machine's own page: the middle span, in the lede and the answer box
+  for (const hw of unpriced) {
+    const path = `/hardware/${hw.id}/`;
+    const html = meta.find((m) => m.path === path)?.html;
+    if (!html) {
+      problems.push(`${path} is not among the pages this build wrote`);
+      continue;
+    }
+    const best = savers(hw, st.usage)[0];
+    if (!best) continue;
+    const middle = SPREAD_MONTHS[Math.min(1, SPREAD_MONTHS.length - 1)];
+    const row = /Pay-back against the API<\/span><span class="answer-v">([^<]*)</.exec(html);
+    const said = unesc(row?.[1] ?? '');
+    const hit = /needs a price under (\$[\d,]+(?:\.\d\d)?) to come back inside ([a-z]+ years?)/.exec(said);
+    if (!hit) {
+      problems.push(`${path} prices nothing and its answer box says "${said}" rather than the price it would need`);
+      continue;
+    }
+    if (spans.get(hit[2]) !== middle)
+      problems.push(`${path} answers the pay-back over ${hit[2]} where every other page on this site leads with ${yearSpan(middle)}`);
+    figures++;
+    const days = breaksEven(hw, best.model, st.usage, usd(hit[1]));
+    const owed = (middle / 12) * DAYS_PER_YEAR;
+    if (days == null || Math.abs(days - owed) > Math.max(1 / best.calc!.dailySaving, 1))
+      problems.push(`${path} says it needs a price under ${hit[1]} to come back inside ${yearSpan(middle)} and at that price it comes back in ${days == null ? 'never' : fmtDuration(days)}`);
+    const lede = flat(/<p class="lede">([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '');
+    if (!lede.includes(hit[1]) || !lede.includes(best.model.display_name))
+      problems.push(`${path} answers the pay-back with ${hit[1]} on ${best.model.display_name} in its answer box and opens with something else`);
+  }
+
+  // and no machine with a price pretends to need one
+  for (const m of meta) {
+    if (!/^\/hardware\/[^/]+\/$/.test(m.path)) continue;
+    const hw = data.hardware.find((h) => `/hardware/${h.id}/` === m.path);
+    if (!hw || hw.price_usd == null) continue;
+    if (/needs a price under/.test(m.html))
+      problems.push(`${m.path} carries a published price of ${fmtUsd(hw.price_usd)} and says it needs one`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      `${problems.length} figure${problems.length === 1 ? ' about what an unpriced machine would have to cost does not invert' : 's about what an unpriced machine would have to cost do not invert'} this site's own pay-back`,
+    );
+  }
+  const sizesUnpriced = MEMORY_SIZES.filter((gb) => !sizeView(gb).priced).length;
+  console.log(
+    `  ${unpriced.length} machines are announced and not priced; their pages and the ${sizesUnpriced} size page${sizesUnpriced === 1 ? '' : 's'} with no priced machine put ${figures} prices on them, every one breaking even on the span it claims`,
+  );
+}
+
+checkPriceToBeat();
+
 // Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
 // that earned its place, and leaves the ledger alone — it records the day a

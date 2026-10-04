@@ -806,8 +806,8 @@
       "changed": "2026-09-20"
     },
     "/hardware/framework-desktop-495-192/": {
-      "hash": "254b33d20560c747",
-      "changed": "2026-09-20"
+      "hash": "b9b7bd3e2a5deaca",
+      "changed": "2026-10-04"
     },
     "/hardware/geforce-rtx-3060-12/": {
       "hash": "2f2e18c2cc4b6481",
@@ -942,8 +942,8 @@
       "changed": "2026-09-20"
     },
     "/hardware/mac-studio-m5-ultra-512/": {
-      "hash": "fd97f562d5c56d36",
-      "changed": "2026-09-20"
+      "hash": "715f478d6297ca52",
+      "changed": "2026-10-04"
     },
     "/hardware/mac-studio-m5-ultra-96/": {
       "hash": "9ecb4ebdcf768cc9",
@@ -1022,8 +1022,8 @@
       "changed": "2026-10-02"
     },
     "/how-much-memory/192gb/": {
-      "hash": "ac437428eeb9e765",
-      "changed": "2026-10-02"
+      "hash": "41e323c7ffcd6f87",
+      "changed": "2026-10-04"
     },
     "/how-much-memory/24gb/": {
       "hash": "8ee70fcef3589d82",
