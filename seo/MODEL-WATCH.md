@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-04
+Last checked: 2026-10-05
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,44 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-05 · Kolibri 1 is a 78B MoE that would fit here, and it ships only at FP8
+
+**Kolibri 1 (Aleph Alpha), released 2026-10-03 under Apache 2.0.** An English-German
+mixture-of-experts reasoning model, **78.1B total with about 3.46B active per token**, 50 layers
+with 384 experts each, routing every token to 6 experts plus 1 shared. A 1,048,576-token window,
+with 262,144 named as the practical serving figure. Weights are on Hugging Face as
+`Aleph-Alpha/Kolibri-1` in `float8_e4m3fn`, with the sensitive parts left in bfloat16. The write-up
+puts it at about 78 GB of memory, which is the shape of an FP8 build of 78.1B parameters and would
+fit the roomiest machines here. It is the first candidate this watch has found whose attention is
+mostly local: four of every five layers use a 512-token sliding window and the fifth attends to the
+whole context, so its KV cache at 262k would be small for its size, and `fit.ts` already caps
+sliding-window layers at their window.
+
+Reported benchmarks, from the same write-up and against Qwen3.6: AIME 2026 at 96% English and 90%
+German, against 91% and 84.4%; Tau3-Bench banking at 38.1% against 10.6%; MMLU-Pro CoT at 80%
+against 84.3%.
+
+**What it still needs, and why it is not a row yet.**
+
+- **`weights_gb`**: nothing cites a file listing. Every size this site prices is a four-bit build,
+  and no four-bit Kolibri 1 is quoted anywhere found. The 78 GB figure is a memory requirement in
+  prose, not a repo's file sizes, and this file does not take arithmetic on a parameter count as a
+  size.
+- **`architecture`**: the layer count and the expert layout are stated, the `n_kv_heads` and
+  `head_dim` that `kv_cache_gb_per_8k` is computed from are not, and neither is which of the 50
+  layers are the full-attention ones. `validate-data.ts` recomputes that field and would fail.
+- **`frontier_equivalent`**: Artificial Analysis has no page for it. Searched by name and by shape;
+  the index's 35B-A3B pages are Qwen's.
+- **`cloud_equivalent`**: no published token price, stated plainly by the write-up. Nobody found
+  renting it, so this would need the stand-in treatment.
+
+Sources, secondhand, neither opened from here beyond a fetch of the first:
+[DataCamp's write-up](https://www.datacamp.com/blog/aleph-alpha-kolibri-1) and
+[Mervin Praison's](https://mer.vin/news/aleph-alpha-kolibri-1-sovereign-open-weight-model-for-engineers/).
+
+Nothing moved on the three candidates that were waiting: Index-Translate-35B-A3B still has no index
+score, searched by name again today; MiMo-V2.6-Flash and Apodex 1.1 Mini are unchanged.
 
 ### 2026-10-04 · Index-Translate-35B-A3B is a well-sourced four-bit build with nowhere to get a score, and Strands Decider 2B is out on kind
 

@@ -29,10 +29,21 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] Three head-to-head titles are over 60 characters, at 61, 62 and 63, and cannot be cut without
       losing a name a searcher typed. The build counts them every run.
-- [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
-      who merges it.
 
 ## Runs
+
+### 2026-10-05 — A pull request is tested before it is merged, not by the push that deploys it
+`deploy.yml` was the only workflow and runs on a push to main, so a PR's first test was the push that
+published it: a broken guard would have been found by deploying. PR #20 adds `checks.yml` on
+`pull_request`: `npm ci`, the typecheck the deploy skips, 452 tests, the full build with every page
+guard, and one check it never had. `seo/page-dates.json` is the only committed file the build
+rewrites, and a page changed without its ledger entry deploys and crawls but takes no `lastmod` into
+the sitemap, so the diff the build leaves is the only sign. A PR because only one can prove a
+`pull_request` trigger fires, and #20's run did. Verified in that order locally, clean, then both ways
+of the mistake, reverted: a stale hash re-dated its page, and a page edited with the ledger as
+committed wrote a new hash and today's date. The step fails on either, and a matching hash keeps its
+date, so a later build cannot trip it. Watch: Kolibri 1, 78.1B/3.46B, Apache 2.0, fits here but ships
+FP8 only, with no four-bit listing. Next: the three over-length head-to-head titles.
 
 ### 2026-10-04 — Two unpriced machines and one size page say what they would have to cost
 Every pay-back here divides a price by a daily saving, so the two unpriced machines got the same non-answer,
