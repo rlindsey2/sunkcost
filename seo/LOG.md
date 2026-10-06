@@ -27,12 +27,40 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] Three head-to-head titles are over 60 characters, at 61, 62 and 63, and cannot be cut without
-      losing a name a searcher typed. The build counts them every run.
-- [ ] Nothing in .github/workflows triggers on pull_request, so a PR is only tested by the person
-      who merges it.
+- [ ] Three head-to-head titles are over 60 characters and cannot be cut without losing a name a
+      searcher typed. Read 2026-10-06 and left: Nemotron 3.5 Lightning 30B-A3B vs Qwen3 235B-A22B
+      Instruct 2507 at 63, MacBook Air M5 (15-inch), 16GB vs RTX PRO 6000 Blackwell, 96GB at 62,
+      DeepSeek-R1-Distill-Qwen-32B vs DeepSeek-R1-Distill-Llama-70B at 61. Each is 1 to 3 over, the
+      Air's bracket is the one thing that tells it from the 13-inch, and dropping "Instruct 2507"
+      loses a version a searcher types. Worth a run only if it can be done without that.
 
 ## Runs
+
+### 2026-10-06 — 56 machine pages say how fast the machine is, not only what fits in it
+A machine page answered what runs on it and whether it pays back, never how fast. The tok/s for the
+strongest model it holds sat in the answer block and the table's first row, neither of them where a
+search result reads: the first paragraph named that model and went to the money, the description
+spent its 155 characters on the count and the pay-back. Both carry it now, each saying whether the
+figure was measured or worked out from bandwidth, and none of the 56 is a measurement. The Mac
+Studio M5 Max, 128GB opens on Qwen3.8 27B at 25 tok/s at a 32k window, the RTX 3060, 12GB at 38 on
+Gemma 4 12B. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with those 56 moved and no others,
+six read rendered, and eight mutations of `checkMachineLedeSpeeds()`, which reads each speed back off
+that machine's own first row. Watch: Kolibri 1 has a 47.5 GB four-bit build and wants two fields now,
+not one. Next: the over-length titles, read this run and left; see the backlog.
+
+### 2026-10-05 — A pull request is tested before it is merged, not by the push that deploys it
+`deploy.yml` was the only workflow and runs on a push to main, so a PR's first test was the push that
+published it: a broken guard would have been found by deploying. PR #20 adds `checks.yml` on
+`pull_request`: `npm ci`, the typecheck the deploy skips, 452 tests, the full build with every page
+guard, and one check it never had. `seo/page-dates.json` is the only committed file the build
+rewrites, and a page changed without its ledger entry deploys and crawls but takes no `lastmod` into
+the sitemap, so the diff the build leaves is the only sign. A PR because only one can prove a
+`pull_request` trigger fires, and #20's run did. Verified in that order locally, clean, then both ways
+of the mistake, reverted: a stale hash re-dated its page, and a page edited with the ledger as
+committed wrote a new hash and today's date. The step fails on either, and a matching hash keeps its
+date, so a later build cannot trip it. Watch: Kolibri 1, 78.1B/3.46B, Apache 2.0, fits here but ships
+FP8 only, with no four-bit listing. Next: the three over-length head-to-head titles.
 
 ### 2026-10-04 — Two unpriced machines and one size page say what they would have to cost
 Every pay-back here divides a price by a daily saving, so the two unpriced machines got the same non-answer,

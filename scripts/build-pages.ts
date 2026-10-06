@@ -3752,9 +3752,30 @@ function hardwarePage(hw: Hardware): string {
   // Each sentence of the machine's note under the figure it is about, rather than
   // all of them under the memory figure. See splitHardwareNote().
   const note = splitHardwareNote(hw.notes);
+  // How fast this machine is, in the words a search result shows.
+  //
+  // The first paragraph named the strongest model this machine holds and went
+  // straight to the money. The tok/s for that pair was on the page twice, in the
+  // answer block and in the first row of the table, and in neither place a search
+  // result reads. The only non-brand queries this site has ever been shown for
+  // are model and machine names, and what people put after one is a machine or
+  // "tokens per second". It is the same finding that put a speed in the model pages.
+  // ledes, on the page type whose names got the impressions.
+  //
+  // The figure is the one that machine's own table prints for that model, at the
+  // context every figure on the page is taken at, and it says how it was arrived
+  // at. That is not decoration: 1,397 of the 1,425 speeds on this site are worked
+  // out from memory bandwidth, and a bare number in a sentence reads as a
+  // measurement in a way a number in a marked-up table does not.
+  const bestTps = best?.throughput.tokensPerSec ?? null;
+  const bestBasis = best?.throughput.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth';
+  const ledeSpeed =
+    best && bestTps != null
+      ? ` The strongest it holds, ${esc(best.model.display_name)}, runs at ${fmtNum(bestTps, bestTps < 10 ? 1 : 0)} tok/s with a ${ctxLabel(state.ctx)} window, ${bestBasis}.`
+      : '';
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}. Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best && !ledeSpeed ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}.${ledeSpeed} Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
@@ -3796,6 +3817,9 @@ ${headToHeadNote(hw)}
 </dl>
 </article>`;
 
+  const speedLead =
+    best && bestTps != null ? `${short} runs ${best.model.display_name} at ${fmtNum(bestTps, bestTps < 10 ? 1 : 0)} tok/s` : null;
+
   return pageShell(
     {
       title: titleOf([
@@ -3804,6 +3828,27 @@ ${headToHeadNote(hw)}
         `${short} for local LLMs`,
       ]),
       description: descOf([
+        // The speed goes first, for the reason the model pages' descriptions put
+        // it first: a machine name is one of the two things this site has ever
+        // been shown in a search result for, and what people type after one is
+        // "tokens per second". A description is 155 characters, so these variants
+        // trade the count of models, then the pay-back, then the usage it is
+        // quoted at, and fall back to the ones that say nothing about speed
+        // rather than to nothing at all.
+        ...(speedLead
+          ? [
+              ...(hwVerdict
+                ? [
+                    `${speedLead}, the strongest of the ${fits.length} open models here that fit it. It ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+                    `${speedLead}, the strongest of ${fits.length} open models that fit. It ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+                    `${speedLead}, the strongest of ${fits.length} models that fit. It ${hwVerdict}.`,
+                  ]
+                : []),
+              `${speedLead}, the strongest of the ${fits.length} open models here that fit it.`,
+              `${speedLead}. ${fits.length} of ${view.rows.length} open models fit.`,
+              `${speedLead}.`,
+            ]
+          : []),
         ...(best && hwVerdict
           ? [
               `${fits.length} of the ${view.rows.length} open models here fit a ${short}. On ${best.model.display_name}, the strongest of them, it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
@@ -7287,6 +7332,74 @@ function checkLedeSpeeds() {
 }
 
 /**
+ * The same three claims on the other side of the site: what the first paragraph
+ * of a machine page now promises about speed, held to the table it came from.
+ *
+ * A machine page's opening named the strongest model the machine holds and then
+ * the money. The speed for that pair was on the page but not in its words, so
+ * the one figure somebody searching a machine name and "tokens per second"
+ * arrived for was the one thing the paragraph did not say.
+ *
+ * The strongest model is worked out here from the data rather than taken from
+ * the variable that wrote the sentence, so a change to the table's ordering
+ * fails this rather than quietly passing it. The speed has to be the one that
+ * machine's own first row prints, to the digit, and it has to say whether
+ * anybody measured it. And no page invents one: a machine with no speed for the
+ * model it leads on says nothing about speed, which is the case the site's
+ * honesty rule is actually about.
+ */
+function checkMachineLedeSpeeds() {
+  const problems: string[] = [];
+  const text = (html: string) => unesc(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
+  const ctx = ctxLabel(defaultState(data).ctx);
+  let named = 0;
+  let quoted = 0;
+  let silent = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    const lede = text(html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '');
+    const strongest = computeView({ ...defaultState(data), hw: hw.id }, data).rows.filter((r) => r.fit.status === 'fits')[0];
+    // A machine that holds nothing at this context has no strongest model and no
+    // speed. It may not claim one.
+    if (!strongest) {
+      if (/tok\/s/.test(lede)) problems.push(`${path} opens with a speed and holds no model at ${ctx}`);
+      continue;
+    }
+    named++;
+    if (!lede.includes(strongest.model.display_name))
+      problems.push(`${path} does not name ${strongest.model.display_name} in its first paragraph, the strongest model it holds`);
+    const tps = strongest.throughput.tokensPerSec;
+    if (tps == null) {
+      silent++;
+      if (/tok\/s/.test(lede)) problems.push(`${path} opens with a speed and there is none for ${strongest.model.display_name}`);
+      continue;
+    }
+    quoted++;
+    const said = `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+    const basis = strongest.throughput.measurement === 'measured' ? 'measured' : 'worked out from memory bandwidth';
+    if (!lede.includes(`The strongest it holds, ${strongest.model.display_name}, runs at ${said} with a ${ctx} window, ${basis}.`))
+      problems.push(`${path} does not open with the ${said} it runs ${strongest.model.display_name} at, at ${ctx}, ${basis}`);
+    // the same figure in the first row of this machine's own table, which is the
+    // row for the model the paragraph leads on
+    const firstRow = text(html.split('<tbody>')[1]?.split('</tr>')[0] ?? '');
+    if (!firstRow.includes(strongest.model.display_name))
+      problems.push(`${path} opens on ${strongest.model.display_name} and its table's first row is a different model`);
+    const printed = firstRow.match(/([\d,.]+) tok\/s/)?.[1];
+    if (printed == null) problems.push(`${path} opens with ${said} and its table's first row prints no speed`);
+    else if (`${printed} tok/s` !== said) problems.push(`${path} opens with ${said} and its table's first row says ${printed} tok/s`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} machine page${problems.length === 1 ? '' : 's'} open with a speed the page itself does not bear out`);
+  }
+  console.log(
+    `  ${named} machine pages open by naming the strongest model they hold, ${quoted} of them with the speed that model's own row prints${silent ? `, ${silent} with no speed to give` : ''}`,
+  );
+}
+
+/**
  * Two ways a page can print a note out of the data and have it stop reading as
  * the page's own sentence, both of which shipped for weeks.
  *
@@ -9561,6 +9674,7 @@ checkBestGpu();
 checkBestCuts();
 checkNotes();
 checkLedeSpeeds();
+checkMachineLedeSpeeds();
 checkHardwareNotes();
 checkTierLabels();
 checkTokenCost();
