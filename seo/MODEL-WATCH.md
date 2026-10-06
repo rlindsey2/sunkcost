@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-05
+Last checked: 2026-10-06
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,42 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-06 · Kolibri 1 has a four-bit size now, and lost the one field it had instead
+
+**Kolibri 1's `weights_gb` gap is closed, and it is still not a row.** Three community GGUF repos
+quote a Q4_K_M build at about **47.5 GB** — Prompt48 at 47.45 GB decimal, Hob-forge and a third at
+47.5 GB — which is the field yesterday's entry said it was waiting on, and it lands where the 64 GB
+machines here hold it with room for a window. But searching for the other two fields closed the
+question the other way: **Artificial Analysis has no page for it**, confirmed by name again today,
+and **Aleph Alpha has published no token price**, with no Kolibri model id in its API docs as of
+2026-10-05. So the row now waits on two fields rather than one, and both are the kind this site
+cannot supply itself: no index score means no Score column, and no endpoint means `cloud_equivalent`
+would be a stand-in for a model nobody sells. `architecture` is still short of the `n_kv_heads` and
+`head_dim` that `validate-data.ts` recomputes `kv_cache_gb_per_8k` from.
+
+Sources for the four-bit size, none opened from here — huggingface.co is refused by this
+environment's egress proxy: [Prompt48](https://huggingface.co/Prompt48/Kolibri-1-GGUF),
+[Hob-forge](https://huggingface.co/Hob-forge/Kolibri-1-GGUF) and
+[aparusel](https://huggingface.co/aparusel/kolibri-1-gguf), with one write-up of what a Mac needs to
+load them ([modelfit.io](https://modelfit.io/blog/kolibri-1-aleph-alpha-mac-memory-requirements/)).
+For the two missing fields, [Kompozy's review](https://kompozy.io/reviews/kolibri) and
+[innfactory's listing](https://innfactory.ai/en/ai-models/aleph-alpha-kolibri/).
+
+**Ruled out this run.** Mistral Large 4, announced today as "Le Chonk" at about **1.05T total /
+49B active** and multimodal, is out twice over: at that size a four-bit build is far past the 384 GB
+the roomiest machine here hands a model, as Kimi K2.6, GLM-5.3 and Qwen3.8 Max already are, and the
+weights are not out — reports put them at the end of October, with only a preview served today. It
+goes on this list again if the released weights come with a smaller sibling.
+[One write-up](https://tech-insider.org/mistral-large-4-le-chonk-1-05t-parameters-2026). And
+**Clef-Flash**, a 9B Cloudflare fine-tune of Qwen3.5 9B, is out on kind for the same reason Clef was
+on 2026-10-01: a fine-tune aimed at structured output is not a model this site prices.
+
+**Unchanged.** MiMo-V2.6-Flash is still one four-bit file listing short, and today's search turned up
+the trap worth writing down: a **187.14 GB Q4_K_M** figure that search results attach to it belongs
+to **MiMo-V2-Flash**, a different model. The official repo's own quants remain Q2_K at about 126 GB
+and MXFP4 at about 167 GB, which is the same pair as 2026-10-03. Index-Translate-35B-A3B and
+Apodex 1.1 Mini are unchanged.
 
 ### 2026-10-05 · Kolibri 1 is a 78B MoE that would fit here, and it ships only at FP8
 
