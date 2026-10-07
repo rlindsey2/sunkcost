@@ -27,14 +27,26 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] Three head-to-head titles are over 60 characters and cannot be cut without losing a name a
-      searcher typed. Read 2026-10-06 and left: Nemotron 3.5 Lightning 30B-A3B vs Qwen3 235B-A22B
-      Instruct 2507 at 63, MacBook Air M5 (15-inch), 16GB vs RTX PRO 6000 Blackwell, 96GB at 62,
-      DeepSeek-R1-Distill-Qwen-32B vs DeepSeek-R1-Distill-Llama-70B at 61. Each is 1 to 3 over, the
-      Air's bracket is the one thing that tells it from the 13-inch, and dropping "Instruct 2507"
-      loses a version a searcher types. Worth a run only if it can be done without that.
+- [ ] The same unrated dots, wordless, in the "Good at" column: five greys on 652 of the 661 rows the
+      56 machine pages table, 47 of which have no rated row at all, and on 31 of the leaderboard's.
+      Dropping the column is the fix rather than a dash, because `stack()` stops the build when a
+      paired column goes quiet in one row and both tables pair that column with the next (`[3, 4]`
+      either side), so the pair has to be re-chosen or dropped with it.
 
 ## Runs
+
+### 2026-10-07 — 102 pages stop printing a rating nobody has made
+The five capability dots are the one judgement on a model page rather than a figure, and 36 of the 55 models
+here have none: every dot read "not rated", 665 times over 102 pages. On 36 model pages that was five blanks
+under "How good is it, really?" and a line about this site's last ratings pass, process language on the page a
+model-name search lands on. On 35 head-to-heads it was worse than blank, because a rated column beside an
+unrated one reads as a verdict: gemma-3-12b vs gemma-4-12b rated the older model at five jobs and the newer at
+none, where the score row has it 14 against 4. A block is printed where there are ratings now; the 19 rated
+models still print all five. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with those 102 moved and no others, four read
+rendered, the phrase gone from all 320, and ten mutations of `checkRatingBlocks()` all stopping the build.
+Closed, not done: the three over-length titles, 1 to 3 characters past 60 with no cut that keeps every name a
+searcher types. Watch: Beam, 501B-A23B, Apache 2.0, waits on its weights. Next: the same dots, wordless.
 
 ### 2026-10-06 — 56 machine pages say how fast the machine is, not only what fits in it
 A machine page answered what runs on it and whether it pays back, never how fast. The tok/s for the

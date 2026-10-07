@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-06
+Last checked: 2026-10-07
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,47 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-07 · Beam is 501B announced with Apache 2.0 weights, and the weights are not out
+
+**Beam (Reflection AI), announced 2026-10-05.** A sparse mixture of experts, reported at **501B total
+with about 23B active per token**, aimed at coding, reasoning and agentic work, with **Apache 2.0**
+weights, a technical report and a model card promised later in October. Early access is a waitlist.
+Worth recording because of where it would land: a four-bit build of 501B is the first candidate since
+GLM-5.3-Flash that could be the largest row on this site rather than ruled out above it. One write-up
+puts a four-bit build at roughly 250 GB, which would sit under the **384 GB** the Mac Studio M3 Ultra,
+512GB hands a model and over the 192 GB usable on the roomiest machine Apple still sells.
+
+**It is not a row, and nothing about it can be guessed.** That 250 GB is arithmetic on a parameter
+count, which this file does not take as a size; there is no file listing because there are no files.
+As of 2026-10-06 no Beam weights were on Hugging Face and the model could not be self-hosted, checked
+against Reflection's organisation page, which is verified and empty of them. `architecture`,
+`frontier_equivalent` and `cloud_equivalent` are all open. It goes back on this list the day the
+weights land, when the size stops being an estimate.
+
+Sources, secondhand, none opened from here:
+[TechCrunch](https://techcrunch.com/2026/10/05/reflection-debuts-beam-a-open-weight-ai-model-to-rival-chinese-models-at-lower-compute-cost/),
+[MarkTechPost](https://www.marktechpost.com/2026/10/05/reflection-ai-introduces-beam-a-501b-open-weight-moe-model-with-23b-active-parameters-for-coding-and-agentic-workloads/),
+[Reflection's own post](https://reflection.ai/blog/introducing-beam) and
+[one write-up of what it would take to run](https://aitoolsrecap.com/Blog/reflection-ai-beam-501b-open-weight-coding-model-2026).
+
+**Nothing else released that this site could price.** Mistral Large 4 is where yesterday left it: a
+preview, with weights reported for the end of October, and out on size at about 1.05T either way. A
+release tracker lists an **EmbeddingGemma 2** on 2026-10-06, and searching Google's own blog and
+Hugging Face by that name turns up only the 2025 EmbeddingGemma, so there is nothing here to record;
+an embedding model emits no tokens and would be out on kind in any case.
+
+**The four waiting candidates have not moved, and two searches closed the same way as before.**
+`artificialanalysis.ai/models/apodex-1-1-mini` answered **404** again this run. One vendor blog quotes
+the index at **44** for the full Apodex 1.1, not the Mini, citing Artificial Analysis rather than
+showing it; a secondhand citation of a score is not a score, so Apodex 1.1 Mini still waits on the one
+field it lacks ([the write-up](https://www.orcarouter.ai/blog/apodex-1-1-explained)). Searching Aleph
+Alpha's pricing again turned up Luminous and no **Kolibri 1**, with third-party aggregators
+disagreeing by a factor of a thousand on the Luminous prices, which is its own reason not to take one;
+Kolibri 1 still needs a price and a score. **MiMo-V2.6-Flash** is unchanged — Q2_K at about 126 GB and
+MXFP4 at about 157 to 167 GB, no Q4_K_M — and the **185.40 GB** figure a VRAM calculator shows for it
+labels its own row as calculated with no published GGUF file, which is the same trap as the 187.14 GB
+one on 2026-10-06. **Index-Translate-35B-A3B** is unchanged.
 
 ### 2026-10-06 · Kolibri 1 has a four-bit size now, and lost the one field it had instead
 

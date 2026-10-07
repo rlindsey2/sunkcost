@@ -686,9 +686,10 @@ export function dotRow(m: Model): string {
  * A model page printed the whole thing as its opening paragraph, so 36 pages
  * opened by telling the reader the model was unrated, and on 31 of them the
  * next section printed the score: Qwen3.8 27B said "Not yet rated" and then
- * scored 34. Split, each half says something where it lands. The description
- * opens the page. The ratings line goes under the five ratings, which is the
- * one place a reader is looking at a blank and wondering why.
+ * scored 34. Split, the description opens the page and the other half is left
+ * where it was written, in the data. It was printed for a while under the five
+ * ratings, as the explanation of a blank; the blank is not printed any more
+ * either, so there is nothing left for it to explain.
  */
 const RATING_SENTENCES = [
   'Not yet rated: released after our last ratings pass.',

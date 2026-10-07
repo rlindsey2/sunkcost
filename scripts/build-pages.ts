@@ -2449,6 +2449,27 @@ function checkFonts() {
 
 const ratingWord: Record<string, string> = { green: 'good', amber: 'usable', red: 'don’t', unknown: 'not rated' };
 
+/**
+ * The five capability ratings are a judgement someone makes after using a
+ * model, and 36 of the 55 priced here are newer than the last pass, so all
+ * five of their dots read `unknown`. Printed, that is a block of blanks: on a
+ * model page, five grey dots under "How good is it, really?"; on a
+ * head-to-head, ten table cells reading "not rated". Worse than blank on the
+ * 35 pairs where one side is rated and the other is not, because a column of
+ * ratings beside a column of blanks reads as a verdict — Gemma 3 12B against
+ * Gemma 4 12B rated the older model at five jobs and the newer one at none.
+ *
+ * So a rating block is printed where there are ratings and left out where
+ * there are none. What stays answers the same question from the figures that
+ * do exist: the index score, the band it puts the model in, and what the model
+ * is for in the lede. Nothing explains the absence, because there is no longer
+ * a blank on the page to explain, which is why the line about the ratings pass
+ * goes with the dots it was parked under.
+ */
+function isRated(m: Model): boolean {
+  return CAPABILITY_KEYS.every((k) => m.capabilities[k] !== 'unknown');
+}
+
 // Where the same model is listed at two quantisations, the quantisation is the
 // thing that tells the two pages apart, so it goes in the title.
 const sharedNames = new Set(
@@ -3297,11 +3318,13 @@ function modelPage(m: Model): string {
   // See modelSmallestSizeLine().
   const smallestLine = cheapest && sizeLine ? modelSmallestSizeLine(m, cheapest.hw.unified_memory_gb) : '';
 
-  const caps = CAPABILITY_KEYS.map(
-    (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
-  ).join('');
-  // The description opens the page; the line about the five ratings goes under
-  // the five ratings. See splitCapabilityNote().
+  // Only where there are five ratings to print. See isRated().
+  const caps = isRated(m)
+    ? CAPABILITY_KEYS.map(
+        (k) => `<li><span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}</li>`,
+      ).join('')
+    : '';
+  // The description opens the page. See splitCapabilityNote().
   const note = splitCapabilityNote(m.capability_note);
 
   // Every machine in this table holds the model at the context the page assumes,
@@ -3475,9 +3498,8 @@ ${cheapest
       ? `On the ${fe.url ? `<a href="${esc(fe.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}</a>` : esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
       : 'It has not been placed on the intelligence index yet.'}
  <a href="/leaderboard/">See the whole table</a>.</p>
-<ul class="caps">${caps}</ul>${note.ratings ? `
-<p class="note">${esc(note.ratings)}</p>` : ''}
-${versusLine}
+${caps ? `<ul class="caps">${caps}</ul>
+` : ''}${versusLine}
 <h2>${costHeading(m)}</h2>
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="${SECTIONS.millionTokens}">What a million tokens costs each way</a> puts the two prices side by side.</p>
 
@@ -5716,9 +5738,13 @@ function modelComparePage(a: Model, b: Model): string {
   const sa = a.frontier_equivalent?.score ?? null;
   const sb = b.frontier_equivalent?.score ?? null;
   const row = (k: string, x: string, y: string) => `<tr><th>${esc(k)}</th><td>${x}</td><td>${y}</td></tr>`;
-  const capRows = CAPABILITY_KEYS.map(
-    (k) => `<tr><th>${esc(CAP_SHORT[k])}</th><td><span class="dot dot-${a.capabilities[k]}"></span> ${esc(ratingWord[a.capabilities[k]])}</td><td><span class="dot dot-${b.capabilities[k]}"></span> ${esc(ratingWord[b.capabilities[k]])}</td></tr>`,
-  ).join('');
+  // Both sides or neither: half a comparison is the misleading one. See isRated().
+  const capRows =
+    isRated(a) && isRated(b)
+      ? CAPABILITY_KEYS.map(
+          (k) => `<tr><th>${esc(CAP_SHORT[k])}</th><td><span class="dot dot-${a.capabilities[k]}"></span> ${esc(ratingWord[a.capabilities[k]])}</td><td><span class="dot dot-${b.capabilities[k]}"></span> ${esc(ratingWord[b.capabilities[k]])}</td></tr>`,
+        ).join('')
+      : '';
 
   // what the model asks of any machine: the same figure the machine head-to-heads
   // print under "Needs at 32k", taken from the fit rather than recomputed
@@ -6030,12 +6056,10 @@ ${row('API price per 1M', apiPriceCell(a), apiPriceCell(b))}
 ${row('Licence', esc(a.license), esc(b.license))}
 ${row('Machines here that run it', `${ra.length} of ${considered}`, `${rb.length} of ${considered}`)}
 ${row('Cheapest machine that runs it', ra[0] ? `<a href="/hardware/${esc(ra[0].hw.id)}/">${esc(hardwareLabel(ra[0].hw))}</a> ${priceWithScope(ra[0].hw)}` : 'none listed', rb[0] ? `<a href="/hardware/${esc(rb[0].hw.id)}/">${esc(hardwareLabel(rb[0].hw))}</a> ${priceWithScope(rb[0].hw)}` : 'none listed')}
-${capRows}
-</tbody>
+${capRows ? `${capRows}\n` : ''}</tbody>
 </table>
 <p><a class="cta" href="${esc(ctaA.href)}">Run ${esc(ctaA.text)}</a> · <a href="${esc(ctaB.href)}">or ${esc(ctaB.text)}</a></p>
-<p class="note">Ratings are coarse on purpose: they say what a model is usable for, not where it places to the decimal.</p>
-${generation ? modelGenerationSection(generation[0], generation[1], data) : ''}${sideBySide}
+${capRows ? `<p class="note">Ratings are coarse on purpose: they say what a model is usable for, not where it places to the decimal.</p>\n` : ''}${generation ? modelGenerationSection(generation[0], generation[1], data) : ''}${sideBySide}
 ${usageSection}
 ${machinesSection}
 ${modelSiblingNote(a, b)}
@@ -7409,8 +7433,9 @@ function checkMachineLedeSpeeds() {
  * process, in the paragraph a search result shows — and on 31 of them the next
  * section printed a score from the intelligence index. Qwen3.8 27B, the best
  * model on this site that a graphics card runs, said it was unrated and then
- * scored 34. splitCapabilityNote() puts the description in the lede and the
- * ratings line under the five ratings it is about.
+ * scored 34. splitCapabilityNote() keeps the description, which is the half
+ * about the model, and the page prints that. The other half belongs on no page:
+ * the five blanks it explained are not printed any more either. See isRated().
  *
  * The second: the architecture notes end in a full stop, and the KV cache line
  * added another, so 41 model pages printed "on all 80 layers..". endStop()
@@ -7432,14 +7457,13 @@ function checkNotes() {
     if (!unrated && ratings) problems.push(`${m.id} carries a line about missing ratings and has ${CAPABILITY_KEYS.filter((k) => m.capabilities[k] !== 'unknown').length} of them`);
     const lede = unesc(html.match(/<p class="lede">([\s\S]*?)<\/p>/)?.[1] ?? '');
     if (!lede) problems.push(`/models/${m.id}/ has no lede`);
-    if (ratings && lede.includes(ratings)) problems.push(`/models/${m.id}/ opens with the line about its ratings`);
     if (about && !lede.includes(about)) problems.push(`/models/${m.id}/ drops what its note says about the model`);
     if (!ratings) continue;
     moved++;
-    // under the five ratings, which is the blank it explains, and nowhere else
-    const under = unesc(html.match(/<ul class="caps">[\s\S]*?<\/ul>\s*<p class="note">([\s\S]*?)<\/p>/)?.[1] ?? '');
-    if (under !== ratings) problems.push(`/models/${m.id}/ does not print the line about its ratings under them`);
-    if (unesc(html).split(ratings).length !== 2) problems.push(`/models/${m.id}/ prints the line about its ratings ${unesc(html).split(ratings).length - 1} times`);
+    // and the half about the ratings is on no page of the site, in any section
+    for (const page of meta) {
+      if (unesc(mainOf(page.html)).includes(ratings)) problems.push(`${page.path} prints the line about this site's ratings pass`);
+    }
   }
   const doubled = meta.filter((p) => /\.\.(?!\.)/.test(unesc((p.html.match(/<main[\s\S]*?<\/main>/)?.[0] ?? '').replace(/<[^>]+>/g, ' '))));
   for (const p of doubled.slice(0, 3)) problems.push(`${p.path} prints a doubled full stop`);
@@ -7447,7 +7471,7 @@ function checkNotes() {
     console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
     throw new Error(`${problems.length} page${problems.length === 1 ? '' : 's'} print a note from the data where it does not belong`);
   }
-  console.log(`  ${moved} model pages open with what their note says about the model and put the line about the five ratings under them; no page of the ${meta.length} prints a doubled full stop`);
+  console.log(`  ${moved} model pages open with what their note says about the model and no page of the ${meta.length} carries the line about this site's ratings pass or a doubled full stop`);
 }
 
 /**
@@ -9570,6 +9594,84 @@ function checkStepSpeeds() {
 }
 
 /**
+ * The rating blocks, held to the ratings there are.
+ *
+ * The five capability dots are the one thing on a model page that is a
+ * judgement rather than a figure, and 36 of the 55 models here have none of
+ * them: every dot reads `unknown`, which prints as "not rated". That word
+ * appeared 665 times over 102 pages — five dots and a line about this site's
+ * ratings pass on 36 model pages, and ten table cells on 66 head-to-heads, 35
+ * of which set a rated model against an unrated one, so the table read as a
+ * verdict on whichever of the two was newer. A block is printed where there
+ * are ratings now, and this holds both ways of getting that wrong: a rated
+ * model still has to print all five, with the word its own data gives each
+ * one, and a head-to-head between two rated models still has to table them.
+ */
+function checkRatingBlocks() {
+  const problems: string[] = [];
+  // Every word below is read back through the same map the page writes it from,
+  // so a swapped pair would match itself and invert every rating on the site at
+  // once, and a renamed fourth would turn the sweep at the end of this check
+  // into a no-op. These are the four words the site means, written out again.
+  const means: Record<string, string> = { green: 'good', amber: 'usable', red: 'don’t', unknown: 'not rated' };
+  for (const [rating, word] of Object.entries(means))
+    if (ratingWord[rating] !== word) problems.push(`a ${rating} rating reads "${ratingWord[rating]}" where it should read "${word}"`);
+  let printed = 0;
+  for (const m of data.models) {
+    const html = meta.find((x) => x.path === `/models/${m.id}/`)?.html;
+    if (html == null) continue;
+    const list = mainOf(html).match(/<ul class="caps">([\s\S]*?)<\/ul>/)?.[1] ?? null;
+    const rated = CAPABILITY_KEYS.filter((k) => m.capabilities[k] !== 'unknown').length;
+    if (!isRated(m)) {
+      if (list != null) problems.push(`/models/${m.id}/ prints a rating block with ${rated} of the ${CAPABILITY_KEYS.length} ratings in the data`);
+      continue;
+    }
+    if (list == null) {
+      problems.push(`/models/${m.id}/ is rated for all ${CAPABILITY_KEYS.length} jobs and prints none of them`);
+      continue;
+    }
+    printed++;
+    for (const k of CAPABILITY_KEYS) {
+      const cell = `<span class="dot dot-${m.capabilities[k]}"></span><b>${esc(CAP_SHORT[k])}</b> — ${esc(ratingWord[m.capabilities[k]])}`;
+      if (!list.includes(cell)) problems.push(`/models/${m.id}/ does not print ${CAP_SHORT[k].toLowerCase()} as ${ratingWord[m.capabilities[k]]}, which is what its data says`);
+    }
+  }
+  let tabled = 0;
+  const coarse = 'Ratings are coarse on purpose';
+  for (const [a, b] of modelPairs(data)) {
+    const path = modelComparePath(a, b);
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    const main = mainOf(html);
+    const shown = CAPABILITY_KEYS.filter((k) => main.includes(`<tr><th>${esc(CAP_SHORT[k])}</th>`));
+    const both = isRated(a) && isRated(b);
+    if (!both) {
+      if (shown.length) problems.push(`${path} tables ${shown.length} ratings and ${[a, b].filter((m) => !isRated(m)).map((m) => m.display_name).join(' and ')} ${isRated(a) || isRated(b) ? 'has' : 'have'} none`);
+      if (main.includes(coarse)) problems.push(`${path} explains the ratings and tables none`);
+      continue;
+    }
+    tabled++;
+    if (!main.includes(coarse)) problems.push(`${path} tables the ratings and does not say how coarse they are`);
+    for (const k of CAPABILITY_KEYS) {
+      const row = `<tr><th>${esc(CAP_SHORT[k])}</th><td><span class="dot dot-${a.capabilities[k]}"></span> ${esc(ratingWord[a.capabilities[k]])}</td><td><span class="dot dot-${b.capabilities[k]}"></span> ${esc(ratingWord[b.capabilities[k]])}</td></tr>`;
+      if (!main.includes(row)) problems.push(`${path} does not table ${CAP_SHORT[k].toLowerCase()} as ${ratingWord[a.capabilities[k]]} against ${ratingWord[b.capabilities[k]]}, which is what the two models' data says`);
+    }
+  }
+  // and nowhere on the site, in any section of any page, does a model read as unrated
+  for (const page of meta) {
+    const text = unesc(mainOf(page.html).replace(/<[^>]+>/g, ' '));
+    if (text.includes(means.unknown)) problems.push(`${page.path} says a model is ${means.unknown}`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} rating ${problems.length === 1 ? 'block does' : 'blocks do'} not hold to the ratings in the data`);
+  }
+  console.log(
+    `  ${printed} of the ${data.models.length} models are rated for all ${CAPABILITY_KEYS.length} jobs and print them, ${tabled} head-to-heads table the five for both sides, and no page of the ${meta.length} calls a model ${means.unknown}`,
+  );
+}
+
+/**
  * Every page on this site sits under a directory, and most of those directories are a
  * page in their own right: /hardware/ indexes the machines, /compare/ the head-to-heads,
  * /how-much-memory/ the sizes. /models/ is the one that is not, and a reader who trims a
@@ -9692,6 +9794,7 @@ checkSizeLadder();
 checkStepSizeOffers();
 checkPrecisionBuilds();
 checkStepSpeeds();
+checkRatingBlocks();
 /**
  * The prices to beat, held to the formula they invert.
  *
