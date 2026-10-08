@@ -27,13 +27,26 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] The same unrated dots, wordless, in the "Good at" column: five greys on 652 of the 661 rows the
-      56 machine pages table, 47 of which have no rated row at all, and on 31 of the leaderboard's.
-      Dropping the column is the fix rather than a dash, because `stack()` stops the build when a
-      paired column goes quiet in one row and both tables pair that column with the next (`[3, 4]`
-      either side), so the pair has to be re-chosen or dropped with it.
+- [ ] The 14 legacy model pages are the least-linked on the site: /models/llama-3.3-70b-q4/ has 4
+      pages pointing at it, against 14 for the thinnest machine page and 6 for the thinnest size
+      page. A superseded model name is exactly what the Search Console impressions are, and the page
+      already says what replaced it. What should link it is the open question.
 
 ## Runs
+
+### 2026-10-08 — The "Good at" column is gone from the 57 tables with nothing to put in it
+Five capability dots sat in every row of the 56 machine tables and the leaderboard's. Of those 3,545
+dots, 3,415 were the grey that means unrated: 652 of the 661 machine rows, 47 of those pages with not one rated
+row, and 31 of the leaderboard's 48. Wordless, so last run's sweep for "not rated" never saw them, and in a
+ranked table a grey row beside a coloured one is a verdict the data never made. The column is dropped rather
+than dashed. On a phone the machine tables keep a pair — memory and longest context, 254px against the 271px
+a 320px row gives, measured in Chromium — and the leaderboard loses its, because class and weights, the only
+neighbours left, want 318px. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with those 57 moved and no others, four read
+rendered at 390 and 1100px, no `dot-unknown` left on any page, and twelve mutations all stopping the build:
+`checkCapabilityDots()` counts the site's 215 dots off the data, `checkTableWidths()` holds all 886 tables'
+rows to the columns their head names. Model watch done, nothing new to price. Next: the legacy model pages,
+the least-linked on the site; see the backlog.
 
 ### 2026-10-07 — 102 pages stop printing a rating nobody has made
 The five capability dots are the one judgement on a model page rather than a figure, and 36 of the 55 models

@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-07
+Last checked: 2026-10-08
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,35 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-08 · Nothing new to price, and a second source says Apodex 1.1 Mini has no score
+
+**Beam has not shipped its weights.** Searched again by name and for a Hugging Face repo: every
+write-up of the 2026-10-05 announcement still puts the weights "later in October", one of them saying
+the model is in final red-teaming, and none of them names a repository. Access is still the waitlist.
+Unchanged from yesterday, and it goes back on this list the day the files land.
+[LetsDataScience](https://letsdatascience.com/news/reflection-introduces-beam-open-weight-reasoning-model-b6a0e32f),
+[AI Magazine](https://aimagazine.com/news/what-is-nvidia-backed-reflection-ai-its-open-weight-model),
+[ai-tldr](https://ai-tldr.dev/releases/reflection-beam/).
+
+**Apodex 1.1 Mini's missing score is now missing in two places.** BenchLM tracks the Mini and prints
+its index score as "not computed", which is the second source to say what Artificial Analysis's own
+404 said: there is no number to take. The same site puts the **full** Apodex 1.1 at 30.4 where the
+vendor blog quoted on 2026-10-07 puts it at 44 — two secondhand figures for a model that is not the
+one this site would add, disagreeing by half, which is its own reason to take neither.
+[BenchLM's Mini page](https://benchlm.ai/models/apodex-1-1-mini),
+[its Apodex 1.1 page](https://benchlm.ai/md/models/apodex-1-1.md).
+
+**One tracker entry chased down and closed.** A release timeline lists a **"GLM 5.3 Fast"** from Z.ai
+on 2026-10-07. Searching that name returns nothing of its own: every result is **GLM-5.3-Flash**, the
+320B/18B MIT-licensed model this site already prices at 188.99 GB. It is a mangled name, not a
+release. The same timeline dates **Mistral Large 4** to 2026-10-06, which is the preview entry of
+2026-10-06 — out on size at about 1.05T, with weights still reported for the end of the month.
+[llmgateway's timeline](https://llmgateway.io/timeline),
+[one write-up of the GLM pair](https://gigazine.net/gsc_news/en/20260829-glm-5-3-open/).
+
+**Kolibri 1, MiMo-V2.6-Flash and Index-Translate-35B-A3B are unchanged**, each still short of the
+fields yesterday's entry lists. Nothing else open-weight that emits tokens turned up this run.
 
 ### 2026-10-07 · Beam is 501B announced with Apache 2.0 weights, and the weights are not out
 

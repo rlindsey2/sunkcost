@@ -24,7 +24,6 @@ export {
 import { fit as memoryFit, kvScaleFor } from './fit';
 import { defaultState, serializeState, type State } from './state';
 import type { Dataset, Hardware, Model } from './types';
-import { CAPABILITY_KEYS, CAPABILITY_LABELS } from './types';
 
 export const CAP_SHORT: Record<string, string> = {
   summarisation: 'Summarising',
@@ -668,12 +667,6 @@ export const SECTIONS = {
 
 export function calcLink(state: Partial<State>, data: Dataset): string {
   return `/?${serializeState({ ...defaultState(data), ...state })}`;
-}
-
-export function dotRow(m: Model): string {
-  return `<span class="dots" role="img" aria-label="${CAPABILITY_KEYS.map((k) => `${CAP_SHORT[k]}: ${m.capabilities[k]}`).join(', ')}">${CAPABILITY_KEYS.map(
-    (k) => `<i class="dot dot-${m.capabilities[k]}" title="${esc(CAPABILITY_LABELS[k].long)}: ${m.capabilities[k]}"></i>`,
-  ).join('')}</span>`;
 }
 
 /**

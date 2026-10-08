@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   addJumpLine, anchoredHeading, anchorHeadings, andList, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
-  computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, dotRow, endStop, esc,
+  computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
@@ -1567,7 +1567,7 @@ function checkMachineContexts() {
     rows.forEach((row, i) => {
       const m = shown[i].model;
       const want = longestContext(m, hw, data);
-      const cell = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1])[5] ?? '';
+      const cell = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1])[4] ?? '';
       const printed = cell.replace(/<span class="c-quant">memory<\/span>/, '').replace(/<[^>]*>/g, '').trim();
       const should = want == null ? 'unknown' : ctxLabel(want);
       if (printed !== should)
@@ -2766,7 +2766,6 @@ function leaderboard(): string {
   <td class="c-model"><a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a><span class="c-quant">${holdHyphens(m.quantisation)}</span>${(alsoAt.get(m.id) ?? []).length ? `<br><span class="dim">also at ${andList((alsoAt.get(m.id) ?? []).map((o) => `<a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, ${fmtGb(o.weights_gb)}`))}</span>` : ''}</td>
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
-  <td class="c-caps">${dotRow(m)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
   <td class="c-hw">${cheapest ? hwCell(cheapest.hw, m, null) : shorter ? hwCell(shorter.hw, m, shorter.ctx) : '<span class="dim">nothing on the list</span>'}</td>
   <td class="c-vs">${next ? `<a href="/compare/${slug(m.id)}-vs-${slug(next.id)}/">vs ${esc(next.display_name)}</a>` : ''}</td>
@@ -2782,14 +2781,14 @@ function leaderboard(): string {
   // now, in a heading above the block, and the row keeps the one thing only it knows:
   // the figure the index gives that model with its reasoning turned down, which is in
   // the data and was printed nowhere on the site.
-  const hostedHeading = `<tr class="is-frontier"><th colspan="7">Hosted models, here for scale. You cannot download any of these; they run in someone else’s data centre.</th></tr>`;
+  const hostedHeading = `<tr class="is-frontier"><th colspan="6">Hosted models, here for scale. You cannot download any of these; they run in someone else’s data centre.</th></tr>`;
 
   const frontierRows = refs
     .map(
       (r) => `<tr class="is-hosted">
   <td class="c-model">${esc(r.name)}<span class="c-quant">hosted</span></td>
   <td class="c-score"><span class="bar"><span style="width:${((r.score / max) * 100).toFixed(1)}%"></span></span><b>${r.score}</b></td>
-  <td class="c-tier" colspan="3">${r.score_alt == null ? '' : `<span class="dim">or ${r.score_alt} with reasoning turned down</span>`}</td>
+  <td class="c-tier" colspan="2">${r.score_alt == null ? '' : `<span class="dim">or ${r.score_alt} with reasoning turned down</span>`}</td>
   <td class="c-hw"><span class="dim">—</span></td>
   <td class="c-vs"></td>
 </tr>`,
@@ -2812,14 +2811,14 @@ ${gap != null ? `<h2>How far behind the frontier open models are</h2>
 <p>The short version: the best open model here scores <b>${best.frontier_equivalent!.score}</b> — that is ${esc(best.display_name)}, and it wants ${fmtGb(best.weights_gb)} of memory. The best hosted model scores <b>${refs[0].score}</b>. That gap of ${gap} points is the thing no amount of hardware closes.</p>` : ''}
 <h2>Every model here, ranked</h2>
 ${stack(`<table class="board">
-<thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Good at</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
+<thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${hostedHeading}${frontierRows}${rows}</tbody>
-</table>`, { fig: 1, labels: { 5: 'Cheapest', 6: 'Then' }, pair: [3, 4] })}
+</table>`, { fig: 1, labels: { 4: 'Cheapest', 5: 'Then' } })}
 ${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
 ${unplaced.length ? `<h2>Models the index has not scored yet</h2>
 <p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <h2>How to read the scores</h2>
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. The dots are, in order: ${CAPABILITY_KEYS.map((k) => CAP_SHORT[k].toLowerCase()).join(', ')}.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>.</p>
 </article>`;
 
   return pageShell(
@@ -3713,7 +3712,6 @@ function hardwarePage(hw: Hardware): string {
   <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${holdHyphens(r.model.quantisation)}</span></td>
   <td>${speedWithBasis(r)}</td>
   <td>${tierScale(r.model, data)} ${tierLabel(r.model, data)}</td>
-  <td>${dotRow(r.model)}</td>
   <td>${fmtGb(r.fit.needGb)}</td>
   <td>${holds == null ? '<span class="dim">unknown</span>' : `<a href="${esc(calcLink({ hw: hw.id, model: r.model.id, ctx: holds }, data))}">${ctxLabel(holds)}</a>${memory ? '<span class="c-quant">memory</span>' : ''}`}</td>
 </tr>`;
@@ -3811,7 +3809,7 @@ function hardwarePage(hw: Hardware): string {
 ${rows ? `<h2>${runsHeading(hw)}</h2>
 ${contextLine}
 ${stack(`<table class="board">
-<thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Good at</th><th>Memory</th><th>Longest context</th></tr></thead>
+<thead><tr><th>Model</th><th>Speed</th><th>Class</th><th>Memory</th><th>Longest context</th></tr></thead>
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
 <p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `, and <a href="${esc(memorySizePath(hw.unified_memory_gb))}">one on what ${hw.unified_memory_gb} GB runs, machine by machine</a>` : ''}. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
@@ -9795,6 +9793,102 @@ checkStepSizeOffers();
 checkPrecisionBuilds();
 checkStepSpeeds();
 checkRatingBlocks();
+checkCapabilityDots();
+checkTableWidths();
+/**
+ * Every capability dot on the site, held to a rating that exists.
+ *
+ * A dot beside the word it means is a rating; a dot on its own is a colour the
+ * reader has to decode. The model tables carried the second kind in a "Good at"
+ * column, five dots per row with no word anywhere near them, and 3,415 of them
+ * were the grey that means unrated: 652 of the 661 rows across the 56 machine
+ * pages, 47 of which had not one rated row, and 31 of the leaderboard's 48. A
+ * ranked table is where that reads worst, because a grey row beside a coloured
+ * one is a verdict the data never made. The column is gone, and the dots are
+ * left where they carry their word: the five on a rated model's page, and the
+ * ten a head-to-head tables when both sides are rated.
+ *
+ * So the count is the check. Five dots per rated model page and ten per
+ * head-to-head between two rated models is the whole site's supply, drawn from
+ * the data rather than from the pages, and no dot anywhere may be the grey one.
+ */
+function checkCapabilityDots() {
+  const problems: string[] = [];
+  const rated = data.models.filter((m) => isRated(m) && meta.some((x) => x.path === `/models/${m.id}/`));
+  const pairs = modelPairs(data).filter(
+    ([a, b]) => isRated(a) && isRated(b) && meta.some((x) => x.path === modelComparePath(a, b)),
+  );
+  const expected = rated.length * CAPABILITY_KEYS.length + pairs.length * CAPABILITY_KEYS.length * 2;
+  let drawn = 0;
+  for (const page of meta) {
+    const main = mainOf(page.html);
+    const dots = [...main.matchAll(/class="dot dot-([a-z]+)"/g)].map((m) => m[1]);
+    drawn += dots.length;
+    const grey = dots.filter((d) => d === 'unknown').length;
+    if (grey) problems.push(`${page.path} draws ${grey} dot${grey === 1 ? '' : 's'} for a rating that is not in the data`);
+    // a dot in a table a phone reads as a block has no room for its word beside
+    // it, which is the column this check exists to keep gone
+    for (const t of main.matchAll(/<table class="board stack"[\s\S]*?<\/table>/g)) {
+      const n = [...t[0].matchAll(/class="dot dot-/g)].length;
+      if (n) problems.push(`${page.path} puts ${n} wordless dot${n === 1 ? '' : 's'} in a table`);
+    }
+  }
+  if (drawn !== expected) {
+    problems.push(
+      `the site draws ${drawn} capability dots where the data has ${expected}: ${CAPABILITY_KEYS.length} each on ${rated.length} rated model pages and ${CAPABILITY_KEYS.length * 2} each on ${pairs.length} head-to-heads`,
+    );
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} capability ${problems.length === 1 ? 'dot does' : 'dots do'} not stand for a rating in the data`);
+  }
+  console.log(
+    `  ${drawn} capability dots on the site, every one beside the word it means: ${CAPABILITY_KEYS.length} on each of ${rated.length} rated model pages and ${CAPABILITY_KEYS.length * 2} on each of ${pairs.length} head-to-heads`,
+  );
+}
+
+/**
+ * Every table fills the columns its own head names.
+ *
+ * Dropping a column from a table means editing two places that do not look
+ * alike: the head that names it, and every `colspan` in the body that was
+ * counted to reach across the old width. Miss one and nothing throws — the
+ * table renders, and on a phone `stack()` reads the cells past the end as
+ * something they are not, so a heading becomes a figure or a figure a label.
+ * This counts the head's columns once per table and holds every row to it.
+ */
+function checkTableWidths() {
+  const problems: string[] = [];
+  let tables = 0;
+  for (const page of meta) {
+    for (const t of mainOf(page.html).matchAll(/<table[^>]*>([\s\S]*?)<\/table>/g)) {
+      const head = t[1].match(/<thead>([\s\S]*?)<\/thead>/);
+      if (!head) continue;
+      const width = [...head[1].matchAll(/<th[^>]*>/g)].reduce(
+        (n, m) => n + Number(m[0].match(/colspan="(\d+)"/)?.[1] ?? 1),
+        0,
+      );
+      tables++;
+      for (const body of t[1].matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)) {
+        for (const r of body[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)) {
+          const cells = [...r[1].matchAll(/<(?:td|th)[^>]*>/g)].reduce(
+            (n, m) => n + Number(m[0].match(/colspan="(\d+)"/)?.[1] ?? 1),
+            0,
+          );
+          if (cells !== width) problems.push(`${page.path} has a table ${width} columns wide with a row of ${cells}`);
+        }
+      }
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(
+      `${problems.length} ${problems.length === 1 ? 'row does not fill the columns its table names' : 'rows do not fill the columns their tables name'}`,
+    );
+  }
+  console.log(`  ${tables} tables with a head of their own, every row of every one filling the columns it names`);
+}
+
 /**
  * The prices to beat, held to the formula they invert.
  *
