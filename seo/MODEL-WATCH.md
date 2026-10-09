@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-08
+Last checked: 2026-10-09
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,35 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-09 · Nothing new to price, and Kimi K3 is out on size with the figures to say so
+
+**Beam's weights are still not out.** Fifth day of searching by name and for a repository: the
+coverage of the 2026-10-05 announcement still puts the weights "later in October", one write-up
+saying before the end of the month under Apache 2.0, and access is still the waitlist. No Hugging
+Face listing. Unchanged, and it comes off this list the day the files land.
+[SCMP](https://scmp.com/tech/tech-trends/article/3369885/nvidia-backed-reflection-ai-challenges-chinese-dominance-open-weight-models),
+[Silicon UK](https://www.silicon.co.uk/ai-2/reflection-beam-open-631797),
+[The Hill](https://thehill.com/policy/technology/6130496-reflection-ai-releases-beam-model/amp/).
+
+**Kimi K3 is ruled out on size, and now the figures are written down.** A current guide to
+open-weight models names it among the leaders, so it was worth closing rather than passing over:
+2.8T parameters with 104B active, a checkpoint reported at 1.56 TB over 118 files, about 1.4 TB
+resident at its native MXFP4 before any cache. The roomiest machine this site prices holds 384 GB,
+so it runs on nothing here at any window. The licence is its own "Kimi K3 License" with revenue
+conditions, not MIT, whatever some coverage says — which would have mattered only if the size had
+not already settled it.
+[OpenRouter on the licence](https://openrouter.ai/blog/insights/kimi-k3-open-source/),
+[one report of the checkpoint size](https://rits.shanghai.nyu.edu/ai/kimi-k3-open-weights-ship-2-8t-parameters-1-4-tb-to-run/),
+[the guide that listed it](https://codersera.com/blog/open-source-llms-landscape-2026/).
+
+**No release this week to chase.** One tracker's open-weight section reads "no open source releases
+this week", and searches for a release this month, for the families the script lists and for a new
+quantisation turned up nothing that is not already here or already ruled out.
+[llm-stats updates](https://llm-stats.com/llm-updates).
+
+**Apodex 1.1 Mini, Kolibri 1, MiMo-V2.6-Flash and Index-Translate-35B-A3B are unchanged**, each
+still short of the fields their own entries list.
 
 ### 2026-10-08 · Nothing new to price, and a second source says Apodex 1.1 Mini has no score
 

@@ -782,12 +782,12 @@
       "changed": "2026-09-24"
     },
     "/hardware/beelink-gtr9-pro-128/": {
-      "hash": "af81a75563fccc3d",
-      "changed": "2026-10-08"
+      "hash": "add0ba684a557672",
+      "changed": "2026-10-09"
     },
     "/hardware/corsair-ai-workstation-300-128/": {
-      "hash": "ca65a905cd493ccf",
-      "changed": "2026-10-08"
+      "hash": "704dd05b5e90c934",
+      "changed": "2026-10-09"
     },
     "/hardware/corsair-ai-workstation-300-64/": {
       "hash": "e8ae92c10e1a1487",
@@ -798,44 +798,44 @@
       "changed": "2026-10-08"
     },
     "/hardware/framework-desktop-395-128/": {
-      "hash": "840e80db7ba19e6a",
-      "changed": "2026-10-08"
+      "hash": "bc0cc8f4ec9f7c1c",
+      "changed": "2026-10-09"
     },
     "/hardware/framework-desktop-395-64/": {
-      "hash": "644b5e0f1736b64b",
-      "changed": "2026-10-08"
+      "hash": "735ec657dbf487d9",
+      "changed": "2026-10-09"
     },
     "/hardware/framework-desktop-495-192/": {
       "hash": "315005904be3d5a1",
       "changed": "2026-10-08"
     },
     "/hardware/geforce-rtx-3060-12/": {
-      "hash": "056512586c5951f9",
-      "changed": "2026-10-08"
+      "hash": "2599b7a526eeab56",
+      "changed": "2026-10-09"
     },
     "/hardware/geforce-rtx-3090-24/": {
-      "hash": "626825bac05833fc",
-      "changed": "2026-10-08"
+      "hash": "51849b3c73fa6339",
+      "changed": "2026-10-09"
     },
     "/hardware/geforce-rtx-4080-16/": {
-      "hash": "12abf325a5754fbc",
-      "changed": "2026-10-08"
+      "hash": "10060e7680fe4129",
+      "changed": "2026-10-09"
     },
     "/hardware/geforce-rtx-4090-24/": {
-      "hash": "844f9fa7a1ade547",
-      "changed": "2026-10-08"
+      "hash": "ab26dd104f77b2c0",
+      "changed": "2026-10-09"
     },
     "/hardware/geforce-rtx-5090-32/": {
-      "hash": "7ce791e064f46aed",
-      "changed": "2026-10-08"
+      "hash": "5099b857d18c6931",
+      "changed": "2026-10-09"
     },
     "/hardware/gmktec-evo-x2-128/": {
-      "hash": "d70c97a9524fa533",
-      "changed": "2026-10-08"
+      "hash": "a388322a0b5cb7db",
+      "changed": "2026-10-09"
     },
     "/hardware/gmktec-evo-x2-64/": {
-      "hash": "c2985e3a845b5c93",
-      "changed": "2026-10-08"
+      "hash": "1853b85d811576b4",
+      "changed": "2026-10-09"
     },
     "/hardware/gmktec-evo-x3-128/": {
       "hash": "d3aef0db5d80950d",
@@ -846,28 +846,28 @@
       "changed": "2026-10-08"
     },
     "/hardware/mac-mini-m4-16/": {
-      "hash": "c49975f0739d5a5b",
-      "changed": "2026-10-08"
+      "hash": "0906cf469af8d487",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-mini-m4-24/": {
-      "hash": "197a000c0fa0f6f6",
-      "changed": "2026-10-08"
+      "hash": "f58d6db25aaa1a1a",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-mini-m4-32/": {
-      "hash": "541374208a9c5c1c",
-      "changed": "2026-10-08"
+      "hash": "33d41ef5ec5a6c95",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-mini-m4-pro-24/": {
-      "hash": "06b2d827530b747d",
-      "changed": "2026-10-08"
+      "hash": "0c7ff40c187e902e",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-mini-m4-pro-48/": {
-      "hash": "a8e09f20bed3b4fb",
-      "changed": "2026-10-08"
+      "hash": "d8e84c2927208618",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-mini-m4-pro-64/": {
-      "hash": "00526eca0ee6fe49",
-      "changed": "2026-10-08"
+      "hash": "83b2355e121aa055",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-mini-m5-pro-24/": {
       "hash": "4616a59af0878895",
@@ -894,32 +894,32 @@
       "changed": "2026-10-08"
     },
     "/hardware/mac-studio-m3-ultra-256/": {
-      "hash": "92a92a257d41c51c",
-      "changed": "2026-10-08"
+      "hash": "5baf1341e478ce44",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-studio-m3-ultra-512/": {
-      "hash": "072ca8397cb124b6",
-      "changed": "2026-10-08"
+      "hash": "bccdd4b1ec155985",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-studio-m3-ultra-96/": {
-      "hash": "c0e1466129b63750",
-      "changed": "2026-10-08"
+      "hash": "82c657b3ec0c5bb4",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-studio-m4-max-128/": {
-      "hash": "9b5a1f4eb197bd54",
-      "changed": "2026-10-08"
+      "hash": "0cea927e1b764e51",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-studio-m4-max-36/": {
       "hash": "15084c95fac08cf7",
       "changed": "2026-10-08"
     },
     "/hardware/mac-studio-m4-max-48/": {
-      "hash": "879e3edbd37ea9e3",
-      "changed": "2026-10-08"
+      "hash": "412083cc69f9c1a9",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-studio-m4-max-64/": {
-      "hash": "44712545c2de3c70",
-      "changed": "2026-10-08"
+      "hash": "ee7f155424cb0429",
+      "changed": "2026-10-09"
     },
     "/hardware/mac-studio-m5-max-128/": {
       "hash": "05fd10b43bd1f122",
@@ -994,16 +994,16 @@
       "changed": "2026-10-08"
     },
     "/hardware/nvidia-dgx-spark-128/": {
-      "hash": "93aaebe68f647b0e",
-      "changed": "2026-10-08"
+      "hash": "c292137eaf6ece66",
+      "changed": "2026-10-09"
     },
     "/hardware/radeon-ai-pro-r9700-32/": {
-      "hash": "efee131ce9a32dc5",
-      "changed": "2026-10-08"
+      "hash": "9def886ac6dea5b9",
+      "changed": "2026-10-09"
     },
     "/hardware/rtx-pro-6000-blackwell-96/": {
-      "hash": "e6fbe771a9f393ad",
-      "changed": "2026-10-08"
+      "hash": "f0ce16bfdf170b31",
+      "changed": "2026-10-09"
     },
     "/how-much-memory/": {
       "hash": "03b9d4750d583b17",

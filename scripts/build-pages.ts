@@ -34,7 +34,7 @@ import { cumulativeSaving, DAYS_PER_YEAR } from '../src/calc';
 import { defaultState } from '../src/state';
 import { hasShareCard } from '../src/share';
 import { bestByTier, bestUsageLevels } from '../src/best';
-import { fit, footprintGb, kvCacheGb, kvScaleFor } from '../src/fit';
+import { contextSpeedFactor, fit, footprintGb, kvCacheGb, kvScaleFor, resolveThroughput } from '../src/fit';
 import { fingerprint, mainOf, nextDates, publishedDate, type PageDates } from '../src/page-dates';
 import { CAPABILITY_KEYS, type Dataset, type Hardware, type Model } from '../src/types';
 import type { ModelRow, View } from '../src/compute';
@@ -3661,6 +3661,101 @@ ${stack(`<table class="board">
 `;
 }
 
+/**
+ * What anybody has actually measured on this machine.
+ *
+ * Of the 1,425 speeds on this site, 1,397 are worked out from memory bandwidth,
+ * and a machine page said as much and stopped: "every one here is estimated from
+ * this machine's 819 GB/s of memory bandwidth rather than taken from a published
+ * benchmark". True of the table it sits under, and it reads as though nobody has
+ * ever run a model on the box. Somebody has. data/throughput.json holds 98
+ * published figures across 27 of the 56 machines, and 70 of them were taken on
+ * superseded models, which the calculator hides until asked and the machine
+ * table leaves out — so the page that answers how fast a machine is showed no
+ * figure anyone had measured on it.
+ *
+ * Every measurement this site holds for the machine goes in the section: the
+ * figure as its source published it, at the window it was run at, and the same
+ * measurement read at the context the rest of the page is taken at. The three
+ * pairs site-wide where the machine cannot hold the model at that context fall
+ * back to the longest window it does hold, in the row.
+ *
+ * A machine whose measurements are all on models the table above already prints
+ * gets no section: there the page is not hiding anything, and the only machine
+ * in that case is the HP Z2 Mini G1a.
+ */
+type MeasuredOn = { model: Model; published: number; from: number; ctx: number; tps: number; sourceUrl: string };
+
+function measuredOn(hw: Hardware): MeasuredOn[] {
+  const state = defaultState(data);
+  const kv = kvScaleFor(state.kv, data.defaults);
+  const out: MeasuredOn[] = [];
+  for (const t of data.throughput) {
+    if (t.hardware_id !== hw.id || t.measurement !== 'measured' || t.tokens_per_sec == null) continue;
+    const model = data.models.find((m) => m.id === t.model_id);
+    if (!model) continue;
+    // the context the figure is quoted at: the page's own, where the machine
+    // holds the model there, and otherwise the longest window it does hold
+    const ctx = fit(model, hw, state.ctx, data.defaults.nearly_fits_ratio, kv).status === 'fits'
+      ? state.ctx
+      : longestContext(model, hw, data);
+    if (ctx == null) continue;
+    const tp = resolveThroughput(model, hw, data.throughput, data.defaults, ctx, kv);
+    if (tp.tokensPerSec == null || tp.measurement !== 'measured') continue;
+    out.push({ model, published: t.tokens_per_sec, from: t.measured_at_context ?? 0, ctx, tps: tp.tokensPerSec, sourceUrl: t.source_url ?? '' });
+  }
+  return out.sort((a, b) => b.tps - a.tps || a.model.display_name.localeCompare(b.model.display_name));
+}
+
+/** The window a figure was measured at, in words, down to the 512 tokens one source used. */
+const measuredAt = (tokens: number) =>
+  tokens === 0 ? 'measured at an empty window' : tokens < 1024 ? `measured at ${tokens} tokens` : `measured at ${ctxLabel(tokens)}`;
+
+const measuredHeading = (hw: Hardware) => `What has been measured on the ${esc(shortHardwareLabel(hw))}`;
+
+function measuredSection(hw: Hardware, shown: ModelRow[]): string {
+  const rows = measuredOn(hw);
+  const older = rows.filter((r) => r.model.generation === 'legacy');
+  if (!older.length) return '';
+  const ctx = defaultState(data).ctx;
+  const k = ctxLabel(ctx);
+  // The note under the table above already says how its speeds were arrived at,
+  // so this does not repeat the bandwidth figure: it says what that leaves out.
+  const inTable = shown.filter((r) => r.throughput.measurement === 'measured').length;
+  const lead = inTable
+    ? `${sentenceCase(numberWord(inTable))} of the speeds above ${inTable === 1 ? 'is' : 'are'} measured on this machine, and there are more measurements than the table shows.`
+    : `Not one of the speeds above was measured on this machine, and that is not because nobody has run a model on one.`;
+  // How much of what follows the page above never showed, which is the whole
+  // reason the section is here: on 25 of the 26 machines that get one, every
+  // measurement but a handful is on a model the calculator hides until asked.
+  const scope =
+    rows.length === 1
+      ? 'on a superseded model the table above leaves out'
+      : older.length === rows.length
+        ? rows.length === 2
+          ? 'both on superseded models the table above leaves out'
+          : 'every one on a superseded model the table above leaves out'
+        : `${numberWord(older.length)} of them on ${older.length === 1 ? 'a superseded model' : 'superseded models'} the table above leaves out`;
+  const body = rows
+    .map(
+      (r) => `<tr>
+  <td class="c-model"><a href="/models/${esc(r.model.id)}/">${esc(r.model.display_name)}</a><span class="c-quant">${holdHyphens(r.model.quantisation)}</span>${r.model.generation === 'legacy' ? '<span class="c-quant">superseded</span>' : ''}</td>
+  <td>${speedFrom({ tokensPerSec: r.tps, measurement: 'measured' })}${r.ctx !== ctx ? `<span class="c-quant">at ${ctxLabel(r.ctx)}</span>` : ''}</td>
+  <td>${fmtNum(r.published, r.published < 10 ? 1 : 0)} tok/s<span class="c-quant">${measuredAt(r.from)}</span></td>
+</tr>`,
+    )
+    .join('');
+  return `<h2>${measuredHeading(hw)}</h2>
+<p>${lead} This site holds ${numberWord(rows.length)} published ${rows.length === 1 ? 'speed' : 'speeds'} taken on this machine, ${scope}. ${rows.length === 1 ? 'It is' : 'They are'} below, as published and again at ${k} of context, which is what every other speed on this page is taken at.</p>
+${stack(`<table class="board">
+<thead><tr><th>Model</th><th>At ${k}</th><th>As published</th></tr></thead>
+<tbody>${body}</tbody>
+</table>`, { fig: 1 })}
+<p class="note">A published figure is what its source reports, at the window the model was run at. The ${k} figure is that measurement read at ${k} of context: every token generated reads the weights and the whole key-value cache, so the longer the window the slower it runs.${rows.some((r) => r.ctx !== ctx) ? ` Where this machine does not hold a model at ${k}, the row gives the longest window it does hold.` : ''} ${rows.length === 1 ? 'The figure comes' : 'The figures come'} from ${sourceLinks([...new Set(rows.map((r) => r.sourceUrl))])}.</p>
+
+`;
+}
+
 function hardwarePage(hw: Hardware): string {
   const state = { ...defaultState(data), hw: hw.id };
   const view = computeView(state, data);
@@ -3815,7 +3910,7 @@ ${stack(`<table class="board">
 <p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `, and <a href="${esc(memorySizePath(hw.unified_memory_gb))}">one on what ${hw.unified_memory_gb} GB runs, machine by machine</a>` : ''}. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
 ${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
 
-${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
+${measuredSection(hw, shown)}${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Memory</th><th>Models that fit</th><th>Pay-back</th></tr></thead>
 <tbody>
@@ -9795,6 +9890,7 @@ checkStepSpeeds();
 checkRatingBlocks();
 checkCapabilityDots();
 checkTableWidths();
+checkMeasuredRows();
 /**
  * Every capability dot on the site, held to a rating that exists.
  *
@@ -9844,6 +9940,148 @@ function checkCapabilityDots() {
   }
   console.log(
     `  ${drawn} capability dots on the site, every one beside the word it means: ${CAPABILITY_KEYS.length} on each of ${rated.length} rated model pages and ${CAPABILITY_KEYS.length * 2} on each of ${pairs.length} head-to-heads`,
+  );
+}
+
+/**
+ * The measurements a machine page prints, held to the rows in data/throughput.json.
+ *
+ * Every figure is read back out of the rendered section and recomputed from the
+ * data rather than from measuredSection(): the published speed off the
+ * throughput row, the window off `measured_at_context`, and the figure at 32k
+ * from the context-decay formula applied to that published speed, which is the
+ * one thing a section like this can get silently wrong. It also holds the two
+ * claims the prose makes — how many measurements there are, and how many of
+ * them the table above leaves out — and the other side of the rule: a machine
+ * with no measurement on a superseded model may not carry the section, and a
+ * model the section calls superseded may not be in the table above as well.
+ */
+function checkMeasuredRows() {
+  const problems: string[] = [];
+  const state = defaultState(data);
+  const kv = kvScaleFor(state.kv, data.defaults);
+  const k = ctxLabel(state.ctx);
+  const tps = (n: number) => `${fmtNum(n, n < 10 ? 1 : 0)} tok/s`;
+  const round = (n: number) => (n < 10 ? Math.round(n * 10) / 10 : Math.round(n));
+  let pages = 0;
+  let printed = 0;
+  let superseded = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    // What the data says this machine has been measured on, worked out here
+    // rather than taken from the helper that wrote the section.
+    const want = data.throughput
+      .filter((t) => t.hardware_id === hw.id && t.measurement === 'measured' && t.tokens_per_sec != null)
+      .flatMap((t) => {
+        const model = data.models.find((m) => m.id === t.model_id);
+        if (!model) {
+          problems.push(`${path} has a measured speed for ${t.model_id}, which is not a model here`);
+          return [];
+        }
+        const ctx = fit(model, hw, state.ctx, data.defaults.nearly_fits_ratio, kv).status === 'fits'
+          ? state.ctx
+          : longestContext(model, hw, data);
+        if (ctx == null) return [];
+        const at = t.measured_at_context ?? 0;
+        return [{
+          model,
+          at,
+          published: t.tokens_per_sec!,
+          ctx,
+          // the measurement read at the window the row quotes it at, from the
+          // decay the site documents rather than from resolveThroughput()
+          tps: t.tokens_per_sec! * contextSpeedFactor(model, at, ctx, kv),
+          sourceUrl: t.source_url ?? '',
+        }];
+      })
+      .sort((a, b) => b.tps - a.tps || a.model.display_name.localeCompare(b.model.display_name));
+    const older = want.filter((r) => r.model.generation === 'legacy');
+    const section = sectionUnder(html, measuredHeading(hw));
+    if (!older.length) {
+      if (section != null) problems.push(`${path} prints a measurements section and has no measurement on a superseded model`);
+      continue;
+    }
+    if (section == null) {
+      problems.push(`${path} has ${want.length} measured speed${want.length === 1 ? '' : 's'} on it and prints no measurements section`);
+      continue;
+    }
+    pages += 1;
+    superseded += older.length;
+    const tbody = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+    const rows = [...tbody.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) => m[1]);
+    if (rows.length !== want.length) {
+      problems.push(`${path} tables ${rows.length} measurements where the data has ${want.length}`);
+      continue;
+    }
+    want.forEach((r, i) => {
+      printed += 1;
+      const row = rows[i];
+      const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
+      const text = (h: string) => unesc(h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+      if (cells.length !== 3) {
+        problems.push(`${path} writes a measurement row of ${cells.length} cells`);
+        return;
+      }
+      if (!cells[0].includes(`href="/models/${r.model.id}/"`))
+        problems.push(`${path} does not link ${r.model.display_name} from its measurement row`);
+      if (!meta.some((x) => x.path === `/models/${r.model.id}/`))
+        problems.push(`${path} links /models/${r.model.id}/ from its measurements and there is no such page`);
+      if (!cells[0].includes(`>${holdHyphens(r.model.quantisation)}<`))
+        problems.push(`${path} does not name the quantisation ${r.model.quantisation} measured for ${r.model.display_name}`);
+      const marked = cells[0].includes('superseded');
+      if (marked !== (r.model.generation === 'legacy'))
+        problems.push(`${path} ${marked ? 'calls' : 'does not call'} ${r.model.display_name} superseded, against the data`);
+      // a superseded model is in no other table on the page, which is the gap
+      // the section exists to fill
+      if (r.model.generation === 'legacy' && (html.split('<table class="board')[1]?.split('</table>')[0] ?? '').includes(`/models/${r.model.id}/`))
+        problems.push(`${path} calls ${r.model.display_name} a model the table above leaves out and tables it there`);
+      if (!text(cells[1]).startsWith(`${tps(round(r.tps))} measured`))
+        problems.push(`${path} prints ${text(cells[1])} for ${r.model.display_name} where the measurement reads ${tps(round(r.tps))} at ${ctxLabel(r.ctx)}`);
+      const short = `<span class="c-quant">at ${ctxLabel(r.ctx)}</span>`;
+      if (r.ctx !== state.ctx && !cells[1].includes(short))
+        problems.push(`${path} quotes ${r.model.display_name} at ${ctxLabel(r.ctx)} under a column headed ${k} and does not say so`);
+      if (r.ctx === state.ctx && cells[1].includes('c-quant'))
+        problems.push(`${path} says ${r.model.display_name} is quoted short of ${k} where this machine holds it there`);
+      // and the sentence that explains those rows, on the pages that have one
+      if ((r.ctx !== state.ctx) && !section.includes(`Where this machine does not hold a model at ${k}`))
+        problems.push(`${path} quotes a speed short of ${k} and never says why`);
+      const said = text(cells[2]);
+      const at = r.at === 0 ? 'measured at an empty window' : r.at < 1024 ? `measured at ${r.at} tokens` : `measured at ${ctxLabel(r.at)}`;
+      if (said !== `${tps(r.published)}${at}`.replace(/measured/, ' measured'))
+        problems.push(`${path} publishes ${said} for ${r.model.display_name} where the row says ${tps(r.published)}, ${at}`);
+      if (round(r.tps) > round(r.published) && r.at < r.ctx)
+        problems.push(`${path} reads ${r.model.display_name} faster at ${ctxLabel(r.ctx)} than the window it was measured at`);
+    });
+    // the two counts the paragraph makes, against the data and against the
+    // table above it
+    const lede = unesc((section.match(/<p>([\s\S]*?)<\/p>/)?.[1] ?? '').replace(/<[^>]+>/g, ''));
+    const n = want.length;
+    if (!lede.includes(`This site holds ${numberWord(n)} published ${n === 1 ? 'speed' : 'speeds'} taken on this machine`))
+      problems.push(`${path} does not say it holds ${numberWord(n)} published speeds on this machine`);
+    if (older.length < n && !lede.includes(`${numberWord(older.length)} of them on`))
+      problems.push(`${path} does not say ${numberWord(older.length)} of its ${n} measurements are on models the table above leaves out`);
+    if (older.length === n && n > 1 && !/\b(both|every one) on/.test(lede))
+      problems.push(`${path} has every measurement on a superseded model and does not say so`);
+    const inTable = [...(html.split('<table class="board')[1]?.split('</table>')[0] ?? '').matchAll(/tok\/s <span class="dim">measured/g)].length;
+    if (inTable === 0 && !lede.startsWith('Not one of the speeds above was measured on this machine'))
+      problems.push(`${path} has no measured speed in the table above and does not open the section by saying so`);
+    if (inTable > 0 && !lede.startsWith(`${sentenceCase(numberWord(inTable))} of the speeds above ${inTable === 1 ? 'is' : 'are'} measured`))
+      problems.push(`${path} has ${inTable} measured speeds in the table above and the section says otherwise`);
+    // every source behind the figures, and no other
+    const cited = [...section.matchAll(/<p class="note">[\s\S]*?<\/p>/g)]
+      .flatMap((m) => [...m[0].matchAll(/href="([^"]+)" rel="noopener"/g)].map((x) => unesc(x[1])));
+    const sources = [...new Set(want.map((r) => r.sourceUrl))];
+    if (cited.join('|') !== sources.join('|'))
+      problems.push(`${path} credits ${cited.length} sources for its measurements where the rows name ${sources.length}`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} published measurement${problems.length === 1 ? '' : 's'} do not hold to data/throughput.json`);
+  }
+  console.log(
+    `  ${pages} machine pages print the ${printed} speeds anybody has published on them, ${superseded} of those on superseded models their own tables leave out`,
   );
 }
 

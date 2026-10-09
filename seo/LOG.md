@@ -27,12 +27,24 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] The 14 legacy model pages are the least-linked on the site: /models/llama-3.3-70b-q4/ has 4
-      pages pointing at it, against 14 for the thinnest machine page and 6 for the thinnest size
-      page. A superseded model name is exactly what the Search Console impressions are, and the page
-      already says what replaced it. What should link it is the open question.
+- [ ] Two legacy model pages were not reached by the measurements link: /models/gemma-3-12b-q4/ and
+      /models/llama-3.1-8b-q8/, at 5 inbound each, because nobody has published a speed for either on
+      a machine here. They are now the thinnest model pages on the site.
 
 ## Runs
+
+### 2026-10-09 — 26 machine pages print the benchmarks somebody actually ran on them
+A machine page said every speed in its table was worked out from memory bandwidth, which reads as though
+nobody has run a model on the box. data/throughput.json holds 98 published figures across 27 of the 56
+machines, 70 of them on superseded models, which the calculator hides until asked and the table leaves out,
+so the page answering how fast a machine is showed no figure anyone had measured on it. The 26 pages with
+one now table the 97 their machine still holds at some window: the speed as published, at the window it was
+run at, and that measurement read at 32k. Every row links its model, closing the backlog item: the 16 legacy
+pages go from 4-10 inbound to 5-21, median 6 to 10, no longer the thinnest here. Straight to main. Verified:
+452 tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of 321
+dated with those 26 moved and no others, five read rendered at 320, 390 and 1100px, and 17 mutations of
+`checkMeasuredRows()`, which recomputes each 32k figure from the published one, all stopping the build.
+Watch done: Kimi K3 is out on size at 2.8T. Next: the two legacy pages no measurement reaches.
 
 ### 2026-10-08 — The "Good at" column is gone from the 57 tables with nothing to put in it
 Five capability dots sat in every row of the 56 machine tables and the leaderboard's. Of those 3,545
