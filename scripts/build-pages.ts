@@ -3294,6 +3294,111 @@ function cheapestSpeedLine(cheapest: Runner, ctx: number): string {
   return `On the cheapest machine that runs it, ${where}, it generates ${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s at ${ctxLabel(ctx)} of context, ${basis}.`;
 }
 
+const precisionHeading = (m: Model, light: Model, heavy: Model) =>
+  `${esc(m.display_name)} at ${esc(light.quantisation)} or ${esc(heavy.quantisation)}?`;
+
+/**
+ * The four pages whose subject is a choice between two downloads.
+ *
+ * Two models here are listed at two precisions, and those four pages are the only
+ * ones on the site where the reader is choosing a build rather than a machine. The
+ * two heavier ones were also the least-linked model pages here and the only model
+ * pages in no head-to-head at all, because a match-up is built between two models
+ * and these are one model twice. What a reader lands on them asking — whether the
+ * extra precision is worth the memory — was one clause of the lede and a file size
+ * in the definition list at the foot of the page.
+ *
+ * The cost is exact and every figure of it is in the data: the weights, the cache,
+ * which is the same size either way because both builds share an architecture, how
+ * many machines hold each at the context this page prices everything at, the cheapest
+ * one still sold, and the speed. The gain is not, and the section says so rather than
+ * filling the gap: the index carries one score for the model and both builds here
+ * carry it, and the five ratings are the same five. Where somebody has run both
+ * builds on one machine that measurement is used in place of the estimate, which on
+ * Qwen3 32B is the only measured precision pair on the site.
+ *
+ * `checkModelPrecision()` recomputes every figure from the data and holds the section
+ * to those four pages.
+ */
+function precisionSection(m: Model): string {
+  const builds = [m, ...otherQuantisations(m, data)].filter((b) => b.weights_gb != null);
+  if (builds.length !== 2) return '';
+  const [light, heavy] = [...builds].sort((a, b) => a.weights_gb! - b.weights_gb!);
+  const other = builds.find((b) => b.id !== m.id)!;
+  const cache = kvCacheGb(m, CTX);
+  if (cache == null || kvCacheGb(other, CTX) !== cache) return '';
+
+  const link = (b: Model, text: string) => `<a href="/models/${esc(b.id)}/">${text}</a>`;
+  const quant = (b: Model) => (b.id === m.id ? esc(b.quantisation) : link(b, esc(b.quantisation)));
+  const pairs = twoPrecisionPairs().length;
+  const named = pairs === 1 ? 'the one model' : `one of ${numberWord(pairs)} models`;
+
+  // The count is over every machine on the site, the scope the table above this
+  // section counts in; the price is from the machines still sold at a published
+  // price, the scope the answer block at the top chooses its cheapest from. Two
+  // scopes, so each says which it is.
+  const fleet = data.hardware.filter((h) => h.usable_memory_gb != null);
+  const holdCount = (b: Model) => fleet.filter((hw) => holds(hw, b, CTX)).length;
+  const held = { light: holdCount(light), heavy: holdCount(heavy) };
+  const cheapestOf = (b: Model) => runnersFor(b, data)[0] ?? null;
+  const cheap = { light: cheapestOf(light), heavy: cheapestOf(heavy) };
+
+  const heldLine =
+    held.light === fleet.length
+      ? `All ${fleet.length} machines on this site hold the lighter build at ${ctxLabel(CTX)}; ${held.heavy} hold the heavier.`
+      : `${held.light} of the ${fleet.length} machines on this site hold the lighter build at ${ctxLabel(CTX)}, and ${held.heavy} hold the heavier.`;
+  // "card only" is a clause of its own, so it closes before the next one starts
+  const at = (hw: Hardware) =>
+    `the <a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a>${hw.price_usd != null ? ` at ${priceWithScopeText(hw)}${hw.price_scope === 'card_only' ? ',' : ''}` : ''}`;
+  const priceLine =
+    cheap.light && cheap.heavy && cheap.light.hw.id !== cheap.heavy.hw.id
+      ? ` The cheapest one still sold is ${at(cheap.light.hw)} for the lighter build and ${at(cheap.heavy.hw)} for the heavier.`
+      : '';
+
+  // Both builds on one machine, so the only thing that changes between the two
+  // figures is the precision. A machine where somebody has measured both is
+  // worth more here than the cheapest one, and there is exactly one.
+  const both = fleet
+    .map((hw) => {
+      const st = defaultState(data);
+      const views = [light, heavy].map((b) => computeView({ ...st, hw: hw.id, model: b.id, ctx: CTX }, data));
+      if (views.some((v, i) => v.model?.id !== [light, heavy][i].id)) return null;
+      const tps = views.map((v) => v.throughput?.tokensPerSec ?? null);
+      if (tps.some((t) => t == null)) return null;
+      return { hw, tps: tps as number[], measured: views.every((v) => v.throughput!.measurement === 'measured') };
+    })
+    .filter((x): x is { hw: Hardware; tps: number[]; measured: boolean } => x != null);
+  const measuredPair = both.find((x) => x.measured) ?? null;
+  const shown = measuredPair ?? both.filter((x) => x.hw.price_usd != null && (x.hw.generation ?? 'current') === 'current').sort((a, b) => a.hw.price_usd! - b.hw.price_usd!)[0] ?? null;
+
+  const tok = (t: number) => `${fmtNum(t, t < 10 ? 1 : 0)} tok/s`;
+  const speedPara = !shown
+    ? ''
+    : (() => {
+        const name = `the <a href="/hardware/${esc(shown.hw.id)}/">${esc(shortHardwareLabel(shown.hw))}</a>`;
+        const which = measuredPair
+          ? `the one machine here where both builds have been measured, ${name}${(shown.hw.generation ?? 'current') === 'previous' ? ', no longer sold' : ''},`
+          : `${name}, the cheapest machine still sold that holds both,`;
+        const basis = shown.measured ? 'both measured' : 'both worked out from memory bandwidth';
+        return `\n<p>The heavier build costs speed as well, because every token generated reads the weights and the whole cache. On ${which} this site quotes ${tok(shown.tps[0])} at ${quant(light)} and ${tok(shown.tps[1])} at ${quant(heavy)}, ${basis}.</p>`;
+      })();
+
+  const fe = m.frontier_equivalent;
+  const sameScore = fe?.score != null && other.frontier_equivalent?.score === fe.score;
+  const sameCaps = isRated(m) && isRated(other) && CAPABILITY_KEYS.every((k) => m.capabilities[k] === other.capabilities[k]);
+  const gain = !sameScore && !sameCaps
+    ? ''
+    : `\n<p>What the extra precision buys is the half this site has no figure for. ${[
+        sameScore ? `The intelligence index has one score for ${esc(m.display_name)}, ${fe!.score}, which both builds here carry` : '',
+        sameCaps ? `the five ratings above are the same five on both` : '',
+      ].filter(Boolean).join(', and ')}. The memory and the speed are the whole measured difference between them.</p>`;
+
+  const side = m.id === light.id ? 'lighter' : 'heavier';
+  return `<h2>${precisionHeading(m, light, heavy)}</h2>
+<p>${esc(m.display_name)} is ${named} this site lists at two precisions, and the ${side} build is the subject of this page. The weights go from ${fmtGb1(light.weights_gb)} at ${quant(light)} to ${fmtGb1(heavy.weights_gb)} at ${quant(heavy)}. The key-value cache is the same size either way, ${fmtGb1(cache)} at ${ctxLabel(CTX)} of context, because both builds share an architecture, so what a machine has to hold goes from ${fmtGb1(footprintGb(light, CTX))} to ${fmtGb1(footprintGb(heavy, CTX))}. ${heldLine}${priceLine}</p>${speedPara}${gain}
+`;
+}
+
 function modelPage(m: Model): string {
   const runners = runnersFor(m, data);
   const perFamily = cheapestPerFamily(runners);
@@ -3512,7 +3617,7 @@ ${reachLine}
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}${smallestLine ? `\n<p class="note">${smallestLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
-${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}<h2>The specifics</h2>
+${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}${precisionSection(m)}<h2>The specifics</h2>
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
@@ -9562,6 +9667,168 @@ function checkPrecisionBuilds() {
  * parsed back out of the model table on the size page whose roomiest machine it
  * belongs to, with the basis word beside it.
  */
+/**
+ * The precision sections, read back off the rendered pages.
+ *
+ * Every figure in them is about a build the page is not: the other one's weights,
+ * the machines it fits and misses, the cheapest machine for it, and its speed
+ * beside this one's. Nothing on the page shows those, so a drift in any of them
+ * would read as true. Four things can go wrong and none of them would look wrong:
+ * the counts move as machines are added, the cheapest stops being the cheapest,
+ * the two speeds get read off different machines, and the claim that the index
+ * and the ratings separate the two builds by nothing survives a rating being
+ * entered for one of them.
+ *
+ * So each paragraph is matched against figures rebuilt from `data` rather than
+ * from `precisionSection()`: the cache from `kv_cache_gb_per_8k` and the window
+ * rather than from `kvCacheGb`, the counts from `fit` over `data.hardware`, the
+ * cheapest from `data.hardware` filtered and sorted here. A page carrying a
+ * section where the model has one build, or missing one where it has two, is a
+ * failure too.
+ */
+function checkModelPrecision() {
+  const problems: string[] = [];
+  const twins = new Set(
+    data.models.filter((m) => data.models.some((x) => x.display_name === m.display_name && x.id !== m.id)).map((m) => m.id),
+  );
+  const fleet = data.hardware.filter((h) => h.usable_memory_gb != null);
+  const forSale = fleet
+    .filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .sort((a, b) => a.price_usd! - b.price_usd!);
+  let sections = 0;
+  let measuredPairs = 0;
+
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((p) => p.path === path)?.html ?? '';
+    const found = html.match(/<h2\b[^>]*>[^<]* at [^<]* or [^<]*\?<\/h2>([\s\S]*?)(?=<h2\b)/);
+    if (!twins.has(m.id)) {
+      if (found) problems.push(`${path} carries a precision section for a model listed at one precision`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${path} is one of two builds of the same model and says nothing about the other`);
+      continue;
+    }
+    sections++;
+    const body = found[1];
+    // the figures are checked against what a reader sees, because half of them sit
+    // inside the link to the other build's page
+    const text = unesc(body.replace(/<[^>]+>/g, ''));
+    const says = (what: string, want: string) => {
+      if (!text.includes(unesc(want))) problems.push(`${path} does not say ${what}: expected "${want}"`);
+    };
+
+    const builds = data.models
+      .filter((x) => x.display_name === m.display_name)
+      .sort((a, b) => a.weights_gb! - b.weights_gb!);
+    if (builds.length !== 2) {
+      problems.push(`${path} is one of ${builds.length} builds, which this section is not written for`);
+      continue;
+    }
+    const [light, heavy] = builds;
+
+    // the cache from the field and the window, not from the helper the page used
+    const cache = light.kv_cache_gb_per_8k! * (CTX / 8192);
+    if (Math.abs(cache - heavy.kv_cache_gb_per_8k! * (CTX / 8192)) > 1e-9)
+      problems.push(`${path} says the cache is the same size either way, and the two builds' own figures differ`);
+    // which of the two the reader is on, which is the sentence that orients the rest
+    const pairs = data.models.filter((x) => twins.has(x.id)).length / 2;
+    says(
+      'which build the page is about',
+      `${m.display_name} is ${pairs === 1 ? 'the one model' : `one of ${numberWord(pairs)} models`} this site lists at two precisions, and the ${m.id === light.id ? 'lighter' : 'heavier'} build is the subject of this page.`,
+    );
+    says('the cache once, for both builds', `the same size either way, ${fmtGb1(cache)} at ${ctxLabel(CTX)} of context`);
+    says('both weights', `from ${fmtGb1(light.weights_gb)} at ${esc(light.quantisation)} to ${fmtGb1(heavy.weights_gb)} at ${esc(heavy.quantisation)}`);
+    says('both footprints', `from ${fmtGb1(light.weights_gb! + cache)} to ${fmtGb1(heavy.weights_gb! + cache)}`);
+
+    // the counts, rebuilt from fit over every machine on the site
+    const n = (b: Model) => fleet.filter((hw) => fit(b, hw, CTX, NEARLY).status === 'fits').length;
+    const [nl, nh] = [n(light), n(heavy)];
+    says(
+      'how many machines hold each build',
+      nl === fleet.length
+        ? `All ${fleet.length} machines on this site hold the lighter build at ${ctxLabel(CTX)}; ${nh} hold the heavier.`
+        : `${nl} of the ${fleet.length} machines on this site hold the lighter build at ${ctxLabel(CTX)}, and ${nh} hold the heavier.`,
+    );
+    // and the same page's own table has to agree about this build
+    const own = m.id === light.id ? nl : nh;
+    if (own !== fleet.length && !html.includes(`${own} of the ${fleet.length} machines on this site hold it`))
+      problems.push(`${path} counts ${own} machines in its precision section and something else above it`);
+
+    // the cheapest still sold for each build, chosen here rather than by runnersFor
+    const cheapest = (b: Model) => forSale.find((hw) => fit(b, hw, CTX, NEARLY).status === 'fits') ?? null;
+    const [cl, ch] = [cheapest(light), cheapest(heavy)];
+    if (cl && ch && cl.id !== ch.id)
+      {
+        says(
+          'the cheapest machine still sold for each build',
+          `is the ${esc(shortHardwareLabel(cl))} at ${priceWithScopeText(cl)}${cl.price_scope === 'card_only' ? ',' : ''} for the lighter build and the ${esc(shortHardwareLabel(ch))} at ${priceWithScopeText(ch)}${ch.price_scope === 'card_only' ? ',' : ''} for the heavier`,
+        );
+        for (const hw of [cl, ch])
+          if (!body.includes(`href="/hardware/${esc(hw.id)}/"`))
+            problems.push(`${path} names the ${shortHardwareLabel(hw)} without linking its page`);
+      }
+
+    // the two speeds, both read off the one machine the paragraph names
+    const speedPara = body.split('<p>').find((p) => p.includes('tok/s')) ?? '';
+    const named = fleet.find((hw) => speedPara.includes(`<a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a>`));
+    if (!named) {
+      if (speedPara) problems.push(`${path} quotes a speed without naming the machine it is on`);
+    } else {
+      const st = defaultState(data);
+      const rows = builds.map((b) => computeView({ ...st, hw: named.id, model: b.id, ctx: CTX }, data));
+      if (rows.some((v, i) => v.model?.id !== builds[i].id)) {
+        problems.push(`${path} quotes both speeds on the ${shortHardwareLabel(named)}, which does not hold both builds`);
+      } else {
+        const tps = rows.map((v) => v.throughput?.tokensPerSec ?? null);
+        const measured = rows.every((v) => v.throughput?.measurement === 'measured');
+        if (measured) measuredPairs++;
+        const tok = (t: number | null) => (t == null ? '—' : `${fmtNum(t, t < 10 ? 1 : 0)} tok/s`);
+        says(
+          'both speeds, each at its own precision',
+          `${tok(tps[0])} at ${esc(light.quantisation)} and ${tok(tps[1])} at ${esc(heavy.quantisation)}, ${measured ? 'both measured' : 'both worked out from memory bandwidth'}`,
+        );
+        // the measured pair is worth more than the cheapest machine, so it is used
+        // where it exists; where it does not, the machine has to be the cheapest
+        // still sold that holds both
+        const anyMeasured = fleet.find((hw) =>
+          builds.every((b) => {
+            const v = computeView({ ...st, hw: hw.id, model: b.id, ctx: CTX }, data);
+            return v.model?.id === b.id && v.throughput?.measurement === 'measured';
+          }),
+        );
+        const want = anyMeasured ?? forSale.find((hw) => builds.every((b) => fit(b, hw, CTX, NEARLY).status === 'fits'));
+        if (want && want.id !== named.id)
+          problems.push(`${path} reads its two speeds off the ${shortHardwareLabel(named)} where the ${shortHardwareLabel(want)} is the machine to use`);
+      }
+    }
+
+    // and the one claim here that is not a figure: that nothing on the page
+    // separates the two builds on what they can do
+    const scores = builds.map((b) => b.frontier_equivalent?.score ?? null);
+    const rated = builds.every((b) => isRated(b));
+    const sameCaps = rated && CAPABILITY_KEYS.every((k) => builds[0].capabilities[k] === builds[1].capabilities[k]);
+    if (scores[0] != null && scores[0] === scores[1])
+      says('the one score both builds carry', `one score for ${esc(m.display_name)}, ${scores[0]}, which both builds here carry`);
+    else if (text.includes('which both builds here carry'))
+      problems.push(`${path} says both builds carry one index score, and they do not`);
+    if (sameCaps) says('that the ratings are the same five', 'the five ratings above are the same five on both');
+    else if (text.includes('the same five on both'))
+      problems.push(`${path} says the five ratings are the same on both builds, and they are not`);
+    if (scores[0] !== scores[1] && !sameCaps && text.includes('the half this site has no figure for'))
+      problems.push(`${path} says nothing here separates the two builds, and the data does`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} precision section${problems.length === 1 ? '' : 's'} do not match the data`);
+  }
+  console.log(
+    `  ${sections} model pages are one build of two and weigh the other against it, ${measuredPairs} of them on a machine where both have been measured`,
+  );
+}
+
 function checkStepSpeeds() {
   const problems: string[] = [];
   const label = (h: Hardware) => shortHardwareLabel(h);
@@ -9886,6 +10153,7 @@ checkOffMarketHolders();
 checkSizeLadder();
 checkStepSizeOffers();
 checkPrecisionBuilds();
+checkModelPrecision();
 checkStepSpeeds();
 checkRatingBlocks();
 checkCapabilityDots();

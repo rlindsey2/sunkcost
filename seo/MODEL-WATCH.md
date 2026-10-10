@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-09
+Last checked: 2026-10-10
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -72,6 +72,44 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-10 · Nothing new to price, and Ling 3.1 Flash is closed with the figures to say so
+
+**No open-weight release this week.** The tracker's open-source section still reads "no open source
+releases this week", and the two releases it does date to this week are both proprietary: Mistral
+Large 4 on 6 October and Claude Haiku 5.5 on 7 October. Mistral is one of the families the script
+lists, so that one is checked and ruled out on kind rather than passed over. Searches for a release
+this month, for the families the script prints and for a new quantisation turned up nothing that is
+not already here or already ruled out. [llm-stats updates](https://llm-stats.com/llm-updates).
+
+**Ling 3.1 Flash is ruled out on kind, and now the figures are written down.** The 2026-10-02 entry
+had it announced and not open; it is still not open, and the numbers are worth recording because this
+site already prices a Ling. It is a hybrid reasoning mixture-of-experts model of about **560B total
+with about 25B active**, dated 30 September by one source and 2 October by another, and one
+aggregator lists it as proprietary with the weights unreleased and open-sourcing described as a plan
+for after a trial period. The trap to note: a second aggregator's page for **Ling 3 Flash** carries
+124B and about 5.1B active, which is the model this site already prices at Q4_K_M, not this one.
+[OpenRouter's page](https://openrouter.ai/models/inclusionai/ling-3.1-flash),
+[llmreference on the licence](https://www.llmreference.com/model/ling-3.1-flash),
+[the 124B page not to confuse it with](https://cloudprice.net/models/inclusionai-ling-3-flash).
+
+**Beam's weights are still not out**, sixth day of searching by name and for a repository. Every
+write-up of the 5 October announcement still puts them "later in October" under Apache 2.0, one
+saying before the end of the month, and access is still the waitlist. 501B total with 23B active. No
+Hugging Face listing, and it comes off this list the day the files land.
+[SCMP](https://scmp.com/tech/tech-trends/article/3369885/nvidia-backed-reflection-ai-challenges-chinese-dominance-open-weight-models),
+[vktr](https://www.vktr.com/ai-platforms/reflection-ai-unveils-beam-a-501b-open-weight-model/),
+[Silicon UK](https://www.silicon.co.uk/ai-2/reflection-beam-open-631797).
+
+**The quantisation search turned up no new precision to price.** One quantiser's collection lists
+GGUF and MLX ladders for Laguna XS 2.1 and dynamic-imatrix GGUF of Qwen3.6 27B and 35B-A3B — all
+three already entered here at Q4_K_M — plus GGUF builds of Gemma 4 draft models, which are not a
+model this site would rank. Nothing on the page is dated, so none of it is citable as new even where
+it is. [the collection](https://huggingface.co/AtomicChat/collections).
+
+**Kolibri 1, Apodex 1.1 Mini, MiMo-V2.6-Flash and Index-Translate-35B-A3B are unchanged.** Kolibri 1
+was searched again for a Q4_K_M file size and there is still no listing for the model itself; the
+only 78B four-bit sizes search returns belong to other models and are not its.
 
 ### 2026-10-09 · Nothing new to price, and Kimi K3 is out on size with the figures to say so
 

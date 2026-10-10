@@ -27,11 +27,24 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] Two legacy model pages were not reached by the measurements link: /models/gemma-3-12b-q4/ and
-      /models/llama-3.1-8b-q8/, at 5 inbound each, because nobody has published a speed for either on
-      a machine here. They are now the thinnest model pages on the site.
+- [ ] /models/gemma-3-12b-q4/ and /models/llama-3.1-8b-q8/ are still the least-linked model pages at 5
+      inbound each. The Q8 page now answers its own subject, but no page new to it links it, and the
+      gemma page is unchanged: no rule on the site reaches a legacy model nobody has benchmarked.
 
 ## Runs
+
+### 2026-10-10 — The four pages that are one model at two precisions weigh the two
+Two models here are listed twice at two precisions, and those four pages are the only ones whose subject is a
+download rather than a machine. None weighed the two. The Q8 pages were also the least-linked model pages here
+and the only ones in no head-to-head, so what a reader lands on them asking was a clause of the lede and a file
+size at the foot. Llama 3.1 8B now goes 4.9 to 8.5 GB of weights, 9.2 to 12.8 GB to hold at 32k, all 56 machines
+here to 50, $899 to $1,099 and 14 tok/s to 9.9 on the cheapest box holding both. Qwen3 32B goes 19.8 to 34.8,
+28.3 to 43.4, 36 machines to 28, $1,299 to $1,700 and 24 to 16 tok/s, both measured on the Mac Studio M3 Ultra,
+96GB, the only machine here with both builds measured. The other half has no figure: one index score both builds
+carry, the same five ratings. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with those 4 moved and no others, four read
+rendered, and 21 mutations of `checkModelPrecision()` all stopping the build. Watch done, nothing new to price.
+Next: neither thin page gained an inbound link, and gemma-3-12b-q4 is untouched.
 
 ### 2026-10-09 — 26 machine pages print the benchmarks somebody actually ran on them
 A machine page said every speed in its table was worked out from memory bandwidth, which reads as though
@@ -258,31 +271,3 @@ the speed that machine's own row in the table prints, to the digit, and refuses 
 with no machine. All 54 descriptions fit 155 characters. Five pages read back rendered.
 Model watch done, nothing new: Grok 4.7 ruled out, no weights. Next: the `/hardware/` and
 `/leaderboard/` prose, the next backlog item.
-
-### 2026-09-22 — PR #17 merged, verified on main
-Merged at 23:20 UTC as `f26ac31`, so the home page has a heading on the live site. (The two entries
-below are dated a day ahead of UTC; this one is not.) Verified on merged main rather than assumed:
-447 tests, typecheck clean, validate clean but for the one null price, the full build, **320 pages**
-with every guard passing. The conflict the pull request warned about cost nothing: `/` carries
-`<lastmod>2026-09-22</lastmod>` and **321 of 321 sitemap entries carry a date**, so the rebuild was
-done properly and `seo/page-dates.json` is in sync with the tree. Read rendered in Chromium at 390,
-900 and 1280px: one `<h1>`, weight 400, in the document at all three and painted at the two where
-the bar has room. The duplicated `--ok-text` line is gone and the three that remain are the light,
-dark and forced-dark contexts, which is right.
-Next: the model-page title item at the top of the backlog.
-
-### 2026-09-23 — PR #17 un-conflicted
-Ryan asked for the merge issue on PR #17 fixed. It was three days behind main. Merged main into
-`seo/home-h1` as `fc49f08` (merge commit, not a rebase). One conflict, the one its own description
-predicted: `seo/page-dates.json`, the `"/"` hash. Resolved by taking a side and running
-`npm run build:pages`, which wrote `d47470180e0b4932` — the hash that description measured three
-days ago — dated 2026-09-22, the build's UTC day. Verified on the merged tree: 447 tests, typecheck clean, full build with
-`build:functions`, 320 pages every guard passing, and `dist/index.html` read back with exactly one
-`<h1>`. The merged tree against main is this PR and nothing else. GitHub reports `clean`.
-Next: the model-page title item.
-
-### 2026-09-23 — Search Console read, log restarted
-Ryan exported Search Console, including the crawled-not-indexed URL list. Findings in
-seo/SEARCH-CONSOLE.md; standing orders above. The not-indexed pages are spread across every page
-type and were first crawled on 19 or 20 September, so nothing is cut. The old log moved to
-seo/archive/. No page changed. Next: the model-page title item.
