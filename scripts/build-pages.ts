@@ -3399,6 +3399,127 @@ function precisionSection(m: Model): string {
 `;
 }
 
+const supersededHeading = (m: Model) => `Is ${esc(m.display_name)} still worth running?`;
+
+/**
+ * The sixteen last-generation model pages, and the question they did not answer.
+ *
+ * A model page answers what runs it, how fast and whether it pays back. On a
+ * current model that is the whole question. On a last-generation one it is not:
+ * the only non-brand searches this site gets are exact model names, and a name
+ * people still type is usually one they are already running. What they want to
+ * know is whether to keep running it, and the page said nothing about it. Seven
+ * of the sixteen offered a head-to-head with the current model of their own
+ * family nearest them in size, which is a link to another page rather than an
+ * answer on this one, and the other nine had no newer model of their family here
+ * to be offered.
+ *
+ * The test is two figures and no judgement: a current model here that scores
+ * higher on the index and needs no more memory at the window this page prices
+ * everything at. Both halves matter, because a higher score in more memory is a
+ * different machine and not this reader's choice. Every one of the sixteen has at
+ * least seven such models, so the set is printed as a count and one name — the
+ * strongest of them — rather than a list, which at seven to twenty-two names
+ * would be stuffing.
+ *
+ * The third figure is the one this site exists for. A model beaten in less memory
+ * can mean a cheaper machine, and on six of the sixteen it does: Llama 3.3 70B
+ * Instruct wants $3,449 of computer and Qwen3.8 27B, four times its score, wants
+ * $1,269. Speed is the half that does not follow, and the section says so where it
+ * does not: on two of the sixteen the last-generation model is the faster of the
+ * two, both times a mixture-of-experts model against a dense replacement.
+ *
+ * `checkSupersededModels()` rebuilds every figure from `data` and holds the section
+ * to exactly these sixteen pages.
+ */
+function betterInLessMemory(m: Model): { set: Model[]; best: Model } | null {
+  if ((m.generation ?? 'current') !== 'legacy') return null;
+  const mine = m.frontier_equivalent?.score;
+  const room = footprintGb(m, CTX);
+  if (mine == null || room == null) return null;
+  const set = data.models.filter((c) => {
+    if ((c.generation ?? 'current') !== 'current') return false;
+    const s = c.frontier_equivalent?.score;
+    const r = footprintGb(c, CTX);
+    return s != null && r != null && s > mine && r <= room;
+  });
+  if (!set.length) return null;
+  // the strongest of them, and where two score the same the one that asks less
+  const best = [...set].sort(
+    (a, b) =>
+      b.frontier_equivalent!.score! - a.frontier_equivalent!.score! ||
+      footprintGb(a, CTX)! - footprintGb(b, CTX)! ||
+      a.id.localeCompare(b.id),
+  )[0];
+  return { set, best };
+}
+
+/** A score with the effort it was run at, where the data names one. */
+const scoreSaid = (m: Model) =>
+  `${m.frontier_equivalent!.score}${m.frontier_equivalent!.score_note ? ` (${esc(m.frontier_equivalent!.score_note)})` : ''}`;
+
+function supersededSection(m: Model): string {
+  const found = betterInLessMemory(m);
+  if (!found) return '';
+  const { set, best } = found;
+  const bestLink = `<a href="/models/${esc(best.id)}/">${esc(best.display_name)}</a>`;
+  const count = numberWord(set.length);
+  const one = set.length === 1;
+
+  const standing = `Not on the two figures this site can compare. The <a href="/leaderboard/">intelligence index</a> puts ${count} of the current models here above ${esc(m.display_name)}, and ${one ? 'it asks' : 'not one of them asks'} more of a machine: at ${ctxLabel(CTX)} of context it needs ${fmtGb1(footprintGb(m, CTX))} and scores ${scoreSaid(m)}, where ${one ? 'that model' : `the strongest of the ${count}`}, ${bestLink}, needs ${fmtGb1(footprintGb(best, CTX))} and scores ${scoreSaid(best)}.`;
+
+  // The machine and the speed, both read off the cheapest machine still sold that
+  // holds this model — the one the answer block at the top of the page already
+  // names and quotes a speed on. Anything that needs no more memory holds there
+  // too, so the only thing that changes between the two speeds is the model.
+  const mine = runnersFor(m, data)[0] ?? null;
+  const theirs = runnersFor(best, data)[0] ?? null;
+  const at = (hw: Hardware) =>
+    `the <a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a> at ${priceWithScopeText(hw)}`;
+  let money = '';
+  if (mine) {
+    const st = defaultState(data);
+    const views = [m, best].map((x) => computeView({ ...st, hw: mine.hw.id, model: x.id, ctx: CTX }, data));
+    // read off each view's own row, so the figures compared are the figures printed
+    const rows = views.map((v, i) => v.rows.find((r) => r.model.id === [m, best][i].id) ?? null);
+    const speeds =
+      rows.every((r) => r != null && shownTps(r) != null)
+        ? (() => {
+            const [a, b] = rows as ModelRow[];
+            const lead =
+              shownTps(a)! > shownTps(b)!
+                ? ` Speed is the one figure that goes the other way: ${esc(m.display_name)} is the quicker of the two there.`
+                : '';
+            return ` This site quotes ${esc(best.display_name)} at ${speedWithBasis(b)} there and ${esc(m.display_name)} at ${speedWithBasis(a)}.${lead}`;
+          })()
+        : '';
+    // A price difference is only money where both figures buy the same kind of
+    // thing, and a graphics card's does not buy the PC around it.
+    const sameScope = theirs != null && (mine.hw.price_scope ?? null) === (theirs.hw.price_scope ?? null);
+    const saving =
+      theirs && sameScope && mine.hw.price_usd != null && theirs.hw.price_usd != null && theirs.hw.price_usd < mine.hw.price_usd
+        ? `, ${fmtUsd(mine.hw.price_usd - theirs.hw.price_usd)} less`
+        : '';
+    const cheaper =
+      theirs && theirs.hw.id !== mine.hw.id
+        ? ` ${esc(best.display_name)} itself runs on ${at(theirs.hw)}${saving}.`
+        : '';
+    const scope = cardScopeNote(theirs && theirs.hw.id !== mine.hw.id ? [mine.hw, theirs.hw] : [mine.hw]);
+    money = `The cheapest machine still sold that holds ${esc(m.display_name)} at ${ctxLabel(CTX)} is ${at(mine.hw)}, which holds ${esc(best.display_name)} as well.${speeds}${cheaper}${scope ? ` ${scope}` : ''}`;
+  }
+
+  // Half the scores on this site are Artificial Analysis's own estimate, and a
+  // section whose whole claim is one score against another has to say which.
+  const guessed = [m, best].filter((x) => x.frontier_equivalent?.estimated);
+  const marked = guessed.length
+    ? `<p class="note">${guessed.length === 2 ? 'Both scores above are' : `${esc(guessed[0].display_name)}'s score is`} Artificial Analysis's own estimate rather than a measured run of the full v4.3 suite.</p>\n`
+    : '';
+
+  return `<h2>${supersededHeading(m)}</h2>
+<p>${standing}</p>
+${money ? `<p>${money}</p>\n` : ''}${marked}`;
+}
+
 function modelPage(m: Model): string {
   const runners = runnersFor(m, data);
   const perFamily = cheapestPerFamily(runners);
@@ -3604,7 +3725,7 @@ ${cheapest
  <a href="/leaderboard/">See the whole table</a>.</p>
 ${caps ? `<ul class="caps">${caps}</ul>
 ` : ''}${versusLine}
-<h2>${costHeading(m)}</h2>
+${supersededSection(m)}<h2>${costHeading(m)}</h2>
 <p>${ce.stand_in ? `Nobody rents ${esc(m.display_name)} by the token. The closest hosted match, ${esc(ce.name)},` : `Renting the same model${ce.is_exact_match ? '' : ' (or the nearest hosted equivalent, ' + esc(ce.name) + ')'}`} costs <b>$${ce.input_price_per_mtok}</b> per million input tokens and <b>$${ce.output_price_per_mtok}</b> per million output${ce.source_url ? ` (<a href="${esc(ce.source_url)}" rel="noopener">${esc(ce.source)}</a>, checked ${esc(ce.checked ?? '')})` : ''}. Buying a machine only beats that if you use it hard enough, for long enough, that the hardware price divides down below the rental bill. <a href="${SECTIONS.millionTokens}">What a million tokens costs each way</a> puts the two prices side by side.</p>
 
 ${shorterRun ? shorterWindowRun(m, shorterRun, ctx) : ''}${hwRows ? `<h2>${runnersHeading(m)}</h2>
@@ -10159,6 +10280,157 @@ checkRatingBlocks();
 checkCapabilityDots();
 checkTableWidths();
 checkMeasuredRows();
+checkSupersededModels();
+/**
+ * The sixteen "still worth running?" sections, read back off the rendered pages.
+ *
+ * Every figure in one is about a model the page is not. Nothing else on the page
+ * shows the replacement's memory, its score, its speed or the price of the machine
+ * it needs, so each of them could drift and still read as true. Five things can go
+ * wrong quietly: a model added to `data/models.json` changes the count and can take
+ * over as the strongest; a score re-read at a new index version changes who is above
+ * whom; a machine added or repriced changes which is the cheapest for either side;
+ * the two speeds get read off different machines, which is the one mistake that
+ * makes the comparison meaningless rather than merely wrong; and a `generation`
+ * flipped from legacy to current should take the whole section off the page.
+ *
+ * So the set is rebuilt here from `data.models` and `footprintGb` rather than from
+ * `betterInLessMemory()`, the machines from `data.hardware` filtered and sorted
+ * here rather than from `runnersFor`, and the speeds from `computeView` on the one
+ * machine the paragraph names. A page carrying the section that is not a legacy
+ * model, or a legacy model's page missing it, is a failure too.
+ */
+function checkSupersededModels() {
+  const problems: string[] = [];
+  const forSale = data.hardware
+    .filter((h) => h.usable_memory_gb != null && h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .sort((a, b) => a.price_usd! - b.price_usd!);
+  const cheapestFor = (x: Model) => forSale.find((hw) => fit(x, hw, CTX, NEARLY).status === 'fits') ?? null;
+  let sections = 0;
+  let cheaperMachines = 0;
+  let quickerStill = 0;
+
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((pg) => pg.path === path)?.html ?? '';
+    const found = html.match(/<h2\b[^>]*>Is [^<]*still worth running\?<\/h2>([\s\S]*?)(?=<h2\b)/);
+
+    // the set, rebuilt from the data rather than from the function that wrote it
+    const mine = m.frontier_equivalent?.score ?? null;
+    const room = footprintGb(m, CTX);
+    const set =
+      (m.generation ?? 'current') !== 'legacy' || mine == null || room == null
+        ? []
+        : data.models.filter((c) => {
+            const s = c.frontier_equivalent?.score;
+            const r = footprintGb(c, CTX);
+            return (c.generation ?? 'current') === 'current' && s != null && r != null && s > mine && r <= room;
+          });
+
+    if (!set.length) {
+      if (found) problems.push(`${path} says the model is superseded and nothing current here beats it in the memory it uses`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${path} is a legacy model that ${set.length} current models beat in no more memory, and says nothing about it`);
+      continue;
+    }
+    sections++;
+    const body = found[1];
+    const text = unesc(body.replace(/<[^>]+>/g, ''));
+    const says = (what: string, want: string) => {
+      if (!text.includes(unesc(want))) problems.push(`${path} does not say ${what}: expected "${want}"`);
+    };
+
+    const best = [...set].sort(
+      (a, b) =>
+        b.frontier_equivalent!.score! - a.frontier_equivalent!.score! ||
+        footprintGb(a, CTX)! - footprintGb(b, CTX)! ||
+        a.id.localeCompare(b.id),
+    )[0];
+    const said = (x: Model) =>
+      `${x.frontier_equivalent!.score}${x.frontier_equivalent!.score_note ? ` (${x.frontier_equivalent!.score_note})` : ''}`;
+    const count = numberWord(set.length);
+
+    says(
+      'how many current models beat it in the memory it uses, and by how much',
+      `puts ${count} of the current models here above ${m.display_name}, and ${set.length === 1 ? 'it asks' : 'not one of them asks'} more of a machine: at ${ctxLabel(CTX)} of context it needs ${fmtGb1(room)} and scores ${said(m)}, where ${set.length === 1 ? 'that model' : `the strongest of the ${count}`}, ${best.display_name}, needs ${fmtGb1(footprintGb(best, CTX))} and scores ${said(best)}`,
+    );
+    if (!body.includes(`href="/models/${esc(best.id)}/"`))
+      problems.push(`${path} names ${best.display_name} without linking its page`);
+
+    // the machine, chosen here rather than by runnersFor, and the speeds read off it
+    const ours = cheapestFor(m);
+    const theirs = cheapestFor(best);
+    if (!ours) {
+      if (/cheapest machine still sold/.test(text))
+        problems.push(`${path} names a cheapest machine still sold and nothing still sold holds the model at ${ctxLabel(CTX)}`);
+      continue;
+    }
+    says(
+      'the cheapest machine still sold that holds it, and that the replacement holds there too',
+      `is the ${shortHardwareLabel(ours)} at ${priceWithScopeText(ours)}, which holds ${best.display_name} as well.`,
+    );
+    for (const hw of theirs && theirs.id !== ours.id ? [ours, theirs] : [ours])
+      if (!body.includes(`href="/hardware/${esc(hw.id)}/"`))
+        problems.push(`${path} names the ${shortHardwareLabel(hw)} without linking its page`);
+
+    const st = defaultState(data);
+    const views = [m, best].map((x) => computeView({ ...st, hw: ours.id, model: x.id, ctx: CTX }, data));
+    const rows = views.map((v, i) => v.rows.find((r) => r.model.id === [m, best][i].id) ?? null);
+    if (rows.some((r) => r == null || shownTps(r) == null)) {
+      if (text.includes('tok/s')) problems.push(`${path} quotes a speed for a pair the calculator has no figure for`);
+    } else {
+      const [a, b] = rows as ModelRow[];
+      says(
+        'both speeds, read off that one machine',
+        `quotes ${best.display_name} at ${fmtNum(shownTps(b)!, shownTps(b)! < 10 ? 1 : 0)} tok/s ${b.throughput.measurement} there and ${m.display_name} at ${fmtNum(shownTps(a)!, shownTps(a)! < 10 ? 1 : 0)} tok/s ${a.throughput.measurement}.`,
+      );
+      // the one claim that is a direction rather than a figure
+      const quicker = shownTps(a)! > shownTps(b)!;
+      const flagged = text.includes('Speed is the one figure that goes the other way');
+      if (quicker && !flagged)
+        problems.push(`${path} quotes the older model as the quicker of the two and does not say so`);
+      if (!quicker && flagged)
+        problems.push(`${path} says the older model is the quicker of the two and the figures do not`);
+      if (quicker) quickerStill++;
+    }
+
+    // and the money, which is only money where both prices buy the same kind of thing
+    const scopesMatch = theirs != null && (ours.price_scope ?? null) === (theirs.price_scope ?? null);
+    const saving =
+      theirs && scopesMatch && theirs.price_usd! < ours.price_usd! ? `, ${fmtUsd(ours.price_usd! - theirs.price_usd!)} less` : '';
+    if (theirs && theirs.id !== ours.id) {
+      says('the cheaper machine the replacement needs', `${best.display_name} itself runs on the ${shortHardwareLabel(theirs)} at ${priceWithScopeText(theirs)}${saving}.`);
+      if (theirs.price_usd! < ours.price_usd!) cheaperMachines++;
+      if (!saving && / less\./.test(text))
+        problems.push(`${path} prices one machine against another of a different scope and calls the gap a saving`);
+    } else if (/itself runs on/.test(text)) {
+      problems.push(`${path} sends the reader to another machine for the replacement and the cheapest is the same one`);
+    }
+
+    // half the scores here are the index's own estimate, and this section is one score against another
+    const guessed = [m, best].filter((x) => x.frontier_equivalent?.estimated);
+    const marked = /Artificial Analysis's own estimate/.test(text);
+    if ((guessed.length > 0) !== marked)
+      problems.push(
+        guessed.length
+          ? `${path} compares ${guessed.length} estimated score${guessed.length === 1 ? '' : 's'} in this section without saying so`
+          : `${path} marks a score as the index's own estimate and neither of the two is`,
+      );
+    if (guessed.length === 2) says('that both scores are estimates', 'Both scores above are');
+    if (guessed.length === 1) says('which of the two scores the index estimated', `${guessed[0].display_name}'s score is`);
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} thing${problems.length === 1 ? '' : 's'} wrong in the superseded-model sections`);
+  }
+  console.log(
+    `  ${sections} last-generation model pages weigh what beats them in the memory they use; ${cheaperMachines} name a cheaper machine for the replacement and ${quickerStill} say the older model is still the quicker`,
+  );
+}
+
 /**
  * Every capability dot on the site, held to a rating that exists.
  *

@@ -24,14 +24,34 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Ryan's side
 
 - [ ] Links from outside: the two news articles, r/LocalLLaMA, hardware reviewers who publish tok/s.
+- [ ] Does this site price a vision model? Reka Edge 2603 is the first candidate whose every size and
+      architecture field is citable from the repo (7.13B, Q4_K_M at 4.75 GB), and it is image-text-to-text
+      on a revenue-capped licence with no index score. All 55 models here are text. See seo/MODEL-WATCH.md.
 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] /models/gemma-3-12b-q4/ and /models/llama-3.1-8b-q8/ are still the least-linked model pages at 5
-      inbound each. The Q8 page now answers its own subject, but no page new to it links it, and the
-      gemma page is unchanged: no rule on the site reaches a legacy model nobody has benchmarked.
+      inbound each, unmoved by this run: the new section links outward, from the legacy page to what
+      beats it. The reason is now known rather than guessed. A machine page tables the strongest models
+      its box holds and the ones measured on it, so a low-scoring legacy model with no benchmark is in
+      no machine table and no size page's rows; the only rules that reach one are its own head-to-heads.
+      Any fix is a rule on a current page or a machine page pointing back, and the reader's question it
+      answers has to come first — a sixth link for its own sake is not worth a sentence.
 
 ## Runs
+
+### 2026-10-11 — The 16 last-generation model pages say whether the model is still worth running
+A model page answered what runs it, how fast and whether it pays back. On a last-generation model that is not
+the question: the non-brand searches here are exact model names, and a name still typed is one somebody is
+already running. Seven offered a head-to-head with a same-family successor, a link rather than an answer, and
+nine had none. The test is two figures and no judgement: a current model scoring higher on the index and
+needing no more memory at 32k. Each of the 16 has 7 to 22, so it is a count and the strongest one, not a list.
+Nine name a cheaper machine: Llama 3.3 70B wants $3,449 of
+computer, Qwen3.8 27B at four times the score wants $1,269. Two say the older model is the quicker, both an
+MoE against a dense replacement. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with those 16 moved and no others, six read
+rendered, 15 mutations of `checkSupersededModels()` all stopping the build. Watch: Reka Edge 2603 is open
+weights with every figure citable off the repo and is a vision model, so Ryan's call, above. Next: the backlog.
 
 ### 2026-10-10 — The four pages that are one model at two precisions weigh the two
 Two models here are listed twice at two precisions, and those four pages are the only ones whose subject is a

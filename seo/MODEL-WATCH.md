@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-10
+Last checked: 2026-10-11
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -18,9 +18,11 @@ carries the numbers a source states and the URL that states them; everything els
 missing. Sunk Cost's whole claim is that its figures come from somewhere, and a model added from
 a press release's rounding would cost more trust than a late model costs traffic.
 
-Direct fetches are refused by this environment's egress proxy, so every source below was found
-through search and is **secondhand until someone opens it**. That is a reason to record the URL,
-not a reason to skip it.
+Sources are recorded as URLs whether or not they can be opened from here. Direct fetches were
+refused by this environment's egress proxy on the runs before 2026-10-11 and every source from
+those runs is **secondhand**; fetches worked on 2026-10-11, so an entry from that run says when a
+figure was read off the repo itself rather than off a write-up of it. Try a fetch before assuming
+it will fail.
 
 ## How to do the check
 
@@ -72,6 +74,65 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-11 · Reka Edge 2603 is open weights with every size and architecture field citable, and it is a vision model
+
+**One candidate found, and this is the first entry whose figures were read off the repository
+rather than off coverage of it.** Hugging Face answered directly this run, so the numbers below are
+first-hand: file sizes from the repo's own file list, architecture from its `config.json`.
+
+**Reka Edge 2603 (`RekaAI/reka-edge-2603`).** 7,128,509,568 parameters in BF16 across three
+safetensors shards. The one GGUF repo linked from it carries a full ladder, **Q4_K_M at 4.75 GB**
+(4,748,651,936 bytes), with a separate multimodal projector at 0.45 GB on top if images are used.
+`config.json` gives the architecture fields outright: 32 layers, 8 key-value heads, head dim 128,
+hidden size 4096, and `max_position_embeddings` of 16384 over a YaRN scaling of 2.0 on an 8192
+base. It would be the smallest-context model on this site by a wide margin.
+
+**Three things stop it being a row, and none of them is a missing file size.** It is an
+**image-text-to-text vision-language model** — a 660M ConvNeXT V2 encoder on a 6B language
+backbone — and every one of the 55 models here is a text model, so whether this site prices a VLM
+at all is a scope question for Ryan rather than a figure to look up. Its licence is **Business
+Source License 1.1** under the repo's own `reka-edge-2603-license`, free for commercial use only
+below $1M of annual revenue, which is not the kind of open licence any current row carries.
+And there is **no Artificial Analysis index score**: the index lists Reka Flash 3 and not Edge, so
+`frontier_equivalent` has nothing to take. No `cloud_equivalent` price was found either; the model
+page links an API and a playground and publishes no rates.
+
+**It is not this week's release.** A release timeline dated it 9 October, which is what put it on
+this run's list, but the repo was **created 2026-03-11 and last modified 2026-04-24**, and the
+linked GGUF repo was last touched 2026-04-22 — the "2603" is a March 2026 date code. A
+seven-month-old model this site never picked up, not a new one.
+[the repo](https://huggingface.co/RekaAI/reka-edge-2603),
+[the GGUF ladder](https://huggingface.co/Vastined/reka-edge-2603-GGUF),
+[Reka's own page on the licence](https://reka.ai/reka-edge),
+[the timeline that listed it](https://llmgateway.io/blog/new-ai-models-this-week-2026-10-11).
+
+**Shieldstral 1.0 is ruled out on kind.** It turned up as a Mistral listing and is worth closing
+because Mistral is a family the script prints: a 3B multimodal **safety classifier**, Apache 2.0,
+released 2026-08-04, which judges text and images against a policy rather than answering a user.
+Sources disagree on its size — coverage says about 3B on a Ministral-3B base, one aggregator citing
+Mistral's own page says 3.8B — which would have mattered had the kind not already settled it.
+[one write-up](https://dev.to/alifar/mistral-releases-shieldstral-a-3b-open-weight-model-for-on-device-content-safety-280p),
+[the aggregator with the larger figure](https://www.datalearner.com/ai-models/pretrained-models/shieldstral-1-0).
+
+**Nothing else open-weight this week.** The tracker's open-source section still reads "no open
+source releases this week". Mistral Large 4 is unchanged and still out on size at about 1.05T, now
+with independent coverage calling it the best model from outside the US and China and still putting
+its weights at the end of October. Of the other names in this week's roundup, Reka Edge is above,
+GLM 5.3 Fast was closed on 2026-10-08 as a mangled spelling of GLM-5.3-Flash, and the rest are
+image, video or proprietary.
+[llm-stats updates](https://llm-stats.com/llm-updates),
+[Tom's Hardware on Mistral Large 4](https://tomshardware.com/tech-industry/artificial-intelligence/independent-tests-rank-mistrals-new-trillion-parameter-large-4-the-best-ai-model-outside-the-u-s-and-china-but-chinese-open-weights-still-overcome-europes-best-efforts).
+
+**Beam's weights are still not out**, seventh day of searching. Coverage through 8 October still
+puts them "later in October" under Apache 2.0, one comparison noting Reflection's Hugging Face
+organisation holds no models, and access is still the waitlist. 501B total, 23B active. It comes off
+this list the day the files land.
+[eesel](https://www.eesel.ai/blog/reflection-ai-beam),
+[devx](https://www.devx.com/artificial-intelligence-ai/reflection-ai-beam-model-explained/).
+
+**Kolibri 1, Apodex 1.1 Mini, MiMo-V2.6-Flash, Index-Translate-35B-A3B and Ling 3.1 Flash are
+unchanged**, each still short of the fields its own entry lists.
 
 ### 2026-10-10 · Nothing new to price, and Ling 3.1 Flash is closed with the figures to say so
 
