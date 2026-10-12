@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-11
+Last checked: 2026-10-12
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,50 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-12 · Kolibri 1 now has every field but one, read off the repository itself
+
+**The `architecture` gap from 2026-10-06 is closed, first-hand.** `Aleph-Alpha/Kolibri-1`'s own
+`config.json` answered this run: **50 layers, 4 key-value heads, head dim 128**, hidden size 2560,
+and `use_sliding_window` with a **513-token window on 40 of the 50 layers**, full attention on the
+other 10 (layers 5, 10, 15 … 50). That is the same shape `data/models.json` already carries for
+Gemma 3 12B it and gpt-oss-120b — `full_attention_layers`, `sliding_window_layers`, `sliding_window`
+beside `n_layers` — so `kv_cache_gb_per_8k` is computable here rather than blocked, and the cache
+will barely grow with context for the same reason theirs does not.
+
+**The four-bit size is now exact rather than about.** Hugging Face's own API gives
+`Kolibri-1-Q4_K_M.gguf` at **47,454,113,472 bytes, so 47.45 GB**, a single unsharded file in
+[Hob-forge/Kolibri-1-GGUF](https://huggingface.co/Hob-forge/Kolibri-1-GGUF), tagged `apache-2.0` and
+`base_model:quantized:Aleph-Alpha/Kolibri-1`, last modified 2026-10-08. That repo's GGUF metadata
+also states the parameter count outright, **78,103,074,560**, and the model card gives **3.46B active
+per token** (3,457,573,120). The repo ships a `kolibri1-llama.cpp.patch` beside the files, which is
+worth knowing before anybody quotes a speed: the build needs patching to load it.
+
+**The context is 262,144, not the 1M the write-ups lead with.** The card reads "1,048,576 tokens; we
+recommend ≤262,144 tokens for serving efficiency and complex tasks", `max_position_embeddings` is
+262144, and so is the GGUF's `context_length`; the million needs `--max-model-len 1048576` and an
+`--hf-overrides` of `max_position_embeddings`. So `max_context_tokens` is **262144** with a
+`max_context_note` saying the million is an override, which is the kind of conditional that field
+exists for. Licence is **Apache 2.0**, and the card limits it to the weights and configuration files
+rather than the architecture or the training method.
+[the repo](https://huggingface.co/Aleph-Alpha/Kolibri-1).
+
+**One field is still missing, and it is the one nobody here can supply.** Artificial Analysis still
+has no Kolibri page, confirmed by name again today, so `frontier_equivalent` has nothing to take.
+The only number on offer is a reviewer's **15 to 20** inferred from the models Aleph Alpha chose to
+compare against, which is a guess about a score and not a score
+([trendingtopics](https://www.trendingtopics.eu/aleph-alpha-kolibri-open-weight/)). A hosted price
+did turn up where 2026-10-06 found none — **$0.10 in and $0.40 out per million tokens** from
+Inference.net, listed through a gateway rather than by Aleph Alpha, which still publishes no token
+price ([the listing](https://www.respan.ai/models/inference_net/aleph-alpha/kolibri-1)). That is a
+`cloud_equivalent` marked as a stand-in at best, and secondhand.
+
+**Nothing new open-weight this week, and the two announced ones are still announcements.** Beam
+(501B-A23B, Apache 2.0) has no weights and Reflection's Hugging Face org no models; Ling 3.1 Flash
+(about 560B / 25B) has no `inclusionAI` repo — its model list, read directly this run, goes from
+Ling-3.0-flash to this week's probe uploads with no 3.1. Mistral Large 4 is unchanged and out on
+size. Hugging Face's newest text-generation uploads are fine-tunes, quantisations and probes of
+models already priced here.
 
 ### 2026-10-11 · Reka Edge 2603 is open weights with every size and architecture field citable, and it is a vision model
 

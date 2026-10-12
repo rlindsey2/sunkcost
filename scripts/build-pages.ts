@@ -3527,6 +3527,11 @@ function modelPage(m: Model): string {
   // best value: the shortest pay-back among machines that run it
   const withPayback = runners.filter((r) => r.view.calc?.breakevenDays != null);
   const bestValue = withPayback.sort((a, b) => a.view.calc!.breakevenDays! - b.view.calc!.breakevenDays!)[0];
+  // The quickest machine here that holds it, over every machine that runs it
+  // rather than over the eight the table below shows. The table is one machine
+  // per family and the cheapest of each, so on 25 of these pages the quickest
+  // box is in no table on the page: the row has to name its price, because
+  // nothing else on the page prints one for it.
   const fastest = runners
     .filter((r) => r.view.throughput?.tokensPerSec != null)
     .sort((a, b) => b.view.throughput!.tokensPerSec! - a.view.throughput!.tokensPerSec!)[0];
@@ -3706,7 +3711,7 @@ ${cheapest
   <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${priceWithScope(cheapest.hw)}</span></div>
   ${shorterMachines[0] && shorterMachines[0].hw.price_usd != null && cheapest.hw.price_usd != null && shorterMachines[0].hw.price_usd < cheapest.hw.price_usd ? `<div class="answer-row"><span class="answer-k">Cheaper at a shorter window</span><span class="answer-v"><a href="/hardware/${esc(shorterMachines[0].hw.id)}/">${esc(hardwareLabel(shorterMachines[0].hw))}</a> at ${priceWithScope(shorterMachines[0].hw)}, which holds it at ${ctxLabel(shorterMachines[0].ctx)}</span></div>
   ` : ''}${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
-  ${fastest ? `<div class="answer-row"><span class="answer-k">Fastest of the ones listed</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> — at ${Math.round(ctx / 1024)}k context, ${speedFrom(fastest.view.throughput)}</span></div>` : ''}
+  ${fastest && fastest.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Fastest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> at ${priceWithScope(fastest.hw)} — ${speedFrom(fastest.view.throughput)} at ${Math.round(ctx / 1024)}k context</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
 </div>`
       : `<div class="answer">
@@ -10281,6 +10286,80 @@ checkCapabilityDots();
 checkTableWidths();
 checkMeasuredRows();
 checkSupersededModels();
+checkFastestRow();
+
+/**
+ * The "fastest machine that runs it" row in the answer block of a model page.
+ *
+ * The row is chosen over every machine here that holds the model; the table
+ * below it is one machine per family and the cheapest of each. The two sets are
+ * not the same, so on most of these pages the quickest box is in no table on the
+ * page, and the row used to call it the fastest "of the ones listed" while
+ * listing something else. It also ran on the pages where one machine runs the
+ * model, where it repeated the cheapest row's machine and added a speed.
+ *
+ * Four things hold on every page with the row, and all four are worked out from
+ * `data` rather than read off the page that prints them. It names the quickest
+ * runner, not merely a quick one: no speed in the page's own table may beat the
+ * one it quotes. It carries that machine's price, which matters most on the
+ * pages where the machine appears nowhere else. It quotes the speed and the
+ * basis that machine's own figure gives at this page's context. And it is
+ * absent exactly where the cheapest row has already named the machine.
+ */
+function checkFastestRow() {
+  const problems: string[] = [];
+  const text = (html: string) => unesc(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
+  const ctx = data.defaults.context.default_tokens;
+  const ROW = /<div class="answer-row"><span class="answer-k">Fastest machine that runs it<\/span><span class="answer-v">([\s\S]*?)<\/span><\/div>/;
+  let named = 0;
+  let offTable = 0;
+  let dropped = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    const row = html.match(ROW)?.[1] ?? null;
+    const runners = runnersFor(m, data);
+    const cheapest = runners[0];
+    const fastest = runners
+      .filter((r) => r.view.throughput?.tokensPerSec != null)
+      .sort((a, b) => b.view.throughput!.tokensPerSec! - a.view.throughput!.tokensPerSec!)[0];
+    if (!fastest || !cheapest || fastest.hw.id === cheapest.hw.id) {
+      if (row) problems.push(`${path} gives the fastest machine a row of its own and it is the machine the block already names`);
+      else if (fastest) dropped++;
+      continue;
+    }
+    const label = hardwareLabel(fastest.hw);
+    if (!row) {
+      problems.push(`${path} does not name the ${label}, the fastest machine here that runs it`);
+      continue;
+    }
+    named++;
+    const said = text(row);
+    if (!row.includes(`href="/hardware/${esc(fastest.hw.id)}/"`)) problems.push(`${path} says the ${label} is the fastest machine and does not link its page`);
+    if (!said.includes(label)) problems.push(`${path} should name the ${label} as the fastest machine here and says "${said.slice(0, 60)}"`);
+    if (!row.includes(priceWithScope(fastest.hw))) problems.push(`${path} names the ${label} as the fastest machine and not the ${priceWithScopeText(fastest.hw)} it costs`);
+    const tps = fastest.view.throughput!.tokensPerSec!;
+    const speed = `${fmtNum(tps, tps < 10 ? 1 : 0)} tok/s`;
+    if (!said.includes(speed)) problems.push(`${path} should say the ${label} runs it at ${speed} and says "${said.slice(0, 60)}"`);
+    if (!said.includes(fastest.view.throughput!.measurement)) problems.push(`${path} quotes ${speed} on the ${label} without saying whether it was measured`);
+    if (!said.includes(`${Math.round(ctx / 1024)}k context`)) problems.push(`${path} quotes ${speed} on the ${label} without the context it is quoted at`);
+    // The claim is that nothing here is quicker, so no cell of this page's own
+    // table of machines may print a bigger figure than the row does.
+    const cells = [...html.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].flatMap((c) => [...text(c[1]).matchAll(/([\d,.]+) tok\/s/g)].map((t) => Number(t[1].replace(/,/g, ''))));
+    const quoted = Number(speed.replace(/,/g, '').replace(' tok/s', ''));
+    const beaten = cells.filter((n) => n > quoted);
+    if (beaten.length) problems.push(`${path} calls ${speed} on the ${label} the fastest and its own table prints ${Math.max(...beaten)} tok/s`);
+    if (!(html.match(/<table[\s\S]*?<\/table>/g) ?? []).some((t) => t.includes(`href="/hardware/${esc(fastest.hw.id)}/"`))) offTable++;
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} do not bear out the fastest machine they name`);
+  }
+  console.log(
+    `  ${named} model pages name the fastest machine here that runs them, with its price and its speed; on ${offTable} of them that machine is in no table on the page, and ${dropped} pages leave the row out because the cheapest machine is also the fastest`,
+  );
+}
 /**
  * The sixteen "still worth running?" sections, read back off the rendered pages.
  *

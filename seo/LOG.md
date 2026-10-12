@@ -1,6 +1,6 @@
 # SEO log
 
-Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-09-23 is in
+Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-09-25 is in
 seo/archive/ and is not required reading; it grew to 10,000 lines, which is why this one has rules.
 
 ## Rules for this file
@@ -39,6 +39,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       answers has to come first — a sixth link for its own sake is not worth a sentence.
 
 ## Runs
+
+### 2026-10-12 — 54 model pages name the fastest machine here, not "the fastest of the ones listed"
+Reading the two least-linked model pages for the backlog item turned up a false row in the answer block of all
+54. The row is chosen over every machine here that runs the model; the table under it is one machine per family,
+the cheapest of each. On 25 pages it named a machine in no table on the page, listing something the page did
+not; on 6 it named the box the row above had, one machine being both where only one runs the model. It reads
+"Fastest machine that runs it" now, carries that machine's price, and is left out where the cheapest is also
+the fastest. The price is the half that matters: both machines it ever names are graphics cards, the RTX PRO
+6000 Blackwell, 96GB on 36 pages and the RTX 5090, 32GB on 12, and $18,000 card only reads differently from a
+whole computer. Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions,
+320 pages every guard passing, 321 of 321 dated with those 54 moved and no others, four read rendered, and 12
+mutations stopping the build: 11 on the new checkFastestRow(), one on the guard already holding every speed to
+its basis. Watch: Kolibri 1 has every field but the index score, off its own repo. Next: the backlog, unchanged.
 
 ### 2026-10-11 — The 16 last-generation model pages say whether the model is still worth running
 A model page answered what runs it, how fast and whether it pays back. On a last-generation model that is not
@@ -264,30 +277,3 @@ rendered. `checkSizeLadder()` holds every size link on a page to the set it is a
 mutations of it all stop the build. Model watch done: dots3-note Preview, 280B/16B and Apache 2.0,
 could be priced here and waits on a four-bit file size; Qwen3.8 Max and DeepSeek V4.1-Flash are out
 on size. Next: the home page `og:url`, which wants its own pull request.
-
-### 2026-09-24 — Two false sentences on /hardware/, and a guard so there can be no more
-The machine index read its own table for you in prose nobody checked, and two claims in it were
-false: the strongest model a machine holds is *the slowest thing it can run* (true of none of
-the 56), and a smaller model on the same machine *pays back sooner* (false on 39 of the 54 that
-pay back at all, because the model the table prices usually saves the most a day). Both are
-figures now — 15 machines another model pays back sooner on, 39 where nothing does — and the
-decade line is drawn from the data, so it changes the day a machine pays back in nine years.
-`checkBoardLedes()` holds every claim in those three paragraphs to the rows parsed back out of
-the rendered table, and /leaderboard/'s opening to the top row of each half of its own.
-Straight to main. Verified: 447 tests, typecheck clean, full build with `build:functions`, 320
-pages every guard passing, 321 of 321 sitemap entries dated, eight mutations of the new figures
-all stopping the build. Model watch done, nothing new. Next: the six under-linked size pages.
-
-### 2026-09-23 — Model pages open with the speed on their cheapest machine
-The only non-brand impressions this site has are exact model names, and what people put after one
-is a machine or "tokens per second". Model pages answered neither where a search result can see
-it: the first paragraph stopped at the weights, and the description spent its 155 characters on
-weights, machine and pay-back. Both now carry the speed on the cheapest machine that runs the
-model, at 32k, saying whether it was measured or worked out from bandwidth. 54 of the 55 model
-pages gained it; Tencent Hy3 has no machine here and so claims nothing.
-Verified: 447 tests, typecheck clean, the full build including `build:functions`, 320 pages with
-every guard passing plus a new one — `checkLedeSpeeds()` holds each first paragraph's figure to
-the speed that machine's own row in the table prints, to the digit, and refuses a speed on a page
-with no machine. All 54 descriptions fit 155 characters. Five pages read back rendered.
-Model watch done, nothing new: Grok 4.7 ruled out, no weights. Next: the `/hardware/` and
-`/leaderboard/` prose, the next backlog item.

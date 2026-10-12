@@ -1066,224 +1066,224 @@
       "changed": "2026-09-19"
     },
     "/models/deepseek-r1-distill-llama-70b-q4/": {
-      "hash": "d2ef048f9bcb3b81",
-      "changed": "2026-10-11"
+      "hash": "cf6dc53d95967572",
+      "changed": "2026-10-12"
     },
     "/models/deepseek-r1-distill-qwen-32b-q4/": {
-      "hash": "e8dfe806b84fb08f",
-      "changed": "2026-10-11"
+      "hash": "949d9540887a7cda",
+      "changed": "2026-10-12"
     },
     "/models/deepseek-v4-flash-ud-q4/": {
-      "hash": "985a39420878a829",
-      "changed": "2026-10-07"
+      "hash": "9cdde8ec77638480",
+      "changed": "2026-10-12"
     },
     "/models/devstral-2-123b-q4/": {
-      "hash": "d4df6b07e57bfaaf",
-      "changed": "2026-10-07"
+      "hash": "722b8e39de9d80d5",
+      "changed": "2026-10-12"
     },
     "/models/devstral-small-2-24b-q4/": {
-      "hash": "a31e9d3816e5b83b",
-      "changed": "2026-10-07"
+      "hash": "e9576cbf7e8ae853",
+      "changed": "2026-10-12"
     },
     "/models/gemma-3-12b-q4/": {
-      "hash": "c6d131b178b05b8b",
-      "changed": "2026-10-11"
+      "hash": "21bafa7ac113a53e",
+      "changed": "2026-10-12"
     },
     "/models/gemma-3-27b-q4/": {
-      "hash": "5520978d2e0ea2d0",
-      "changed": "2026-10-11"
+      "hash": "fdca2cc49476d28c",
+      "changed": "2026-10-12"
     },
     "/models/gemma-4-12b-q4/": {
-      "hash": "0fc2b428da903ba2",
-      "changed": "2026-10-07"
+      "hash": "c7f59aafe26ef298",
+      "changed": "2026-10-12"
     },
     "/models/gemma-4-26b-a4b-q4/": {
-      "hash": "5f0ebe0f2153b244",
-      "changed": "2026-10-07"
+      "hash": "42d35206b4d5ed15",
+      "changed": "2026-10-12"
     },
     "/models/gemma-4-31b-q4/": {
-      "hash": "3f6745a2636942e1",
-      "changed": "2026-10-07"
+      "hash": "29200d1491af2682",
+      "changed": "2026-10-12"
     },
     "/models/gemma-4-e4b-q4/": {
-      "hash": "5540b8063fa2ac96",
-      "changed": "2026-10-07"
+      "hash": "51c67df7ee54c6fc",
+      "changed": "2026-10-12"
     },
     "/models/glm-4.5-air-q4/": {
-      "hash": "ee9a466be7f9fd47",
-      "changed": "2026-10-11"
+      "hash": "236325d4de90c5e1",
+      "changed": "2026-10-12"
     },
     "/models/glm-4.7-flash-q4/": {
-      "hash": "b16c7584dee3c3c4",
-      "changed": "2026-10-07"
+      "hash": "ce3a9a05ab709096",
+      "changed": "2026-10-12"
     },
     "/models/glm-5.3-flash-ud-q4/": {
-      "hash": "6145fa0bd0c5fd12",
-      "changed": "2026-10-07"
+      "hash": "9334e7a5c2357a42",
+      "changed": "2026-10-12"
     },
     "/models/gpt-oss-120b-mxfp4/": {
-      "hash": "a7f230f07309beab",
-      "changed": "2026-09-30"
+      "hash": "ef52c57b42c9835c",
+      "changed": "2026-10-12"
     },
     "/models/gpt-oss-20b-mxfp4/": {
-      "hash": "245050f036f521ce",
-      "changed": "2026-09-30"
+      "hash": "c53c43067e4292ec",
+      "changed": "2026-10-12"
     },
     "/models/granite-4.2-30b-q4/": {
-      "hash": "13e596f8c457c73b",
-      "changed": "2026-10-07"
+      "hash": "5e4a10d1444ac748",
+      "changed": "2026-10-12"
     },
     "/models/granite-4.2-8b-q4/": {
-      "hash": "a79aefb00132c5a7",
-      "changed": "2026-10-07"
+      "hash": "b018aca5e50aec43",
+      "changed": "2026-10-12"
     },
     "/models/hunyuan-hy3-q4/": {
       "hash": "50a315c4b27464b5",
       "changed": "2026-10-07"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "87eeaf05f897543e",
-      "changed": "2026-10-07"
+      "hash": "0aa1556388cd06fe",
+      "changed": "2026-10-12"
     },
     "/models/kat-coder-v2.5-q4/": {
-      "hash": "9a54ecc2373b00ae",
-      "changed": "2026-10-07"
+      "hash": "b50aea06e7055f3a",
+      "changed": "2026-10-12"
     },
     "/models/laguna-xs-2.1-q4/": {
-      "hash": "8238573aaa81aa86",
-      "changed": "2026-10-07"
+      "hash": "a46fe0c739b315f5",
+      "changed": "2026-10-12"
     },
     "/models/lfm2.5-2.6b-q4/": {
-      "hash": "fe00381e779909cb",
-      "changed": "2026-10-07"
+      "hash": "676c2a4c77e678a4",
+      "changed": "2026-10-12"
     },
     "/models/ling-3.0-flash-q4/": {
-      "hash": "e26590bd37419496",
-      "changed": "2026-10-07"
+      "hash": "cd910c28dc364c95",
+      "changed": "2026-10-12"
     },
     "/models/ling-3.0-tiny-q4/": {
-      "hash": "eac595689793ac58",
-      "changed": "2026-10-07"
+      "hash": "015bded1464c98c9",
+      "changed": "2026-10-12"
     },
     "/models/llama-3.1-8b-q4/": {
-      "hash": "db6d65d58a167a2c",
-      "changed": "2026-10-11"
+      "hash": "67a9205af7e48ca0",
+      "changed": "2026-10-12"
     },
     "/models/llama-3.1-8b-q8/": {
-      "hash": "8da6f71e76014e07",
-      "changed": "2026-10-11"
+      "hash": "d72c6077e101e9f3",
+      "changed": "2026-10-12"
     },
     "/models/llama-3.3-70b-q4/": {
-      "hash": "83499f87c64c0d35",
-      "changed": "2026-10-11"
+      "hash": "c0c3680ca3f52875",
+      "changed": "2026-10-12"
     },
     "/models/llama-4-scout-q4/": {
-      "hash": "c0901fcc2c1c7979",
-      "changed": "2026-10-11"
+      "hash": "410047df411339f4",
+      "changed": "2026-10-12"
     },
     "/models/minicpm5-2b-q4/": {
-      "hash": "027e7c37d859cf76",
-      "changed": "2026-10-07"
+      "hash": "6fc3c8bdf996ade5",
+      "changed": "2026-10-12"
     },
     "/models/minimax-m2.7-q4/": {
-      "hash": "165b9bae820cd016",
-      "changed": "2026-10-07"
+      "hash": "4fa9ac48b027c9c0",
+      "changed": "2026-10-12"
     },
     "/models/ministral-3-14b-q4/": {
-      "hash": "4dedda6efb9d44ec",
-      "changed": "2026-10-07"
+      "hash": "423e0e9674d77ef3",
+      "changed": "2026-10-12"
     },
     "/models/ministral-3-8b-q4/": {
-      "hash": "d1acd6e9c416ef11",
-      "changed": "2026-10-07"
+      "hash": "051a472d4a254239",
+      "changed": "2026-10-12"
     },
     "/models/mistral-small-3.2-24b-q4/": {
-      "hash": "9e91a48ad1549e39",
-      "changed": "2026-10-11"
+      "hash": "8a04e1aed27b66e3",
+      "changed": "2026-10-12"
     },
     "/models/mistral-small-4-119b-q4/": {
-      "hash": "9105b406bcd894ac",
-      "changed": "2026-10-07"
+      "hash": "3d69157e4c417ac0",
+      "changed": "2026-10-12"
     },
     "/models/muse-glimmer-30b-q4/": {
-      "hash": "981d486e8de17d68",
-      "changed": "2026-10-07"
+      "hash": "438cc3e25dc63786",
+      "changed": "2026-10-12"
     },
     "/models/nemotron-3.5-lightning-30b-q4/": {
-      "hash": "d3987cfbee927fcb",
-      "changed": "2026-10-07"
+      "hash": "b55e1fca2da069bf",
+      "changed": "2026-10-12"
     },
     "/models/ornith-1.5-35b-a3b-q4/": {
-      "hash": "2c57f02b382f4e77",
-      "changed": "2026-10-07"
+      "hash": "8f72bb6f22cd341e",
+      "changed": "2026-10-12"
     },
     "/models/ornith-1.5-9b-q4/": {
-      "hash": "511b2a219ee9c1b6",
-      "changed": "2026-10-07"
+      "hash": "0e5f56d1ef37dbc7",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-14b-q4/": {
-      "hash": "374f268d212285cc",
-      "changed": "2026-10-11"
+      "hash": "82f6db7258a16ed3",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "582276729ce7bb27",
-      "changed": "2026-10-11"
+      "hash": "5a3eedf9a856c3e4",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
-      "hash": "b1868f11045894ed",
-      "changed": "2026-10-11"
+      "hash": "758c73b33b750f7b",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-32b-q4/": {
-      "hash": "3cf195f0dc0ed4c1",
-      "changed": "2026-10-11"
+      "hash": "1a29f27521d0bcb1",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-32b-q8/": {
-      "hash": "8ba5054a87650641",
-      "changed": "2026-10-11"
+      "hash": "94aecfb22d6802e6",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-8b-q4/": {
-      "hash": "dea7747f59c8a2f7",
-      "changed": "2026-10-11"
+      "hash": "0bc98f88b494d920",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-coder-30b-a3b-q4/": {
-      "hash": "de2cee6f670f8e85",
-      "changed": "2026-09-30"
+      "hash": "b4568c512df8c5f4",
+      "changed": "2026-10-12"
     },
     "/models/qwen3-coder-next-q4/": {
-      "hash": "33d140578acf6b11",
-      "changed": "2026-10-07"
+      "hash": "54fcc950a6bcb243",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.5-122b-a10b-ud-q4/": {
-      "hash": "8a2d4c15ffabcf06",
-      "changed": "2026-10-07"
+      "hash": "4bbd27daf8c53dc4",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.5-4b-q4/": {
-      "hash": "59b08f25c6d97230",
-      "changed": "2026-10-07"
+      "hash": "fab7eddb4352eed0",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.5-9b-q4/": {
-      "hash": "b14728ad36e78130",
-      "changed": "2026-10-07"
+      "hash": "d3c56388d25b9352",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.6-27b-q4/": {
-      "hash": "4fc6f7eca34536e5",
-      "changed": "2026-10-07"
+      "hash": "9190cb5ec9c2cf5b",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.6-35b-a3b-q4/": {
-      "hash": "93ec8d3ac91c2738",
-      "changed": "2026-10-07"
+      "hash": "e467ecb679e43cdc",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.8-27b-q4/": {
-      "hash": "be39aa435df28d10",
-      "changed": "2026-10-07"
+      "hash": "9dc4d60b1df84bed",
+      "changed": "2026-10-12"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "a7bf97d6903d5ae3",
-      "changed": "2026-10-07"
+      "hash": "dff0367fa30d8610",
+      "changed": "2026-10-12"
     },
     "/models/spark-x2.5-4b-q4/": {
-      "hash": "e62c1e7602aee6f1",
-      "changed": "2026-10-07"
+      "hash": "4e064506c01d49dd",
+      "changed": "2026-10-12"
     }
   }
 }
