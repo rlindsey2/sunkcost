@@ -3520,6 +3520,113 @@ function supersededSection(m: Model): string {
 ${money ? `<p>${money}</p>\n` : ''}${marked}`;
 }
 
+type MeasuredWith = { hw: Hardware; published: number; from: number; ctx: number; tps: number; sourceUrl: string };
+
+/**
+ * Every published speed this site holds for one model, machine by machine.
+ *
+ * The machine pages gained this table first, read down the other axis: what has
+ * been measured on one box, across models. A model page never had it, and the
+ * table it does have is one machine per family, the cheapest of each, chosen
+ * from the machines still sold with a published price. Measurements do not fall
+ * on those machines. They fall on the box somebody owned when they ran the
+ * benchmark, which is usually last year's, so 78 of the 98 figures in
+ * `data/throughput.json` sat on no model page at all: Llama 3.1 8B Instruct has
+ * nine of them and its page printed eight speeds, every one worked out from
+ * memory bandwidth, under a note saying speeds are measured where a public
+ * benchmark exists.
+ *
+ * A model name plus "tokens per second" is the search this site is closest to
+ * ranking for, so the figures somebody actually measured belong on the page
+ * that search lands on.
+ */
+function measuredWith(m: Model): MeasuredWith[] {
+  const state = defaultState(data);
+  const kv = kvScaleFor(state.kv, data.defaults);
+  const out: MeasuredWith[] = [];
+  for (const t of data.throughput) {
+    if (t.model_id !== m.id || t.measurement !== 'measured' || t.tokens_per_sec == null) continue;
+    const hw = data.hardware.find((h) => h.id === t.hardware_id);
+    if (!hw) continue;
+    // the context the figure is quoted at: the page's own, where that machine
+    // holds the model there, and otherwise the longest window it does hold
+    const ctx = fit(m, hw, state.ctx, data.defaults.nearly_fits_ratio, kv).status === 'fits'
+      ? state.ctx
+      : longestContext(m, hw, data);
+    if (ctx == null) continue;
+    const tp = resolveThroughput(m, hw, data.throughput, data.defaults, ctx, kv);
+    if (tp.tokensPerSec == null || tp.measurement !== 'measured') continue;
+    out.push({ hw, published: t.tokens_per_sec, from: t.measured_at_context ?? 0, ctx, tps: tp.tokensPerSec, sourceUrl: t.source_url ?? '' });
+  }
+  return out.sort((a, b) => b.tps - a.tps || hardwareLabel(a.hw).localeCompare(hardwareLabel(b.hw)));
+}
+
+/** Two memory tiers of one machine: the same chip, so the same bandwidth. */
+const sameBox = (a: Hardware, b: Hardware) =>
+  a.id !== b.id && a.family === b.family && a.chip === b.chip && a.memory_bandwidth_gbs === b.memory_bandwidth_gbs;
+
+const measuredWithHeading = (m: Model) => `What has been measured running ${esc(m.display_name)}`;
+
+function measuredWithSection(m: Model, shown: Runner[]): string {
+  const rows = measuredWith(m);
+  const shownIds = new Set(shown.map((r) => r.hw.id));
+  // Where every measurement is already in the table above, the section would be
+  // that table again with a column swapped.
+  const extra = rows.filter((r) => !shownIds.has(r.hw.id));
+  if (!extra.length) return '';
+  const ctx = defaultState(data).ctx;
+  const k = ctxLabel(ctx);
+  const name = esc(m.display_name);
+  const inTable = shown.filter((r) => r.view.throughput?.measurement === 'measured').length;
+  const lead = inTable
+    ? `${sentenceCase(numberWord(inTable))} of the speeds in the table above ${inTable === 1 ? 'was' : 'were'} measured, and there are more measurements than that table shows.`
+    : `Every speed in the table above is worked out from memory bandwidth, and that is not because nobody has run ${name}.`;
+  // Why the rest are in no table on the page: it counts machines still on sale
+  // with a published price, one per family and the cheapest of each.
+  const gone = extra.filter((r) => (r.hw.generation ?? 'current') === 'previous');
+  const unpriced = extra.filter((r) => r.hw.price_usd == null && (r.hw.generation ?? 'current') === 'current');
+  const dearer = extra.length - gone.length - unpriced.length;
+  // Each reason as a predicate, so a count can be put in front of it either way
+  // round: "five are no longer sold", "the other five are no longer sold".
+  const kinds = [
+    { n: gone.length, one: 'is no longer sold', many: 'are no longer sold' },
+    { n: unpriced.length, one: 'has no published price', many: 'have no published price' },
+    { n: dearer, one: 'is still sold but not the cheapest of its family', many: 'are still sold but not the cheapest of their family' },
+  ].filter((x) => x.n > 0);
+  const counted = andList(kinds.map((x) => `${numberWord(x.n)} ${x.n === 1 ? x.one : x.many}`));
+  const held = rows.length - extra.length;
+  // The lede names the model where the first sentence has not.
+  const subject = inTable ? name : 'it';
+  const count = `${sentenceCase(numberWord(rows.length))} ${rows.length === 1 ? 'machine here has' : 'machines here have'} a published speed for ${subject}`;
+  const breakdown = held
+    ? `${count}. The table above has ${numberWord(held)} of them; ${
+        kinds.length === 1
+          ? `the other ${numberWord(extra.length)} ${extra.length === 1 ? kinds[0].one : kinds[0].many}`
+          : `of the other ${numberWord(extra.length)}, ${counted}`
+      }.`
+    : rows.length === 1
+      ? `${count}, and the table above leaves it out: it ${kinds[0].one}.`
+      : `${count}, and the table above has none of them: ${kinds.length === 1 ? `every one ${kinds[0].one}` : counted}.`;
+  const tiers = rows.some((a) => rows.some((b) => sameBox(a.hw, b.hw) && a.published === b.published));
+  const body = rows
+    .map((r) => `<tr>
+  <td class="c-hw"><a href="/hardware/${esc(r.hw.id)}/">${esc(hardwareLabel(r.hw))}</a>${(r.hw.generation ?? 'current') === 'previous' ? '<span class="c-quant">discontinued</span>' : ''}</td>
+  <td>${priceWithScope(r.hw)}</td>
+  <td>${speedFrom({ tokensPerSec: r.tps, measurement: 'measured' })}${r.ctx !== ctx ? `<span class="c-quant">at ${ctxLabel(r.ctx)}</span>` : ''}</td>
+  <td><a href="${esc(r.sourceUrl)}" rel="noopener">${fmtNum(r.published, r.published < 10 ? 1 : 0)} tok/s</a><span class="c-quant">${measuredAt(r.from)}</span></td>
+</tr>`)
+    .join('');
+  return `<h2>${measuredWithHeading(m)}</h2>
+<p>${lead} ${breakdown} ${rows.length === 1 ? 'It is' : 'They are'} below, as published and again at ${k} of context, which is what every other speed on this page is taken at.</p>
+${stack(`<table class="board">
+<thead><tr><th>Machine</th><th>Price</th><th>At ${k}</th><th>As published</th></tr></thead>
+<tbody>${body}</tbody>
+</table>`, { fig: 2 })}
+<p class="note">A published figure is what its source reports, at the window the model was run at. The ${k} figure is that measurement read at ${k} of context: every token generated reads the weights and the whole key-value cache, so the longer the window the slower it runs.${rows.some((r) => r.ctx !== ctx) ? ` Where a machine does not hold ${name} at ${k}, the row gives the longest window it does hold.` : ''}${gone.length ? ` A discontinued machine's price is the one it launched at.` : ''}${tiers ? ` Where two memory tiers of one machine carry the same figure, the speed is set by the bandwidth of the chip they share rather than by the amount of memory.` : ''} Each published figure links the source that took it.</p>
+
+`;
+}
+
 function modelPage(m: Model): string {
   const runners = runnersFor(m, data);
   const perFamily = cheapestPerFamily(runners);
@@ -3743,7 +3850,7 @@ ${reachLine}
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}${smallestLine ? `\n<p class="note">${smallestLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
-${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}${precisionSection(m)}<h2>The specifics</h2>
+${measuredWithSection(m, perFamily)}${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}${precisionSection(m)}<h2>The specifics</h2>
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
@@ -8832,6 +8939,7 @@ function checkSubjectHeadings() {
     /^How good is (.+), really\?$/,
     /^What (.+) costs either way$/,
     /^Machines that run (.+)$/,
+    /^What has been measured running (.+)$/,
     /^The machines that miss (.+), and what they run$/,
     /^(.+) fits at \d+k of context$/,
   ];
@@ -10287,6 +10395,190 @@ checkTableWidths();
 checkMeasuredRows();
 checkSupersededModels();
 checkFastestRow();
+checkMeasuredMachines();
+
+/**
+ * The measurements a model page prints, machine by machine.
+ *
+ * The mirror of `checkMeasuredRows()`, and it has more ways to go wrong, because
+ * the page it sits on already prints a table of machines with a speed in it. Two
+ * figures that look alike are not: the table above quotes every machine at this
+ * page's context, and this section quotes each measurement twice, once at that
+ * context and once as its source published it, at whatever window the source ran
+ * it at. Mix the two and the page either flatters a machine or calls a slower
+ * figure a measurement nobody took.
+ *
+ * So nothing here is read off `measuredWith()`. Each row is rebuilt from
+ * `data/throughput.json` and the decay this site documents, the set of machines
+ * is rebuilt from the same rule the table above uses, and the paragraph's four
+ * counts — how many machines have a figure, how many of those the table above
+ * holds, and why the rest are not in it — are counted from the data rather than
+ * from the sentence that states them.
+ */
+function checkMeasuredMachines() {
+  const problems: string[] = [];
+  const state = defaultState(data);
+  const kv = kvScaleFor(state.kv, data.defaults);
+  const k = ctxLabel(state.ctx);
+  const text = (h: string) => unesc(h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+  const tps = (n: number) => `${fmtNum(n, n < 10 ? 1 : 0)} tok/s`;
+  const round = (n: number) => (n < 10 ? Math.round(n * 10) / 10 : Math.round(n));
+  let pages = 0;
+  let printed = 0;
+  let offTable = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    const want = data.throughput
+      .filter((t) => t.model_id === m.id && t.measurement === 'measured' && t.tokens_per_sec != null)
+      .flatMap((t) => {
+        const hw = data.hardware.find((h) => h.id === t.hardware_id);
+        if (!hw) {
+          problems.push(`${path} has a measured speed on ${t.hardware_id}, which is not a machine here`);
+          return [];
+        }
+        const ctx = fit(m, hw, state.ctx, data.defaults.nearly_fits_ratio, kv).status === 'fits'
+          ? state.ctx
+          : longestContext(m, hw, data);
+        if (ctx == null) return [];
+        const at = t.measured_at_context ?? 0;
+        return [{
+          hw,
+          at,
+          published: t.tokens_per_sec!,
+          ctx,
+          tps: t.tokens_per_sec! * contextSpeedFactor(m, at, ctx, kv),
+          sourceUrl: t.source_url ?? '',
+        }];
+      })
+      .sort((a, b) => b.tps - a.tps || hardwareLabel(a.hw).localeCompare(hardwareLabel(b.hw)));
+    // the machines the table above shows, rebuilt from the rule it is built on
+    const above = cheapestPerFamily(runnersFor(m, data));
+    const shownIds = new Set(above.map((r) => r.hw.id));
+    const extra = want.filter((r) => !shownIds.has(r.hw.id));
+    const section = sectionUnder(html, measuredWithHeading(m));
+    if (!extra.length) {
+      if (section != null) problems.push(`${path} prints a measurements section and the table above already holds every measurement`);
+      continue;
+    }
+    if (section == null) {
+      problems.push(`${path} has ${extra.length} measured speed${extra.length === 1 ? '' : 's'} in no table on it and prints no measurements section`);
+      continue;
+    }
+    pages += 1;
+    offTable += extra.length;
+    const tbody = section.match(/<tbody>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+    const rows = [...tbody.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((x) => x[1]);
+    if (rows.length !== want.length) {
+      problems.push(`${path} tables ${rows.length} measurements where the data has ${want.length}`);
+      continue;
+    }
+    want.forEach((r, i) => {
+      printed += 1;
+      const label = hardwareLabel(r.hw);
+      const cells = [...rows[i].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((x) => x[1]);
+      if (cells.length !== 4) {
+        problems.push(`${path} writes a measurement row of ${cells.length} cells`);
+        return;
+      }
+      if (!cells[0].includes(`href="/hardware/${esc(r.hw.id)}/"`))
+        problems.push(`${path} does not link the ${label} from its measurement row`);
+      if (!meta.some((x) => x.path === `/hardware/${r.hw.id}/`))
+        problems.push(`${path} links /hardware/${r.hw.id}/ from its measurements and there is no such page`);
+      const marked = cells[0].includes('discontinued');
+      if (marked !== ((r.hw.generation ?? 'current') === 'previous'))
+        problems.push(`${path} ${marked ? 'calls' : 'does not call'} the ${label} discontinued, against the data`);
+      if (cells[1] !== priceWithScope(r.hw))
+        problems.push(`${path} prices the ${label} at ${text(cells[1])} where the data says ${priceWithScopeText(r.hw)}`);
+      if (!text(cells[2]).startsWith(`${tps(round(r.tps))} measured`))
+        problems.push(`${path} prints ${text(cells[2])} on the ${label} where the measurement reads ${tps(round(r.tps))} at ${ctxLabel(r.ctx)}`);
+      const short = `<span class="c-quant">at ${ctxLabel(r.ctx)}</span>`;
+      if (r.ctx !== state.ctx && !cells[2].includes(short))
+        problems.push(`${path} quotes the ${label} at ${ctxLabel(r.ctx)} under a column headed ${k} and does not say so`);
+      if (r.ctx === state.ctx && cells[2].includes('c-quant'))
+        problems.push(`${path} says the ${label} is quoted short of ${k} where it holds this model there`);
+      if (r.ctx !== state.ctx && !section.includes(`Where a machine does not hold ${esc(m.display_name)} at ${k}`))
+        problems.push(`${path} quotes a speed short of ${k} and never says why`);
+      const at = r.at === 0 ? 'measured at an empty window' : r.at < 1024 ? `measured at ${r.at} tokens` : `measured at ${ctxLabel(r.at)}`;
+      if (text(cells[3]) !== `${tps(r.published)} ${at}`)
+        problems.push(`${path} publishes ${text(cells[3])} on the ${label} where the row says ${tps(r.published)}, ${at}`);
+      // the figure carries its own source, so 16 rows do not become a list of 16
+      // links in which one publisher's name stands five times over
+      if (!cells[3].includes(`<a href="${esc(r.sourceUrl)}" rel="noopener">${tps(r.published)}</a>`))
+        problems.push(`${path} does not link ${r.sourceUrl}, which published ${tps(r.published)} on the ${label}`);
+      if (round(r.tps) > round(r.published) && r.at < r.ctx)
+        problems.push(`${path} reads the ${label} faster at ${ctxLabel(r.ctx)} than the window it was measured at`);
+    });
+    // the counts the paragraph makes, every one of them from the data
+    const lede = text(section.match(/<p>([\s\S]*?)<\/p>/)?.[1] ?? '');
+    const n = want.length;
+    const held = n - extra.length;
+    if (!lede.includes(`${sentenceCase(numberWord(n))} ${n === 1 ? 'machine here has' : 'machines here have'} a published speed`))
+      problems.push(`${path} does not say ${numberWord(n)} machines here have a published speed for this model`);
+    // the table above calls a speed measured exactly where this site holds one
+    const inTable = above.filter((r) => r.view.throughput?.measurement === 'measured').length;
+    if (inTable !== held)
+      problems.push(`${path} has ${inTable} measured speeds in its table of machines and ${held} of its measurements are on machines in that table`);
+    if (held && !lede.includes(`The table above has ${numberWord(held)} of them`))
+      problems.push(`${path} does not say the table above holds ${numberWord(held)} of the ${n} measurements`);
+    if (!held && !/the table above (has none of them|leaves it out)/.test(lede))
+      problems.push(`${path} has no measurement in the table above and does not say so`);
+    if (held && !lede.startsWith(`${sentenceCase(numberWord(held))} of the speeds in the table above ${held === 1 ? 'was' : 'were'} measured`))
+      problems.push(`${path} opens its measurements section without saying how many of the speeds above were measured`);
+    if (!held && !lede.startsWith('Every speed in the table above is worked out from memory bandwidth'))
+      problems.push(`${path} has no measured speed in the table above and does not open the section by saying so`);
+    const gone = extra.filter((r) => (r.hw.generation ?? 'current') === 'previous').length;
+    const unpriced = extra.filter((r) => r.hw.price_usd == null && (r.hw.generation ?? 'current') === 'current').length;
+    const dearer = extra.length - gone - unpriced;
+    // Why each machine is in no table above, counted and in words: a reason said
+    // without its own count, or with the count of another reason, is the half of
+    // this that reads fine and is false.
+    const reasons = [
+      { n: gone, one: 'is no longer sold', many: 'are no longer sold' },
+      { n: unpriced, one: 'has no published price', many: 'have no published price' },
+      { n: dearer, one: 'is still sold but not the cheapest of its family', many: 'are still sold but not the cheapest of their family' },
+    ];
+    const given = reasons.filter((x) => x.n > 0);
+    for (const x of reasons) {
+      if (!x.n && (lede.includes(x.one) || lede.includes(x.many)))
+        problems.push(`${path} says a machine ${x.many} and none of its measurements is on one`);
+    }
+    const expected =
+      given.length > 1
+        ? andList(given.map((x) => `${numberWord(x.n)} ${x.n === 1 ? x.one : x.many}`))
+        : held
+          ? `the other ${numberWord(extra.length)} ${extra.length === 1 ? given[0].one : given[0].many}`
+          : n === 1
+            ? `it ${given[0].one}`
+            : `every one ${given[0].one}`;
+    if (!lede.includes(expected))
+      problems.push(`${path} should say ${expected} of the machines its measurements are on, and says "${lede.slice(-90)}"`);
+    // and the two sentences the rows can call for
+    const launch = section.includes("A discontinued machine's price is the one it launched at.");
+    const anyGone = want.some((r) => (r.hw.generation ?? 'current') === 'previous');
+    if (launch !== anyGone)
+      problems.push(`${path} ${launch ? 'says a price is a launch price and tables no discontinued machine' : 'tables a discontinued machine and does not say its price is the one it launched at'}`);
+    const tiers = section.includes('Where two memory tiers of one machine carry the same figure');
+    const anyTier = want.some((a) => want.some((b) => sameBox(a.hw, b.hw) && a.published === b.published));
+    if (tiers !== anyTier)
+      problems.push(`${path} ${tiers ? 'explains two memory tiers carrying one figure and tables no such pair' : 'tables two memory tiers of one machine at the same figure and does not say why'}`);
+    // every source the rows cite, and no source the rows do not
+    const cited = [...section.matchAll(/href="([^"]+)" rel="noopener"/g)].map((x) => unesc(x[1]));
+    const sources = want.map((r) => r.sourceUrl);
+    if (cited.join('|') !== sources.join('|'))
+      problems.push(`${path} links ${cited.length} sources in its measurements where its ${sources.length} rows name ${[...new Set(sources)].length}`);
+    if (!section.includes('Each published figure links the source that took it.'))
+      problems.push(`${path} links a source from every measurement and never says that is what the link is`);
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} measured speed${problems.length === 1 ? '' : 's'} on a model page do not hold to data/throughput.json`);
+  }
+  console.log(
+    `  ${pages} model pages print the ${printed} speeds anybody has published running them, ${offTable} of those on machines their own tables leave out`,
+  );
+}
 
 /**
  * The "fastest machine that runs it" row in the answer block of a model page.
@@ -10345,8 +10637,13 @@ function checkFastestRow() {
     if (!said.includes(fastest.view.throughput!.measurement)) problems.push(`${path} quotes ${speed} on the ${label} without saying whether it was measured`);
     if (!said.includes(`${Math.round(ctx / 1024)}k context`)) problems.push(`${path} quotes ${speed} on the ${label} without the context it is quoted at`);
     // The claim is that nothing here is quicker, so no cell of this page's own
-    // table of machines may print a bigger figure than the row does.
-    const cells = [...html.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].flatMap((c) => [...text(c[1]).matchAll(/([\d,.]+) tok\/s/g)].map((t) => Number(t[1].replace(/,/g, ''))));
+    // table of machines may print a bigger figure than the row does. It is that
+    // table alone: every figure in it is quoted at this page's context, which is
+    // what makes the comparison a comparison. The measurements table below it
+    // prints each figure as published too, at the window its source ran it at,
+    // and those are higher by the decay this site documents.
+    const runnersTable = sectionUnder(html, runnersHeading(m)) ?? '';
+    const cells = [...runnersTable.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].flatMap((c) => [...text(c[1]).matchAll(/([\d,.]+) tok\/s/g)].map((t) => Number(t[1].replace(/,/g, ''))));
     const quoted = Number(speed.replace(/,/g, '').replace(' tok/s', ''));
     const beaten = cells.filter((n) => n > quoted);
     if (beaten.length) problems.push(`${path} calls ${speed} on the ${label} the fastest and its own table prints ${Math.max(...beaten)} tok/s`);

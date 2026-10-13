@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-12
+Last checked: 2026-10-13
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,45 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-13 · Mellum2.1 Thinking is the first candidate whose only gaps are the two judgements
+
+**Everything a row needs but the score and the price is read off JetBrains's own repositories.**
+[JetBrains/Mellum2.1-12B-A2.5B-Thinking](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking)
+is **Apache 2.0** on the licence tag of both the weights and the GGUF repo, and the official
+[GGUF build](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF) is a JetBrains
+repository rather than a third-party conversion. Hugging Face's own API gives
+`Mellum2.1-12B-A2.5B-Thinking-Q4_K_M.gguf` at **8,071,295,264 bytes, so 8.07 GB**, one unsharded
+file, beside MXFP4_MOE at 7.03 GB, Q6_K at 10.88 GB, Q8_0 at 12.93 GB and BF16 at 24.31 GB. The
+API's safetensors index gives the total outright, **12,149,923,072, so 12.15B**. The **2.5B active
+per token** is the repo's own name and the write-ups rather than a field, so that one wants the
+card; Hugging Face answered 429 to every attempt at it today.
+
+**The architecture is the shape this site already carries.** `config.json` reads 28 layers, 32
+attention heads, **4 key-value heads, head dim 128**, hidden size 2304, 64 experts with 8 active,
+and `use_sliding_window` with a **1024-token window**; `layer_types` runs three
+`sliding_attention` to one `full_attention` through all 28, so **7 layers hold full attention**
+(4, 8, 12 … 28). That is `full_attention_layers` 7, `sliding_window_layers` 21,
+`sliding_window` 1024 beside `n_layers` 28, and the site's own formula then gives
+`kv_cache_gb_per_8k` **0.161**: 0.51 GB of cache at 32k, 1.92 GB at 128k, so **8.58 GB to hold at
+32k** and 9.99 GB at its ceiling. `max_position_embeddings` is **131072**, with separate rope
+settings per attention type (yarn, factor 16, on the full-attention layers).
+
+**The two missing fields are the two that are judgements, not measurements.** Artificial Analysis
+lists no Mellum model, checked by name today, so `frontier_equivalent` has nothing to take, and
+that page now heads its index **v4.3.2** where `data/models.json` records v4.3. Nobody rents it
+either: OpenRouter's model list answered 461 models today and holds no Mellum and nothing from
+JetBrains, so `cloud_equivalent` needs a stand-in and a basis. It is a coding model, which makes
+the nearest hosted match a choice rather than an arithmetic, so both are Ryan's call. The repo's
+own `model-index` carries 17 benchmark figures, SWE-bench Verified at 47.0 and LiveCodeBench v6 at
+82.0 among them, every one marked unverified; none of them is an index score.
+
+**Meta's two releases this week are hosted only.** Muse Wonder and Muse Wonder Full (12 October)
+have no downloadable weights: Artificial Analysis lists Wonder as proprietary with no disclosed
+parameter count, and Meta's Hugging Face organisation still publishes only Muse Glimmer 30B, which
+this site already prices. Mistral Large 4's API preview opened 6 October with weights said to be
+due by the end of the month, so it is a watch rather than a candidate. Kolibri 1, from 2026-10-12,
+is unchanged: still no Artificial Analysis page.
 
 ### 2026-10-12 · Kolibri 1 now has every field but one, read off the repository itself
 

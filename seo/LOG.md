@@ -37,8 +37,29 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       no machine table and no size page's rows; the only rules that reach one are its own head-to-heads.
       Any fix is a rule on a current page or a machine page pointing back, and the reader's question it
       answers has to come first — a sixth link for its own sake is not worth a sentence.
+- [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
+      Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
+      reads it to 32k with its own decay. Nine of the 16 land within 5% of the source's own 32k
+      number; the four Corsair AI Workstation 300 rows read high by 19 to 92% (gpt-oss-120b at 39.0
+      against the chart's 20.4, Llama 3.1 8B at 21.8 against 13.0), and Qwen3 30B-A3B on the RTX 5090
+      reads 104 against 143. The machine and model pages print all of them as measured. The fix is a
+      row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-13 — 16 model pages print the speeds somebody measured running that model
+A model page's table is one machine per family, the cheapest of each, over the machines still sold at a published
+price. A benchmark gets run on the box somebody already owns, which is usually last year's, so the two sets barely
+meet: 78 of the 98 measured figures in data/throughput.json sat on no model page at all. Llama 3.1 8B Instruct has
+nine and its page printed eight speeds, every one worked out from bandwidth, under a note saying speeds are measured
+where a public benchmark exists. The 16 pages with a measurement their table misses now table every one: the machine,
+its price, the figure read at 32k, and the figure as published, linking the source that took it at the window it was
+run at. checkFastestRow() wanted narrowing too: its "nothing here is quicker" read every cell on the page, and a
+figure published at an empty window is not a figure at 32k. Straight to main. Verified: 452 tests, typecheck clean,
+the full build with build:functions, 320 pages every guard passing, 321 of 321 dated with those 16 moved and no
+others, five read rendered, and 24 mutations stopping the build, 23 on the new checkMeasuredMachines() and one on the
+guard already holding a card's price to the card. Watch: Mellum2.1 Thinking, Apache 2.0, 12.15B at 8.07 GB, every
+field but the index score and a rental price, and both of those are judgements. Next: the new backlog item, a data edit.
 
 ### 2026-10-12 — 54 model pages name the fastest machine here, not "the fastest of the ones listed"
 Reading the two least-linked model pages for the backlog item turned up a false row in the answer block of all
