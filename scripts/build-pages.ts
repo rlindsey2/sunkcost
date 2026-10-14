@@ -3520,6 +3520,129 @@ function supersededSection(m: Model): string {
 ${money ? `<p>${money}</p>\n` : ''}${marked}`;
 }
 
+/**
+ * What a longer window costs: in memory, in machine, and in speed.
+ *
+ * Every other figure on a model page is priced at the context the calculator
+ * starts from, and the page says so. The window a reader wants is often the
+ * model's own ceiling, and between the two the answer can change completely.
+ * Ministral 3 8B is 9.8 GB at 32k and 41.7 GB at its 256k ceiling: the machines
+ * here that hold it fall from 37 to 20, and the cheapest still sold goes from
+ * $899 to $1,700. The weights are a fixed size and the cache is not, so this is
+ * the figure that decides which box to buy, and it was readable only one machine
+ * at a time, out of the "Longest context" column of the table above.
+ *
+ * Four models here stop at a 40k ceiling, one setting above the 32k everything
+ * is priced at, so there is no longer window to price and no section. Nor is
+ * there one on the page of a model nothing still sold holds at 32k, where the
+ * answer block already prices the whole question.
+ */
+interface LongerWindow {
+  top: number;
+  now: Runner[];
+  then: Runner[];
+  fpNow: number;
+  fpTop: number;
+}
+
+function longerWindow(m: Model): LongerWindow | null {
+  const limit = m.max_context_tokens ?? Infinity;
+  const longer = [...data.defaults.context.options].sort((a, b) => a - b).filter((o) => o > CTX && o <= limit);
+  if (!longer.length) return null;
+  const top = longer[longer.length - 1];
+  const fpNow = footprintGb(m, CTX);
+  const fpTop = footprintGb(m, top);
+  if (fpNow == null || fpTop == null) return null;
+  const now = runnersFor(m, data);
+  if (!now.length) return null;
+  return { top, now, then: runnersFor(m, data, { ctx: top }), fpNow, fpTop };
+}
+
+/** Why a machine that holds the model is outside the set the rest of the page buys from. */
+function offMarketSaid(h: Hardware): string {
+  const reason = OFF_MARKET_REASONS.find((r) => r.has(h));
+  if (!reason) return '';
+  return (h.generation ?? 'current') === 'previous' && h.price_usd != null
+    ? `${reason.said}, at the ${fmtUsd(h.price_usd)} it launched at`
+    : reason.said;
+}
+
+const contextCostHeading = (m: Model, top: number) => `How much memory does ${esc(m.display_name)} need at ${ctxLabel(top)}?`;
+
+function contextCostSection(m: Model): string {
+  const found = longerWindow(m);
+  if (!found) return '';
+  const { top, now, then, fpNow, fpTop } = found;
+  const name = esc(m.display_name);
+  // The same four readings of a context figure the table above uses, and the
+  // fourth is the one that matters: a window that is the longest setting on offer
+  // below the model's own limit is not the model's ceiling, and MiniMax M2.7 stops
+  // at 200k rather than at the 128k this section can price.
+  const longestOffered = Math.max(...data.defaults.context.options);
+  const limit = m.max_context_tokens ?? Infinity;
+  const said =
+    top === limit
+      ? top === longestOffered
+        ? `, which is this model's own ceiling and the longest the calculator offers`
+        : `, this model's own ceiling`
+      : top === longestOffered
+        ? `, the longest the calculator offers`
+        : `, the longest setting the calculator offers below this model's own ${ctxLabel(limit)} limit`;
+  // The weights are not printed again here. They do not change, and the three
+  // figures rounded to a tenth of a gigabyte stop adding up on 22 of these pages.
+  const answer = `Every figure above is priced at ${ctxLabel(CTX)} of context. At ${ctxLabel(top)}${said}, ${name} needs ${fmtGb1(fpTop)} rather than ${fmtGb1(fpNow)}. The weights are the same either way; the key-value cache goes from ${fmtGb1(kvCacheGb(m, CTX))} to ${fmtGb1(kvCacheGb(m, top))}.`;
+
+  const link = (hw: Hardware) => `the <a href="/hardware/${esc(hw.id)}/">${esc(shortHardwareLabel(hw))}</a>`;
+  const at = (hw: Hardware) => `${link(hw)} at ${priceWithScopeText(hw)}`;
+  const cheapNow = now[0];
+  const cheapTop = then[0] ?? null;
+
+  // What that does to the shopping list. A machine that holds the model at the
+  // longer window holds it at the shorter one too, so this set only ever shrinks.
+  let machines: string;
+  if (!cheapTop) {
+    const off = offMarketHolders(m, top);
+    const holds = off.length
+      ? ` ${sentenceCase(numberWord(off.length))} machine${off.length === 1 ? '' : 's'} here ${off.length === 1 ? 'does' : 'do'} hold it there: ${off.map((h) => `${link(h)}, ${offMarketSaid(h)}`).join('; ')}.`
+      : '';
+    machines = `No machine here that is still sold at a published price holds ${name} at ${ctxLabel(top)}. ${
+      now.length === 1 ? `The one that holds it at ${ctxLabel(CTX)} is ${at(cheapNow.hw)}` : `${sentenceCase(numberWord(now.length))} hold it at ${ctxLabel(CTX)}, from ${at(cheapNow.hw)}`
+    }.${holds}`;
+  } else if (then.length === now.length) {
+    machines =
+      now.length === 1
+        ? `The window costs nothing in hardware: the one machine here that holds ${name} at ${ctxLabel(CTX)}, ${at(cheapNow.hw)}, holds it at ${ctxLabel(top)} as well.`
+        : `The window costs nothing in hardware: the same ${numberWord(now.length)} machines here hold ${name} at both lengths, and the cheapest still sold is ${at(cheapNow.hw)}.`;
+  } else {
+    const count = `${sentenceCase(numberWord(now.length))} machine${now.length === 1 ? '' : 's'} here hold${now.length === 1 ? 's' : ''} ${name} at ${ctxLabel(CTX)} and ${numberWord(then.length)} hold${then.length === 1 ? 's' : ''} it at ${ctxLabel(top)}.`;
+    const price =
+      cheapTop.hw.id === cheapNow.hw.id
+        ? ` The cheapest still sold is the same at both lengths: ${at(cheapNow.hw)}.`
+        : ` The cheapest still sold goes from ${at(cheapNow.hw)} to ${at(cheapTop.hw)}.`;
+    machines = `${count}${price}`;
+  }
+  const scope = cardScopeNote(cheapTop && cheapTop.hw.id !== cheapNow.hw.id ? [cheapNow.hw, cheapTop.hw] : [cheapNow.hw]);
+
+  // The other half of what a window costs, held to one machine so that the
+  // window is the only thing that changes between the two figures.
+  const speeds = (() => {
+    if (!cheapTop) return '';
+    const st = defaultState(data);
+    const rows = [CTX, top].map((ctx) => {
+      const v = computeView({ ...st, hw: cheapTop.hw.id, model: m.id, ctx }, data);
+      return v.rows.find((r) => r.model.id === m.id) ?? null;
+    });
+    if (rows.some((r) => shownTps(r) == null)) return '';
+    const [a, b] = rows;
+    return `On ${link(cheapTop.hw)} it runs ${speedWithBasis(a)} at ${ctxLabel(CTX)} and ${speedWithBasis(b)} at ${ctxLabel(top)}. Every token generated reads the whole cache back, so a longer window is slower as well as bigger.`;
+  })();
+
+  return `<h2>${contextCostHeading(m, top)}</h2>
+<p>${answer}</p>
+<p>${machines}${scope ? ` ${scope}` : ''}</p>
+${speeds ? `<p>${speeds}</p>\n` : ''}`;
+}
+
 type MeasuredWith = { hw: Hardware; published: number; from: number; ctx: number; tps: number; sourceUrl: string };
 
 /**
@@ -3850,7 +3973,7 @@ ${reachLine}
 <p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}${smallestLine ? `\n<p class="note">${smallestLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
-${measuredWithSection(m, perFamily)}${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}${precisionSection(m)}<h2>The specifics</h2>
+${contextCostSection(m)}${measuredWithSection(m, perFamily)}${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}${precisionSection(m)}<h2>The specifics</h2>
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
@@ -10396,6 +10519,7 @@ checkMeasuredRows();
 checkSupersededModels();
 checkFastestRow();
 checkMeasuredMachines();
+checkContextCost();
 
 /**
  * The measurements a model page prints, machine by machine.
@@ -11237,3 +11361,173 @@ writeFileSync(new URL('_redirects', outRoot), redirectsTxt);
 writeFileSync(datesFile, `${JSON.stringify(nextLedger, null, 2)}\n`);
 // /hardware/ is the index of the machines, not one of them, so it is not counted as one
 console.log(`wrote ${paths.length} static pages + sitemap.xml (${paths.filter((p) => p.startsWith('/models')).length} models, ${paths.filter((p) => p.startsWith('/hardware/') && p !== '/hardware/').length} machines, ${paths.filter((p) => p.startsWith('/compare')).length} comparisons)`);
+
+/**
+ * What a model page says a longer window costs.
+ *
+ * Every figure in the section is rebuilt here from `data.models` and
+ * `data.hardware` rather than from the function that wrote it: the footprint at
+ * both windows, the cache at both, the machines that hold it at each, and the two
+ * speeds, each read off the one machine the section quotes them on. Two ways to
+ * get it wrong matter more than the rest. A figure at the wrong window reads as a
+ * discount on a model that needs twice the memory a reader thinks; and a machine
+ * set that grew with the window would be arithmetic running backwards, because the
+ * weights are fixed and the cache only grows, so this set can shrink and never
+ * gain. Both stop the build.
+ */
+function checkContextCost() {
+  const problems: string[] = [];
+  const options = [...data.defaults.context.options].sort((a, b) => a - b);
+  const longestOffered = options[options.length - 1];
+  const forSale = data.hardware
+    .filter((h) => h.usable_memory_gb != null && h.price_usd != null && (h.generation ?? 'current') === 'current')
+    .sort((a, b) => a.price_usd! - b.price_usd!);
+  const holdersAt = (m: Model, ctx: number) => forSale.filter((hw) => fit(m, hw, ctx, NEARLY).status === 'fits');
+  let sections = 0;
+  let freeWindows = 0;
+  let nothingHolds = 0;
+
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((pg) => pg.path === path)?.html ?? '';
+    const found = html.match(/<h2\b[^>]*>How much memory does [^<]*?need at (\d+k)\?<\/h2>([\s\S]*?)(?=<h2\b)/);
+
+    const limit = m.max_context_tokens ?? Infinity;
+    const longer = options.filter((o) => o > CTX && o <= limit);
+    const top = longer.length ? longer[longer.length - 1] : null;
+    const now = holdersAt(m, CTX);
+    const want = top != null && now.length > 0 && footprintGb(m, CTX) != null && footprintGb(m, top) != null;
+
+    if (!want) {
+      if (found) problems.push(`${path} prices a longer window than this page has one to price`);
+      continue;
+    }
+    if (!found) {
+      problems.push(`${path} is priced at ${ctxLabel(CTX)} and says nothing about what ${ctxLabel(top!)} costs`);
+      continue;
+    }
+    sections++;
+    const body = found[2];
+    const text = unesc(body.replace(/<[^>]+>/g, ''));
+    const says = (what: string, said: string) => {
+      if (!text.includes(unesc(said))) problems.push(`${path} does not say ${what}: expected "${said}"`);
+    };
+    if (found[1] !== ctxLabel(top!))
+      problems.push(`${path} heads the section ${found[1]} and the longest window it can price is ${ctxLabel(top!)}`);
+
+    const then = holdersAt(m, top!);
+    // the weights are fixed and the cache only grows, so this set can only shrink
+    const held = new Set(now.map((h) => h.id));
+    const gained = then.filter((h) => !held.has(h.id));
+    if (gained.length)
+      problems.push(`${path} has ${gained.length} machine${gained.length === 1 ? '' : 's'} holding it at ${ctxLabel(top!)} and not at ${ctxLabel(CTX)}`);
+
+    const said =
+      top === limit
+        ? top === longestOffered
+          ? `, which is this model's own ceiling and the longest the calculator offers`
+          : `, this model's own ceiling`
+        : top === longestOffered
+          ? `, the longest the calculator offers`
+          : `, the longest setting the calculator offers below this model's own ${ctxLabel(limit)} limit`;
+    says(
+      `what it needs at ${ctxLabel(top!)} against ${ctxLabel(CTX)}, and the cache at each`,
+      `Every figure above is priced at ${ctxLabel(CTX)} of context. At ${ctxLabel(top!)}${said}, ${m.display_name} needs ${fmtGb1(footprintGb(m, top!))} rather than ${fmtGb1(footprintGb(m, CTX))}. The weights are the same either way; the key-value cache goes from ${fmtGb1(kvCacheGb(m, CTX))} to ${fmtGb1(kvCacheGb(m, top!))}.`,
+    );
+
+    const cheapNow = now[0];
+    const cheapTop = then[0] ?? null;
+    if (!cheapTop) {
+      nothingHolds++;
+      says(
+        `that nothing still sold holds it at ${ctxLabel(top!)}`,
+        `No machine here that is still sold at a published price holds ${m.display_name} at ${ctxLabel(top!)}.`,
+      );
+      says(
+        `what does hold it at ${ctxLabel(CTX)}`,
+        now.length === 1
+          ? `The one that holds it at ${ctxLabel(CTX)} is the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`
+          : `${sentenceCase(numberWord(now.length))} hold it at ${ctxLabel(CTX)}, from the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`,
+      );
+      // the machines outside that set which do hold it there, and why each is outside it
+      const off = data.hardware.filter(
+        (h) => !forSale.some((s) => s.id === h.id) && h.usable_memory_gb != null && fit(m, h, top!, NEARLY).status === 'fits',
+      );
+      if (off.length) {
+        says(
+          `how many machines outside that set hold it at ${ctxLabel(top!)}`,
+          `${sentenceCase(numberWord(off.length))} machine${off.length === 1 ? '' : 's'} here ${off.length === 1 ? 'does' : 'do'} hold it there:`,
+        );
+        // why each is outside that set, written out here rather than read off the
+        // helper the section writes it with, so dropping the launch price shows up
+        const why = (h: Hardware) => {
+          const gone = (h.generation ?? 'current') === 'previous';
+          if (gone && h.price_usd != null) return `no longer sold, at the ${fmtUsd(h.price_usd)} it launched at`;
+          return gone ? 'no longer sold, with no published price' : 'on sale with no published price';
+        };
+        for (const h of off) {
+          says(`why the ${shortHardwareLabel(h)} is not an answer to what to buy`, `${shortHardwareLabel(h)}, ${why(h)}`);
+          if (!body.includes(`href="/hardware/${esc(h.id)}/"`))
+            problems.push(`${path} names the ${shortHardwareLabel(h)} without linking its page`);
+        }
+      } else if (/do hold it there|does hold it there/.test(text)) {
+        problems.push(`${path} names a machine holding it at ${ctxLabel(top!)} and nothing here does`);
+      }
+    } else if (then.length === now.length) {
+      freeWindows++;
+      says(
+        `that the longer window costs no more machine`,
+        now.length === 1
+          ? `The window costs nothing in hardware: the one machine here that holds ${m.display_name} at ${ctxLabel(CTX)}, the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}, holds it at ${ctxLabel(top!)} as well.`
+          : `The window costs nothing in hardware: the same ${numberWord(now.length)} machines here hold ${m.display_name} at both lengths, and the cheapest still sold is the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`,
+      );
+    } else {
+      says(
+        `how many machines hold it at each window`,
+        `${sentenceCase(numberWord(now.length))} machine${now.length === 1 ? '' : 's'} here hold${now.length === 1 ? 's' : ''} ${m.display_name} at ${ctxLabel(CTX)} and ${numberWord(then.length)} hold${then.length === 1 ? 's' : ''} it at ${ctxLabel(top!)}.`,
+      );
+      says(
+        `what the cheapest machine still sold is at each window`,
+        cheapTop.id === cheapNow.id
+          ? `The cheapest still sold is the same at both lengths: the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`
+          : `The cheapest still sold goes from the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)} to the ${shortHardwareLabel(cheapTop)} at ${priceWithScopeText(cheapTop)}.`,
+      );
+    }
+
+    for (const hw of cheapTop && cheapTop.id !== cheapNow.id ? [cheapNow, cheapTop] : [cheapNow])
+      if (!body.includes(`href="/hardware/${esc(hw.id)}/"`))
+        problems.push(`${path} names the ${shortHardwareLabel(hw)} without linking its page`);
+    // a price priced as a card alone says so wherever it is printed
+    const cards = (cheapTop && cheapTop.id !== cheapNow.id ? [cheapNow, cheapTop] : [cheapNow]).filter((h) => h.price_scope === 'card_only');
+    if (cards.length && !/priced as the card alone/.test(text))
+      problems.push(`${path} prices a graphics card here without saying the price is the card alone`);
+
+    if (cheapTop) {
+      const st = defaultState(data);
+      const rows = [CTX, top!].map((ctx) => {
+        const v = computeView({ ...st, hw: cheapTop.id, model: m.id, ctx }, data);
+        return v.rows.find((r) => r.model.id === m.id) ?? null;
+      });
+      if (rows.some((r) => shownTps(r) == null)) {
+        if (/ it runs /.test(text)) problems.push(`${path} quotes a speed at two windows the calculator has no pair of figures for`);
+      } else {
+        const [a, b] = rows as ModelRow[];
+        const tps = (r: ModelRow) => `${fmtNum(shownTps(r)!, shownTps(r)! < 10 ? 1 : 0)} tok/s ${r.throughput.measurement}`;
+        says(
+          `both speeds, read off the one machine`,
+          `On the ${shortHardwareLabel(cheapTop)} it runs ${tps(a)} at ${ctxLabel(CTX)} and ${tps(b)} at ${ctxLabel(top!)}.`,
+        );
+        if (shownTps(b)! > shownTps(a)!)
+          problems.push(`${path} quotes the longer window as the quicker of the two`);
+      }
+    }
+  }
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} thing${problems.length === 1 ? '' : 's'} wrong in what a longer context costs`);
+  }
+  console.log(
+    `  ${sections} model pages price the longest window they can hold as well as the ${ctxLabel(CTX)} everything else is quoted at; on ${freeWindows} it costs no more machine and on ${nothingHolds} nothing still sold holds it there`,
+  );
+}

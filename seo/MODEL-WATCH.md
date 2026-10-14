@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-13
+Last checked: 2026-10-14
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,51 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-14 · LFM2.5-24B-A2B wants only the score, and Ling 3.1 flash has its weights at last
+
+**Every field but the index score is read off Liquid's own repositories, and the family is
+already here.** [LiquidAI/LFM2.5-24B-A2B](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B) went up
+2026-10-12 under the **LFM 1.0** licence, the same licence `data/models.json` already records for
+LFM2.5 2.6B, and the
+[GGUF build](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF) is Liquid's own repository
+rather than a third-party conversion. Hugging Face's API gives
+`LFM2.5-24B-A2B-Q4_K_M.gguf` at **14,526,258,464 bytes, so 14.53 GB**, one unsharded file, beside
+QAD-Q4_0 at 13.58 GB, Q5_K_M at 17.03 GB, Q6_K at 19.69 GB, Q8_0 at 25.49 GB and BF16 at 47.96 GB.
+The safetensors index gives the total as **23,971,585,280, so 23.97B**, and the model card states
+**24.0B total and 2.45B active** per token.
+
+Its `config.json` has what `kv_cache_gb_per_8k` is computed from, and it is the same shape as the
+2.6B entry already here: **40 layers**, of which the card counts **30 double-gated short
+convolution blocks and 10 GQA**, `num_key_value_heads` **8**, and `hidden_size` 2048 over 32
+attention heads, so **head_dim 64** derived the way the existing entry derives it, the config
+naming no `head_dim`. `max_position_embeddings` is **131,072**. 64 experts, top-4 routing.
+
+The rental price is sourced too: OpenRouter's API lists **liquid/lfm-2.5-24b-a2b** at **$0.05 per
+million input tokens and $0.70 per million output**, 128k context, an exact match for the model,
+read 2026-10-14. That leaves the two that are judgements or somebody else's measurement:
+**Artificial Analysis has no page for it** — `/models/lfm2-5-24b-a2b` is a 404 today, and the
+`lfm2-24b-a2b` page is the older model, not this one — and the five capability ratings.
+
+**Ling 3.1 flash is open now, and it would be the largest model this site prices.** The 2026-10-02
+and 2026-10-10 entries had it announced with no weights.
+[inclusionAI/Ling-3.1-flash](https://huggingface.co/inclusionAI/Ling-3.1-flash) went up 2026-10-13
+under **MIT**, shipping FP8 safetensors; the API's index puts the total at **572,120,680,768, so
+572.12B**. Its `config.json` gives **72 layers**, `head_dim` 128, `num_key_value_heads` 64, latent
+attention with `kv_lora_rank` **512** and `qk_rope_head_dim` **64** — the fields `src/fit.ts`
+already reads for a latent-attention model — and `max_position_embeddings` **262,144**.
+Artificial Analysis scores it **41**, on index **v4.3.2** rather than the v4.3 every score here was
+read at, which is the one figure that is not a clean fit. OpenRouter lists **inclusionai/ling-3.1-flash**
+at **$0.075 and $0.225** per million.
+
+It is not out on size, which is the surprise: the only four-bit build on offer,
+[AtomicChat/Ling-3.1-flash-GGUF](https://huggingface.co/AtomicChat/Ling-3.1-flash-GGUF), sums to
+**354.39 GB at Q4_K_M** across its shards, against the **384 GB** the roomiest machine here hands a
+model. So it fits, on one machine, and that machine is the discontinued Mac Studio M3 Ultra, 512GB
+at its $9,499 launch price, plus the unpriced M5 Ultra, 512GB. Two things are Ryan's call before it
+could be a row. The build is third party, it is sharded rather than one
+file, and every file carries an `AD-` prefix this watch cannot account for; and a model whose only
+holder is off the market would be the first here that no machine still sold can run at any window.
 
 ### 2026-10-13 · Mellum2.1 Thinking is the first candidate whose only gaps are the two judgements
 

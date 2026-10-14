@@ -1,6 +1,6 @@
 # SEO log
 
-Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-09-25 is in
+Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-09-28 is in
 seo/archive/ and is not required reading; it grew to 10,000 lines, which is why this one has rules.
 
 ## Rules for this file
@@ -37,6 +37,14 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       no machine table and no size page's rows; the only rules that reach one are its own head-to-heads.
       Any fix is a rule on a current page or a machine page pointing back, and the reader's question it
       answers has to come first — a sixth link for its own sake is not worth a sentence.
+- [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
+      sliding window "so the KV cache barely grows with context", and the figures on the same page say it grows
+      from 0.9 GB at 8k to 2.5 GB at 32k and 8.9 GB at 128k — 10 times for 16 times the tokens, where a model
+      with no windowing at all would be 16. The 8 full-attention layers carry 8 KV heads at 256 wide in the
+      data, 8,192 bytes a token, the same as the windowed ones. Gemma 4 12B has the same layer counts and
+      records 2,048 bytes for its full layers, and its cache really does crawl: 0.47 GB to 2.5 GB. So either the
+      note is wrong or the Gemma 3 architecture fields are, and both are a data edit and Ryan's.
+
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
       reads it to 32k with its own decay. Nine of the 16 land within 5% of the source's own 32k
@@ -46,6 +54,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-14 — 50 model pages price the window a reader is buying for, not only the 32k the page is quoted at
+A model page prices everything at 32k and says so. The window somebody wants is usually the model's own ceiling, and
+between the two the answer can change completely; the only way to read it was one machine at a time, out of the
+"Longest context" column. The 50 pages with a longer window to price now give the footprint at both, the cache at
+both, the machines here that hold it at each, the cheapest still sold at each, and both speeds on one machine, so the
+window is the only thing that changes between them. Ministral 3 8B goes 9.8 GB to 41.7 GB, 37 machines to 20, $899 to
+$1,700 and 20 tok/s to 4.6. On 13 the window costs no more machine; on 2 nothing still sold holds it, and the two
+512 GB Macs that do are named with why neither is a purchase. Straight to main. Verified: 452 tests, typecheck clean,
+the full build with build:functions, 320 pages every guard passing, 321 of 321 dated with those 50 moved and no
+others, four read rendered, and 20 mutations of the new `checkContextCost()` all stopping the build. It caught a
+false claim before it shipped: MiniMax M2.7 stops at 200k and GLM-4.7-Flash at 198k, so the 128k each page can price
+is neither its ceiling nor the longest on offer. Watch done. Next: the new item below, Ryan's. Top item unmoved.
 
 ### 2026-10-13 — 16 model pages print the speeds somebody measured running that model
 A model page's table is one machine per family, the cheapest of each, over the machines still sold at a published
@@ -259,42 +280,3 @@ describe, and five mutations of it stop the build. Closed: no schema.org node fi
 pages — a memory size is no type's thing, an index's ItemList restates its own links, and the home
 page's WebApplication wants an offer or a rating this site has not got. Watch done: MiMo-V2.6-Flash is
 the closest candidate yet, score and price sourced, one four-bit size short. Next: the Q8 pages' links.
-
-### 2026-09-27 — 300 pages now say what they are about, in the words they print
-Structured data named a subject on 56 pages and nothing on 264. A model page now carries its model
-as a SoftwareApplication (parameters, active parameters where they differ, quantisation, weights on
-disk, maximum context, licence), and the 189 head-to-heads carry both their sides, each under the
-`@id` its own page already gives it, so the three pages that mention one machine name one entity
-between them rather than three. No score and no rental price: both need their caveat, and a
-property has nowhere to put one. `checkPageSubjects()` holds every published figure to the text of
-the subject's own page, word for word, and every head-to-head to the two sides it sets. Straight to
-main. Verified: 451 tests, typecheck clean, the full build with `build:functions`, 320 pages every
-guard passing, 321 of 321 sitemap entries dated, no page's date moved, six mutations all stopping
-the build. Also PR #19, the home page's `og:url`, off the backlog. Model watch done: Qwen3.8-Omni-Flash
-is hosted only, Qwen-Image-2.1 is an image model, GGUF NVFP4 tooling merged with no build to price.
-
-### 2026-09-26 — Model watch, and a false alarm about yesterday's deploy that I put in the log
-The run opened on a detached HEAD at c4e3aeb with a stale `origin/main` reading 27c9bb0, and I took
-that for yesterday's work committed but never pushed. Wrong: c4e3aeb was pushed 2026-09-25 at 20:42
-UTC, deploy #291 succeeded, the ladder has been live since, and yesterday's entry was accurate. I
-judged the remote without fetching. Commit 352e5d1 carries the false version — an edit to yesterday's
-entry and a standing order built on a failure that never happened; both are reverted, and the order
-now says fetch and confirm against the Actions list. Three pushes this run against the one-push rule,
-because a log that misreports its own history misleads every run that reads it.
-The watch is the real work and closed one open question: GLM-5.3, as against the GLM-5.3-Flash this
-site prices, is about 744B and ruled out on size, with sources; dots3-note still has no four-bit build
-to cite. The wasted re-verification was clean, on work already live: 447 tests, full build, 320 pages
-every guard passing, 321 of 321 dated, five read rendered. No page changed. Next: `og:url`, in a PR.
-
-### 2026-09-25 — The twelve size pages are a ladder you can walk
-Six of them (12, 36, 48, 96, 192, 512 GB) were reached from nothing but the machines sold at them and
-the index above, two pages in all on three of them. Two kinds of page are about a size rather than a
-machine and now link one: each size page names the rungs either side of it, where it had sent a reader
-back to the index to find them, and the 18 head-to-heads between two memory tiers of one box offer
-both sizes' pages. The least-linked page on the site goes from 2 inbound to 3, and the six to 3, 5,
-17, 6, 4 and 4. Straight to main. Verified: 447 tests, typecheck clean, the full build with
-`build:functions`, 320 pages every guard passing, 321 of 321 sitemap entries dated, three read back
-rendered. `checkSizeLadder()` holds every size link on a page to the set it is allowed, and six
-mutations of it all stop the build. Model watch done: dots3-note Preview, 280B/16B and Apache 2.0,
-could be priced here and waits on a four-bit file size; Qwen3.8 Max and DeepSeek V4.1-Flash are out
-on size. Next: the home page `og:url`, which wants its own pull request.
