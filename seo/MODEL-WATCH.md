@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-14
+Last checked: 2026-10-15
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,32 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-15 · Underdog Saluki 27B is Qwen3.8 27B at two bits, 7.90 GB against 16.46, and nobody scores it
+
+**A model already priced here, at a precision this site does not carry, from a publisher that is
+not Qwen.** [ConwayResearch/Underdog-Saluki-27B-1.0](https://huggingface.co/ConwayResearch/Underdog-Saluki-27B-1.0)
+went up 2026-10-08 under **Apache 2.0** and has **344,177 downloads** and 496 likes in a week. Its
+card names `Qwen/Qwen3.8-27B` and a GSQ-RCO GGUF of it as its base models, with
+`base_model_relation: quantized`, so this is the entry already in `data/models.json` as
+`qwen3.8-27b-q4` at a different precision, not a new model. Hugging Face's API gives the one file,
+`Underdog-Saluki-27B-1.0-IQ2-mix.gguf`, at **7,898,369,152 bytes, so 7.90 GB**, against the
+**16.46 GB** recorded here for that model at Q4_K_M. The architecture fields and
+`kv_cache_gb_per_8k` would carry over from the existing entry unchanged, a quantisation changing
+neither, and `max_context_tokens` stays 262,144; the card runs its own quickstart at a 32k window.
+
+**It is the quality half that has no source, and a two-bit build is where that matters most.** The
+only figures on offer are the publisher's own: 88 against 84 on a tool-calling bench of its own
+making, 42 parallel calls against 35, and "96% average retention across 9 benchmarks". None of
+those is an Artificial Analysis index score, and **Artificial Analysis has no page for it** — what
+it scores is Qwen3.8 27B, at 34, which is this build's base model and not this build. Nobody rents
+a two-bit quant either, so `cloud_equivalent` has no exact match. So the gap is not one field: it is
+whether a third-party IQ2 quant, whose only evidence of what it keeps is the publisher's own
+benchmark, belongs beside 55 entries whose scores all come from one index. That is Ryan's call, and
+the pattern is the same one the 2026-10-11 Reka Edge entry raised from the other side.
+
+**LFM2.5-24B-A2B is unchanged: `artificialanalysis.ai/models/lfm2-5-24b-a2b` is still a 404 today.**
+Every other field for it is read off Liquid's own repositories; see the 2026-10-14 entry below.
 
 ### 2026-10-14 · LFM2.5-24B-A2B wants only the score, and Ling 3.1 flash has its weights at last
 

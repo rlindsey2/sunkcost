@@ -16,7 +16,7 @@ import {
   headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
-  nearestCompleteComputer, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
+  nearestCompleteComputer, NUMBER_WORDS, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
@@ -3597,8 +3597,21 @@ function contextCostSection(m: Model): string {
   const cheapNow = now[0];
   const cheapTop = then[0] ?? null;
 
-  // What that does to the shopping list. A machine that holds the model at the
-  // longer window holds it at the shorter one too, so this set only ever shrinks.
+  // What that does to the shopping list, counted over the machines this site
+  // buys from rather than over every one it lists. The two sets are 37 and 56,
+  // and the sentence under the table above counts the 56, so an unqualified
+  // "machines here" put two different counts of the same thing on 44 of these
+  // pages: "All 56 machines on this site run it at 32k" three paragraphs above
+  // "37 machines here hold Gemma 3 12B it at 32k". Naming the set is the fix. A
+  // machine that holds the model at the longer window holds it at the shorter
+  // one too, so this set only ever shrinks.
+  const priced = machinesConsidered(data).length;
+  // "All 37" where every one of them holds it, because "37 of the 37" is a
+  // fraction a reader has to cancel before it says anything. The set is spelled
+  // out rather than called "priced here", the compare pages' shorthand for it,
+  // because this is the page that prints the other count too.
+  const ofPriced = (n: number) =>
+    `${n === priced ? `all ${priced}` : `${numberWord(n)} of the ${priced}`} machines here still sold at a published price`;
   let machines: string;
   if (!cheapTop) {
     const off = offMarketHolders(m, top);
@@ -3606,15 +3619,19 @@ function contextCostSection(m: Model): string {
       ? ` ${sentenceCase(numberWord(off.length))} machine${off.length === 1 ? '' : 's'} here ${off.length === 1 ? 'does' : 'do'} hold it there: ${off.map((h) => `${link(h)}, ${offMarketSaid(h)}`).join('; ')}.`
       : '';
     machines = `No machine here that is still sold at a published price holds ${name} at ${ctxLabel(top)}. ${
-      now.length === 1 ? `The one that holds it at ${ctxLabel(CTX)} is ${at(cheapNow.hw)}` : `${sentenceCase(numberWord(now.length))} hold it at ${ctxLabel(CTX)}, from ${at(cheapNow.hw)}`
+      now.length === 1
+        ? `${sentenceCase(ofPriced(1))} holds it at ${ctxLabel(CTX)}, and it is ${at(cheapNow.hw)}`
+        : `${sentenceCase(ofPriced(now.length))} hold it at ${ctxLabel(CTX)}, from ${at(cheapNow.hw)}`
     }.${holds}`;
   } else if (then.length === now.length) {
     machines =
       now.length === 1
-        ? `The window costs nothing in hardware: the one machine here that holds ${name} at ${ctxLabel(CTX)}, ${at(cheapNow.hw)}, holds it at ${ctxLabel(top)} as well.`
-        : `The window costs nothing in hardware: the same ${numberWord(now.length)} machines here hold ${name} at both lengths, and the cheapest still sold is ${at(cheapNow.hw)}.`;
+        ? `The window costs nothing in hardware: the one machine here still sold at a published price that holds ${name} at ${ctxLabel(CTX)}, ${at(cheapNow.hw)}, holds it at ${ctxLabel(top)} as well.`
+        : now.length === priced
+          ? `The window costs nothing in hardware: ${ofPriced(now.length)} hold ${name} at both lengths, and the cheapest of them is ${at(cheapNow.hw)}.`
+          : `The window costs nothing in hardware: the same ${ofPriced(now.length)} hold ${name} at both lengths, and the cheapest of them is ${at(cheapNow.hw)}.`;
   } else {
-    const count = `${sentenceCase(numberWord(now.length))} machine${now.length === 1 ? '' : 's'} here hold${now.length === 1 ? 's' : ''} ${name} at ${ctxLabel(CTX)} and ${numberWord(then.length)} hold${then.length === 1 ? 's' : ''} it at ${ctxLabel(top)}.`;
+    const count = `${sentenceCase(ofPriced(now.length))} hold${now.length === 1 ? 's' : ''} ${name} at ${ctxLabel(CTX)} and ${numberWord(then.length)} hold${then.length === 1 ? 's' : ''} it at ${ctxLabel(top)}.`;
     const price =
       cheapTop.hw.id === cheapNow.hw.id
         ? ` The cheapest still sold is the same at both lengths: ${at(cheapNow.hw)}.`
@@ -10520,6 +10537,7 @@ checkSupersededModels();
 checkFastestRow();
 checkMeasuredMachines();
 checkContextCost();
+checkMachineCountScope();
 
 /**
  * The measurements a model page prints, machine by machine.
@@ -11383,6 +11401,13 @@ function checkContextCost() {
     .filter((h) => h.usable_memory_gb != null && h.price_usd != null && (h.generation ?? 'current') === 'current')
     .sort((a, b) => a.price_usd! - b.price_usd!);
   const holdersAt = (m: Model, ctx: number) => forSale.filter((hw) => fit(m, hw, ctx, NEARLY).status === 'fits');
+  // The set every count in this section is over, named rather than left to the
+  // reader to guess: the sentence under the table above counts all 56 machines
+  // on the site, and this one counts the ones it is worth buying. Spelled out
+  // here off `forSale` rather than off the page's own helper, so losing the
+  // denominator shows up as a failure instead of as agreement.
+  const ofPriced = (n: number) =>
+    `${n === forSale.length ? `all ${forSale.length}` : `${numberWord(n)} of the ${forSale.length}`} machines here still sold at a published price`;
   let sections = 0;
   let freeWindows = 0;
   let nothingHolds = 0;
@@ -11446,8 +11471,8 @@ function checkContextCost() {
       says(
         `what does hold it at ${ctxLabel(CTX)}`,
         now.length === 1
-          ? `The one that holds it at ${ctxLabel(CTX)} is the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`
-          : `${sentenceCase(numberWord(now.length))} hold it at ${ctxLabel(CTX)}, from the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`,
+          ? `${sentenceCase(ofPriced(1))} holds it at ${ctxLabel(CTX)}, and it is the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`
+          : `${sentenceCase(ofPriced(now.length))} hold it at ${ctxLabel(CTX)}, from the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`,
       );
       // the machines outside that set which do hold it there, and why each is outside it
       const off = data.hardware.filter(
@@ -11478,13 +11503,13 @@ function checkContextCost() {
       says(
         `that the longer window costs no more machine`,
         now.length === 1
-          ? `The window costs nothing in hardware: the one machine here that holds ${m.display_name} at ${ctxLabel(CTX)}, the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}, holds it at ${ctxLabel(top!)} as well.`
-          : `The window costs nothing in hardware: the same ${numberWord(now.length)} machines here hold ${m.display_name} at both lengths, and the cheapest still sold is the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`,
+          ? `The window costs nothing in hardware: the one machine here still sold at a published price that holds ${m.display_name} at ${ctxLabel(CTX)}, the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}, holds it at ${ctxLabel(top!)} as well.`
+          : `The window costs nothing in hardware: ${now.length === forSale.length ? '' : 'the same '}${ofPriced(now.length)} hold ${m.display_name} at both lengths, and the cheapest of them is the ${shortHardwareLabel(cheapNow)} at ${priceWithScopeText(cheapNow)}.`,
       );
     } else {
       says(
-        `how many machines hold it at each window`,
-        `${sentenceCase(numberWord(now.length))} machine${now.length === 1 ? '' : 's'} here hold${now.length === 1 ? 's' : ''} ${m.display_name} at ${ctxLabel(CTX)} and ${numberWord(then.length)} hold${then.length === 1 ? 's' : ''} it at ${ctxLabel(top!)}.`,
+        `how many of the machines still sold hold it at each window`,
+        `${sentenceCase(ofPriced(now.length))} hold${now.length === 1 ? 's' : ''} ${m.display_name} at ${ctxLabel(CTX)} and ${numberWord(then.length)} hold${then.length === 1 ? 's' : ''} it at ${ctxLabel(top!)}.`,
       );
       says(
         `what the cheapest machine still sold is at each window`,
@@ -11530,4 +11555,78 @@ function checkContextCost() {
   console.log(
     `  ${sections} model pages price the longest window they can hold as well as the ${ctxLabel(CTX)} everything else is quoted at; on ${freeWindows} it costs no more machine and on ${nothingHolds} nothing still sold holds it there`,
   );
+}
+
+/**
+ * Every count of machines on a model page says which set it counts.
+ *
+ * This site keeps two sets of machines and counts both out loud. One is every
+ * machine it lists, 56 of them, which is what answers "does the box I already
+ * own run this": a discontinued graphics card and a Mac with no published price
+ * still run a model. The other is the 37 it buys from, priced and still sold,
+ * which is what answers "what should I buy". A page is entitled to both, and the
+ * model pages print both within three paragraphs of each other: the sentence
+ * under the table of machines counts the 56, and the section pricing a longer
+ * window counts the 37.
+ *
+ * Neither said so. So 44 model pages read "All 56 machines on this site run it
+ * at 32k" and then, further down, "37 machines here hold Gemma 3 12B it at 32k",
+ * two counts of the same claim at the same window, differing, with nothing to
+ * tell them apart. Both figures were right and the page was not.
+ *
+ * The denominator is what separates them, so this holds every count to one: a
+ * count of machines reads as "of the 56 machines on this site" or "of the 37
+ * machines here still sold at a published price", each denominator is the size
+ * of the set it names, each numerator is recomputed from the data, and a count
+ * with no set behind it fails the build.
+ */
+function checkMachineCountScope() {
+  const problems: string[] = [];
+  const all = data.hardware.length;
+  const priced = data.hardware.filter((h) => h.price_usd != null && (h.generation ?? 'current') === 'current').length;
+  if (all === priced) problems.push(`the two machine sets are the same size, so no count on a model page can be read wrong`);
+  // the numbers as the pages write them, numerals and words both
+  const num = `(?:\\d+|${NUMBER_WORDS.slice(1).join('|')})`;
+  let counts = 0;
+
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const page = meta.find((pg) => pg.path === path);
+    if (!page) continue;
+    const text = unesc(mainOf(page.html).replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ');
+
+    // A count with nothing behind it. Written as the bug was written, so the
+    // sentence that caused this guard would fail the build that shipped it.
+    for (const hit of text.matchAll(new RegExp(`(?:the same )?${num} machines? here (?:hold|run)`, 'gi')))
+      problems.push(`${path} counts machines without naming the set: "${hit[0]}"`);
+
+    // Every denominator is the size of the set its words name.
+    for (const hit of text.matchAll(/(?:of the|all) (\d+) machines on this site/g))
+      if (Number(hit[1]) !== all) problems.push(`${path} counts out of ${hit[1]} machines on this site and the site lists ${all}`);
+    for (const hit of text.matchAll(/(?:of the|all) (\d+)(?: machines here)? still sold at a published price/g))
+      if (Number(hit[1]) !== priced) problems.push(`${path} counts out of ${hit[1]} machines still sold at a published price and ${priced} are`);
+
+    // And the two numerators, each recomputed from the data rather than read off
+    // the helper that writes its sentence.
+    const holds = (set: Hardware[], ctx: number) => set.filter((hw) => hw.usable_memory_gb != null && fit(m, hw, ctx, NEARLY).status === 'fits').length;
+    const siteHolders = holds(data.hardware, CTX);
+    for (const hit of text.matchAll(/All (\d+) machines on this site run it at (\d+k)/g)) {
+      counts++;
+      if (Number(hit[1]) !== siteHolders) problems.push(`${path} says all ${hit[1]} machines on this site run it at ${hit[2]} and ${siteHolders} hold it`);
+      if (hit[2] !== ctxLabel(CTX)) problems.push(`${path} counts the site's machines at ${hit[2]} and prices the page at ${ctxLabel(CTX)}`);
+    }
+    for (const hit of text.matchAll(/(\d+) of the \d+ machines on this site hold it at (\d+k)/g)) {
+      counts++;
+      if (Number(hit[1]) !== siteHolders) problems.push(`${path} says ${hit[1]} machines on this site hold it at ${hit[2]} and ${siteHolders} do`);
+      if (hit[2] !== ctxLabel(CTX)) problems.push(`${path} counts the site's machines at ${hit[2]} and prices the page at ${ctxLabel(CTX)}`);
+    }
+  }
+
+  if (counts < 40) problems.push(`only ${counts} model pages count the site's machines, which is too few for this guard to be reading the pages`);
+  if (problems.length) {
+    console.error(`\n${problems.length} machine count${problems.length === 1 ? '' : 's'} on a model page does not say which set it counts:`);
+    for (const p of problems) console.error(`  ${p}`);
+    process.exit(1);
+  }
+  console.log(`  machine counts: ${counts} model pages count the ${all} machines on the site, and every count of the ${priced} still sold at a published price says so`);
 }

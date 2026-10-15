@@ -36,7 +36,9 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       its box holds and the ones measured on it, so a low-scoring legacy model with no benchmark is in
       no machine table and no size page's rows; the only rules that reach one are its own head-to-heads.
       Any fix is a rule on a current page or a machine page pointing back, and the reader's question it
-      answers has to come first — a sixth link for its own sake is not worth a sentence.
+      answers has to come first; a sixth link for its own sake is not worth a sentence. The five that reach
+      gemma-3-12b-q4 are three head-to-heads, /leaderboard/ and /how-much-memory/, and the five that reach
+      llama-3.1-8b-q8 are its own Q4 page, /leaderboard/ and three size pages. No machine page links either.
 - [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
       sliding window "so the KV cache barely grows with context", and the figures on the same page say it grows
       from 0.9 GB at 8k to 2.5 GB at 32k and 8.9 GB at 128k — 10 times for 16 times the tokens, where a model
@@ -54,6 +56,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-15 — 50 model pages say which set of machines they are counting
+A model page counts machines twice. The sentence under its table counts all 56 the site lists, which answers whether the box
+somebody already owns runs the model: a discontinued card and an unpriced Mac still run one. The section pricing a longer window
+counts the 37 still sold at a published price, which answers what to buy. Neither said so, so 44 pages read "All 56 machines on
+this site run it at 32k" and, two sections later, "37 machines here hold Gemma 3 12B it at 32k": two counts of one claim at one
+window, differing, both right. Every count in that section now carries its set and the size of it, in the words the section's own
+other branch already used. Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages
+every guard passing, 321 of 321 dated with those 50 moved and no others, one page read rendered in full and the new paragraph on
+ten more, covering all three of its branches, and 13 mutations all stopping the build. The new `checkMachineCountScope()` holds
+alone, which is how the bug lived: with `checkContextCost()`'s expectation mutated to agree with the page, the old guard saw
+nothing and the new one named all 44 pages, and separately every wrong denominator. Watch: Underdog Saluki 27B is Qwen3.8 27B at
+two bits, 7.90 GB against 16.46, Apache 2.0 and 344,177 downloads in a week, and nobody but its publisher has measured what it
+keeps. Next: the backlog, unchanged.
 
 ### 2026-10-14 — 50 model pages price the window a reader is buying for, not only the 32k the page is quoted at
 A model page prices everything at 32k and says so. The window somebody wants is usually the model's own ceiling, and
