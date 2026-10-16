@@ -30,15 +30,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] /models/gemma-3-12b-q4/ and /models/llama-3.1-8b-q8/ are still the least-linked model pages at 5
-      inbound each, unmoved by this run: the new section links outward, from the legacy page to what
-      beats it. The reason is now known rather than guessed. A machine page tables the strongest models
-      its box holds and the ones measured on it, so a low-scoring legacy model with no benchmark is in
-      no machine table and no size page's rows; the only rules that reach one are its own head-to-heads.
-      Any fix is a rule on a current page or a machine page pointing back, and the reader's question it
-      answers has to come first; a sixth link for its own sake is not worth a sentence. The five that reach
-      gemma-3-12b-q4 are three head-to-heads, /leaderboard/ and /how-much-memory/, and the five that reach
-      llama-3.1-8b-q8 are its own Q4 page, /leaderboard/ and three size pages. No machine page links either.
+- [ ] The answer block on 3 model pages reads "Shortest pay-back" over a machine that ties the cheapest
+      one: muse-glimmer-30b-q4 at 22 years, qwen3.6-27b-q4 at 19 and qwen3.8-27b-q4 at 17, each naming a
+      dearer box whose printed figure is the one the row below it prints for the cheapest. The days behind
+      them differ by a few out of 6,000, which is noise on an estimated speed. The fastest-machine row
+      already drops out where the cheapest is also the fastest; the same rule fits this one.
+- [ ] Two machine pages open "39 of the 39 current models on this site fit", where the sentence wants
+      "all 39". Only the two 512 GB Macs hold everything, so it is two pages and a branch in the lede.
 - [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
       sliding window "so the KV cache barely grows with context", and the figures on the same page say it grows
       from 0.9 GB at 8k to 2.5 GB at 32k and 8.9 GB at 128k — 10 times for 16 times the tokens, where a model
@@ -56,6 +54,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-16 — 170 pages say which models they count, and every machine page names the ones it leaves out
+A machine page counts models over the 39 the calculator counts, the current ones, and called that "the 39 open models on this
+site". This site prices 55, and 26 of those pages table published speeds for superseded models no count on them includes, so
+the page's first sentence and its snippet read as a count of everything here. Every count of that set now says current: 56
+machine ledes and their descriptions, 111 head-to-heads, /hardware/, /compare/ and /best-gpu/. Each machine page also names
+the superseded ones it holds at 32k, linked and strongest first, 3 on an RTX 3060 and 15 on an RTX PRO 6000. That closes the
+top backlog item as it asked, off a reader's question: inbound links go 5 to 61 on gemma-3-12b-q4 and 5 to 55 on
+llama-3.1-8b-q8, and the thinnest pages here are now the four largest models, at 11 to 16. Straight to main. Verified: 452
+tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of 321 dated with those 170
+moved, five read rendered, and 22 mutations of the new `checkModelCountScope()`, 20 stopping the build and 2 unobservable; it
+caught two unscoped description counts on its first run. Watch: Beam is out, Apache 2.0, every field citable but the index
+version, and its one four-bit build is NVFP4 at 293.63 GB, which nothing here with room for it runs. Next: the backlog.
 
 ### 2026-10-15 — 50 model pages say which set of machines they are counting
 A model page counts machines twice. The sentence under its table counts all 56 the site lists, which answers whether the box
@@ -269,30 +280,3 @@ hands a model, its price and whether it is still sold, every figure read off the
 which binds each figure to that machine's own row, all stopping the build. Watch done: nothing
 open-weight since MiMo-V2.6, and the four-bit size now quoted for MiMo-V2.6-Flash is arithmetic on its
 parameter count, not a listing. Next: the 512 and 36 GB pages.
-
-### 2026-09-29 — Five size pages say what a heavier build costs
-Two models here are listed at two precisions, and a size page's table counts one build per model, so it
-could not show the thing a buyer is choosing: same model, same machine, twice the weights. Said now on
-the five sizes where it decides what runs. 12, 32 and 48 GB hold only the lighter build; 16 and 64 GB
-are the smallest that hold both; the other seven say nothing, because there both fit or neither does.
-Each line carries both footprints at 32k and the memory that size hands a model, from the figures the
-table beside it prints. The two Q8 pages go from 3 inbound to 5 and 6, closing the backlog item.
-Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages
-every guard passing, 321 of 321 dated with 5 moved, two read rendered. `checkPrecisionBuilds()` binds
-each figure to its own build; of six mutations, swapped footprints alone got through, and the guard
-was tightened until it did not.
-Watch done: MiMo-V2.6-Distill-Qwen-9B has a citable 5.84 GB at Q4_K_M and waits only on an index
-score; Kimi K2.6 is out on size at 1T. Next: /how-much-memory/12gb/, the least-linked page now.
-
-### 2026-09-28 — 78 model head-to-heads say in the result what separates the two models
-Every model-vs-model description ended in a list of the page's own columns — "Size, context, licence,
-API price and the cheapest machine that runs each" — 73 of the 155 characters a result shows, given to
-a table of contents. Each now ends in a figure that separates the two: the memory each one asks of a
-machine at 32k, or, on the pairs level in both score and memory, the speed each runs at where they
-meet. Straight to main. Verified: 452 tests, typecheck clean, the full build, 320 pages every guard
-passing, 321 of 321 dated with 78 moved and no others, two read rendered. The new
-`checkDescriptionFigures()` holds all 1,385 figures in 320 descriptions to the words of the page they
-describe, and five mutations of it stop the build. Closed: no schema.org node fits the 20 subject-less
-pages — a memory size is no type's thing, an index's ItemList restates its own links, and the home
-page's WebApplication wants an offer or a rating this site has not got. Watch done: MiMo-V2.6-Flash is
-the closest candidate yet, score and price sourced, one four-bit size short. Next: the Q8 pages' links.

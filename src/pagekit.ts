@@ -1743,13 +1743,13 @@ export function machineVerdict(a: Hardware, b: Hardware, va: View, vb: View, dat
   const twins = sameSilicon(a, b);
   if (twins) {
     out.push(
-      `The ${la} and the ${lb} are the same machine inside: ${gpuPart(a)}, ${a.unified_memory_gb} GB of memory at ${a.memory_bandwidth_gbs} GB/s. Both hold ${fa.length} of the ${va.rows.length} open models here.`,
+      `The ${la} and the ${lb} are the same machine inside: ${gpuPart(a)}, ${a.unified_memory_gb} GB of memory at ${a.memory_bandwidth_gbs} GB/s. Both hold ${fa.length} of the ${va.rows.length} current models here.`,
     );
   } else if (fa.length === fb.length) {
-    out.push(`Both hold ${fa.length} of the ${va.rows.length} open models here.`);
+    out.push(`Both hold ${fa.length} of the ${va.rows.length} current models here.`);
   } else {
     const [more, mc, less, lc] = fa.length > fb.length ? [la, fa.length, lb, fb.length] : [lb, fb.length, la, fa.length];
-    out.push(`The ${more} holds ${mc} of the ${va.rows.length} open models here, and the ${less} holds ${lc}.`);
+    out.push(`The ${more} holds ${mc} of the ${va.rows.length} current models here, and the ${less} holds ${lc}.`);
   }
 
   if (a.price_usd != null && b.price_usd != null) {

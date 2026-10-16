@@ -766,7 +766,7 @@ describe('machine head-to-heads', () => {
   it('counts the models each machine holds the way the table does', () => {
     const [va, vb] = differ.map(view);
     const verdict = machineVerdict(hw(differ[0]), hw(differ[1]), va, vb, data);
-    expect(verdict).toContain(`holds ${Math.max(fitsOf(va).length, fitsOf(vb).length)} of the ${va.rows.length} open models here`);
+    expect(verdict).toContain(`holds ${Math.max(fitsOf(va).length, fitsOf(vb).length)} of the ${va.rows.length} current models here`);
     expect(verdict).toContain(`holds ${Math.min(fitsOf(va).length, fitsOf(vb).length)}`);
   });
 

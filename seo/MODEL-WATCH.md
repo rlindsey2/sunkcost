@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-15
+Last checked: 2026-10-16
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,74 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-16 · Beam's weights are out, every field but one is citable, and the four-bit build is NVFP4
+
+**Eleven days on this list as an announcement, and today the files landed.** Reflection published
+Beam 1.0 on 2026-10-16 under **Apache 2.0**, in three precisions, with no GGUF or MLX build from
+anybody yet. The sizes are the repositories' own file lists, read off the Hugging Face API today,
+summing the safetensors:
+
+| Repository | Numerics | Files | Weights |
+|---|---|---|---|
+| [reflection/Beam-1.0-501B-A23B](https://huggingface.co/reflection/Beam-1.0-501B-A23B) | BF16 | 198 | 1,002.67 GB |
+| [reflection/Beam-1.0-501B-A23B-FP8](https://huggingface.co/reflection/Beam-1.0-501B-A23B-FP8) | FP8 | 197 | 503.29 GB |
+| [reflection/Beam-1.0-501B-A23B-NVFP4](https://huggingface.co/reflection/Beam-1.0-501B-A23B-NVFP4) | NVFP4 | 63 | 293.63 GB |
+
+**Every architecture field comes off the NVFP4 repo's own `config.json`.** 52 layers, the first 3
+dense and the other 49 mixture-of-experts with 256 experts and 8 routed per token;
+`hidden_size` 5,120; 48 query heads to **8 KV heads at `head_dim` 128**; `sliding_window` 512 on 43
+of the 52 layers, the other 9 full attention; `max_position_embeddings` **1,048,576**;
+`quant_algo: NVFP4` from modelopt, 4-bit weights and activations at group size 16. The parameter
+count is 501.27B total and 23.4B active per token, and the Hub reads the NVFP4 checkpoint as 254.6B
+parameters because most of it is packed into U8 (246.63B U8, 7.95B BF16, 64.2M F32). So
+`kv_cache_gb_per_8k` works out at **0.392 GB** in the convention this site already uses for
+gpt-oss: 9 full layers at 8 x 128 x 2 bytes x 2 is 4,096 B a token, which is 0.302 GB over 8k, plus
+43 windowed layers that stop growing at 512 tokens, 0.090 GB.
+
+**The price and the score are sourced too.** OpenRouter lists `reflection/beam-1.0-501b-a23b` at
+**$0.25 per million input and $1.00 per million output** with a 1,048,576-token context, read from
+its models API today. Artificial Analysis says Beam **scores 30** on its Intelligence Index, second
+among US open-weights models, in an article dated today; that page gives no index version, so
+`index_version` is the one field in a `models.json` entry with nothing behind it.
+[OpenRouter](https://openrouter.ai/models/reflection/beam-1.0-501b-a23b),
+[Artificial Analysis](https://artificialanalysis.ai/articles/recent-open-weights-model-launches),
+[Reflection's own post](https://reflection.ai/blog/beam-is-available),
+[the Hugging Face write-up](https://huggingface.co/blog/reflection-beam).
+
+**The judgement is the quantisation, and it is Ryan's.** At 293.63 GB the NVFP4 build would be the
+largest thing priced here by a long way, against 188.99 GB for GLM-5.3-Flash today, and two
+machines on this site hand a model that much: the Mac Studio M5 Ultra, 512GB, which has no
+published price, and the discontinued Mac Studio M3 Ultra, 512GB at its $9,499 launch price, both
+384 GB usable. Both are Apple Silicon, and NVFP4 is a Blackwell format that neither llama.cpp nor
+MLX reads, so the only four-bit build published cannot run on either machine with room for it. FP8
+at 503.29 GB and BF16 at 1,002.67 GB fit nothing here at all. So the three ways to take it are:
+price it at NVFP4 on two machines that cannot run it, wait for a four-bit GGUF or MLX build and
+price it then, or leave it out. Nothing else on the watch is this close.
+
+**Nothing else new to price.** One tracker's open-weight section still reads "no open source
+releases this week", and searches for a release this month, for the families the script prints and
+for a new quantisation turned up nothing that is not already here or already ruled out.
+[llm-stats updates](https://llm-stats.com/llm-updates).
+
+**Mistral Large 4 is ruled out on size, and the figures are worth recording.** Mistral opened a
+hosted preview on 2026-10-06 and says the open weights come at the end of this month; a Hugging
+Face listing for `Mistral-Large-4-1T-A52B` is dated 2026-10-31. The documentation puts it at
+**1.05T total with 52B active**, a separate vision encoder and a context up to 1M, and no licence
+text is published yet. The roomiest machine here hands a model 384 GB, so a four-bit build of a
+trillion-parameter model runs on nothing on this site at any window, the same reason Kimi K3 was
+closed on 2026-10-09. [the launch write-up](https://www.vktr.com/ai-platforms/mistral-large-4-debuts-as-1t-parameter-open-weight-model/),
+[a second report of the date](https://aiweekly.co/alerts/mistrals-1t-parameter-large-4-slated-for-october-31-drop).
+
+**Shieldstral 1.0 is ruled out on kind.** Mistral is one of the families the script lists, so it is
+closed rather than passed over: a 3B policy-adaptive safety classifier published 2026-08-04 under
+Apache 2.0, which checks text and images against a policy written in plain language. It answers a
+moderation question rather than generating anything, so there is no hosted chat price to set it
+against and no index score, which are two of the fields an entry here cannot do without.
+[the release write-up](https://rits.shanghai.nyu.edu/ai/mistral-releases-shieldstral-a-3b-policy-adaptive-safety-classifier).
+
+**Underdog Saluki 27B, Mellum2.1 Thinking, Kolibri 1, Apodex 1.1 Mini, MiMo-V2.6-Flash and
+Index-Translate-35B-A3B are unchanged**, each still short of the fields its own entry lists.
 
 ### 2026-10-15 · Underdog Saluki 27B is Qwen3.8 27B at two bits, 7.90 GB against 16.46, and nobody scores it
 

@@ -1089,7 +1089,7 @@ function checkBoardLedes() {
   const holdAll = hwRows.filter((r) => r.fits === total);
   if (holdAll.length)
     say(
-      `${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list`,
+      `${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} current models`,
       `how many of its rows hold every model`,
     );
 
@@ -1377,7 +1377,7 @@ function checkSharedHeadroom() {
       continue;
     }
     const shared = fitsOf(tighterView).length;
-    if (!para.includes(`Of the ${shared} models both machines hold`))
+    if (!para.includes(`Of the ${shared} current models both machines hold`))
       problems.push(`${path} does not say the two machines share ${shared} models at ${Math.round(st.ctx / 1024)}k`);
     const counted = rows.length === 1 ? 'one runs' : `${rows.length} run`;
     if (!para.includes(`${counted} to a longer window on the ${esc(hardwareLabel(roomier))}`))
@@ -4342,6 +4342,34 @@ function hardwarePage(hw: Hardware): string {
   // What the table leaves out: the models this machine misses at the context every
   // figure above is taken at, and holds at a shorter window.
   const shorter = fitsShorter(hw, view.rows.map((r) => r.model), data);
+  // And the other thing it leaves out. Every count on this page is of the current
+  // models, because that is the list the calculator counts, and this site prices 16
+  // superseded ones besides: the reason being that people still run them, which is
+  // also why a model-name search is the only non-brand query this site is shown
+  // for. Each machine here holds between three and sixteen of them, and the page
+  // said nothing about any of it — while the measured section below prints
+  // published speeds for some of the same models. The rows come from the
+  // calculator's own list with the older models asked for, so a model counted here
+  // is one the same fit rules let this machine hold.
+  const superseded = computeView({ ...state, showOlder: true }, data).rows.filter(
+    (r) => r.model.generation === 'legacy' && r.fit.status === 'fits',
+  );
+  const supersededTotal = data.models.filter((m) => m.generation === 'legacy').length;
+  const supersededNote = (() => {
+    if (!superseded.length || !fits.length) return '';
+    // strongest first, and the claim is only made where every one of them is scored
+    const ranked = [...superseded].sort(
+      (x, y) =>
+        (y.model.frontier_equivalent?.score ?? -1) - (x.model.frontier_equivalent?.score ?? -1) ||
+        (x.model.weights_gb ?? 0) - (y.model.weights_gb ?? 0),
+    );
+    const order = ranked.every((r) => r.model.frontier_equivalent?.score != null) ? ', strongest first' : '';
+    const names = ranked
+      .map((r) => `<a href="/models/${esc(r.model.id)}/">${esc(namePlusQuant(r.model))}</a>`)
+      .join(', ');
+    const one = ranked.length === 1;
+    return `<p class="note">The ${view.rows.length} counted above are the current models. This site prices ${numberWord(supersededTotal)} superseded ones as well, because people still run them, and this machine holds ${one ? 'one' : numberWord(ranked.length)} of those at ${ctxLabel(state.ctx)}${order}: ${names}. ${one ? 'That page asks' : 'Each of those pages asks'} whether the model is still worth running.</p>`;
+  })();
   // Each sentence of the machine's note under the figure it is about, rather than
   // all of them under the memory figure. See splitHardwareNote().
   const note = splitHardwareNote(hw.notes);
@@ -4368,7 +4396,7 @@ function hardwarePage(hw: Hardware): string {
       : '';
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} open models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best && !ledeSpeed ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}.${ledeSpeed} Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${fits.length} of the ${view.rows.length} current models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best && !ledeSpeed ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}.${ledeSpeed} Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
@@ -4386,7 +4414,7 @@ ${stack(`<table class="board">
 <tbody>${rows}</tbody>
 </table>`, { fig: 1, pair: [3, 4] })}
 <p class="note">Speed and memory are at ${Math.round(state.ctx / 1024)}k context, the setting the calculator starts on; the memory column is the weights plus the cache for that much of it.${speedBasisLine} There is <a href="/how-much-memory/">a page on how that sum works, and what each size needs</a>${MEMORY_SIZES.includes(hw.unified_memory_gb) ? `, and <a href="${esc(memorySizePath(hw.unified_memory_gb))}">one on what ${hw.unified_memory_gb} GB runs, machine by machine</a>` : ''}. The longest context is the longest setting the calculator offers that this machine still holds the model at, cache included, and each one opens the calculator on that model at that length. A figure tagged <i>memory</i> is one this machine ran out of room for, and the rest are stopped by the model's own limit or by the end of the list.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${note.speed ? `\n<p class="note">${esc(note.speed)}</p>` : ''}
-${hidden.length ? `<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}` : ''}
+${hidden.length ? `\n<p class="note">${runsOnNote(hidden, modelLink)}</p>` : ''}${supersededNote ? `\n${supersededNote}` : ''}` : ''}
 
 ${measuredSection(hw, shown)}${shorterWindowSection(hw, shorter, state.ctx)}${range.length || rivals.length ? `<h2>${rivalsHeading(hw)}</h2>
 ${stack(`<table class="board">
@@ -4396,7 +4424,7 @@ ${range.length ? `<tr class="is-frontier"><th colspan="5">${esc(familyHeading(hw
 ${rivals.length ? `<tr class="is-frontier"><th colspan="5">Nearest in price elsewhere on the list</th></tr>${rivals.map(relatedRow).join('')}` : ''}
 </tbody>
 </table>`, { fig: 4 })}
-<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} models.${(() => { const n = cardScopeNote([...range, ...rivals], hw.price_scope === 'card_only' ? undefined : data); return n ? ` ${n}` : ''; })()}</p>` : ''}
+<p class="note">Every row uses the same defaults as the figures above: ${fmtTokens(state.usage)} tokens a day at ${state.ratio}:1 input to output, ${Math.round(state.ctx / 1024)}k context, and each machine's strongest model that fits, counted against the same ${view.rows.length} current models.${(() => { const n = cardScopeNote([...range, ...rivals], hw.price_scope === 'card_only' ? undefined : data); return n ? ` ${n}` : ''; })()}</p>` : ''}
 ${headToHeadNote(hw)}
 
 <h2>The specifics</h2>
@@ -4432,25 +4460,25 @@ ${headToHeadNote(hw)}
           ? [
               ...(hwVerdict
                 ? [
-                    `${speedLead}, the strongest of the ${fits.length} open models here that fit it. It ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
-                    `${speedLead}, the strongest of ${fits.length} open models that fit. It ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
-                    `${speedLead}, the strongest of ${fits.length} models that fit. It ${hwVerdict}.`,
+                    `${speedLead}, the strongest of the ${fits.length} current models here that fit it. It ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+                    `${speedLead}, the strongest of ${fits.length} current models that fit. It ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+                    `${speedLead}, the strongest of ${fits.length} current models that fit. It ${hwVerdict}.`,
                   ]
                 : []),
-              `${speedLead}, the strongest of the ${fits.length} open models here that fit it.`,
-              `${speedLead}. ${fits.length} of ${view.rows.length} open models fit.`,
+              `${speedLead}, the strongest of the ${fits.length} current models here that fit it.`,
+              `${speedLead}. ${fits.length} of ${view.rows.length} current models fit.`,
               `${speedLead}.`,
             ]
           : []),
         ...(best && hwVerdict
           ? [
-              `${fits.length} of the ${view.rows.length} open models here fit a ${short}. On ${best.model.display_name}, the strongest of them, it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
-              `${fits.length} of the ${view.rows.length} open models here fit a ${short}. On the strongest of them it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
-              `${fits.length} of the ${view.rows.length} open models here fit a ${short}, and on the strongest of them it ${hwVerdict}.`,
+              `${fits.length} of the ${view.rows.length} current models here fit a ${short}. On ${best.model.display_name}, the strongest of them, it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+              `${fits.length} of the ${view.rows.length} current models here fit a ${short}. On the strongest of them it ${hwVerdict} at ${fmtTokens(state.usage)} tokens a day.`,
+              `${fits.length} of the ${view.rows.length} current models here fit a ${short}, and on the strongest of them it ${hwVerdict}.`,
             ]
           : []),
-        `${fits.length} of the ${view.rows.length} open models here fit a ${short}. What it runs, how fast, and whether buying it beats paying an API.`,
-        `${fits.length} open models fit a ${short}. What it runs, how fast, and whether it pays back.`,
+        `${fits.length} of the ${view.rows.length} current models here fit a ${short}. What it runs, how fast, and whether buying it beats paying an API.`,
+        `${fits.length} current models fit a ${short}. What it runs, how fast, and whether it pays back.`,
       ]),
       canonical: `/hardware/${hw.id}/`,
       ogImage: cardFor(hw.id, view.model?.id),
@@ -4524,7 +4552,7 @@ function sharedLengthLine(roomier: Hardware, tighter: Hardware, tighterView: Vie
   const shared = fitsOf(tighterView).length;
   const count = shared === 1
     ? `The one model both machines hold at ${ctxK}k runs to a longer window on the ${esc(la)}`
-    : `Of the ${shared} models both machines hold at ${ctxK}k, ${rows.length === 1 ? 'one runs' : `${rows.length} run`} to a longer window on the ${esc(la)}`;
+    : `Of the ${shared} current models both machines hold at ${ctxK}k, ${rows.length === 1 ? 'one runs' : `${rows.length} run`} to a longer window on the ${esc(la)}`;
   const link = calcLink({ hw: roomier.id, model: widest.model.id, ctx: widest.a! }, data);
   return `<p>The extra memory buys context as well. ${count}: the weights are a fixed size and the KV cache is not, so what the weights leave spare is what a longer context grows into. <a href="${esc(link)}">${esc(widest.model.display_name)} reaches ${ctxLabel(widest.a!)}</a> there against ${ctxLabel(widest.b!)} on the ${esc(lb)}, each the longest window the calculator offers that the machine still holds it at.</p>`;
 }
@@ -4579,7 +4607,7 @@ function sameSiliconSection(a: Hardware, b: Hardware, va: View, ctxK: number, fa
         : ` Both draw ${a.load_watts} W under load, and this page prices the electricity into both.`;
 
   return `<h2>The same machine inside</h2>
-<p>Both have the same ${esc(gpuPart(a))}, the same ${a.unified_memory_gb} GB of memory and the same ${a.memory_bandwidth_gbs} GB/s to read it at, and both leave ${a.usable_memory_gb} GB of that memory to the GPU. What a machine holds is decided by that last figure, so they hold the same ${fa.length} models, and not only at ${ctxK}k of context: across all ${va.rows.length} models the calculator counts, at every context from ${span}, there is no model one holds and the other does not.${speedLine}${variantLine}</p>
+<p>Both have the same ${esc(gpuPart(a))}, the same ${a.unified_memory_gb} GB of memory and the same ${a.memory_bandwidth_gbs} GB/s to read it at, and both leave ${a.usable_memory_gb} GB of that memory to the GPU. What a machine holds is decided by that last figure, so they hold the same ${fa.length} current models, and not only at ${ctxK}k of context: across all ${va.rows.length} models the calculator counts, at every context from ${span}, there is no model one holds and the other does not.${speedLine}${variantLine}</p>
 <p>So the whole question on this page is the ${gap} between them. The ${esc(shortHardwareLabel(dear))} costs that much more than the ${esc(shortHardwareLabel(cheap))} ${forSame}, and ${onlyGap}.${watts} What else separates them is not something this site measures: it prices what a machine holds, how fast it runs it and what it draws, and everything from the case to the ports to the warranty is yours to weigh against the ${gap}.</p>`;
 }
 
@@ -4686,7 +4714,7 @@ function chipStepSection(a: Hardware, b: Hardware, step: { machine: string; a: s
 
   const holds = fb.length > fa.length
     ? `The ${esc(step.b)} box holds ${fb.length} of the ${va.rows.length} models the calculator counts against ${fa.length} on the ${esc(step.a)}.`
-    : `Both hold the same ${fa.length} models at ${ctxK}k of context.`;
+    : `Both hold the same ${fa.length} current models at ${ctxK}k of context.`;
   const close = sameBw
     ? `if the models you want fit the cheaper box, the chip above it is not buying you tokens.`
     : `here the step buys room and speed together, and the years move with both.`;
@@ -4997,8 +5025,8 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
               const c = shortHardwareLabel(cheap);
               const d = shortHardwareLabel(dear);
               return [
-                `The ${d} costs ${gap} more than the ${c} for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What the money buys, and whether either pays back.`,
-                `${d} against ${c}: ${gap} apart for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What the money buys.`,
+                `The ${d} costs ${gap} more than the ${c} for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} current models. What the money buys, and whether either pays back.`,
+                `${d} against ${c}: ${gap} apart for the same GPU, the same ${a.unified_memory_gb} GB and the same ${fa.length} current models. What the money buys.`,
                 `${d} or ${c}: the same machine inside, ${gap} apart. What the money buys, and whether it pays back.`,
                 `${d} or ${c}: the same machine inside, ${gap} apart.`,
               ];
@@ -5009,14 +5037,14 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
               // newer chip actually changes, which is the bandwidth, not the memory
               const bw = a.memory_bandwidth_gbs != null && b.memory_bandwidth_gbs != null
                 ? [
-                    `The ${gens.b} reads its memory at ${b.memory_bandwidth_gbs} GB/s against the ${gens.a}'s ${a.memory_bandwidth_gbs}, on the same ${a.unified_memory_gb} GB and the same ${fa.length} models. What a generation buys.`,
-                    `${gens.b} against ${gens.a} at ${gens.size}: the same ${fa.length} models, ${b.memory_bandwidth_gbs} GB/s against ${a.memory_bandwidth_gbs}. What a generation buys, and whether it pays back.`,
-                    `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} models, and what the newer chip's bandwidth buys.`,
+                    `The ${gens.b} reads its memory at ${b.memory_bandwidth_gbs} GB/s against the ${gens.a}'s ${a.memory_bandwidth_gbs}, on the same ${a.unified_memory_gb} GB and the same ${fa.length} current models. What a generation buys.`,
+                    `${gens.b} against ${gens.a} at ${gens.size}: the same ${fa.length} current models, ${b.memory_bandwidth_gbs} GB/s against ${a.memory_bandwidth_gbs}. What a generation buys, and whether it pays back.`,
+                    `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} current models, and what the newer chip's bandwidth buys.`,
                   ]
                 : [];
               return [
                 ...bw,
-                `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} models either way. What a generation buys, and whether it pays back.`,
+                `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: the same ${fa.length} current models either way. What a generation buys, and whether it pays back.`,
                 `${gens.machine} ${gens.a} or ${gens.b}, ${gens.size}: what a generation buys, and whether it pays back.`,
               ];
             })()
@@ -5040,9 +5068,9 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
                 : [];
               const more = hiFits.length > loFits.length
                 ? [
-                    `The ${step.b} ${step.machine} holds ${hiFits.length} of the ${va.rows.length} open models here against ${loFits.length}${chip}. What ${gap} more buys, and whether it pays back.`,
-                    `The ${step.b} ${step.machine} holds ${hiFits.length} of the ${va.rows.length} open models here against ${loFits.length}${chip}. What ${gap} more buys.`,
-                    `${step.machine}, ${step.a} or ${step.b}: ${hiFits.length} models against ${loFits.length}${chip}, ${gap} apart.`,
+                    `The ${step.b} ${step.machine} holds ${hiFits.length} of the ${va.rows.length} current models here against ${loFits.length}${chip}. What ${gap} more buys, and whether it pays back.`,
+                    `The ${step.b} ${step.machine} holds ${hiFits.length} of the ${va.rows.length} current models here against ${loFits.length}${chip}. What ${gap} more buys.`,
+                    `${step.machine}, ${step.a} or ${step.b}: ${hiFits.length} current models against ${loFits.length}${chip}, ${gap} apart.`,
                   ]
                 : [];
               return [
@@ -5055,19 +5083,19 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
           : tiers
           ? fa.length !== fb.length
             ? [
-                `The ${tiers.machine} with ${tiers.b} holds ${fb.length} of the ${va.rows.length} open models here, with ${tiers.a} ${fa.length}. What the extra memory buys, and whether it pays back.`,
-                `${tiers.machine}, ${tiers.b} against ${tiers.a}: ${fb.length} models fit against ${fa.length}. What the extra memory buys, and whether it pays back.`,
+                `The ${tiers.machine} with ${tiers.b} holds ${fb.length} of the ${va.rows.length} current models here, with ${tiers.a} ${fa.length}. What the extra memory buys, and whether it pays back.`,
+                `${tiers.machine}, ${tiers.b} against ${tiers.a}: ${fb.length} current models fit against ${fa.length}. What the extra memory buys, and whether it pays back.`,
                 `${tiers.machine}, ${tiers.a} or ${tiers.b}: what the extra memory buys, and whether it pays back.`,
               ]
             : headroom.length
               ? [
-                  `The ${tiers.machine} holds the same ${fa.length} models with ${tiers.a} or ${tiers.b}. What the extra memory buys is context: ${headroom.length} of them run to a longer window.`,
-                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} models either way, and ${headroom.length} of them run to a longer window with ${tiers.b}.`,
+                  `The ${tiers.machine} holds the same ${fa.length} current models with ${tiers.a} or ${tiers.b}. What the extra memory buys is context: ${headroom.length} of them run to a longer window.`,
+                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} current models either way, and ${headroom.length} of them run to a longer window with ${tiers.b}.`,
                   `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same models either way, ${headroom.length} of them to a longer window.`,
                 ]
               : [
-                  `The ${tiers.machine} holds the same ${fa.length} models with ${tiers.a} or ${tiers.b}, to the same length at every context, so the extra memory buys nothing here.`,
-                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} models to the same length either way, so the memory buys nothing here.`,
+                  `The ${tiers.machine} holds the same ${fa.length} current models with ${tiers.a} or ${tiers.b}, to the same length at every context, so the extra memory buys nothing here.`,
+                  `${tiers.machine}, ${tiers.a} or ${tiers.b}: the same ${fa.length} current models to the same length either way, so the memory buys nothing here.`,
                   `${tiers.machine}, ${tiers.a} or ${tiers.b}: the extra memory buys nothing local AI can use.`,
                 ]
           : money
@@ -5079,8 +5107,8 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
                 ? `At ${fmtUsd(cheap.price_usd!, { cents: false })} each`
                 : `At ${fmtUsd(cheap.price_usd!, { cents: false })} against ${fmtUsd(dear.price_usd!, { cents: false })}`);
               const holds = cf.length === df.length
-                ? `both hold ${cf.length} of the ${va.rows.length} open models here`
-                : `the ${lc} holds ${cf.length} of the ${va.rows.length} open models here and the ${ld} ${df.length}`;
+                ? `both hold ${cf.length} of the ${va.rows.length} current models here`
+                : `the ${lc} holds ${cf.length} of the ${va.rows.length} current models here and the ${ld} ${df.length}`;
               return [
                 `${at}, ${holds}. What the same money buys, and which pays back sooner.`,
                 `${at}, ${holds}. What the same money buys.`,
@@ -5089,8 +5117,8 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
               ];
             })()
           : [
-              `${fa.length} of the ${va.rows.length} open models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
-              `${fa.length} models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
+              `${fa.length} of the ${va.rows.length} current models here fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
+              `${fa.length} current models fit the ${shortHardwareLabel(a)}, ${fb.length} the ${shortHardwareLabel(b)}. Memory, speed, price and which pays back sooner.`,
               `${shortHardwareLabel(a)} against ${shortHardwareLabel(b)}: memory, speed, what each runs and which pays back sooner.`,
             ],
       ),
@@ -5932,7 +5960,7 @@ ${payback}
       ]),
       description: descOf([
         `${fitsSaid(v)} of the ${currentModels.length} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, the machines that come with it, and what each one holds.`,
-        `${fitsSaid(v)} of the ${currentModels.length} models fit at ${kctx} of context. What a model really gets from ${gb} GB, and the machines that come with it.`,
+        `${fitsSaid(v)} of the ${currentModels.length} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, and the machines that come with it.`,
         `What fits in ${gb} GB at ${kctx} of context, machine by machine.`,
       ]),
       canonical: memorySizePath(gb),
@@ -6190,8 +6218,8 @@ ${
         const names = scored.slice(0, Math.max(n, 1)).map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`);
         const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
         return n > 1
-          ? `the ${numberWord(n)} strongest open models on the site are among them: ${list}`
-          : `the strongest open model on the site is one of them: ${list}`;
+          ? `the ${numberWord(n)} strongest current models here are among them: ${list}`
+          : `the strongest current model here is one of them: ${list}`;
       })()}. The dearest card on the list, ${fmtGb1(dearest.hw.usable_memory_gb)} of memory for ${fmtUsd(dearest.hw.price_usd)}, holds none of them either. For a model that size you are buying unified memory instead: ${esc(best.display_name)} runs on the <a href="/hardware/${esc(bestRunner.hw.id)}/">${esc(hardwareLabel(bestRunner.hw))}</a> at ${fmtUsd(bestRunner.hw.price_usd)}, and on nothing cheaper.</p>`
       : ''
   }
@@ -6853,7 +6881,7 @@ function compareIndex(): string {
 <h1>Every head-to-head: machine against machine, model against model</h1>
 <p class="lede">Every comparison on this site in one place: ${machines.length} machine match-ups and ${modelPairs(data).length} model match-ups, each row carrying the prices, the memory and the speeds the comparison itself opens with. For one machine on its own, start at <a href="/best/">best buys by usage</a>, the <a href="/leaderboard/">leaderboard</a> or <a href="/hardware/">every machine in one table</a>.</p>
 ${most && cheapest ? `<h2>Does any machine here hold every model?</h2>
-<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} open models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
+<p>The short version: none of the ${ranked.length} machines compared here holds more than ${most.fits} of the ${modelCount} current models${atMost.length > 1 ? `, and ${atMost.length} of them hold that many` : ''}. The cheapest that does is the ${esc(shortHardwareLabel(most.hw))} at ${priceWithScopeText(most.hw)}. The cheapest machine here at all is the ${esc(shortHardwareLabel(cheapest.hw))} at ${priceWithScopeText(cheapest.hw)}, which holds ${cheapest.fits}.${launchNote([most.hw, cheapest.hw])}</p>` : ''}
 
 <h2>Machine against machine</h2>
 ${matchUpKindsList(machineMatchUpKinds())}
@@ -7036,9 +7064,9 @@ function hardwareIndex(): string {
 
   const body = `<article class="prose">
 <h1>Every machine that runs local models, priced</h1>
-<p class="lede">All ${data.hardware.length} configurations this site lists, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} open models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. ${publishedPriceLine(data)} Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
+<p class="lede">All ${data.hardware.length} configurations this site lists, in one table: what each costs, how much of its memory the GPU can use, how many of the ${total} current models it holds at ${ctxLabel(st.ctx)} of context, the strongest of those, and how long that pair takes to pay for itself rather than renting the same model. ${publishedPriceLine(data)} Families are in order of what the cheapest of them costs. For the quickest pay-back at a given amount of use, see <a href="/best/">best buys by usage</a>; for two machines side by side, <a href="/compare/">every head-to-head</a>; for what each model needs before you pick a box, <a href="/how-much-memory/">how much memory you need</a>.</p>
 ${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
-<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} models on the list.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
+<p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} current models.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
 <h2>How long each machine takes to pay for itself</h2>
 <p>Pay-back runs the other way, because the strongest model a machine holds is never the fastest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. ${decadeLine} What changes the answer is using the machine much harder. Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table. <a href="/best/">Best buys by usage</a> ranks every pair.${launchLine([quickest])}</p>` : ''}
 <h2>Every machine here, side by side</h2>
@@ -7054,8 +7082,8 @@ ${stack(`<table class="board">
     {
       title: titleOf(['Local LLM hardware: every machine, priced and measured', 'Local LLM hardware: every machine, priced']),
       description: descOf([
-        `All ${data.hardware.length} machines in one table: price, usable memory, how many open models each one holds, and how long it takes to pay for itself.`,
-        `All ${data.hardware.length} machines in one table: price, memory, models each one holds and how long it takes to pay for itself.`,
+        `All ${data.hardware.length} machines in one table: price, usable memory, how many current models each one holds, and how long it takes to pay for itself.`,
+        `All ${data.hardware.length} machines in one table: price, memory, current models each one holds and how long it takes to pay for itself.`,
       ]),
       canonical: '/hardware/',
       ogImage: HARDWARE_CARD,
@@ -11366,6 +11394,134 @@ function checkPriceToBeat() {
 }
 
 checkPriceToBeat();
+
+/**
+ * The mirror of checkMachineCountScope(), on the pages whose subject is a machine.
+ *
+ * A machine page counts models twice over. Everything above its table is counted
+ * over the list the calculator counts, which is the 39 current models, and the
+ * site prices 16 superseded ones besides — the 26 machine pages with a published
+ * benchmark print speeds for some of those same models further down the page. The
+ * lede said "27 of the 39 open models on this site fit", which reads as the whole
+ * of what this site prices and is not: 37 of the 55 fit that card. Every count of
+ * that set now says "current", and each machine page names the superseded models
+ * it holds rather than leaving them to be inferred from a measured row.
+ *
+ * So this holds four things. No page counts models in the words the bug used. The
+ * denominator on a machine page and a machine head-to-head is the size of the
+ * current list. The numerators are recomputed from the data rather than read off
+ * the helper that writes the sentence. And every model the superseded note names
+ * is one this machine holds, is superseded, and has the section the note sends a
+ * reader to.
+ */
+function checkModelCountScope() {
+  const problems: string[] = [];
+  const all = data.models.length;
+  const current = data.models.filter((m) => (m.generation ?? 'current') !== 'legacy');
+  const legacy = data.models.filter((m) => m.generation === 'legacy');
+  if (!legacy.length) problems.push(`no model here is superseded, so no count of the current ones can be read as a count of all ${all}`);
+  const text = (path: string) => {
+    const page = meta.find((pg) => pg.path === path);
+    return page ? unesc(mainOf(page.html).replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ') : null;
+  };
+  const fitsAt = (hw: Hardware, set: Model[], ctx: number) =>
+    set.filter((m) => hw.usable_memory_gb != null && fit(m, hw, ctx, NEARLY).status === 'fits');
+
+  // The words the bug was written in, on any page of the site. "open-weight
+  // models" is the leaderboard counting its own ranked rows and says so there.
+  for (const page of meta) {
+    // the description as well as the page: the snippet is where a count without
+    // its set is read by more people than read the page it is on
+    const body = `${unesc(mainOf(page.html).replace(/<[^>]+>/g, ' '))} ${page.description}`.replace(/\s+/g, ' ');
+    for (const hit of body.matchAll(/(?:of the|all|the same) \d+ open models|\d+ of \d+ open models|(?:the strongest of (?:the )?)?\d+ open models (?:that )?fit/g))
+      problems.push(`${page.path} counts models without naming the set: "${hit[0]}"`);
+    for (const hit of body.matchAll(/the same \d+ models\b/g))
+      problems.push(`${page.path} counts models without naming the set: "${hit[0]}"`);
+    for (const hit of body.matchAll(/of the \d+ models both machines hold/g))
+      problems.push(`${page.path} counts models without naming the set: "${hit[0]}"`);
+  }
+
+  let ledes = 0;
+  let notes = 0;
+  for (const hw of data.hardware) {
+    const path = `/hardware/${hw.id}/`;
+    const body = text(path);
+    if (!body) continue;
+    const held = fitsAt(hw, current, CTX);
+    const older = fitsAt(hw, legacy, CTX);
+
+    // the lede, in the words a search result shows
+    for (const hit of body.matchAll(/Yes — (\d+) of the (\d+) current models on this site fit/g)) {
+      ledes++;
+      if (Number(hit[1]) !== held.length) problems.push(`${path} says ${hit[1]} current models fit it at ${ctxLabel(CTX)} and ${held.length} do`);
+      if (Number(hit[2]) !== current.length) problems.push(`${path} counts out of ${hit[2]} current models and the site lists ${current.length}`);
+    }
+
+    // and the note that says what those counts leave out
+    const said = body.match(/The (\d+) counted above are the current models\. This site prices ([a-z0-9]+) superseded ones as well, because people still run them, and this machine holds ([a-z0-9]+) of those at (\d+k)([^:]*): (.+?)\. (?:Each of those pages|That page) asks whether the model is still worth running\./);
+    if (!older.length) {
+      if (said) problems.push(`${path} names superseded models it holds and holds none at ${ctxLabel(CTX)}`);
+      continue;
+    }
+    if (!said) {
+      problems.push(`${path} holds ${older.length} superseded model${older.length === 1 ? '' : 's'} at ${ctxLabel(CTX)} and names none of them`);
+      continue;
+    }
+    notes++;
+    if (Number(said[1]) !== current.length) problems.push(`${path} says ${said[1]} models are counted above and the current list is ${current.length}`);
+    if (said[2] !== numberWord(legacy.length)) problems.push(`${path} says the site prices ${said[2]} superseded models and it prices ${numberWord(legacy.length)}`);
+    if (said[3] !== (older.length === 1 ? 'one' : numberWord(older.length))) problems.push(`${path} says it holds ${said[3]} superseded models and it holds ${numberWord(older.length)}`);
+    if (said[4] !== ctxLabel(CTX)) problems.push(`${path} counts the superseded models it holds at ${said[4]} and prices the page at ${ctxLabel(CTX)}`);
+    // every name in the list, in the order the sentence claims
+    const named = said[6].split(',').map((s) => s.trim());
+    const want = [...older].sort(
+      (x, y) =>
+        (y.frontier_equivalent?.score ?? -1) - (x.frontier_equivalent?.score ?? -1) ||
+        (x.weights_gb ?? 0) - (y.weights_gb ?? 0),
+    );
+    if (named.length !== want.length) problems.push(`${path} names ${named.length} superseded models and holds ${want.length}`);
+    want.forEach((m, i) => {
+      const label = sharedNames.has(m.display_name) ? `${m.display_name} at ${m.quantisation}` : m.display_name;
+      if (named[i] !== label) problems.push(`${path} names "${named[i]}" in place ${i + 1} of its superseded models, strongest first, where that is ${label}`);
+      const page = meta.find((pg) => pg.path === `/models/${m.id}/`);
+      if (!page) problems.push(`${path} links /models/${m.id}/ and no such page is built`);
+      else if (!page.html.includes(`still worth running?`))
+        problems.push(`${path} sends a reader to /models/${m.id}/ for whether it is still worth running and that page does not ask`);
+      if (!meta.find((pg) => pg.path === path)!.links.includes(`/models/${m.id}/`))
+        problems.push(`${path} names ${m.display_name} and does not link it`);
+    });
+    const claimsOrder = said[5].includes('strongest first');
+    if (claimsOrder !== want.every((m) => m.frontier_equivalent?.score != null))
+      problems.push(`${path} ${claimsOrder ? 'claims an order over' : 'leaves unordered'} superseded models the index has ${claimsOrder ? 'not scored' : 'scored'}`);
+  }
+
+  // the head-to-heads, where the same denominator is two machines' columns
+  let pairs = 0;
+  for (const [a, b] of hardwarePairs(data)) {
+    const path = hardwareComparePath(a, b);
+    const body = text(path);
+    if (!body) continue;
+    for (const hit of body.matchAll(/(?:of|holds) the (\d+) current models here/g)) {
+      pairs++;
+      if (Number(hit[1]) !== current.length) problems.push(`${path} counts out of ${hit[1]} current models and the site lists ${current.length}`);
+    }
+    for (const hit of body.matchAll(/Of the (\d+) current models both machines hold/g)) {
+      pairs++;
+      const both = fitsAt(a, current, CTX).filter((m) => fitsAt(b, current, CTX).some((x) => x.id === m.id)).length;
+      if (Number(hit[1]) !== both) problems.push(`${path} says both machines hold ${hit[1]} current models at ${ctxLabel(CTX)} and they share ${both}`);
+    }
+  }
+
+  if (ledes !== data.hardware.length) problems.push(`${ledes} of the ${data.hardware.length} machine pages open by counting the current models, which is too few for this guard to be reading them`);
+  if (pairs < 50) problems.push(`only ${pairs} counts on the head-to-heads name the current list, which is too few for this guard to be reading them`);
+  if (problems.length) {
+    console.error(`\n${problems.length} model count${problems.length === 1 ? '' : 's'} on a machine page does not say which set it counts:`);
+    for (const p of [...new Set(problems)].slice(0, 8)) console.error(`  ${p}`);
+    process.exit(1);
+  }
+  console.log(`  model counts: ${ledes} machine pages and ${pairs} counts on the head-to-heads count the ${current.length} current models and say so, and ${notes} machine pages name the superseded ones they hold of the ${legacy.length} this site prices besides`);
+}
+checkModelCountScope();
 
 // Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap
