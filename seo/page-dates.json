@@ -1206,8 +1206,8 @@
       "changed": "2026-10-15"
     },
     "/models/muse-glimmer-30b-q4/": {
-      "hash": "09f7d44058a24324",
-      "changed": "2026-10-15"
+      "hash": "4f58f5c3956bf064",
+      "changed": "2026-10-17"
     },
     "/models/nemotron-3.5-lightning-30b-q4/": {
       "hash": "ff8da250f18da91e",
@@ -1266,16 +1266,16 @@
       "changed": "2026-10-15"
     },
     "/models/qwen3.6-27b-q4/": {
-      "hash": "23f1f40718844044",
-      "changed": "2026-10-15"
+      "hash": "00561b04487165b9",
+      "changed": "2026-10-17"
     },
     "/models/qwen3.6-35b-a3b-q4/": {
       "hash": "ab8f1406c15b1547",
       "changed": "2026-10-15"
     },
     "/models/qwen3.8-27b-q4/": {
-      "hash": "d168c2bf12f39861",
-      "changed": "2026-10-15"
+      "hash": "dd1fa305ff5da987",
+      "changed": "2026-10-17"
     },
     "/models/qwen3.8-flash-next-q4/": {
       "hash": "3af6a4469d019f0f",

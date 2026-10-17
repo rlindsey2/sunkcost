@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-16
+Last checked: 2026-10-17
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,95 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-17 · Beam's four-bit GGUF is out at 306.53 GB, and Nemotron 3.5 Bolt is a two-bit vision model NVIDIA quantised itself
+
+**The one thing standing in the way of yesterday's Beam entry is gone.**
+[unsloth/Beam-1.0-501B-A23B-GGUF](https://huggingface.co/unsloth/Beam-1.0-501B-A23B-GGUF) went up
+2026-10-16 under **Apache 2.0**, and NVFP4 is no longer the only four-bit build. The sizes are the
+repository's own file list, read off the Hugging Face API today, summing each build's shards:
+
+| Build | Files | Weights |
+|---|---|---|
+| UD-Q4_K_XL | 8 | 306.53 GB |
+| UD-Q3_K_XL | 6 | 242.31 GB |
+| UD-Q2_K_XL | 5 | 186.88 GB |
+| UD-IQ2_M | 5 | 164.81 GB |
+| UD-IQ1_M | 4 | 123.61 GB |
+| Q8_0 | 13 | 532.79 GB |
+| BF16 | 23 | 1,002.67 GB |
+
+GGUF is what llama.cpp reads on Apple Silicon, so the four-bit build at **306.53 GB** runs on both
+machines here with room for it, where NVFP4 at 293.63 GB runs on neither: the Mac Studio M5 Ultra,
+512GB, which has no published price, and the discontinued Mac Studio M3 Ultra, 512GB at its $9,499
+launch price, both 384 GB usable. It would be the largest thing priced here by a long way, against
+188.99 GB for GLM-5.3-Flash. Arithmetic on the architecture fields recorded yesterday, not a new
+figure: 384 GB less 306.53 leaves 77 GB, and the cache works out at 0.392 GB per 8k, so Beam's own
+1,048,576-token ceiling wants about 39 GB of it. **UD-Q4_K_XL is a quantisation label this data does
+not carry** — the nearest is UD-Q4_K_M — and the choice between it and NVFP4 is part of the same
+judgement.
+
+**The rental price is a spread, and yesterday's figure is the cheapest end of it.** OpenRouter's
+endpoints API lists four providers for `reflection/beam-1.0-501b-a23b` today, all at 1,048,576
+tokens of context: **$0.25 in / $1.00 out** per million at Nebius, $0.40 / $1.20 at Together,
+$1.00 / $3.00 at CoreWeave and $1.30 / $4.30 at BaseTen. The models list prints CoreWeave's. So a
+row needs the provider named as well as the quantisation, and `index_version` is still the one field
+Artificial Analysis does not print.
+[the endpoints API](https://openrouter.ai/models/reflection/beam-1.0-501b-a23b).
+
+**Nemotron 3.5 Bolt 74B-A9B is genuinely new, small enough for most of this list, and both of its
+awkward fields are ones already on Ryan's side.** NVIDIA published
+[the GGUF](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF) itself, created
+2026-10-07 and last changed 2026-10-15, beside
+[the BF16 weights](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16), and
+Artificial Analysis wrote it up on 2026-10-15.
+
+- **Size.** The BF16 repository's safetensors index gives 74,885,081,096 parameters, so **74.89B**,
+  and the card states 74B total with **9B active**. NVIDIA's GGUF is one file,
+  `NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf`, at 22,018,326,528 bytes, so **22.02 GB**, with a
+  separate 1.73 GB `mmproj` for the vision encoder. The card calls the precision **IQ2, two-bit with
+  quantisation-aware training**, built to fit 24 GB and run beside other applications. The one
+  four-bit build is a third party's:
+  [unsloth](https://huggingface.co/unsloth/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-GGUF) publishes
+  UD-Q4_K_XL over three shards at **50.22 GB**.
+- **Architecture**, off the BF16 repository's own `config.json`: **88 blocks, 40 Mamba-2, 40 LatentMoE
+  and 8 attention**, `num_key_value_heads` **2** at `head_dim` **128**, `hidden_size` 4096, 512
+  experts with 9 routed per token and one shared, `max_position_embeddings` **262,144**. A Mamba
+  block's state does not grow with the window, so in the convention this site already uses for linear
+  attention it is ignored, and `kv_cache_gb_per_8k` works out at **0.067 GB**: 8 attention blocks at
+  2 x 128 x 2 bytes x 2 is 1,024 B a token each, 8,192 B in all. That is the smallest cache of
+  anything this size here.
+- **Licence OpenMDW-1.1**, named in the card's front matter with
+  [its text](https://openmdw.ai/license/1-1/), for commercial or non-commercial use.
+- **Score.** Artificial Analysis gives **21** on its Intelligence Index, 21.4 in the article, fourth
+  among models under 100B, and notes it is verbose: 230M tokens over the index against a median of
+  100M. No index version on either page.
+  [the model page](https://artificialanalysis.ai/models/nemotron-3-5-bolt-74b-a9b),
+  [the article](https://artificialanalysis.ai/articles/nemotron-3-5-super-and-bolt).
+- **Nobody rents it.** It is on no OpenRouter listing today, so `cloud_equivalent` has no exact
+  match, and a pay-back needs a token price to beat. That is the field it is short of.
+- **The two judgements are both on the list above already.** It is image-text-to-text, like Reka Edge
+  2603, so it is the vision question again; and the build its publisher ships is two-bit, like
+  Underdog Saluki 27B on 2026-10-15. What is different is that both come from NVIDIA rather than from
+  a third party, with quantisation-aware training behind the two bits rather than a conversion after
+  the fact.
+
+**Muse Spark Open 816B-A42B is ruled out on size.** The GGUF repository
+[unsloth/Muse-Spark-Open-816B-A42B-GGUF](https://huggingface.co/unsloth/Muse-Spark-Open-816B-A42B-GGUF),
+last changed 2026-10-15, names `meta-models/Muse-Spark-Open-816B-A42B` as its base model, and its
+four-bit build is **UD-Q4_K_XL at 505.50 GB**, with UD-Q3_K_XL at 401.48 GB. Both are past the
+384 GB the roomiest machine here hands a model, so nothing on this site runs it at any window.
+UD-Q2_K_XL at 311.23 GB would fit, and this data carries no two-bit build. It is also
+image-text-to-text, with a licence the repository records only as "other". OpenRouter lists
+`meta/muse-spark-open` at $1.25 in / $4.25 out per million at 1,048,576 tokens of context, so the
+price half is there if a smaller build appears. Revisit if a four-bit build lands under 384 GB or a
+roomier machine is priced, which puts it behind Tencent Hy4 and Atria Dawn.
+
+**Nothing else new to price.** The searches were the ones this file lists — a release this month, a
+release this week, each family the script prints, and a new quantisation — and everything else they
+returned is already here or already ruled out below. **Reka Edge 2603, Underdog Saluki 27B, LFM2.5-24B-A2B,
+Mellum2.1 Thinking, Kolibri 1, Apodex 1.1 Mini, MiMo-V2.6-Flash and Index-Translate-35B-A3B are
+unchanged**, each still short of the fields its own entry lists.
 
 ### 2026-10-16 · Beam's weights are out, every field but one is citable, and the four-bit build is NVFP4
 

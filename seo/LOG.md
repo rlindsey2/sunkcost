@@ -30,11 +30,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] The answer block on 3 model pages reads "Shortest pay-back" over a machine that ties the cheapest
-      one: muse-glimmer-30b-q4 at 22 years, qwen3.6-27b-q4 at 19 and qwen3.8-27b-q4 at 17, each naming a
-      dearer box whose printed figure is the one the row below it prints for the cheapest. The days behind
-      them differ by a few out of 6,000, which is noise on an estimated speed. The fastest-machine row
-      already drops out where the cheapest is also the fastest; the same rule fits this one.
 - [ ] Two machine pages open "39 of the 39 current models on this site fit", where the sentence wants
       "all 39". Only the two 512 GB Macs hold everything, so it is two pages and a branch in the lede.
 - [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
@@ -54,6 +49,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-17 — Three model pages stop offering a dearer machine that pays back no sooner
+A model page offers a second machine as the shortest pay-back, chosen over every machine here that runs the model. On three it
+named one $30 dearer than the cheapest whose figure the row below already printed: muse-glimmer-30b-q4 at 22 years against 22,
+qwen3.6-27b-q4 at 19 and qwen3.8-27b-q4 at 17, the days behind them 2 to 55 apart out of 6,000 to 8,000, which is noise on a speed
+worked out from bandwidth. The row drops out there now, the way the fastest-machine row already drops out where the cheapest
+machine is also the fastest, and 11 pages keep it because the two answers differ. That closes the top backlog item as it asked.
+Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of
+321 dated with those 3 moved and no others, all three read rendered and one of the 11 that keep the row, and 11 mutations stopping
+the build, 10 on the new `checkBestValueRow()` and one on `checkTableWidths()`. The new guard reads each Pay-back cell of the
+page's own table back against the machine beside it, so the claim and the table cannot drift apart. Watch: Beam's four-bit GGUF is
+out at 306.53 GB, which both 512 GB Macs hold with room for its 1M window, so yesterday's obstacle is gone and the quantisation is
+the call; Nemotron 3.5 Bolt 74B-A9B is new at 22.02 GB, NVIDIA's own build is two-bit and it is a vision model, so both of Ryan's
+open questions at once; Muse Spark Open is out on size. Next: the two machine pages reading "39 of the 39 current models".
 
 ### 2026-10-16 — 170 pages say which models they count, and every machine page names the ones it leaves out
 A machine page counts models over the 39 the calculator counts, the current ones, and called that "the 39 open models on this

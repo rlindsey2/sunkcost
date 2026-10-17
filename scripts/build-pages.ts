@@ -3774,6 +3774,17 @@ function modelPage(m: Model): string {
   // best value: the shortest pay-back among machines that run it
   const withPayback = runners.filter((r) => r.view.calc?.breakevenDays != null);
   const bestValue = withPayback.sort((a, b) => a.view.calc!.breakevenDays! - b.view.calc!.breakevenDays!)[0];
+  // It gets a row only where it answers something the block does not answer already.
+  // On three pages the quickest pay-back here is a machine $30 dearer than the
+  // cheapest, and the two are a few days apart out of 6,000, which is noise on a
+  // speed worked out from bandwidth: both rows printed the same figure, so a dearer
+  // box read as the better buy over one that ties it. The fastest row already drops
+  // out where the cheapest machine is also the fastest, and this one drops out where
+  // the row below it gives the same answer.
+  const valueRow =
+    cheapest && bestValue && bestValue.hw.id !== cheapest.hw.id && verdictLine(bestValue.view) !== verdictLine(cheapest.view)
+      ? bestValue
+      : null;
   // The quickest machine here that holds it, over every machine that runs it
   // rather than over the eight the table below shows. The table is one machine
   // per family and the cheapest of each, so on 25 of these pages the quickest
@@ -3957,7 +3968,7 @@ ${cheapest
       ? `<div class="answer">
   <div class="answer-row"><span class="answer-k">Cheapest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(cheapest.hw.id)}/">${esc(hardwareLabel(cheapest.hw))}</a> at ${priceWithScope(cheapest.hw)}</span></div>
   ${shorterMachines[0] && shorterMachines[0].hw.price_usd != null && cheapest.hw.price_usd != null && shorterMachines[0].hw.price_usd < cheapest.hw.price_usd ? `<div class="answer-row"><span class="answer-k">Cheaper at a shorter window</span><span class="answer-v"><a href="/hardware/${esc(shorterMachines[0].hw.id)}/">${esc(hardwareLabel(shorterMachines[0].hw))}</a> at ${priceWithScope(shorterMachines[0].hw)}, which holds it at ${ctxLabel(shorterMachines[0].ctx)}</span></div>
-  ` : ''}${bestValue && bestValue.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(bestValue.hw.id)}/">${esc(hardwareLabel(bestValue.hw))}</a> — ${esc(verdictLine(bestValue.view))}</span></div>` : ''}
+  ` : ''}${valueRow ? `<div class="answer-row"><span class="answer-k">Shortest pay-back</span><span class="answer-v"><a href="/hardware/${esc(valueRow.hw.id)}/">${esc(hardwareLabel(valueRow.hw))}</a> — ${esc(verdictLine(valueRow.view))}</span></div>` : ''}
   ${fastest && fastest.hw.id !== cheapest.hw.id ? `<div class="answer-row"><span class="answer-k">Fastest machine that runs it</span><span class="answer-v"><a href="/hardware/${esc(fastest.hw.id)}/">${esc(hardwareLabel(fastest.hw))}</a> at ${priceWithScope(fastest.hw)} — ${speedFrom(fastest.view.throughput)} at ${Math.round(ctx / 1024)}k context</span></div>` : ''}
   <div class="answer-row"><span class="answer-k">Honest answer on cost</span><span class="answer-v">${cheapest.view.calc?.breakevenDays == null ? 'Against the API, buying hardware for this model never pays for itself at ordinary usage.' : `${esc(verdictLine(cheapest.view))} at ${fmtTokens(defaultState(data).usage)} tokens a day.`}</span></div>
 </div>`
@@ -10563,6 +10574,7 @@ checkTableWidths();
 checkMeasuredRows();
 checkSupersededModels();
 checkFastestRow();
+checkBestValueRow();
 checkMeasuredMachines();
 checkContextCost();
 checkMachineCountScope();
@@ -10825,6 +10837,92 @@ function checkFastestRow() {
   }
   console.log(
     `  ${named} model pages name the fastest machine here that runs them, with its price and its speed; on ${offTable} of them that machine is in no table on the page, and ${dropped} pages leave the row out because the cheapest machine is also the fastest`,
+  );
+}
+/**
+ * The "Shortest pay-back" row on a model page.
+ *
+ * The row is chosen over every machine here that runs the model, and what it offers
+ * is a second machine to buy instead of the cheapest one. That only reads as an
+ * offer where the two answers differ. On three pages the shortest pay-back was a
+ * machine $30 dearer whose figure rounded to the one the "Honest answer on cost"
+ * row prints underneath it, 22 years against 22, so the block named a dearer box
+ * and gave the reader the same number twice.
+ *
+ * Four things hold on every page with the row, worked out from `data` rather than
+ * read off the page. It names the machine with the shortest pay-back of any that
+ * run the model. It prints that machine's own pay-back, and the page's own table
+ * of machines agrees with it figure for figure. Nothing in that table pays back
+ * sooner than the row claims. And the row is absent exactly where the cheapest
+ * machine is also the best value, or where its pay-back prints as the one the row
+ * below already gives.
+ */
+function checkBestValueRow() {
+  const problems: string[] = [];
+  const text = (html: string) => unesc(html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')).trim();
+  const ROW = /<div class="answer-row"><span class="answer-k">Shortest pay-back<\/span><span class="answer-v">([\s\S]*?)<\/span><\/div>/;
+  let named = 0;
+  let sameMachine = 0;
+  let tied = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const html = meta.find((x) => x.path === path)?.html;
+    if (html == null) continue;
+    const row = html.match(ROW)?.[1] ?? null;
+    const runners = runnersFor(m, data);
+    const cheapest = runners[0];
+    const best = runners
+      .filter((r) => r.view.calc?.breakevenDays != null)
+      .sort((a, b) => a.view.calc!.breakevenDays! - b.view.calc!.breakevenDays!)[0];
+    if (!cheapest || !best) {
+      if (row) problems.push(`${path} offers a shortest pay-back and no machine here has one`);
+      continue;
+    }
+    const label = hardwareLabel(best.hw);
+    const verdict = verdictLine(best.view);
+    if (best.hw.id === cheapest.hw.id) {
+      if (row) problems.push(`${path} gives the shortest pay-back a row of its own and it is the machine the block already names`);
+      else sameMachine++;
+      continue;
+    }
+    if (verdict === verdictLine(cheapest.view)) {
+      if (row) problems.push(`${path} offers the ${label} as the shortest pay-back and the row below it prints the same figure, "${verdict}"`);
+      else tied++;
+      continue;
+    }
+    if (!row) {
+      problems.push(`${path} does not name the ${label}, which pays back soonest of the machines that run it`);
+      continue;
+    }
+    named++;
+    const said = text(row);
+    if (!row.includes(`href="/hardware/${esc(best.hw.id)}/"`)) problems.push(`${path} says the ${label} pays back soonest and does not link its page`);
+    if (!said.includes(label)) problems.push(`${path} should name the ${label} as the shortest pay-back and says "${said.slice(0, 60)}"`);
+    if (!said.includes(verdict)) problems.push(`${path} says the ${label} pays back soonest and not that it ${verdict.toLowerCase()}`);
+    // The claim is that nothing here pays back sooner, so the page's own table of
+    // machines is read back row by row: each cell against the machine it sits
+    // beside, and every one of them against the figure the row quotes. The table is
+    // one machine per family and the cheapest of each, so it can miss the machine
+    // the row names; it can never hold one that pays back sooner.
+    const table = sectionUnder(html, runnersHeading(m)) ?? '';
+    for (const tr of table.match(/<tr>[\s\S]*?<\/tr>/g) ?? []) {
+      const id = tr.match(/href="\/hardware\/([^/"]+)\//)?.[1];
+      const runner = runners.find((r) => r.hw.id === id);
+      if (!id || !runner) continue;
+      const cells = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => text(c[1]));
+      const printed = cells.find((c) => /^(Pays back in |Never pays back|Not enough data)/.test(c));
+      if (printed == null) problems.push(`${path} tables the ${hardwareLabel(runner.hw)} with no pay-back in the row`);
+      else if (printed !== verdictLine(runner.view)) problems.push(`${path} prints "${printed}" against the ${hardwareLabel(runner.hw)}, which ${verdictLine(runner.view).toLowerCase()}`);
+      const days = runner.view.calc?.breakevenDays;
+      if (days != null && days < best.view.calc!.breakevenDays!) problems.push(`${path} calls the ${label} the shortest pay-back and tables the ${hardwareLabel(runner.hw)} at ${printed}`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} model page${problems.length === 1 ? '' : 's'} do not bear out the shortest pay-back they offer`);
+  }
+  console.log(
+    `  ${named} model pages offer a second machine as the shortest pay-back; ${sameMachine} leave the row out because the cheapest machine is also the best value, and ${tied} because the machine that pays back soonest prints the same figure as the cheapest`,
   );
 }
 /**
