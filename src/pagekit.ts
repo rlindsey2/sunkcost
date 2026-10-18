@@ -1336,6 +1336,15 @@ export const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six',
 export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
 
 /**
+ * A count against the set it was taken out of. Where the two are the same
+ * number the ratio stops being one: "39 of the 39 current models fit" is a
+ * clean sweep written in the shape of a near miss, and a reader skimming a
+ * first paragraph reads the shape before the numbers. A table column of
+ * ratios is a different thing and keeps its form; this is for prose.
+ */
+export const countOfSet = (n: number, total: number) => (n === total ? `all ${total}` : `${n} of the ${total}`);
+
+/**
  * What a model page says under its table of machines. The table names the
  * cheapest machine in each family, and nothing said which of the others hold
  * the model too — so a reader who owns the 64GB one of something had to open

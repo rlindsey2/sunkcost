@@ -898,8 +898,8 @@
       "changed": "2026-10-16"
     },
     "/hardware/mac-studio-m3-ultra-512/": {
-      "hash": "31587064ad63c87c",
-      "changed": "2026-10-16"
+      "hash": "d28faae33d1e301c",
+      "changed": "2026-10-18"
     },
     "/hardware/mac-studio-m3-ultra-96/": {
       "hash": "11220b44d4f7ea2f",
@@ -942,8 +942,8 @@
       "changed": "2026-10-16"
     },
     "/hardware/mac-studio-m5-ultra-512/": {
-      "hash": "c5bb895d3155ea92",
-      "changed": "2026-10-16"
+      "hash": "bc86e873bff06fb3",
+      "changed": "2026-10-18"
     },
     "/hardware/mac-studio-m5-ultra-96/": {
       "hash": "fa1ad11958b22fe0",
@@ -1030,8 +1030,8 @@
       "changed": "2026-10-02"
     },
     "/how-much-memory/256gb/": {
-      "hash": "7aa3ff0cc982fd4e",
-      "changed": "2026-10-02"
+      "hash": "8297fb2a5c757a3e",
+      "changed": "2026-10-18"
     },
     "/how-much-memory/32gb/": {
       "hash": "52656dc09ccae147",
@@ -1046,8 +1046,8 @@
       "changed": "2026-10-02"
     },
     "/how-much-memory/512gb/": {
-      "hash": "856ad4cab27c7c26",
-      "changed": "2026-10-02"
+      "hash": "e312e580347970f9",
+      "changed": "2026-10-18"
     },
     "/how-much-memory/64gb/": {
       "hash": "42f599ac8db8003e",

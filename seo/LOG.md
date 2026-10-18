@@ -30,8 +30,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] Two machine pages open "39 of the 39 current models on this site fit", where the sentence wants
-      "all 39". Only the two 512 GB Macs hold everything, so it is two pages and a branch in the lede.
 - [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
       sliding window "so the KV cache barely grows with context", and the figures on the same page say it grows
       from 0.9 GB at 8k to 2.5 GB at 32k and 8.9 GB at 128k — 10 times for 16 times the tokens, where a model
@@ -49,6 +47,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-18 — The pages that hold every current model say so, rather than counting 39 out of 39
+A count divided by itself is a sweep in the shape of a near miss, and a first paragraph is read for its shape before its numbers.
+Both 512 GB Macs opened "Yes — 39 of the 39 current models on this site fit", the strongest thing a machine page here can say;
+they read "all 39" now. The same sentence sat in two places the item did not name: /how-much-memory/512gb/ opened its description,
+the snippet a search result shows, with "39 of the 39 current models fit at 32k", and the step section there and on the 256 GB
+page said the roomiest 512 GB machine "holds 39 of the 39" beside the rung below "holding 38". All four say all 39, in wording the
+site already used in three other places. Straight to main. Verified: 452 tests, typecheck clean, the full build with
+build:functions, 320 pages every guard passing, 321 of 321 dated with those 4 moved and no others, all four read rendered, and 14
+mutations stopping the build. The new `checkSweepCounts()` reads it both ways: no prose or snippet may print a figure out of
+itself, tables aside, and the pages the data gives a sweep have to claim it, rebuilt off the machines at the size. Watch: LFM2.5
+24B-A2B is the best-sourced candidate this watch has had, an exact rental price and only the index score missing. Next: the
+backlog is two items, both data edits and Ryan's.
 
 ### 2026-10-17 — Three model pages stop offering a dearer machine that pays back no sooner
 A model page offers a second machine as the shortest pay-back, chosen over every machine here that runs the model. On three it

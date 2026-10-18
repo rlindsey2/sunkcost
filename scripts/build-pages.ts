@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from 'node:fs';
 import {
   addJumpLine, anchoredHeading, anchorHeadings, andList, appleChip, bandFit, bestLeftOut, brandOf, calcLink, CAP_SHORT, cheapestPerFamily, cheapestRunsBoth, cheapestThatHolds,
-  computeView, contextCappedBy, contextHeadroom, ctxLabel, DESC_MAX, descOf, discontinuedOn, endStop, esc,
+  computeView, contextCappedBy, contextHeadroom, countOfSet, ctxLabel, DESC_MAX, descOf, discontinuedOn, endStop, esc,
   chipStepNames, familyGroup, familyHeading, familyRange, generationNames,
   DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
@@ -4407,7 +4407,7 @@ function hardwarePage(hw: Hardware): string {
       : '';
   const body = `<article class="prose">
 <h1>Can ${indefiniteArticle(label)} ${esc(label)} run local LLMs?</h1>
-<p class="lede">Yes — ${fits.length} of the ${view.rows.length} current models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best && !ledeSpeed ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}.${ledeSpeed} Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
+<p class="lede">Yes — ${countOfSet(fits.length, view.rows.length)} current models on this site fit in its ${hw.usable_memory_gb ?? '?'} GB of usable memory${best && !ledeSpeed ? `, the strongest being ${esc(best.model.display_name)}` : ''}${shorter.length ? `, and ${numberWord(shorter.length)} more if you keep the window shorter than ${ctxLabel(state.ctx)}` : ''}.${ledeSpeed} Whether that saves you money is a different question${hwVerdict && hw.price_usd != null ? `: at ${hw.generation === 'previous' ? `its ${fmtUsd(hw.price_usd)} launch price` : fmtUsd(hw.price_usd)} and ${fmtTokens(state.usage)} tokens a day, it ${hwVerdict}` : beat ? `, and with no price announced all that can be said is the most it could cost and still come back: ${esc(fmtUsd(beat.middle.usd, { cents: false }))} inside ${esc(yearSpan(beat.middle.months))} at ${fmtTokens(state.usage)} tokens a day, on ${esc(beat.model.display_name)}, the model of the ${fits.length} it holds that saves the most` : ', and the answer is usually no'}.${hw.price_scope === 'card_only' ? ` Its price here is the card alone, so every figure below leaves out the PC you need to put it in. Every card on this site is <a href="${SECTIONS.cardsSideBySide}">set against the others here</a>.` : ''}</p>
 
 <div class="answer">
   <div class="answer-row"><span class="answer-k">Price</span><span class="answer-v">${hw.price_usd == null ? 'not published yet' : fmtUsd(hw.price_usd)}${hw.generation === 'previous' ? ' at launch — discontinued' : ''}${hw.price_scope === 'card_only' ? '<span class="c-quant">card only</span>' : ''}</span></div>
@@ -5602,6 +5602,16 @@ const fitsSaid = (v: SizeView) =>
     ? `${v.most.fits.length}`
     : `${v.least.fits.length} to ${v.most.fits.length}`;
 
+/**
+ * The same count where it opens the description, so it carries the capital. A
+ * size whose machines hand over different amounts gives a range, and a range is
+ * never the whole set, so only the single figure can be a sweep.
+ */
+const fitsSaidOpening = (v: SizeView) =>
+  v.least.fits.length === v.most.fits.length && v.most.fits.length === currentModels.length
+    ? `All ${currentModels.length}`
+    : `${fitsSaid(v)} of the ${currentModels.length}`;
+
 const sizeMachineRow = (hw: Hardware) => {
   const top = strongestThatFits(hw, CTX);
   return `<tr>
@@ -5898,7 +5908,7 @@ function memorySizePage(gb: number): string {
 <h1>What can you run with ${gb} GB of memory?</h1>
 <p class="lede">A model does not get the ${gb} GB. ${
     split
-      ? `On the ${esc(shortHardwareLabel(v.least.example))} it gets ${fmtGb1(v.least.usable)} and on the ${esc(shortHardwareLabel(v.most.example))} it gets ${fmtGb1(v.most.usable)}, ${why}. That is ${v.least.fits.length === v.most.fits.length ? `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context either way` : `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context on the first and ${v.most.fits.length === currentModels.length ? 'every one of them' : v.most.fits.length} on the second`}`
+      ? `On the ${esc(shortHardwareLabel(v.least.example))} it gets ${fmtGb1(v.least.usable)} and on the ${esc(shortHardwareLabel(v.most.example))} it gets ${fmtGb1(v.most.usable)}, ${why}. That is ${v.least.fits.length === v.most.fits.length ? `${countOfSet(v.least.fits.length, currentModels.length)} current models at ${kctx} of context either way` : `${v.least.fits.length} of the ${currentModels.length} current models at ${kctx} of context on the first and ${v.most.fits.length === currentModels.length ? 'every one of them' : v.most.fits.length} on the second`}`
       : `It gets ${fmtGb1(v.most.usable)} on ${v.machines.length === 1 ? `the one machine here sold with ${gb} GB` : v.machines.length === 2 ? `both machines here sold with ${gb} GB` : `all ${numberWord(v.machines.length)} machines here sold with ${gb} GB`}, ${why}. That holds ${v.most.fits.length === currentModels.length ? `every one of the ${currentModels.length} current models` : `${v.most.fits.length} of the ${currentModels.length} current models`} at ${kctx} of context`
   }${strongest ? `, and the strongest of them is <a href="/models/${esc(strongest.id)}/">${esc(strongest.display_name)}</a>` : ''}.</p>
 
@@ -5929,7 +5939,7 @@ ${hostedSpeedLine(speeds, data) ? `<p class="note">${hostedSpeedLine(speeds, dat
 <p class="note">Superseded models are left out of the count, because what a machine is worth buying for is what you would run on it today; <a href="/leaderboard/">the leaderboard</a> ranks every model this site lists, older ones included. <a href="${esc(SECTIONS.weightsAndCache)}">Where the cache figure comes from</a> is one section of the memory guide.</p>${precisionLines(gb, v)}
 
 ${step && pair ? `<h2>What ${pair.to.gb} GB adds over ${pair.from.gb} GB</h2>
-<p>The machine here with ${pair.to.gb} GB that hands a model the most of it is the <a href="/hardware/${esc(pair.to.most.example.id)}/">${esc(shortHardwareLabel(pair.to.most.example))}</a>, at ${fmtGb1(pair.to.most.usable)}, and it holds ${pair.to.most.fits.length} of the ${currentModels.length}. At ${pair.from.gb} GB the most is ${fmtGb1(pair.from.most.usable)}, on the <a href="/hardware/${esc(pair.from.most.example.id)}/">${esc(shortHardwareLabel(pair.from.most.example))}</a>, holding ${pair.from.most.fits.length}. ${
+<p>The machine here with ${pair.to.gb} GB that hands a model the most of it is the <a href="/hardware/${esc(pair.to.most.example.id)}/">${esc(shortHardwareLabel(pair.to.most.example))}</a>, at ${fmtGb1(pair.to.most.usable)}, and it holds ${countOfSet(pair.to.most.fits.length, currentModels.length)}. At ${pair.from.gb} GB the most is ${fmtGb1(pair.from.most.usable)}, on the <a href="/hardware/${esc(pair.from.most.example.id)}/">${esc(shortHardwareLabel(pair.from.most.example))}</a>, holding ${pair.from.most.fits.length}. ${
     step.gained.length
       ? `The step adds ${modelLinks(step.gained)}.`
       : 'Nothing new fits. What the step buys is a longer window and room to work, not a model that was out of reach.'
@@ -5970,8 +5980,8 @@ ${payback}
         `What can you run with ${gb} GB?`,
       ]),
       description: descOf([
-        `${fitsSaid(v)} of the ${currentModels.length} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, the machines that come with it, and what each one holds.`,
-        `${fitsSaid(v)} of the ${currentModels.length} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, and the machines that come with it.`,
+        `${fitsSaidOpening(v)} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, the machines that come with it, and what each one holds.`,
+        `${fitsSaidOpening(v)} current models fit at ${kctx} of context. What a model really gets from ${gb} GB, and the machines that come with it.`,
         `What fits in ${gb} GB at ${kctx} of context, machine by machine.`,
       ]),
       canonical: memorySizePath(gb),
@@ -11548,11 +11558,21 @@ function checkModelCountScope() {
     const held = fitsAt(hw, current, CTX);
     const older = fitsAt(hw, legacy, CTX);
 
-    // the lede, in the words a search result shows
-    for (const hit of body.matchAll(/Yes — (\d+) of the (\d+) current models on this site fit/g)) {
+    // the lede, in the words a search result shows. A machine with room for
+    // every current model says so instead of printing the count twice, so both
+    // forms are read here and the count is the same claim either way.
+    for (const hit of body.matchAll(/Yes — (?:(\d+) of the (\d+)|all (\d+)) current models on this site fit/g)) {
       ledes++;
-      if (Number(hit[1]) !== held.length) problems.push(`${path} says ${hit[1]} current models fit it at ${ctxLabel(CTX)} and ${held.length} do`);
-      if (Number(hit[2]) !== current.length) problems.push(`${path} counts out of ${hit[2]} current models and the site lists ${current.length}`);
+      const said = Number(hit[1] ?? hit[3]);
+      const outOf = Number(hit[2] ?? hit[3]);
+      if (said !== held.length) problems.push(`${path} says ${said} current models fit it at ${ctxLabel(CTX)} and ${held.length} do`);
+      if (outOf !== current.length) problems.push(`${path} counts out of ${outOf} current models and the site lists ${current.length}`);
+      if (!!hit[3] !== (held.length === current.length))
+        problems.push(
+          hit[3]
+            ? `${path} says every current model fits it and ${held.length} of ${current.length} do`
+            : `${path} holds all ${current.length} current models and counts them out of themselves`,
+        );
     }
 
     // and the note that says what those counts leave out
@@ -11620,6 +11640,89 @@ function checkModelCountScope() {
   console.log(`  model counts: ${ledes} machine pages and ${pairs} counts on the head-to-heads count the ${current.length} current models and say so, and ${notes} machine pages name the superseded ones they hold of the ${legacy.length} this site prices besides`);
 }
 checkModelCountScope();
+
+/**
+ * A count divided by itself is a sweep written in the shape of a near miss.
+ * "39 of the 39 current models on this site fit" is the strongest thing a
+ * machine page here can say, and in a first paragraph a reader takes the shape
+ * before the numbers: two counts, one smaller than the other. Every such
+ * sentence on the site says all of them instead.
+ *
+ * The guard reads it both ways. No prose and no snippet may print a figure out
+ * of itself, and the pages that do hold everything have to say so, which is
+ * what stops the sweep wording being dropped again where the data no longer
+ * reaches it. A ratio in a table is a different thing — "2 of 2" under a column
+ * head naming the pair is how a table says it — so the tables come out before
+ * the text is read.
+ */
+function checkSweepCounts() {
+  const problems: string[] = [];
+  const total = currentModels.length;
+  const prose = (page: (typeof meta)[number]) =>
+    `${unesc(mainOf(page.html).replace(/<table[^]*?<\/table>/g, ' ').replace(/<[^>]+>/g, ' '))} ${page.description}`.replace(/\s+/g, ' ');
+
+  for (const page of meta)
+    for (const hit of prose(page).matchAll(/\b(\d+) of (?:the )?(\d+)\b/g))
+      if (hit[1] === hit[2]) problems.push(`${page.path} counts ${hit[1]} out of itself: "${hit[0]}"`);
+
+  // the size pages, where the count opens the description a search result
+  // shows. Both ways round: the sweep has to be claimed where the data holds
+  // it, and nowhere else, so the count is rebuilt here off the machines at the
+  // size rather than off the helper that writes the sentence.
+  let sizes = 0;
+  let sweptSizes = 0;
+  for (const gb of MEMORY_SIZES) {
+    const path = memorySizePath(gb);
+    const page = meta.find((pg) => pg.path === path);
+    if (!page) {
+      problems.push(`${path} is a size with a page and no page was built`);
+      continue;
+    }
+    const v = sizeView(gb);
+    const [lo, hi] = [v.least.fits.length, v.most.fits.length];
+    const said = lo !== hi ? `${lo} to ${hi} of the ${total}` : hi === total ? `All ${total}` : `${hi} of the ${total}`;
+    if (hi === total && lo === total) sweptSizes++;
+    // the shortest description this page has carries no count at all, and a
+    // page long-named enough to fall back to it is not making a claim here
+    if (page.description.startsWith('What fits in')) continue;
+    sizes++;
+    if (!page.description.startsWith(`${said} current models fit at ${ctxLabel(CTX)} of context.`))
+      problems.push(`${path} holds ${lo === hi ? hi : `${lo} to ${hi}`} of the ${total} current models at ${ctxLabel(CTX)} and its description opens "${page.description.slice(0, 64)}"`);
+  }
+
+  // and the step section, where the sentence names the machine it counts
+  let steps = 0;
+  for (const gb of MEMORY_SIZES) {
+    const page = meta.find((pg) => pg.path === memorySizePath(gb));
+    if (!page) continue;
+    for (const hit of unesc(page.html).matchAll(/<a href="\/hardware\/([a-z0-9-]+)\/">[^<]+<\/a>, at [\d.]+ GB, and it holds (all \d+|\d+)\./g)) {
+      steps++;
+      const hw = data.hardware.find((h) => h.id === hit[1]);
+      if (!hw) {
+        problems.push(`${page.path} names /hardware/${hit[1]}/ in its step section and no such machine is in the data`);
+        continue;
+      }
+      const held = currentModels.filter((m) => holds(hw, m, CTX)).length;
+      const want = held === total ? `all ${total}` : `${held}`;
+      if (hit[2] !== want) problems.push(`${page.path} says the ${shortHardwareLabel(hw)} holds "${hit[2]}" and it holds ${want} of the ${total} current models`);
+    }
+  }
+
+  // the machine ledes are read by checkModelCountScope, which has the set; this
+  // only has to know the sweep is reachable, or the halves above pass on nothing
+  const sweeps = data.hardware.filter((h) => currentModels.filter((m) => holds(h, m, CTX)).length === total).length;
+  if (!sweeps) problems.push(`no machine here holds all ${total} current models at ${ctxLabel(CTX)}, so no page can be read for how it says so`);
+  if (!steps) problems.push(`no size page prints the step sentence that counts what the roomiest machine at a size holds`);
+
+  if (problems.length) {
+    console.error(`\n${problems.length} count${problems.length === 1 ? '' : 's'} is written as a ratio of itself:`);
+    for (const x of [...new Set(problems)].slice(0, 8)) console.error(`  ${x}`);
+    process.exit(1);
+  }
+  console.log(`  sweeps: ${sweeps} machines and ${sweptSizes} memory size${sweptSizes === 1 ? '' : 's'} hold all ${total} current models at ${ctxLabel(CTX)} and say so, over ${sizes} size descriptions and ${steps} step sentences read back, and no prose on any page divides a count by itself`);
+}
+checkSweepCounts();
+
 
 // Every guard has passed, so the four files the build publishes rather than
 // generates go out now. A build that stops at a guard leaves the last sitemap

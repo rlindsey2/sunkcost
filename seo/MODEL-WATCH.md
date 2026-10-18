@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-17
+Last checked: 2026-10-18
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,51 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-18 · LFM2.5 24B-A2B is the best-sourced candidate on this list: every field but the index score, and somebody rents it
+
+**[LiquidAI/LFM2.5-24B-A2B](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B) is a new size of a family
+this site already prices**, and Liquid published
+[the GGUF](https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF) itself, last changed 2026-10-13.
+Sizes are the repository's own file list, read off the Hugging Face API today:
+
+| Build | Bytes | Weights |
+|---|---|---|
+| Q4_K_M | 14,526,258,464 | 14.53 GB |
+| QAD-Q4_0 | 13,578,190,880 | 13.58 GB |
+| Q5_K_M | 17,029,602,592 | 17.03 GB |
+| Q6_K | 19,689,405,728 | 19.69 GB |
+| Q8_0 | 25,493,732,640 | 25.49 GB |
+| BF16 | 47,962,094,880 | 47.96 GB |
+
+- **Size.** The card states **24.0B total** and **2.45B active**, and Q4_K_M at 14.53 GB puts it
+  between Mistral Small 3.2 24B (14.33 GB) and Qwen3.8 27B (16.46 GB), so most of this list holds it.
+- **Architecture**, off the base repository's own `config.json`: **40 layers**, `hidden_size` 2048, 32
+  attention heads, `num_key_value_heads` **8**, and the layers alternate convolution with full
+  attention, which appears every fourth layer from index 2, so **10 attention layers**. 64 experts
+  with 4 routed per token, the first 2 layers dense. `max_position_embeddings` **131,072**. The config
+  omits `head_dim`, so it is 2048 ÷ 32 = **64**, the same derivation the LFM2.5 2.6B row records.
+  `kv_cache_gb_per_8k` works out at **0.168 GB**: 10 attention layers at 8 x 64 x 2 bytes x 2 is
+  2,048 B a token each, 20,480 B in all. A convolution layer keeps a fixed state, so it is ignored,
+  which is the convention this data already uses for the 2.6B.
+- **Licence lfm1.0**, named in the repository metadata with a `LICENSE` file beside the weights, the
+  same licence string the 2.6B row carries as "LFM 1.0 (see repo)".
+- **The rental price is an exact match, not a stand-in.** OpenRouter lists `liquid/lfm-2.5-24b-a2b`
+  today at **$0.05 in / $0.70 out** per million tokens, at 128,000 tokens of context. That is the
+  field a model this size usually lacks here, and the 2.6B row above it has to say its endpoint is
+  free, which makes its break-even meaningless.
+- **Missing: the index score.** Artificial Analysis has no page for it — `/models/lfm2-5-24b-a2b` is a
+  404 today, and the `lfm2-24b-a2b` page that search returns is the older LFM2, whose figures differ
+  between index versions. So `frontier_equivalent` and the capability ratings are the open fields.
+
+**Two other new names, neither ready.** [inclusionAI/Ling-3.1-flash](https://huggingface.co/inclusionAI/Ling-3.1-flash)
+has weights now, which closes the 2026-10-02 note that it was announced and not open: **MIT, 560B
+total and 25B active, 1M context**, and OpenRouter rents it at $0.075 / $0.225. The repository links a
+quantisation listing rather than a file, so there is no four-bit size to cite, and at that parameter
+count whether anything here holds it is exactly what the missing figure decides. Tencent published
+**Hy-Memory-30B-A3B**, and NVIDIA **Nemotron-Labs-Dory1.0-4B** with its own GGUF; neither has been
+read here yet.
+
 
 ### 2026-10-17 · Beam's four-bit GGUF is out at 306.53 GB, and Nemotron 3.5 Bolt is a two-bit vision model NVIDIA quantised itself
 
