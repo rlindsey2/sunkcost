@@ -380,7 +380,7 @@ export function modelSoftware(m: Model, url: string): LdNode {
     props.push({ '@type': 'PropertyValue', name: 'Active parameters per token', value: `${fmtNum(m.active_params_b, 1)}B` });
   props.push({ '@type': 'PropertyValue', name: 'Quantisation', value: m.quantisation });
   if (m.max_context_tokens)
-    props.push({ '@type': 'PropertyValue', name: 'Maximum context', value: `${Math.round(m.max_context_tokens / 1024)}k tokens` });
+    props.push({ '@type': 'PropertyValue', name: 'Maximum context', value: `${ctxLabel(m.max_context_tokens)} tokens` });
   props.push({ '@type': 'PropertyValue', name: 'Licence', value: m.license });
   return {
     '@type': 'SoftwareApplication',
@@ -1069,9 +1069,37 @@ export function runsOnlyOn(va: View, vb: View): Model[] {
   return fitsOf(va).filter((r) => !inB.has(r.model.id)).map((r) => r.model);
 }
 
-/** A context length as the calculator writes it: 32768 tokens is "32k". */
+/**
+ * A context length the way a person says it: 32768 tokens is "32k" and
+ * 1048576 is "1M". The calculator's own settings stop at 256k, so the
+ * millions are only ever a model's own ceiling, and "1024k tokens" is a
+ * figure a reader has to divide before it means anything.
+ */
 export function ctxLabel(tokens: number): string {
-  return `${Math.round(tokens / 1024)}k`;
+  const k = Math.round(tokens / 1024);
+  if (k < 1024) return `${k}k`;
+  const m = k / 1024;
+  return `${Number.isInteger(m) ? m : fmtNum(m, 1)}M`;
+}
+
+/**
+ * What a model's maximum-context note adds to the figure printed beside it.
+ *
+ * The note in the data records the ceiling the way its model card writes it, so
+ * most of them are the figure again: "256k" against 256k tokens is the same
+ * fact twice, in a parenthesis a reader stops to read. What is left after the
+ * restatement is the part that says something, and where nothing is left there
+ * is nothing to print.
+ */
+export function maxContextNote(m: Model): string | null {
+  const note = m.max_context_note?.trim();
+  if (!note) return null;
+  if (!m.max_context_tokens) return note;
+  const lead = new RegExp(`^${ctxLabel(m.max_context_tokens).replace('.', '\\.')}(\\s+nativ(?:e|ely))?\\b[\\s,;:]*`, 'i');
+  if (!lead.test(note)) return note;
+  // a note that parenthesised its own aside would nest inside ours
+  const rest = note.replace(lead, '').trim().replace(/^\((.*)\)$/s, '$1').trim();
+  return rest || null;
 }
 
 /**

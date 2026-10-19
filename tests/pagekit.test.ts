@@ -5,6 +5,7 @@ import {
   bestLeftOut, contextHeadroom, ctxLabel, andList, familyHeading, familyNoun, familyRange, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtNum,
   machineIndexLine,
   machinesAtSize,
+  maxContextNote,
   machinesThatHold,
   memoryLevels,
   memorySizePath,
@@ -1404,6 +1405,32 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(ctxLabel(32768)).toBe('32k');
     expect(ctxLabel(4096)).toBe('4k');
     expect(ctxLabel(262144)).toBe('256k');
+    // the calculator stops at 256k, so a million is always a model's own
+    // ceiling, and nobody calls it 1024k
+    expect(ctxLabel(1048576)).toBe('1M');
+    expect(ctxLabel(10485760)).toBe('10M');
+    expect(ctxLabel(1572864)).toBe('1.5M');
+  });
+
+  it('prints only what a context note adds to the ceiling beside it', () => {
+    for (const m of data.models) {
+      const note = maxContextNote(m);
+      if (note === null) continue;
+      // nothing is invented: what the page prints is the data's own words
+      expect([m.id, (m.max_context_note ?? '').includes(note)]).toEqual([m.id, true]);
+      // and the figure is not said twice
+      expect([m.id, note.toLowerCase().startsWith(ctxLabel(m.max_context_tokens!).toLowerCase())]).toEqual([m.id, false]);
+    }
+    // a note that is the ceiling again, however the card wrote it, is nothing to print
+    const ceiling = (tokens: number, note: string) =>
+      maxContextNote({ ...data.models[0], max_context_tokens: tokens, max_context_note: note });
+    expect(ceiling(262144, '256k')).toBeNull();
+    expect(ceiling(1048576, '1M native')).toBeNull();
+    expect(ceiling(262144, '256k natively')).toBeNull();
+    expect(ceiling(262144, '256k natively; up to 1M with YaRN')).toBe('up to 1M with YaRN');
+    expect(ceiling(1048576, '1M (model_max_length)')).toBe('model_max_length');
+    // and a note that never claimed to be the figure is left alone
+    expect(ceiling(40960, '32k natively; 128k with YaRN')).toBe('32k natively; 128k with YaRN');
   });
 
   it('opens the calculator on the configuration the length was measured at', () => {

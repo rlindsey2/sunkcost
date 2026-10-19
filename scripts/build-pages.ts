@@ -14,7 +14,7 @@ import {
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
+  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, maxContextNote, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
   nearestCompleteComputer, NUMBER_WORDS, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -3962,7 +3962,7 @@ function modelPage(m: Model): string {
   const versusLine = ladderLine || genLine || memLine ? `<p class="note">${[ladderLine, genLine, memLine].filter(Boolean).join(' ')}</p>` : '';
   const body = `<article class="prose">
 <h1>What hardware do you need to run ${esc(m.display_name)}?</h1>
-<p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${Math.round(m.max_context_tokens / 1024)}k tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}${cheapest ? ` ${cheapestSpeedLine(cheapest, ctx)}` : ''}</p>
+<p class="lede">${esc(m.display_name)} at ${esc(m.quantisation)} is ${fmtGb(m.weights_gb)} of weights${m.max_context_tokens ? `, with a context ceiling of ${ctxLabel(m.max_context_tokens)} tokens` : ''}.${note.about ? ` ${esc(note.about)}` : ''}${cheapest ? ` ${cheapestSpeedLine(cheapest, ctx)}` : ''}</p>
 
 ${cheapest
       ? `<div class="answer">
@@ -3998,7 +3998,7 @@ ${stack(`<table class="board">
 <tbody>${hwRows}</tbody>
 </table>`, { fig: 4 })}
 ${reachLine}
-<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${Math.round(m.max_context_tokens / 1024)}k limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}${smallestLine ? `\n<p class="note">${smallestLine}</p>` : ''}
+<p class="note">One machine per family, cheapest first. Speeds are measured where a public benchmark exists and estimated from memory bandwidth otherwise; the calculator says which for any configuration. The longest context is the longest setting the calculator offers that the machine still holds this model at, cache included${m.max_context_tokens ? `, and no machine is shown taking it past its own ${ctxLabel(m.max_context_tokens)} limit` : ''}. Each one opens the calculator on that machine at that length.</p>${hostedLine ? `\n<p class="note">${hostedLine}</p>` : ''}${sizeLine ? `\n<p class="note">${sizeLine}</p>` : ''}${smallestLine ? `\n<p class="note">${smallestLine}</p>` : ''}
 ${furthest != null && furthest > ctx ? `<p><a class="cta" href="${esc(calcLink({ hw: atLength(furthest).hw.id, model: m.id, ctx: furthest }, data))}">Run ${esc(m.display_name)} at ${ctxLabel(furthest)} on the ${esc(hardwareLabel(atLength(furthest).hw))}</a></p>` : ''}` : ''}
 
 ${contextCostSection(m)}${measuredWithSection(m, perFamily)}${cheapest ? shorterMachinesSection(m, shorterMachines, cheapest, ctx) : ''}${missedMachinesSection(m, missed, holders.length === 1 ? holders[0] : null, ctx)}${precisionSection(m)}<h2>The specifics</h2>
@@ -4007,7 +4007,7 @@ ${contextCostSection(m)}${measuredWithSection(m, perFamily)}${cheapest ? shorter
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
   <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
   <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="${SECTIONS.weightsAndCache}">How weights and cache add up</a>.</dd>
-  <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${Math.round(m.max_context_tokens / 1024)}k tokens` : 'unknown'}${m.max_context_note ? ` (${esc(m.max_context_note)})` : ''}</dd>
+  <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${ctxLabel(m.max_context_tokens)} tokens` : 'unknown'}${maxContextNote(m) ? ` (${esc(maxContextNote(m)!)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
   ${m.sources?.length ? `<dt>Sources</dt><dd>${sourceLinks(m.sources)}</dd>` : ''}
 </dl>
@@ -6671,7 +6671,7 @@ ${row('Weights', fmtGb(a.weights_gb), fmtGb(b.weights_gb))}
 ${row(`Needs at ${ctxK}k`, needGb(a, ra) != null ? fmtGb(needGb(a, ra)) : '<span class="dim">unknown</span>', needGb(b, rb) != null ? fmtGb(needGb(b, rb)) : '<span class="dim">unknown</span>')}
 ${row('Quantisation', esc(a.quantisation), esc(b.quantisation))}
 ${row('Parameters', `${fmtNum(a.params_b, 1)}B${a.active_params_b && a.active_params_b < a.params_b ? ` (${fmtNum(a.active_params_b, 1)}B active)` : ''}`, `${fmtNum(b.params_b, 1)}B${b.active_params_b && b.active_params_b < b.params_b ? ` (${fmtNum(b.active_params_b, 1)}B active)` : ''}`)}
-${row('Max context', a.max_context_tokens ? `${Math.round(a.max_context_tokens / 1024)}k` : 'unknown', b.max_context_tokens ? `${Math.round(b.max_context_tokens / 1024)}k` : 'unknown')}
+${row('Max context', a.max_context_tokens ? ctxLabel(a.max_context_tokens) : 'unknown', b.max_context_tokens ? ctxLabel(b.max_context_tokens) : 'unknown')}
 ${row('API price per 1M', apiPriceCell(a), apiPriceCell(b))}
 ${row('Licence', esc(a.license), esc(b.license))}
 ${row('Machines here that run it', `${ra.length} of ${considered}`, `${rb.length} of ${considered}`)}
@@ -11722,6 +11722,123 @@ function checkSweepCounts() {
   console.log(`  sweeps: ${sweeps} machines and ${sweptSizes} memory size${sweptSizes === 1 ? '' : 's'} hold all ${total} current models at ${ctxLabel(CTX)} and say so, over ${sizes} size descriptions and ${steps} step sentences read back, and no prose on any page divides a count by itself`);
 }
 checkSweepCounts();
+
+
+/**
+ * What a page says a model's own context ceiling is.
+ *
+ * The ceiling is read in the first paragraph and again in the specifics, and it
+ * went out two ways nobody writes. "1024k tokens" is a figure a reader has to
+ * divide before it means anything, where everyone says 1M. And the note the data
+ * keeps beside the ceiling records it the way the model card writes it, so
+ * printing that note whole put the same number twice on 37 of these pages, in a
+ * parenthesis a reader stops to read. Every figure here is rebuilt from
+ * `data.models` rather than from the helpers that write the lines, and whatever
+ * the parenthesis prints has to be the data's own words with none of the figure
+ * left in it: the line can neither say the ceiling twice nor invent a caveat for
+ * it.
+ */
+function checkContextCeilings() {
+  const problems: string[] = [];
+  const prose = (page: (typeof meta)[number]) =>
+    `${unesc(mainOf(page.html).replace(/<[^>]+>/g, ' '))} ${page.title} ${page.description}`.replace(/\s+/g, ' ');
+
+  // no page counts a context in four-figure thousands, whatever writes it
+  for (const page of meta)
+    for (const hit of prose(page).matchAll(/\b(\d{4,})k\b/g))
+      problems.push(`${page.path} prints a context length as "${hit[0]}", which is ${Number(hit[1]) / 1024}M`);
+
+  let ledes = 0;
+  let notes = 0;
+  let plain = 0;
+  for (const m of data.models) {
+    const path = `/models/${m.id}/`;
+    const page = meta.find((pg) => pg.path === path);
+    if (!page) {
+      problems.push(`${path} is a model with a page and no page was built`);
+      continue;
+    }
+    if (!m.max_context_tokens) continue;
+    const label = ctxLabel(m.max_context_tokens);
+    const opens = new RegExp(`^${label.replace('.', '\\.')}\\b`, 'i');
+    ledes++;
+    if (!prose(page).includes(`context ceiling of ${label} tokens`))
+      problems.push(`${path} does not open on the ${label} ceiling the data gives it`);
+    const cell = unesc(page.html).match(/<dt>Maximum context<\/dt><dd>([\s\S]*?)<\/dd>/);
+    if (!cell) {
+      problems.push(`${path} prints no maximum context in its specifics`);
+      continue;
+    }
+    const said = cell[1].replace(/\s+/g, ' ').trim();
+    if (!said.startsWith(`${label} tokens`)) {
+      problems.push(`${path} gives its maximum context as "${said}" and the ceiling is ${label} tokens`);
+      continue;
+    }
+    const rest = said.slice(`${label} tokens`.length).trim();
+    if (!rest) {
+      plain++;
+      continue;
+    }
+    const inside = /^\((.*)\)$/s.exec(rest);
+    if (!inside) {
+      problems.push(`${path} puts "${rest}" after its ceiling, where this line prints a note in brackets or nothing at all`);
+      continue;
+    }
+    notes++;
+    if (!(m.max_context_note ?? '').includes(inside[1]))
+      problems.push(`${path} says "${inside[1]}" of its ceiling and the data's note reads "${m.max_context_note ?? ''}"`);
+    if (opens.test(inside[1])) problems.push(`${path} opens its ceiling note with the ceiling again: "${inside[1]}"`);
+    if (/\(/.test(inside[1])) problems.push(`${path} nests a bracket inside its ceiling note: "${inside[1]}"`);
+  }
+
+  // and the head-to-heads, where two ceilings are a row of the table
+  let rows = 0;
+  for (const [a, b] of modelPairs(data)) {
+    const page = meta.find((pg) => pg.path === modelComparePath(a, b));
+    if (!page) continue;
+    const row = unesc(page.html).match(/<tr><th>Max context<\/th><td>([^<]*)<\/td><td>([^<]*)<\/td><\/tr>/);
+    if (!row) {
+      problems.push(`${page.path} sets two models against each other and prints neither ceiling`);
+      continue;
+    }
+    rows++;
+    for (const [i, m] of [a, b].entries()) {
+      const want = m.max_context_tokens ? ctxLabel(m.max_context_tokens) : 'unknown';
+      if (row[i + 1] !== want)
+        problems.push(`${page.path} gives ${m.display_name} a ceiling of "${row[i + 1]}" and the data says ${want}`);
+    }
+  }
+
+  // A note that only restates the ceiling is nothing to print; one that goes on
+  // past a clause break is saying something else, and that part cannot be lost
+  // with the restatement. Read off the data's own punctuation, so dropping a
+  // note wholesale is caught whether or not it opened with the figure.
+  let said = 0;
+  for (const m of data.models) {
+    const note = m.max_context_note?.trim() ?? '';
+    const brk = [note.indexOf(';'), note.indexOf('(')].filter((i) => i >= 0).sort((a, b) => a - b)[0];
+    if (brk == null) continue;
+    const tail = note.slice(brk + 1).replace(/[()]/g, '').trim();
+    if (!tail) continue;
+    const page = meta.find((pg) => pg.path === `/models/${m.id}/`);
+    if (!page) continue;
+    said++;
+    if (!unesc(page.html).includes(tail))
+      problems.push(`${page.path} leaves out what the data says of its ceiling past the figure: "${tail}"`);
+  }
+
+  if (!said) problems.push('no context note in the data says anything past the figure, so the rule that keeps that part on the page passes on nothing');
+  if (!notes) problems.push('no model page prints a note beside its ceiling, so the half of this rule that reads one passes on nothing');
+  if (!plain) problems.push('every model page prints a note beside its ceiling, so a restatement would have nothing to be read against');
+
+  if (problems.length) {
+    console.error(`\n${problems.length} context ceiling${problems.length === 1 ? ' is' : 's are'} printed in a way nobody reads:`);
+    for (const x of [...new Set(problems)].slice(0, 8)) console.error(`  ${x}`);
+    process.exit(1);
+  }
+  console.log(`  context ceilings: ${ledes} model pages open on the ceiling the data gives them and print it in the specifics, ${notes} with a note that says more than the figure and ${plain} with the figure alone, ${said} of them keeping what the data says past the figure, and ${rows} head-to-heads set two ceilings in one row`);
+}
+checkContextCeilings();
 
 
 // Every guard has passed, so the four files the build publishes rather than

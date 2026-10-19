@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-18
+Last checked: 2026-10-19
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -74,6 +74,64 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-19 · DeepSeek V4.1-Flash is ruled out on size at a figure of its own now, and Tencent published a GGUF for Hy-Memory 30B-A3B
+
+**The 2026-09-25 ruling-out of DeepSeek V4.1-Flash was secondhand, and the firsthand figure is worse, not
+better.** The 1017 checkpoint went up on 2026-10-17 under **MIT**
+([the repo](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017)) and is the top of Hugging Face's
+trending list today, and unsloth published
+[the GGUF](https://huggingface.co/unsloth/DeepSeek-V4.1-Flash-1017-GGUF) the same day. The sizes are that
+repository's own file list, read off the Hugging Face API today, summing each build's shards:
+
+| Build | Files | Weights |
+|---|---|---|
+| UD-IQ1_S | 5 | 232.98 GB |
+| UD-IQ1_M | 5 | 250.40 GB |
+| UD-IQ2_XXS | 6 | 300.48 GB |
+| UD-Q2_K_XL | 7 | 334.79 GB |
+| UD-IQ3_XXS | 7 | 394.74 GB |
+| UD-IQ3_S | 8 | 423.63 GB |
+| UD-Q3_K_XL | 8 | 485.07 GB |
+| UD-Q4_K_XL | 9 | 500.71 GB |
+| UD-Q8_K_XL | 9 | 508.38 GB |
+
+Four bits is **500.71 GB** against the 384 GB the roomiest machine here hands a model, so it misses by a
+third rather than by the ninth the "426.1 GB at 3.0 bits per weight" figure suggested. Even UD-IQ3_XXS at
+394.74 GB misses. UD-Q2_K_XL at 334.79 GB would fit, and this data carries no two-bit build. The ruling-out
+stands and is no longer the closest one on size.
+
+**Hy-Memory-30B-A3B now has its publisher's own GGUF, and it is not a general model.** Tencent put
+[the GGUF](https://huggingface.co/tencent/Hy-Memory-30B-A3B-GGUF) up today beside
+[the weights](https://huggingface.co/tencent/Hy-Memory-30B-A3B) of 2026-10-15, under **Apache 2.0**.
+
+- **Size.** `hy3a3b-memrl1009-step250-Q4_K_M-imat.gguf` is 18,236,702,464 bytes, so **18.24 GB**, with Q6_K
+  at 24.71 GB and Q8_0 at 31.99 GB. A community conversion published three days earlier
+  ([rapatsky](https://huggingface.co/rapatsky/Hy-Memory-30B-A3B-GGUF)) gives the same Q4_K_M to within 224
+  bytes. The BF16 safetensors index totals 60,129,463,808 bytes, so **30.06B** parameters; the card states
+  **about 3B active** and no total.
+- **Architecture**, off the repository's own `config.json`: **48 layers**, `num_key_value_heads` **4** at
+  `head_dim` **128**, `hidden_size` 2048, 128 experts with 8 routed per token, the first layer dense and the
+  other 47 sparse, `max_position_embeddings` **262,144**. `kv_cache_gb_per_8k` works out at **0.805 GB**: 4
+  KV heads at 128 wide, 2 bytes, keys and values, is 2,048 B a token a layer, 98,304 B over the 48.
+- **Two things stop it being a row, and neither is a search away.** It is a **memory writer**, trained to
+  replace the general-purpose model inside Mem0, MemOS and EverMemOS on the write path, which is not the
+  job every other model here is priced for; and nobody rents it, so there is no token price for a pay-back
+  to beat. It is on no OpenRouter listing today, and Artificial Analysis has no page for it. The GGUF
+  filename also names a training checkpoint, `memrl1009-step250`, rather than a release.
+
+**Dory 1.0 4B ships no four-bit build from NVIDIA.**
+[nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-GGUF](https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-GGUF)
+holds one file, Q5_K_M at 3,673,288,864 bytes, so **3.67 GB**, and the BF16 repository is 7.95 GB under
+**OpenMDW-1.1**. Its `config.json` is the interesting part and the obstacle: **72 layer entries, 36 of them
+MLP, 27 sliding attention at a 1024-token window and 9 full attention**, `num_key_value_heads` **4** at
+`head_dim` **256**, `max_position_embeddings` **262,144** — and 40 of those layers are recurrent, run
+**twice** (`n_recurrent_loops`), which is a cache this data has no convention for. Q5_K_M is also a
+precision no row here carries.
+
+**LFM2.5 24B-A2B is unchanged from yesterday**: OpenRouter still lists `liquid/lfm-2.5-24b-a2b` at $0.05 in
+/ $0.70 out per million at 128,000 tokens, and Artificial Analysis still 404s on `/models/lfm2-5-24b-a2b`,
+so the index score is still the one open field on the best-sourced candidate here.
 
 ### 2026-10-18 · LFM2.5 24B-A2B is the best-sourced candidate on this list: every field but the index score, and somebody rents it
 

@@ -38,6 +38,11 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       records 2,048 bytes for its full layers, and its cache really does crawl: 0.47 GB to 2.5 GB. So either the
       note is wrong or the Gemma 3 architecture fields are, and both are a data edit and Ryan's.
 
+- [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
+      ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
+      DeepSeek distills "in config; the card does not state one for the distills". The figures are right and the
+      caveats are real, so the fix is the wording, which is a data edit and Ryan's.
+
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
       reads it to 32k with its own decay. Nine of the 16 land within 5% of the source's own 32k
@@ -47,6 +52,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
 
 ## Runs
+
+### 2026-10-19 — Every page writes a context ceiling the way a person says it, and stops writing it twice
+A model's own ceiling went out as "1024k tokens", in the first paragraph of six model pages and in 14 head-to-heads: a figure a
+reader divides before it means anything, where everyone says 1M, and Llama 4 Scout's 10M read "10240k". The specifics line under it
+printed that figure again, because the note the data keeps there writes the ceiling the way the model card does, so 37 of the 55
+read "256k tokens (256k)" and Inkling Small nested a bracket in a bracket. One formatter now writes a context in thousands up to
+256k, the calculator's own longest setting, and in millions above it, which is only ever a model's ceiling; and the note prints what
+it adds to the figure or nothing at all, so Llama 4 Scout reads "10M tokens (claimed; nobody has the memory for that locally)" and
+42 pages read the figure alone. Straight to main. Verified: 453 tests, typecheck clean, the full build with build:functions, 320
+pages every guard passing, 321 of 321 dated with those 51 model pages and 14 head-to-heads moved and no others, six read rendered,
+and 15 mutations caught, 14 stopping the build and one the tests. The new `checkContextCeilings()` reads it both ways: no page
+counts a context in four-figure thousands, and the bracket may print only the data's own words with none of the figure in them.
+Watch: DeepSeek V4.1-Flash's own four-bit GGUF is 500.71 GB, past the roomiest machine here. Next: the backlog, three, all Ryan's.
 
 ### 2026-10-18 — The pages that hold every current model say so, rather than counting 39 out of 39
 A count divided by itself is a sweep in the shape of a near miss, and a first paragraph is read for its shape before its numbers.
@@ -261,42 +279,3 @@ passing, 321 of 321 dated with those 4 moved, all four read rendered, and seven 
 `checkStepSizeOffers()`, which rebuilds a size's machines from `data.hardware` and reads every figure back
 off the rendered paragraph. Watch done: MiMo-V2.6-Flash has its first real four-bit listing, MXFP4 at 157 to
 167 GB from two repos, and the 185.40 GB Q4_K_M once quoted for it does not exist. Next: the 192 GB page.
-
-### 2026-10-02 — Twelve size pages said what a step up the ladder buys and never that it can cost speed
-"What 48 GB adds over 36 GB" weighed room and price and stopped. On five of the eleven steps the roomiest
-machine at the larger size reads memory more slowly than the one a rung below, so the step costs speed, and
-the section read as a verdict with that half missing. The 36 GB page said the 48 GB Mac mini M5 Pro is $200
-cheaper and nothing new fits, not that Qwen3.8 27B runs 19 tok/s on the Mac Studio it had just named and 12
-on the cheaper box. Worst from 96 to 128 GB: 1792 GB/s down to 273, 78 tok/s to 11. All 12 pages now say
-which way the step goes, in both bandwidths and both speeds; four buy speed, three leave it alone. Straight
-to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages every guard
-passing, 321 of 321 sitemap entries dated with the 12 size pages moved and no others, all 12 read rendered,
-and six mutations of `checkStepSpeeds()`, which rebuilds the shared model from the scores and reads each
-speed off the table on the page it belongs to. Watch done: Ling 3.1 Flash is announced, not open; Apodex 1.1
-Mini, Apache 2.0 at 21.7 GB from a real listing, is the best-sourced candidate yet and wants a score.
-
-### 2026-10-01 — Seven model pages said nothing here holds a model that two machines do
-"Every machine here but the Mac Studio M5 Ultra, 256GB misses this model" was false on all seven pages
-that said it: between two and four machines on this site hold each of those models at 32k. They are left
-out of "cheapest machine that runs it" rightly, a discontinued box being no purchase and an unpriced one
-no match for an API bill, and that reason was stretched into a claim about all 56. Worst on Tencent Hy3,
-whose snippet read "more than any machine here offers" while two 512 GB Macs hold it to its 256k
-ceiling. Each page now scopes the claim and names what does hold it, with the size, the price and
-whether it is still sold. /how-much-memory/512gb/ goes from 4 inbound to 11, closing that half of the
-backlog item. Straight to main. Verified: 452 tests, typecheck clean, the full build with
-build:functions, 320 pages every guard passing, 321 of 321 dated with 7 moved, three read rendered, and
-eight mutations of `checkOffMarketHolders()`, which works its machine set out from the data rather than
-from the helper that writes the sentence. Watch done: Clef is out on kind. Next: /how-much-memory/36gb/.
-
-### 2026-09-30 — 46 model pages name the least memory anything here holds them in
-A model page named the cheapest machine that runs it, one still sold: that answers what to buy, not what
-a reader who already owns a card is asking. The roomiest machine at a size is often a discontinued card
-with more to give than a cheap new computer, so on 46 pages the smallest size here that holds the model
-is below the size its cheapest machine is sold in. Each now names that size, the machine there, what it
-hands a model, its price and whether it is still sold, every figure read off the size page it links.
-/how-much-memory/12gb/ goes from 3 inbound to 17, closing the backlog item. Straight to main. Verified:
-452 tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of
-321 dated with 46 moved, five read rendered, and nine mutations of the new `checkSmallestSizeLine()`,
-which binds each figure to that machine's own row, all stopping the build. Watch done: nothing
-open-weight since MiMo-V2.6, and the four-bit size now quoted for MiMo-V2.6-Flash is arithmetic on its
-parameter count, not a listing. Next: the 512 and 36 GB pages.
