@@ -20,7 +20,15 @@ Google knew 619 URLs on 2026-09-18. The sitemap now lists 321 pages, of which 19
 - Every query with a click is the site's own name. Non-brand queries with any impression: a handful of model names (Qwen3.8 Flash Next, GLM-5.3-Flash, Laguna XS 2.1, Ornith 1.5) and machine names (M5 Mac Studio, Mac Studio M5 Ultra), all at 1 or 2 impressions, positions 5 to 130.
 - Impressions ran about 160 a day during launch week and were 10 a day by 2026-09-20. Launch traffic came from links, not search.
 
-## What this means for the work
+## Cloudflare, read 2026-10-20 (no new Search Console export yet)
+
+- Visits from Google: about 40 from 23 Sep to 5 Oct, about 220 from 6 to 20 Oct. In the second window
+  searchers landed on about ten `/compare/` head-to-heads and `/best/`, the first generated pages seen
+  taking search traffic. Non-brand clicks are likely but unconfirmed until the next export.
+- Singapore is about half of all October visits at ~1.4 views a visit, against 10+ elsewhere: bots.
+  Real traffic is about 100 visits a day.
+
+## What this meant for the work (2026-09-23; the freeze in point 2 lifted 2026-10-20, see LOG.md)
 
 1. The site's search problem is not technical. Redirects, canonicals, sitemap and structured data are in order. Half of the known pages are simply not yet indexed, and none rank for anything but the brand.
 2. Adding pages does not help. Google is indexing new pages slowly across every type, which is authority, not a fault in the pages. More pages dilute what little authority there is. No new page types until the existing ones are indexed and at least one non-brand query shows clicks. Fewer, deeper pages beat more.

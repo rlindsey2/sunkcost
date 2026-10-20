@@ -13,10 +13,15 @@ in it writes anything.
 
 ## The rule that does not bend here
 
-**No figure is ever invented, and this agent does not edit `data/*.json`.** A candidate below
-carries the numbers a source states and the URL that states them; everything else is marked as
-missing. Sunk Cost's whole claim is that its figures come from somewhere, and a model added from
-a press release's rounding would cost more trust than a late model costs traffic.
+**No figure is ever invented.** A candidate below carries the numbers a source states and the URL
+that states them; everything else is marked as missing. Sunk Cost's whole claim is that its figures
+come from somewhere, and a model added from a press release's rounding would cost more trust than a
+late model costs traffic.
+
+**Since 2026-10-20 the agent adds the rows itself** (Ryan, standing order in seo/LOG.md). A candidate
+whose fields are citable goes into `data/models.json`, and a judgement this file used to leave to Ryan
+(a new quantisation label, a vision model, a two-bit publisher build) is now the agent's to make and to
+say on the page. A field no source states is `null` with a TODO, never a blocker on its own.
 
 Sources are recorded as URLs whether or not they can be opened from here. Direct fetches were
 refused by this environment's egress proxy on the runs before 2026-10-11 and every source from

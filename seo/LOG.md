@@ -11,10 +11,22 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
   entry that finished it and delete it here. Do not keep "nothing to do" items.
 - Once this file passes 300 lines, move the oldest run entries to seo/archive/.
 
-## Standing orders (from Ryan, via the 2026-09-23 Search Console read)
+## Standing orders (from Ryan)
 
-- No new page types, and no new head-to-heads, until Search Console shows the existing pages
-  indexed and a non-brand query with clicks. Depth over count.
+- (Ryan, 2026-10-20) **The 2026-09-23 freeze is lifted, and data edits are the agent's now.** This
+  replaces the 2026-09-23 freeze and every line in this repo that says the agent does not edit
+  `data/*.json` or that a data edit is Ryan's call. The agent may:
+  - add, correct and retire rows in `data/*.json`: models from the watch, throughput rows, notes,
+    prices, architecture fields;
+  - change the data model itself (new fields, a new quantisation label, a vision flag), with
+    `validate-data.ts`, the types and the tests changed to match in the same push;
+  - add new page types and new head-to-heads, where the page answers a search people make
+    (model name + machine, "tokens per second", "can a <machine> run <model>").
+- What does not change: no figure is invented. Every new number carries its source URL and the
+  date it was read; anything a source does not state is `null` with a TODO. A new page holds its
+  claims with a build check, the way existing pages are held. Taking a page down needs a 301.
+- Still Ryan's: anything that costs money or touches secrets, DNS, the deploy workflow or the
+  calculator's maths in `src/compute.ts`.
 - The model watch (`npm run model-watch`, seo/MODEL-WATCH.md) stays daily and comes first.
 - Deploys are not free: one push per run, with the log change in the same push as the work.
 - (agent, 2026-09-26) `git fetch origin main` before judging what main has. This container clones
@@ -24,11 +36,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Ryan's side
 
 - [ ] Links from outside: the two news articles, r/LocalLLaMA, hardware reviewers who publish tok/s.
-- [ ] Does this site price a vision model? Reka Edge 2603 is the first candidate whose every size and
-      architecture field is citable from the repo (7.13B, Q4_K_M at 4.75 GB), and it is image-text-to-text
-      on a revenue-capped licence with no index score. All 55 models here are text. See seo/MODEL-WATCH.md.
 
 ## Backlog (ordered by expected traffic impact)
+
+- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** LFM2.5 24B-A2B, Nemotron 3.5
+      Bolt 74B-A9B, Beam 1.0 at UD-Q4_K_XL and Reka Edge 2603 were all held as Ryan's call; they are the
+      agent's now (seo/MODEL-WATCH.md has the figures and sources). One model per run, with its model page,
+      sitemap entry and head-to-heads. Vision models: price the text side and say on the page that it is.
 
 - [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
       sliding window "so the KV cache barely grows with context", and the figures on the same page say it grows
@@ -36,12 +50,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       with no windowing at all would be 16. The 8 full-attention layers carry 8 KV heads at 256 wide in the
       data, 8,192 bytes a token, the same as the windowed ones. Gemma 4 12B has the same layer counts and
       records 2,048 bytes for its full layers, and its cache really does crawl: 0.47 GB to 2.5 GB. So either the
-      note is wrong or the Gemma 3 architecture fields are, and both are a data edit and Ryan's.
+      note is wrong or the Gemma 3 architecture fields are, and both are a data edit, now the agent's.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
       DeepSeek distills "in config; the card does not state one for the distills". The figures are right and the
-      caveats are real, so the fix is the wording, which is a data edit and Ryan's.
+      caveats are real, so the fix is the wording, which is a data edit, now the agent's.
 
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
@@ -49,7 +63,7 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       number; the four Corsair AI Workstation 300 rows read high by 19 to 92% (gpt-oss-120b at 39.0
       against the chart's 20.4, Llama 3.1 8B at 21.8 against 13.0), and Qwen3 30B-A3B on the RTX 5090
       reads 104 against 143. The machine and model pages print all of them as measured. The fix is a
-      row quoted at the window the source ran it at for each of the 16, so a data edit and Ryan's.
+      row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
 
