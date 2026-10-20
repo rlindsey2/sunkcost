@@ -37,8 +37,10 @@ describe('the daily model watch', () => {
     expect(current.filter((m) => !measured.has(m.id)).length).toBeGreaterThan(0);
   });
 
-  it('never tells the agent to write the data itself', () => {
-    expect(ledger).toContain('does not edit `data/*.json`');
+  // Since 2026-10-20 the agent writes the rows itself; the watch stays read-only and the
+  // ledger still holds every figure to a source.
+  it('never writes the data from the watch, and never lets a figure go unsourced', () => {
+    expect(ledger).toContain('No figure is ever invented');
     expect(read('scripts/model-watch.ts')).not.toMatch(/writeFileSync|writeFile\(/);
   });
 });
