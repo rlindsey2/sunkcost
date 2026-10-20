@@ -44,14 +44,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       agent's now (seo/MODEL-WATCH.md has the figures and sources). One model per run, with its model page,
       sitemap entry and head-to-heads. Vision models: price the text side and say on the page that it is.
 
-- [ ] `/models/gemma-3-12b-q4/` prints, off `architecture.note`, that 5 of every 6 layers use a 1024-token
-      sliding window "so the KV cache barely grows with context", and the figures on the same page say it grows
-      from 0.9 GB at 8k to 2.5 GB at 32k and 8.9 GB at 128k — 10 times for 16 times the tokens, where a model
-      with no windowing at all would be 16. The 8 full-attention layers carry 8 KV heads at 256 wide in the
-      data, 8,192 bytes a token, the same as the windowed ones. Gemma 4 12B has the same layer counts and
-      records 2,048 bytes for its full layers, and its cache really does crawl: 0.47 GB to 2.5 GB. So either the
-      note is wrong or the Gemma 3 architecture fields are, and both are a data edit, now the agent's.
-
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
       DeepSeek distills "in config; the card does not state one for the distills". The figures are right and the
@@ -66,6 +58,18 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
+
+### 2026-10-20 — The Gemma cache figures say what the configs say, and Gemma 4 31B needs half the cache it claimed
+The top backlog item asked whether Gemma 3 12B's note was wrong or its architecture fields were. The config answers: `unsloth/
+gemma-3-12b-it` states eight KV heads at 256 wide and no separate geometry for the eight layers that grow, so 8,192 bytes a
+token is every layer and the fields are right. The note claiming the cache "barely grows with context" was the false half, and
+now says the windowing slows the growth rather than stopping it. Reading that same field across the family found the larger
+fault: every Gemma 4 config states `num_global_key_value_heads` and `global_head_dim`, three of the four rows record them and
+gemma-4-31b did not, so the layers that grow were priced at sixteen heads by 256 instead of four by 512. Its cache goes 6.2 GB
+to 3.5 at 32k and 22.3 to 11.6 at 128k, which moves what fits: the Radeon AI PRO R9700, 32GB now reads 23 GB and 64k where it
+read 26 GB and 32k. The other eight windowed models' configs were read and none states that geometry, so the class is swept.
+Straight to main. Verified: tests with three snapshots corrected, typecheck and validate clean, the full build with
+build:functions, 321 pages every guard passing, 322 of 322 dated with 145 moved, four read rendered. Next: the watch's rows.
 
 ### 2026-10-19 — Every page writes a context ceiling the way a person says it, and stops writing it twice
 A model's own ceiling went out as "1024k tokens", in the first paragraph of six model pages and in 14 head-to-heads: a figure a

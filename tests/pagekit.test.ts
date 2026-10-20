@@ -1248,10 +1248,10 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(widest).not.toBeNull();
     const ratio = (r: { a: number | null; b: number | null }) => (r.a ?? 0) / (r.b ?? 1);
     for (const r of rows) expect(ratio(r)).toBeLessThanOrEqual(ratio(widest));
-    // 32k to 256k beats 128k to 256k, though the second is the larger number of tokens
-    expect(ratio(widest)).toBe(8);
+    // 64k to 256k beats 128k to 256k, though the second is the larger number of tokens
+    expect(ratio(widest)).toBe(4);
     expect(widest.a).toBe(262144);
-    expect(widest.b).toBe(32768);
+    expect(widest.b).toBe(65536);
   });
 
   it('keeps the page\'s order on a tie, and has nothing to name when nothing differs', () => {
@@ -2488,7 +2488,7 @@ describe('what a reader gets for swapping the model they run for the current one
     expect(lighter).toContain('The weights are 5.7 GB against 5.0 GB, and the cache at that window is 1.1 GB against 4.8 GB.');
     // and the pair where the newer model costs memory says so rather than the other way
     const heavier = words(section('gemma-3-27b-q4', 'gemma-4-31b-q4'));
-    expect(heavier).toContain('It asks more of the machine: 26 GB at 32k of context against 20 GB.');
+    expect(heavier).toContain('It asks more of the machine: 23 GB at 32k of context against 20 GB.');
     expect(heavier).not.toContain('asks less');
     // and where nothing moves, neither claim is made
     const same = words(section('mistral-small-3.2-24b-q4', 'devstral-small-2-24b-q4'));
@@ -2497,11 +2497,14 @@ describe('what a reader gets for swapping the model they run for the current one
   });
 
   it('counts the machines each way, and names one to run the newer model on', () => {
-    // the swap that costs machines names both cheapest, since the reader is choosing
+    // the swap that costs machines counts both ways, and says where the cheapest does not move
     const costly = words(section('gemma-3-27b-q4', 'gemma-4-31b-q4'));
-    expect(costly).toContain('27 of the 37 machines priced here run it, against 30 for Gemma 3 27B it.');
-    expect(costly).toContain('The cheapest that runs it is the Radeon AI PRO R9700, 32GB at $1,299, card only, where Gemma 3 27B it starts at the Framework Desktop, 32GB at $1,269.');
-    expect(section('gemma-3-27b-q4', 'gemma-4-31b-q4')).toContain('href="/hardware/radeon-ai-pro-r9700-32/"');
+    expect(costly).toContain('28 of the 37 machines priced here run it, against 30 for Gemma 3 27B it');
+    expect(costly).toContain('the cheapest is the same either way: the Framework Desktop, 32GB at $1,269.');
+    // and where it does move, both are named, since the reader is choosing
+    const moved = words(section('qwen3-32b-q4', 'qwen3.8-27b-q4'));
+    expect(moved).toContain('The cheapest that runs it is the Framework Desktop, 32GB at $1,269, where Qwen3 32B starts at the Radeon AI PRO R9700, 32GB at $1,299, card only.');
+    expect(section('qwen3-32b-q4', 'qwen3.8-27b-q4')).toContain('href="/hardware/framework-desktop-385-32/"');
     // and the three ways nothing changes are three sentences, not one with a number in it
     expect(words(section('qwen3-8b-q4', 'qwen3.5-9b-q4'))).toContain('Every one of the 37 machines priced here runs both, from the Mac mini M6, 16GB at $899.');
     expect(words(section('qwen3-235b-a22b-2507-q4', 'qwen3.8-flash-next-q4'))).toContain('One of the 37 machines priced here runs either of them, and it is the same one: the Mac Studio M5 Ultra, 256GB at $10,799.');

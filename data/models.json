@@ -465,7 +465,7 @@
       "full_attention_layers": 8,
       "sliding_window_layers": 40,
       "sliding_window": 1024,
-      "note": "5 of every 6 layers use a 1024-token sliding window, so the KV cache barely grows with context."
+      "note": "8 of the 48 layers grow with the context and the other 40 stop at a 1,024-token window. All 48 carry eight KV heads at 256 wide, 8,192 bytes a token, so the windowing slows the growth rather than stopping it."
     },
     "capabilities": {
       "summarisation": "green",
@@ -980,7 +980,7 @@
     "active_params_b": 31.27,
     "quantisation": "Q4_K_M",
     "weights_gb": 19.6,
-    "kv_cache_gb_per_8k": 2.181,
+    "kv_cache_gb_per_8k": 1.51,
     "architecture": {
       "n_layers": 60,
       "n_kv_heads": 16,
@@ -988,7 +988,9 @@
       "full_attention_layers": 10,
       "sliding_window_layers": 50,
       "sliding_window": 1024,
-      "note": "5 of every 6 layers use a 1024-token sliding window."
+      "bytes_per_token_full": 8192,
+      "bytes_per_token_sliding": 16384,
+      "note": "10 of 60 layers grow with the context, at four KV heads by 512 wide; the other 50 stop at a 1,024-token window, at sixteen heads by 256."
     },
     "capabilities": {
       "summarisation": "unknown",

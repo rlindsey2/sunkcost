@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-19
+Last checked: 2026-10-20
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -65,7 +65,7 @@ From `data/models.json`, and the script prints this list from the data rather th
 | --- | --- |
 | `weights_gb` | the actual file sizes on the model's Hugging Face repo, at the quantisation being entered |
 | `kv_cache_gb_per_8k` | computed from `architecture`; `validate-data.ts` recomputes it and fails if the two disagree |
-| `architecture` | `n_layers`, `n_kv_heads`, `head_dim` from the repo's `config.json` |
+| `architecture` | `n_layers`, `n_kv_heads`, `head_dim` from the repo's `config.json`. Read `layer_types` or `sliding_window_pattern` for the split between the layers that grow and the ones a window caps, and read `num_global_key_value_heads` and `global_head_dim` before assuming the two share a geometry: where a config states them, the growing layers want `bytes_per_token_full` and the capped ones `bytes_per_token_sliding`, and leaving them out overstated Gemma 4 31B's cache twofold until 2026-10-20 |
 | `params_b`, `active_params_b` | the model card; the two differ only on a mixture-of-experts model |
 | `max_context_tokens` | the model card, with `max_context_note` for anything conditional |
 | `license` | the repo |
@@ -79,6 +79,31 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-20 · Nothing new to price, and the one new name is out on three counts
+
+The searches and Hugging Face's trending and most-downloaded lists return the names yesterday's entry already
+covers. The one repository created since that check is
+[orcarouter/OrcaCyber-Nano-1.0](https://huggingface.co/orcarouter/OrcaCyber-Nano-1.0), 2026-10-16, with 18,606
+downloads: a cybersecurity and reverse-engineering tune of a Qwen base, published as GGUF by its own author. It
+is out on three counts rather than one. The licence is Qwen's own custom one, named in the repository as
+`license: other` with `license_name: qwen`. Its two usable builds are called `Mix-13G` at 12.99 GB and
+`Mix-15.7G` at 15.70 GB, mixed precisions this data carries no label for, with nothing else but a 2.06 GB Q8_0
+of a distilled variant and a 0.93 GB vision projector. And it is image-text-to-text and single-domain, so it
+answers neither the general question every row here is priced for nor the vision question the backlog now
+hands this agent.
+Artificial Analysis has no page for it and it is on no OpenRouter listing today.
+
+**Both open fields on yesterday's candidates are still open.** Artificial Analysis still 404s on
+`/models/lfm2-5-24b-a2b`, so LFM2.5 24B-A2B still wants only its index score, and OpenRouter still lists
+`liquid/lfm-2.5-24b-a2b` at $0.05 in / $0.70 out. Hy-Memory 30B-A3B is on no OpenRouter listing today, so it
+still has no token price for a pay-back to beat.
+
+**One field this file never asked for, and it cost a figure.** Settling the Gemma 3 question in seo/LOG.md today
+turned up that a model's full-attention layers can carry a different geometry from its windowed ones, declared as
+`num_global_key_value_heads` and `global_head_dim`. Every Gemma 4 config states them; `gemma-4-31b` was entered
+without them and overstated its cache twofold at a long window. The field table above now names them, and no
+other model here whose layers are windowed declares them: the eight configs were read today.
 
 ### 2026-10-19 · DeepSeek V4.1-Flash is ruled out on size at a figure of its own now, and Tencent published a GGUF for Hy-Memory 30B-A3B
 
