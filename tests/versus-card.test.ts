@@ -114,7 +114,13 @@ describe('the head-to-head card', () => {
   });
 
   it('says it on a model card too, where the cheapest machine that runs one is a card', () => {
-    const cheapest = (m: Parameters<typeof modelVersusCard>[0]) => runnersFor(m, data)[0]?.hw;
+    // one lookup per model, not one per side of every pair it is in: runnersFor()
+    // prices the model on every machine, and each model is in up to three pairs
+    const cheapestOf = new Map<string, ReturnType<typeof runnersFor>[number]['hw'] | undefined>();
+    const cheapest = (m: Parameters<typeof modelVersusCard>[0]) => {
+      if (!cheapestOf.has(m.id)) cheapestOf.set(m.id, runnersFor(m, data)[0]?.hw);
+      return cheapestOf.get(m.id);
+    };
     let seen = 0;
     for (const [a, b] of modelPairs(data)) {
       const onACard = [a, b].some((m) => cheapest(m)?.price_scope === 'card_only');

@@ -69,16 +69,16 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ### 2026-10-20 — LFM2.5 24B-A2B is priced here, and the page it gets has no head-to-head to give it
 The top backlog item wanted the best-sourced candidate as a row, and every figure in it was read again today off the sources
-themselves: Q4_K_M at 14.53 GB off the GGUF repository's file list, 40 layers with 10 of them attention at 8 KV heads by 64 off
-`config.json`, 24.0B total with 2.45B active and 131,072 tokens off the card, lfm1.0 off the repository metadata, and $0.05 /
-$0.70 off the OpenRouter listing, an exact rental match rather than a stand-in. Artificial Analysis still 404s on it, so the
-index score is `null` with a TODO and the five ratings wait on it. The page reads finished: 15 GB of weights, a Mac mini M6,
-24GB at $1,099 the cheapest of the 49 machines holding it at 32k, 24 tok/s there, 73 years to pay back, 17.2 GB at its own
-128k ceiling, and 65 pages linking in, mid-range among the six unscored pages' 55 to 71. What it has not got is a head-to-head,
-because all three pair rules are cut from the index and six models here are not on it; new backlog item below. Straight to
-main. Verified: 453 tests with the one model count they assert moved, typecheck clean, the full build with build:functions, 322
-pages every guard passing, 323 of 323 dated with 227 moved, the new page read rendered and its mentions on the leaderboard and
-the 24 GB size page read too. Next: Nemotron 3.5 Bolt 74B-A9B, the best-sourced of the three candidates left on that item.
+themselves: 14.53 GB of Q4_K_M off the GGUF repository's file list, 40 layers with 10 of them attention at 8 KV heads by 64 off
+`config.json`, 24.0B with 2.45B active and 131,072 tokens off the card, lfm1.0 off the repository metadata, and $0.05 / $0.70
+off OpenRouter, an exact rental match. Artificial Analysis still 404s on it, so the index score is `null` with a TODO and the
+five ratings wait on it. The page reads finished: a Mac mini M6, 24GB at $1,099 the cheapest of the 49 machines holding it at
+32k, 24 tok/s there, 73 years to pay back, 17.2 GB at its own 128k ceiling, 65 pages linking in. No head-to-head, because all
+three pair rules are cut from the index and six models here are not on it; new backlog item below. Straight to main, ef372b2.
+Verified: 453 tests, typecheck clean, the full build with build:functions, 322 pages every guard passing, 323 of 323 dated with
+227 moved, the new page and its two mentions elsewhere read rendered. That deploy failed and a second push fixed it: the 56th
+model took a card test that runs in 1.3 seconds here past vitest's 5-second default on the runner, where nearly every test is
+one assertion over every row of the data, so the suite allows 30 seconds now. Next: Nemotron 3.5 Bolt 74B-A9B.
 
 ### 2026-10-20 — The Gemma cache figures say what the configs say, and Gemma 4 31B needs half the cache it claimed
 The top backlog item asked whether Gemma 3 12B's note was wrong or its architecture fields were. The config answers: `unsloth/
