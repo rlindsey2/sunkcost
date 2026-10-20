@@ -99,6 +99,21 @@ Artificial Analysis has no page for it and it is on no OpenRouter listing today.
 `liquid/lfm-2.5-24b-a2b` at $0.05 in / $0.70 out. Hy-Memory 30B-A3B is on no OpenRouter listing today, so it
 still has no token price for a pay-back to beat.
 
+**LFM2.5 24B-A2B is a row now rather than a candidate.** `lfm2.5-24b-a2b-q4` is in `data/models.json`, and every
+figure in it was read again today off the sources themselves: the GGUF repository's own file list for Q4_K_M at
+14.53 GB, the base repository's `config.json` for 40 layers with `full_attention` at every fourth from index 2, so
+10 of them, at 8 KV heads by a `head_dim` of 64 the config omits and 2048 / 32 gives, the card for 24.0B total,
+2.45B active and 131,072 tokens, the repository metadata for `license_name: lfm1.0`, and the OpenRouter model list
+for $0.05 in / $0.70 out at 128,000 tokens. Two fields are still open and are `null` with a TODO in the row:
+`artificialanalysis.ai/models/lfm2-5-24b-a2b` is a 404 again today where the 2.6B's page answers, so there is no
+index score, and the five capability ratings wait on one.
+
+**One figure the card states that no row here can hold.** It claims 184 tok/s "on an Apple M5 Max". This site
+prices seven M5 Max machines across two memory bandwidths, 460 GB/s at 36 GB and 614 GB/s above it, and the claim
+names no memory size, no quantisation and no context, so there is no model-and-machine pair to put it on.
+`data/throughput.json` is unchanged and the page quotes the speed worked out from bandwidth, as it does for every
+model nobody has published a placeable measurement for.
+
 **One field this file never asked for, and it cost a figure.** Settling the Gemma 3 question in seo/LOG.md today
 turned up that a model's full-attention layers can carry a different geometry from its windowed ones, declared as
 `num_global_key_value_heads` and `global_head_dim`. Every Gemma 4 config states them; `gemma-4-31b` was entered

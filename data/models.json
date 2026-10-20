@@ -2938,5 +2938,58 @@
       "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev"
     ],
     "TODO": "Capability ratings needed. Active parameters inferred from the name, not stated on the card."
+  },
+  {
+    "id": "lfm2.5-24b-a2b-q4",
+    "display_name": "LFM2.5 24B-A2B",
+    "family": "Liquid",
+    "generation": "current",
+    "params_b": 24.0,
+    "active_params_b": 2.45,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 14.53,
+    "kv_cache_gb_per_8k": 0.168,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 8,
+      "head_dim": 64,
+      "full_attention_layers": 10,
+      "note": "Only 10 of 40 layers are attention; the rest are short convolutions that keep a fixed-size state. head_dim derived from hidden_size ÷ heads, as the config omits it."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Liquid's largest LFM2.5: 24B total with 2.45B active, post-trained for agents and tool use. It reasons before answering, so a reply costs more output tokens than its size suggests.",
+    "cloud_equivalent": {
+      "name": "LFM2.5 24B-A2B",
+      "input_price_per_mtok": 0.05,
+      "output_price_per_mtok": 0.7,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/liquid/lfm-2.5-24b-a2b",
+      "is_exact_match": true,
+      "checked": "2026-10-20"
+    },
+    "license": "LFM 1.0 (see repo)",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-10-20",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
+      "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]

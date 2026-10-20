@@ -39,10 +39,18 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** LFM2.5 24B-A2B, Nemotron 3.5
-      Bolt 74B-A9B, Beam 1.0 at UD-Q4_K_XL and Reka Edge 2603 were all held as Ryan's call; they are the
-      agent's now (seo/MODEL-WATCH.md has the figures and sources). One model per run, with its model page,
-      sitemap entry and head-to-heads. Vision models: price the text side and say on the page that it is.
+- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** Nemotron 3.5 Bolt 74B-A9B, Beam 1.0
+      at UD-Q4_K_XL and Reka Edge 2603 are what is left of this item (seo/MODEL-WATCH.md has the figures and
+      sources). One model per run, with its model page and sitemap entry. Vision models: price the text side
+      and say on the page that it is. Beam and Nemotron are both publisher builds below four bits, which is a
+      quantisation label this data has not carried before.
+
+- [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
+      — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
+      the models the intelligence index has scored, so an unscored model is in no pair however well sourced it
+      is. The memory rule needs no score: it pairs two models that ask a machine for the same memory, which is
+      a footprint and a family name. Running that one rule over every model with a footprint would give the six
+      a page each, and the searches it answers are the ones the Search Console notes name.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
@@ -58,6 +66,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
+
+### 2026-10-20 — LFM2.5 24B-A2B is priced here, and the page it gets has no head-to-head to give it
+The top backlog item wanted the best-sourced candidate as a row, and every figure in it was read again today off the sources
+themselves: Q4_K_M at 14.53 GB off the GGUF repository's file list, 40 layers with 10 of them attention at 8 KV heads by 64 off
+`config.json`, 24.0B total with 2.45B active and 131,072 tokens off the card, lfm1.0 off the repository metadata, and $0.05 /
+$0.70 off the OpenRouter listing, an exact rental match rather than a stand-in. Artificial Analysis still 404s on it, so the
+index score is `null` with a TODO and the five ratings wait on it. The page reads finished: 15 GB of weights, a Mac mini M6,
+24GB at $1,099 the cheapest of the 49 machines holding it at 32k, 24 tok/s there, 73 years to pay back, 17.2 GB at its own
+128k ceiling, and 65 pages linking in, mid-range among the six unscored pages' 55 to 71. What it has not got is a head-to-head,
+because all three pair rules are cut from the index and six models here are not on it; new backlog item below. Straight to
+main. Verified: 453 tests with the one model count they assert moved, typecheck clean, the full build with build:functions, 322
+pages every guard passing, 323 of 323 dated with 227 moved, the new page read rendered and its mentions on the leaderboard and
+the 24 GB size page read too. Next: Nemotron 3.5 Bolt 74B-A9B, the best-sourced of the three candidates left on that item.
 
 ### 2026-10-20 — The Gemma cache figures say what the configs say, and Gemma 4 31B needs half the cache it claimed
 The top backlog item asked whether Gemma 3 12B's note was wrong or its architecture fields were. The config answers: `unsloth/
@@ -269,31 +290,3 @@ of the mistake, reverted: a stale hash re-dated its page, and a page edited with
 committed wrote a new hash and today's date. The step fails on either, and a matching hash keeps its
 date, so a later build cannot trip it. Watch: Kolibri 1, 78.1B/3.46B, Apache 2.0, fits here but ships
 FP8 only, with no four-bit listing. Next: the three over-length head-to-head titles.
-
-### 2026-10-04 — Two unpriced machines and one size page say what they would have to cost
-Every pay-back here divides a price by a daily saving, so the two unpriced machines got the same non-answer,
-"cannot be computed yet", and /how-much-memory/192gb/, whose only machine is one, gave up on the question
-this site exists to answer. A saving needs no price, so the sum runs backwards. At 500k tokens a day the
-Framework Desktop, 192GB would have to cost $154 to come back inside two years, on Qwen3.8 27B at $0.21 a
-day; at 20M, agents most of the day, $5,191 on Qwen3.5 122B-A10B. The Mac Studio M5 Ultra, 512GB needs $175.
-Both mark the borrowed power behind the electricity. The item's link half is shut: no pair rule reaches an
-unpriced machine, and the 11 pages naming the Framework 192GB in a price table would be stuffing to link.
-Straight to main. Verified: 452 tests, typecheck clean, the full build, 320 pages every guard passing, 321
-of 321 dated with those 3 moved, three read rendered, and ten mutations of `checkPriceToBeat()`, which
-prices each machine at its own printed ceiling and asks the forward sum when it breaks even, all stopping
-the build. Watch done: Index-Translate-35B-A3B has 21.7 GB from two uploads and no index score. Next: no
-workflow in .github runs on pull_request.
-
-### 2026-10-03 — The four chip-step head-to-heads offer the two size pages they are about
-A memory-tier pair holds the silicon equal and offers both its size pages. The four pairs where the maker cut
-the chip as well as the memory fall outside that rule and offered neither rung, so the one page here whose
-whole subject is 36 GB against 48 sent a reader to no size page at all. All four now offer both, and each
-says what else is sold at the size the step buys: 4 machines at 48 GB from the Mac mini M5 Pro at $2,299,
-$800 under the Mac Studio at 307 GB/s against 614; 7 at 64 GB and 10 at 128 GB, from $259 and $1,251 under
-their own box at 256 GB/s both ways; at 256 GB only the column itself. /how-much-memory/36gb/ goes from 5
-inbound to 6, closing the item; it stays the thinnest because one machine on sale sits at 36 GB. Straight to
-main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages every guard
-passing, 321 of 321 dated with those 4 moved, all four read rendered, and seven mutations of
-`checkStepSizeOffers()`, which rebuilds a size's machines from `data.hardware` and reads every figure back
-off the rendered paragraph. Watch done: MiMo-V2.6-Flash has its first real four-bit listing, MXFP4 at 157 to
-167 GB from two repos, and the 185.40 GB Q4_K_M once quoted for it does not exist. Next: the 192 GB page.

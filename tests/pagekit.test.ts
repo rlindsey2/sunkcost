@@ -2377,7 +2377,7 @@ describe('the machines a model page’s table has no row for', () => {
       pairs += held.length;
       for (const r of reach) expect([m.id, r.total]).toEqual([m.id, (families.get(r.family) ?? []).length]);
     }
-    expect(pages).toBe(55);
+    expect(pages).toBe(56);
     expect(pairs).toBeGreaterThan(1900);
   });
 
