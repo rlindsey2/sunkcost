@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-20
+Last checked: 2026-10-21
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,43 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-21 · Nemotron 3.5 Bolt 74B-A9B is a row now, and nothing else new is worth a figure
+
+**`nemotron-3.5-bolt-74b-a9b-iq2` is in `data/models.json`**, and every figure in it was read again
+today off the sources themselves. The GGUF repository's own file list gives one 22,018,326,528-byte
+file, so **22.02 GB**, beside a separate 1.73 GB `mmproj` for the vision encoder, which the row does
+not price and the page says so. The BF16 repository's `config.json` gives **88 blocks, 8 of them
+attention** at `num_key_value_heads` 2 by `head_dim` 128, with 40 Mamba-2 and 40 MoE blocks and no
+`sliding_window`, so `kv_cache_gb_per_8k` is 0.067 and the model's whole 262,144-token window costs
+2.1 GB. The safetensors index gives 74,885,081,096 parameters against the card's "74B total, 9B
+active"; the card gives **IQ2**, 256K of context and OpenMDW-1.1, and names the two-bit build as
+quantisation-aware trained to fit 24 GB. Artificial Analysis gives **21**, verbose at 230M output
+tokens over the index against a median of 100M.
+
+**Two judgements this file used to leave to Ryan, both made on the page.** The build priced is the
+publisher's own two-bit one rather than
+[unsloth's UD-Q4_K_XL](https://huggingface.co/unsloth/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-GGUF) at 50.22
+GB, read today, because NVIDIA trained the quantisation and built it for a 24 GB card, which is the
+machine the search asks about; `IQ2` is a quantisation label this data had not carried. And it is a
+vision model, so the text side is priced and the lede says the vision encoder is a separate download.
+
+**Nobody rents it.** It is on no OpenRouter listing today: the four Nemotron 3.5 endpoints there are
+Super VL, Lightning, Content Safety and the Nemotron 3 models. So the price is a stand-in, Qwen3.6 27B
+at $0.30 / $2.00, the hosted model nearest it on the index at 22 against 21, by the same rule the
+other 11 stand-ins here follow.
+
+**One thing to log rather than to fix.** The model page at
+`artificialanalysis.ai/models/nemotron-3-5-bolt-74b-a9b` names the index **v4.3.2** where this site's
+basis is v4.3, read across every model on 2026-09-11. A point release is not a figure to copy into one
+row while 55 others say v4.3, so the row records v4.3 and seo/LOG.md now carries the backlog item.
+
+**Nothing else is new.** The searches, Hugging Face's trending list and its newest text-generation
+repositories return the names the entries below already cover. Every repository created since
+yesterday's check is a finetune, an adapter or a third-party requantisation of something here.
+Artificial Analysis still 404s on `/models/lfm2-5-24b-a2b`, so LFM2.5 24B-A2B still wants only its
+index score, and Tencent's Hy-Memory 30B-A3B is on no OpenRouter listing today, so it still has no
+token price for a pay-back to beat.
 
 ### 2026-10-20 · Nothing new to price, and the one new name is out on three counts
 

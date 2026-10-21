@@ -2991,5 +2991,62 @@
       "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "nemotron-3.5-bolt-74b-a9b-iq2",
+    "display_name": "Nemotron 3.5 Bolt 74B-A9B",
+    "family": "Nemotron",
+    "generation": "current",
+    "params_b": 74.89,
+    "active_params_b": 9.0,
+    "quantisation": "IQ2",
+    "weights_gb": 22.02,
+    "kv_cache_gb_per_8k": 0.067,
+    "architecture": {
+      "n_layers": 88,
+      "n_kv_heads": 2,
+      "head_dim": 128,
+      "full_attention_layers": 8,
+      "note": "Only 8 of the 88 blocks are attention. Forty are Mamba-2, which keep a fixed-size state whatever the context, and forty are mixture-of-experts. The whole 256k window costs about 2.1 GB."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. NVIDIA quantised this one itself, to two bits with quantisation-aware training, so that a 74B model fits in 24 GB. It reads images and video as well as text, and the vision encoder is a separate 1.7 GB download this page does not price.",
+    "cloud_equivalent": {
+      "name": "Qwen3.6 27B",
+      "input_price_per_mtok": 0.3,
+      "output_price_per_mtok": 2.0,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.6-27b",
+      "is_exact_match": false,
+      "checked": "2026-10-21",
+      "stand_in": true,
+      "stand_in_for": "qwen3.6-27b-q4",
+      "stand_in_basis": "nearest_score",
+      "note": "Nobody rents Nemotron 3.5 Bolt by the token. Priced as Qwen3.6 27B, the hosted model closest to it on the intelligence index (22 against 21)."
+    },
+    "license": "OpenMDW 1.1",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": 1,
+      "score": 21,
+      "score_note": "very verbose: 230M output tokens over the index against a median of 100M",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 21 (very verbose: 230M output tokens over the index against a median of 100M)",
+      "url": "https://artificialanalysis.ai/models/nemotron-3-5-bolt-74b-a9b",
+      "checked": "2026-10-21",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+      "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]

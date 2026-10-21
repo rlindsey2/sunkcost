@@ -1,6 +1,6 @@
 # SEO log
 
-Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-09-28 is in
+Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-10-07 is in
 seo/archive/ and is not required reading; it grew to 10,000 lines, which is why this one has rules.
 
 ## Rules for this file
@@ -39,11 +39,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** Nemotron 3.5 Bolt 74B-A9B, Beam 1.0
-      at UD-Q4_K_XL and Reka Edge 2603 are what is left of this item (seo/MODEL-WATCH.md has the figures and
-      sources). One model per run, with its model page and sitemap entry. Vision models: price the text side
-      and say on the page that it is. Beam and Nemotron are both publisher builds below four bits, which is a
-      quantisation label this data has not carried before.
+- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** Beam 1.0 at UD-Q4_K_XL and Reka
+      Edge 2603 are what is left of this item (seo/MODEL-WATCH.md has the figures and sources). One model per
+      run, with its model page and sitemap entry. Beam would be the largest thing priced here at 306.53 GB,
+      which only the two 512 GB Macs hold, and its rental price is a spread, so the row has to name the
+      provider as well as the quantisation. Reka Edge 2603 is a vision model: price the text side, as
+      Nemotron 3.5 Bolt now does, and say so on the page.
 
 - [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -51,6 +52,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       is. The memory rule needs no score: it pairs two models that ask a machine for the same memory, which is
       a footprint and a family name. Running that one rule over every model with a footprint would give the six
       a page each, and the searches it answers are the ones the Search Console notes name.
+
+- [ ] Artificial Analysis has moved to **index v4.3.2**, and 56 rows here say v4.3. Every model page says "On
+      the Artificial Analysis Intelligence Index v4.3 it scores N", out of `defaults.frontier_basis.name`, and
+      the 50 scores under it were read on 2026-09-11. Nemotron 3.5 Bolt's was read on the v4.3.2 page today and
+      recorded as v4.3 so that one row does not claim a scale the other 55 are not on. The fix is to re-read the
+      scores off the leaderboard and move the basis with them, which is a data edit over every scored row.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
@@ -66,6 +73,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
+
+### 2026-10-21 — Nemotron 3.5 Bolt 74B-A9B is priced here, and the three pages it retired still answer
+The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 22.02 GB off the GGUF repository's
+file list, 88 blocks with 8 of them attention at 2 KV heads by 128 off the BF16 `config.json`, 74.89B with 9B active, IQ2 and 256k off the card,
+OpenMDW-1.1 off its front matter, 21 off Artificial Analysis. Two judgements the watch held for Ryan are made on the page: NVIDIA's own two-bit build
+is priced rather than unsloth's 50.22 GB four-bit, because that quantisation is trained and built for a 24 GB card, and the vision side is a separate
+1.7 GB download the row does not price. Nobody rents it, so the price is a stand-in, Qwen3.6 27B at 22 against 21. The page reads finished: 41 of the
+56 machines hold it at 32k, the cheapest a Framework Desktop, 32GB at $1,269 and 48 tok/s, 17 years to pay back, its whole 256k window 2.1 GB of
+cache, 94 pages linking in. Adding it retired three head-to-heads the pair rules chose by score and by memory, so `RETIRED_PAGES` 301s all three to
+the model page their address names first, and `checkRetiredPages()` stops the build on a page in the committed ledger it no longer writes and does not
+redirect. Straight to main. Verified: 453 tests, one of which counted 56 models by hand and now counts the data, typecheck and validate clean, the
+full build with build:functions, 324 pages every guard passing, four mutations of the new guard stopping the build, the page read rendered. Next: Beam
+1.0 and Reka Edge 2603 on the watch.
 
 ### 2026-10-20 — LFM2.5 24B-A2B is priced here, and the page it gets has no head-to-head to give it
 The top backlog item wanted the best-sourced candidate as a row, and every figure in it was read again today off the sources
@@ -264,29 +284,3 @@ build:functions, 320 pages every guard passing, 321 of 321 dated with those 102 
 rendered, the phrase gone from all 320, and ten mutations of `checkRatingBlocks()` all stopping the build.
 Closed, not done: the three over-length titles, 1 to 3 characters past 60 with no cut that keeps every name a
 searcher types. Watch: Beam, 501B-A23B, Apache 2.0, waits on its weights. Next: the same dots, wordless.
-
-### 2026-10-06 — 56 machine pages say how fast the machine is, not only what fits in it
-A machine page answered what runs on it and whether it pays back, never how fast. The tok/s for the
-strongest model it holds sat in the answer block and the table's first row, neither of them where a
-search result reads: the first paragraph named that model and went to the money, the description
-spent its 155 characters on the count and the pay-back. Both carry it now, each saying whether the
-figure was measured or worked out from bandwidth, and none of the 56 is a measurement. The Mac
-Studio M5 Max, 128GB opens on Qwen3.8 27B at 25 tok/s at a 32k window, the RTX 3060, 12GB at 38 on
-Gemma 4 12B. Straight to main. Verified: 452 tests, typecheck clean, the full build with
-build:functions, 320 pages every guard passing, 321 of 321 dated with those 56 moved and no others,
-six read rendered, and eight mutations of `checkMachineLedeSpeeds()`, which reads each speed back off
-that machine's own first row. Watch: Kolibri 1 has a 47.5 GB four-bit build and wants two fields now,
-not one. Next: the over-length titles, read this run and left; see the backlog.
-
-### 2026-10-05 — A pull request is tested before it is merged, not by the push that deploys it
-`deploy.yml` was the only workflow and runs on a push to main, so a PR's first test was the push that
-published it: a broken guard would have been found by deploying. PR #20 adds `checks.yml` on
-`pull_request`: `npm ci`, the typecheck the deploy skips, 452 tests, the full build with every page
-guard, and one check it never had. `seo/page-dates.json` is the only committed file the build
-rewrites, and a page changed without its ledger entry deploys and crawls but takes no `lastmod` into
-the sitemap, so the diff the build leaves is the only sign. A PR because only one can prove a
-`pull_request` trigger fires, and #20's run did. Verified in that order locally, clean, then both ways
-of the mistake, reverted: a stale hash re-dated its page, and a page edited with the ledger as
-committed wrote a new hash and today's date. The step fails on either, and a matching hash keeps its
-date, so a later build cannot trip it. Watch: Kolibri 1, 78.1B/3.46B, Apache 2.0, fits here but ships
-FP8 only, with no four-bit listing. Next: the three over-length head-to-head titles.

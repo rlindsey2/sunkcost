@@ -2377,7 +2377,8 @@ describe('the machines a model page’s table has no row for', () => {
       pairs += held.length;
       for (const r of reach) expect([m.id, r.total]).toEqual([m.id, (families.get(r.family) ?? []).length]);
     }
-    expect(pages).toBe(56);
+    // every model this site prices is held by at least one machine on it
+    expect(pages).toBe(data.models.length);
     expect(pairs).toBeGreaterThan(1900);
   });
 

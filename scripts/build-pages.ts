@@ -7525,7 +7525,24 @@ const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`;
 // build actually writes, both ways, so neither a redirect to a page that has gone nor a
 // new family of pages without one can ship.
 const PARENT_REDIRECTS: [from: string, to: string][] = [['/models/', '/leaderboard/']];
-const redirectsTxt = `${PARENT_REDIRECTS.map(([from, to]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`).join('\n')}\n`;
+
+// A head-to-head is paired by rule rather than by hand, so a model added to the data can
+// retire one: the ladder re-sorts around the new score, or a memory neighbour is
+// displaced. By then the address has been crawled, and a page that becomes a 404 takes
+// whatever it had earned with it. So a retired address keeps answering, with a 301 to
+// the page nearest the question it was asked: the model page of the side it names first,
+// which carries that model's current match-ups. checkRetiredPages() reads the list back
+// against the committed ledger, so the next retirement cannot be a silent one.
+const RETIRED_PAGES: [from: string, to: string][] = [
+  // 2026-10-21, to Nemotron 3.5 Bolt: it scores between Qwen3.6 27B and Qwen3.6 35B-A3B,
+  // which were neighbours on the index until it arrived, and at 32k it asks a machine for
+  // the memory that made Gemma 4 31B the nearest model to the two Qwen3 30B-A3B builds.
+  ['/compare/qwen3-6-27b-q4-vs-qwen3-6-35b-a3b-q4/', '/models/qwen3.6-27b-q4/'],
+  ['/compare/gemma-4-31b-q4-vs-qwen3-30b-a3b-2507-q4/', '/models/gemma-4-31b-q4/'],
+  ['/compare/gemma-4-31b-q4-vs-qwen3-coder-30b-a3b-q4/', '/models/gemma-4-31b-q4/'],
+];
+const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
+const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;
 const nextLedger = nextDates(recordedDates, fingerprints, today);
 
 /**
@@ -10502,6 +10519,53 @@ function checkRedirects() {
   );
 }
 
+/**
+ * The other half of the redirects: addresses this site used to answer and no longer
+ * writes. Nothing retires a page here by hand, so the evidence is the committed ledger
+ * in seo/page-dates.json, which holds every path the last build wrote. A path in it that
+ * this build has no page for is a page coming down, and it needs a 301 before it goes.
+ *
+ * So this holds five claims. Every path the ledger has and this build does not is on the
+ * list. No retired address shadows a page this build writes, which would make the
+ * redirect answer in front of a real page. Every target is a page this build writes.
+ * None is listed twice, or in both lists, because the second line would never run. And
+ * the file says each address with and without its trailing slash, as the parent
+ * redirects do.
+ *
+ * The ledger is the build's own output, so a second build in the same working tree reads
+ * a ledger the first one already rewrote and sees nothing missing. That is why the check
+ * is worth having in CI, where the ledger is the committed one and a retirement without
+ * a redirect fails the run.
+ */
+function checkRetiredPages() {
+  const problems: string[] = [];
+  const pages = new Set(paths);
+  const named = new Set(RETIRED_PAGES.map(([from]) => from));
+  const parents = new Set(PARENT_REDIRECTS.map(([from]) => from));
+  for (const path of Object.keys(recordedDates?.pages ?? {}))
+    // the home page is in the ledger and not in `paths`: the calculator is a static file
+    // Vite builds, not a page this script writes
+    if (path !== '/' && !pages.has(path) && !named.has(path))
+      problems.push(`${path} was a page on this site and is not one now, and nothing sends a reader who has the address anywhere`);
+  for (const [from, to] of RETIRED_PAGES) {
+    if (pages.has(from)) problems.push(`${from} is a page this build writes, and a redirect would answer in front of it`);
+    if (!pages.has(to)) problems.push(`${from} is sent to ${to}, which is not a page this build writes`);
+    if (parents.has(from)) problems.push(`${from} is redirected twice, and the second line is dead`);
+    for (const form of [from.replace(/\/$/, ''), from])
+      if (!redirectsTxt.split('\n').includes(`${form} ${to} 301`))
+        problems.push(`${form} is not in the redirects file, so only one of its two forms is answered`);
+  }
+  if (named.size !== RETIRED_PAGES.length) problems.push('one retired address is listed twice, and the second line is dead');
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 6).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in the redirects for the pages that have come down`);
+  }
+  console.log(
+    `  ${RETIRED_PAGES.length} addresses this site used to answer send a reader to the page nearest what they asked, and every page in the ledger is either still written or on that list`,
+  );
+}
+
 checkMeta();
 checkDescriptionFigures();
 checkLinks();
@@ -10512,6 +10576,7 @@ checkMatchUpSiblings();
 checkCanonicals();
 checkPageSubjects();
 checkRedirects();
+checkRetiredPages();
 checkOgCards();
 checkFonts();
 checkCounts();
