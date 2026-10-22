@@ -2250,8 +2250,13 @@ function checkLeaderboardLinks() {
       // the two pages answer the same question differently.
       const shorter = machinesShorter(m, data)[0];
       if (!shorter) {
-        if (row.includes('/?hw=')) problems.push(`/leaderboard/ opens the calculator for ${m.display_name}, which nothing on the list runs`);
-        else if (!row.includes('nothing on the list')) problems.push(`/leaderboard/ does not say that nothing on the list runs ${m.display_name}`);
+        if (row.includes('/?hw=')) problems.push(`/leaderboard/ opens the calculator for ${m.display_name}, which nothing still sold runs`);
+        else if (!row.includes('nothing still sold')) problems.push(`/leaderboard/ does not say that nothing still sold runs ${m.display_name}`);
+        // and where a machine outside that set does hold it, the note says which and why,
+        // so the empty cell is not read as nothing on the site running it at all
+        const held = offMarketHolders(m, CTX);
+        if (held.length && !notes.some((p) => p.includes(esc(m.display_name)) && p.includes('fits nothing still sold')))
+          problems.push(`/leaderboard/ leaves ${m.display_name} with no machine and no note, where ${andList(held.map((h) => shortHardwareLabel(h)))} ${held.length === 1 ? 'holds' : 'hold'} it`);
         continue;
       }
       const wantShort = `<a href="/hardware/${esc(shorter.hw.id)}/">${esc(hardwareLabel(shorter.hw))}</a> <a class="dim" href="${esc(calcLink({ hw: shorter.hw.id, model: m.id, ctx: shorter.ctx }, data))}">${fmtUsd(shorter.hw.price_usd)}</a>`;
@@ -2767,12 +2772,28 @@ function leaderboard(): string {
   <td class="c-score"><span class="bar"><span style="width:${((score / max) * 100).toFixed(1)}%"></span></span><b>${score}</b>${m.frontier_equivalent?.estimated ? '<abbr title="Artificial Analysis estimated this score rather than running the full suite">*</abbr>' : ''}</td>
   <td class="c-tier">${tierScale(m, data)} ${tierLabel(m, data)}</td>
   <td class="c-gb">${fmtGb(m.weights_gb)}</td>
-  <td class="c-hw">${cheapest ? hwCell(cheapest.hw, m, null) : shorter ? hwCell(shorter.hw, m, shorter.ctx) : '<span class="dim">nothing on the list</span>'}</td>
+  <td class="c-hw">${cheapest ? hwCell(cheapest.hw, m, null) : shorter ? hwCell(shorter.hw, m, shorter.ctx) : '<span class="dim">nothing still sold</span>'}</td>
   <td class="c-vs">${next ? `<a href="/compare/${slug(m.id)}-vs-${slug(next.id)}/">vs ${esc(next.display_name)}</a>` : ''}</td>
 </tr>`)
     .join('');
 
   const shortened = placed.filter((p) => p.shorter);
+  // And the rows where no window on any machine still sold reaches the model. The cell
+  // there can only say the column has no answer, which read as "nothing here runs it"
+  // while two 512 GB Macs hold Beam 1.0: one discontinued, one unpriced. So the note
+  // names what does hold it and why the column leaves those machines out.
+  const offMarket = placed
+    .filter((p) => !p.cheapest && !p.shorter)
+    .map(({ m }) => ({ m, held: offMarketHolders(m, leaderCtx) }))
+    .filter(({ held }) => held.length > 0);
+  const offMarketNote = ({ m, held }: { m: Model; held: Hardware[] }) => {
+    const why = OFF_MARKET_REASONS.map((r) => {
+      const n = held.filter(r.has).length;
+      return n ? `${numberWord(n)} ${r.short}` : '';
+    }).filter(Boolean);
+    const one = held.length === 1;
+    return `${esc(m.display_name)} fits nothing still sold at any window: the ${one ? 'one machine' : `${numberWord(held.length)} machines`} here that ${one ? 'holds' : 'hold'} it ${one ? 'is' : 'are'} ${andList(why)}, and <a href="/models/${esc(m.id)}/">its own page</a> prices ${one ? 'it' : 'them'}`;
+  };
 
   // The hosted models sit at the top of the table for scale, and each of them used to
   // carry the sentence that said so. On a wide screen that is one line inside a row;
@@ -2814,7 +2835,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Score</th><th>Class</th><th>Weights</th><th>Cheapest machine that runs it</th><th>Next down</th></tr></thead>
 <tbody>${hostedHeading}${frontierRows}${rows}</tbody>
 </table>`, { fig: 1, labels: { 4: 'Cheapest', 5: 'Then' } })}
-${shortened.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at. ${shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`).join('. ')}.</p>` : ''}
+${shortened.length || offMarket.length ? `<p class="note">Each machine named is the cheapest that holds that model at the ${ctxLabel(leaderCtx)} context the calculator starts at, of the ${machinesConsidered(data).length} machines here still sold at a published price. ${[...shortened.map(({ m, shorter }) => `${esc(m.display_name)} fits nowhere at that length: its row names the machine that holds it at ${ctxLabel(shorter!.ctx)}, which is marked beside the price`), ...offMarket.map(offMarketNote)].join('. ')}.</p>` : ''}
 ${unplaced.length ? `<h2>Models the index has not scored yet</h2>
 <p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <h2>How to read the scores</h2>
@@ -3250,8 +3271,13 @@ function missedMachinesSection(m: Model, rows: MissedMachine[], only: Hardware |
     ? ''
     : ` <a href="/models/${esc(top.id)}/">${esc(top.display_name)}</a> is the strongest model ${counts.get(top.id) === rows.length ? 'every one of them holds' : `${numberWord(counts.get(top.id) ?? 0)} of the ${numberWord(rows.length)} hold`}, and it scores ${top.frontier_equivalent!.score} on the intelligence index against this model's ${mine}.${allHigher ? ` So every machine that cannot hold ${esc(m.display_name)} runs one that scores higher than it.` : ''}`;
 
-  const cta = top
-    ? `\n<p><a class="cta" href="${esc(calcLink({ hw: nearest.hw.id, model: top.id }, data))}">Price the ${esc(hardwareLabel(nearest.hw))} on ${esc(top.display_name)} instead</a></p>`
+  // The button offers one machine, so the model on it is that machine's own
+  // strongest rather than the one most rows share: the two are the same wherever
+  // the nearest machine is no roomier than the rest, and where it is roomier it
+  // holds something better than they do.
+  const nearestAlt = alt.get(nearest.hw.id) ?? null;
+  const cta = nearestAlt
+    ? `\n<p><a class="cta" href="${esc(calcLink({ hw: nearest.hw.id, model: nearestAlt.id }, data))}">Price the ${esc(hardwareLabel(nearest.hw))} on ${esc(nearestAlt.display_name)} instead</a></p>`
     : '';
 
   const alsoHold = offMarketHoldersLine(m, ctx);
@@ -7540,6 +7566,9 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   ['/compare/qwen3-6-27b-q4-vs-qwen3-6-35b-a3b-q4/', '/models/qwen3.6-27b-q4/'],
   ['/compare/gemma-4-31b-q4-vs-qwen3-30b-a3b-2507-q4/', '/models/gemma-4-31b-q4/'],
   ['/compare/gemma-4-31b-q4-vs-qwen3-coder-30b-a3b-q4/', '/models/gemma-4-31b-q4/'],
+  // 2026-10-22, to Qwen3.8 27B: Beam 1.0 scores 30, between it and Inkling Small, which
+  // were neighbours on the index until it arrived.
+  ['/compare/qwen3-8-27b-q4-vs-inkling-small-ud-q4/', '/models/qwen3.8-27b-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;

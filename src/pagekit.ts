@@ -1955,6 +1955,11 @@ export function modelVerdict(
   const sa = a.frontier_equivalent?.score ?? null;
   const sb = b.frontier_equivalent?.score ?? null;
   const ctxK = Math.round(data.defaults.context.default_tokens / 1024);
+  // Every machine named in this paragraph is drawn from the set the table below
+  // counts out of, so a model nothing on sale holds says which set missed it:
+  // two 512 GB Macs hold Beam 1.0, one discontinued and one unpriced, and
+  // "no machine on this list" read as a claim about all 56.
+  const sold = `${machinesConsidered(data).length} machines here still sold at a published price`;
 
   if (sa != null && sb != null) {
     out.push(
@@ -1991,10 +1996,10 @@ export function modelVerdict(
     const runner = (ca ?? cb)!;
     const [runs, missing] = ca ? [a.display_name, b.display_name] : [b.display_name, a.display_name];
     out.push(
-      `No machine on this list runs ${missing} at ${ctxK}k of context. ${runs} runs on the ${shortHardwareLabel(runner.hw)}, from ${fmtUsd(runner.hw.price_usd)}.${cardPriceNote([runner.hw])}`,
+      `None of the ${sold} runs ${missing} at ${ctxK}k of context. ${runs} runs on the ${shortHardwareLabel(runner.hw)}, from ${fmtUsd(runner.hw.price_usd)}.${cardPriceNote([runner.hw])}`,
     );
   } else {
-    out.push(`No machine on this list runs either model at ${ctxK}k of context.`);
+    out.push(`None of the ${sold} runs either model at ${ctxK}k of context.`);
   }
 
   const sameStart = !!ca && !!cb && ca.hw.id === cb.hw.id;

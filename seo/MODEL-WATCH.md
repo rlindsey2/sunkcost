@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-21
+Last checked: 2026-10-22
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,60 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-22 · Beam 1.0 is a row now, and three new names arrived at once
+
+**`beam-1.0-501b-a23b-ud-q4` is in `data/models.json`**, and every figure in it was read again today
+off the sources themselves. The GGUF repository's file list gives UD-Q4_K_XL over 8 shards at
+306,533,349,412 bytes, so **306.53 GB**. The BF16 repository's `config.json` gives **52 layers, 9 of
+them full attention** and 43 at a 512-token window, `num_key_value_heads` 8 by `head_dim` 128, 256
+experts with 8 routed per token, 3 dense layers and `max_position_embeddings` **1,048,576**, with no
+`num_global_key_value_heads`, so `kv_cache_gb_per_8k` is 0.392 and the whole 1M window costs about 39
+GB. The safetensors index gives 501,267,612,352 parameters against the card's "501B total, 23B
+active" and its own table's 23.4B, and the card states 1M of context and Apache 2.0. Artificial
+Analysis gives **30**, token-efficient at 79M output tokens over the index against a median of 130M.
+
+**Both judgements the watch held are made on the page.** The build priced is unsloth's UD-Q4_K_XL
+rather than Reflection's own NVFP4 at 293.63 GB, because GGUF is what llama.cpp reads on the only
+machines with room for it, and `UD-Q4_K_XL` is a quantisation label this data had not carried. The
+rental price is still a spread, so the row names the provider: OpenRouter's endpoints API lists five
+today, **Nebius cheapest at $0.25 in / $1.00 out** at FP8, then CoreWeave at $0.30 / $1.00 and
+DigitalOcean, BaseTen and Together at $0.40 / $1.20, all at 1,048,576 tokens.
+[the endpoints API](https://openrouter.ai/models/reflection/beam-1.0-501b-a23b),
+[the model page](https://artificialanalysis.ai/models/reflection-beam).
+
+**Three new names, each worth a figure and none ready.**
+
+- **[RecursiveSI/flint](https://huggingface.co/RecursiveSI/flint)**, created 2026-10-21 and second on
+  Hugging Face's trending list today, **Apache 2.0**, with
+  [unsloth's GGUF](https://huggingface.co/unsloth/flint-GGUF) at 7,401 downloads. The safetensors
+  index gives **39,785,287,456 parameters**; `config.json` gives 49 layers, `hidden_size` 2048, 4 KV
+  heads by `head_dim` 128, layers alternating full attention with a **513-token** window, 256 experts
+  with 6 routed per token, 2 dense layers and `max_position_embeddings` **262,144**. UD-Q4_K_XL is
+  25,054,688,704 bytes, so **25.05 GB**, which most of this list holds. Two fields are open and one of
+  them is the blocker: Artificial Analysis 404s on `/models/flint`, and the only OpenRouter listing is
+  `recursive/flint-v1.0:free` at **$0 in / $0 out**, which makes a pay-back meaningless the way
+  LFM2.5 2.6B's free endpoint does. A stand-in price would be the way in. The card's active-parameter
+  count has not been read here yet.
+- **[XHToken/Spark-X2.6-4B](https://huggingface.co/XHToken/Spark-X2.6-4B)**, 2026-10-19, **Apache
+  2.0**, with [its own GGUF](https://huggingface.co/XHToken/Spark-X2.6-4B-GGUF): Q4_K_M at
+  3,543,441,312 bytes, so **3.54 GB**, against the 2.60 GB this site prices Spark-X2.5 4B at. Dense,
+  with no expert or router fields: `config.json` gives 36 layers, 9 full attention and 27 at a
+  512-token window, 4 KV heads by `head_dim` 256, `hidden_size` 2560 and `max_position_embeddings`
+  **1,048,576**. It is a new generation of a family already here, so it would bring a generation
+  head-to-head with it. Short of: the parameter count, an index score and a token price.
+- **[ornith-ai/Ornith-1.5-122B](https://huggingface.co/ornith-ai/Ornith-1.5-122B)**, 2026-10-16,
+  **MIT**, with [unsloth's GGUF](https://huggingface.co/unsloth/Ornith-1.5-122B-GGUF): UD-Q4_K_XL over
+  3 shards at 79,713,771,665 bytes, so **79.71 GB**, beside a 0.91 GB `mmproj`. A third size of a
+  family already here at 9B and 35B-A3B, and `image-text-to-text` on a `qwen3_5_moe` architecture, so
+  the text side would be priced the way Nemotron 3.5 Bolt's is. Short of: the architecture fields, an
+  index score and a token price.
+
+**Nothing else.** The searches were the ones this file lists, and Hugging Face's newest
+text-generation repositories since yesterday are finetunes, adapters and third-party
+requantisations. KRAFTON's Raon-1-mini-preview (2026-10-21), InternScience's Sage-A1.5, MemTensor's
+MemT-1.0 Nano and Flash and IBM's granite-switch-4.1-8b are new since the last check and none has
+been read here yet. **Reka Edge 2603 is unchanged** and is the last item on the backlog's first line.
 
 ### 2026-10-21 · Nemotron 3.5 Bolt 74B-A9B is a row now, and nothing else new is worth a figure
 

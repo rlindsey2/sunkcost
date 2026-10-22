@@ -3048,5 +3048,60 @@
       "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "beam-1.0-501b-a23b-ud-q4",
+    "display_name": "Beam 1.0 501B-A23B",
+    "family": "Beam",
+    "generation": "current",
+    "params_b": 501.27,
+    "active_params_b": 23.4,
+    "quantisation": "UD-Q4_K_XL",
+    "weights_gb": 306.53,
+    "kv_cache_gb_per_8k": 0.392,
+    "architecture": {
+      "n_layers": 52,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 9,
+      "sliding_window_layers": 43,
+      "sliding_window": 512,
+      "note": "43 of the 52 layers use a 512-token window and stop growing there; the other 9 cache the whole context, so the full 1M window costs about 39 GB. The four-bit build is an unsloth dynamic quant, which allocates bits differently from a plain Q4_K_M; Reflection publishes BF16, FP8 and NVFP4 only."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Reflection's first open-weights model: 501B total with 23.4B active, built for reasoning, software engineering and long agent runs, and predominantly for English.",
+    "cloud_equivalent": {
+      "name": "Beam 1.0 501B-A23B",
+      "input_price_per_mtok": 0.25,
+      "output_price_per_mtok": 1,
+      "source": "OpenRouter, cheapest of five active endpoints: Nebius at FP8",
+      "source_url": "https://openrouter.ai/reflection/beam-1.0-501b-a23b",
+      "is_exact_match": true,
+      "checked": "2026-10-22"
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M",
+    "frontier_equivalent": {
+      "tier": 2,
+      "score": 30,
+      "score_note": "token-efficient: 79M output tokens over the index against a median of 130M",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 30 (token-efficient: 79M output tokens over the index against a median of 130M)",
+      "url": "https://artificialanalysis.ai/models/reflection-beam",
+      "checked": "2026-10-22",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/reflection/Beam-1.0-501B-A23B",
+      "https://huggingface.co/unsloth/Beam-1.0-501B-A23B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]

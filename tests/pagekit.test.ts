@@ -23,7 +23,7 @@ import {
   indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
-import { footprintGb, kvCacheGb } from '../src/fit';
+import { fit, footprintGb, kvCacheGb } from '../src/fit';
 import { hardwarePairs, modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
@@ -868,7 +868,7 @@ describe('model head-to-heads', () => {
         expect(rb.some((r) => r.hw.id === shared.hw.id)).toBe(true);
         expect(verdict).toContain(shortHardwareLabel(shared.hw));
       } else {
-        expect(verdict).toContain('No machine on this list runs');
+        expect(verdict).toContain(`None of the ${machinesConsidered(data).length} machines here still sold at a published price runs`);
       }
       expect(verdict).not.toMatch(/undefined|NaN|—|\$[\d,]+\.\d\d less/);
       expect(verdict).toContain(a.display_name);
@@ -900,11 +900,19 @@ describe('model head-to-heads', () => {
     expect(ra[0].hw.id === rb[0].hw.id).toBe(false);
   });
 
-  it('claims no machine where none runs one of the models', () => {
+  // The machines this paragraph draws from are the ones still sold at a published
+  // price, and a model nothing there holds may still be held by a machine the site
+  // prices: two 512 GB Macs hold Beam 1.0, one discontinued and one unpriced. So the
+  // sentence names the set and its size rather than saying "no machine on this list".
+  it('claims no machine where none runs one of the models, out of the set it counts', () => {
     const verdict = verdictFor(unrunnable);
+    const missing = model(unrunnable[0]);
     expect(runners(unrunnable[0]).length).toBe(0);
-    expect(verdict).toContain(`No machine on this list runs ${model(unrunnable[0]).display_name}`);
+    expect(verdict).toContain(`None of the ${machinesConsidered(data).length} machines here still sold at a published price runs ${missing.display_name}`);
     expect(verdict).toContain(`${model(unrunnable[1]).display_name} runs on the`);
+    expect(verdict).not.toContain('No machine on this list');
+    // and the set it names is smaller than the site's, so the scope is not decoration
+    expect(data.hardware.some((hw) => !machinesConsidered(data).includes(hw) && fit(missing, hw, data.defaults.context.default_tokens, 1).status === 'fits')).toBe(true);
   });
 });
 

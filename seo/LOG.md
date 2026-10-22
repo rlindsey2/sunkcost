@@ -39,12 +39,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** Beam 1.0 at UD-Q4_K_XL and Reka
-      Edge 2603 are what is left of this item (seo/MODEL-WATCH.md has the figures and sources). One model per
-      run, with its model page and sitemap entry. Beam would be the largest thing priced here at 306.53 GB,
-      which only the two 512 GB Macs hold, and its rental price is a spread, so the row has to name the
-      provider as well as the quantisation. Reka Edge 2603 is a vision model: price the text side, as
-      Nemotron 3.5 Bolt now does, and say so on the page.
+- [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
+      a vision model: price the text side, as Nemotron 3.5 Bolt now does, and say so on the page. Of the three
+      found on 2026-10-22, flint is the best-sourced bar a price (its only endpoint is free, so it needs a
+      stand-in), Spark-X2.6 4B would bring a generation head-to-head with the 2.5 already here, and Ornith 1.5
+      122B is a third size of a family here and another vision model.
 
 - [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -73,6 +73,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
+
+### 2026-10-22 — Beam 1.0 501B-A23B is priced here, and the pages that find no machine for it say which set they looked in
+The top backlog item wanted the best-sourced candidate as a row, and every figure was read again today off the sources: 306.53 GB over 8
+shards off unsloth's GGUF file list, 52 layers with 9 full attention and 43 at a 512-token window, at 8 KV heads by 128, off the BF16
+`config.json`, 501.27B against the card's 23.4B active, 1M and Apache 2.0 off the card, 30 off Artificial Analysis. Both judgements the
+watch held are made on the page: the four-bit GGUF rather than Reflection's own NVFP4, the only build the machines with room for it can
+read, and the price names its provider, Nebius at $0.25 / $1.00, cheapest of five endpoints. It is the largest thing priced here, and
+the first model nothing still sold at a published price holds at any window, which found two false claims waiting on that case: three
+head-to-heads opened "No machine on this list runs X", and the leaderboard's machine column read "nothing on the list", of a model two
+512 GB Macs hold. Both name the set and its size now, and the leaderboard's note says what does hold it. Adding it retired one
+head-to-head the ladder re-sorted around, 301'd to the model page its address names first. Straight to main. Verified: 453 tests with
+two rewritten, typecheck and validate clean, the full build with build:functions, 326 pages every guard passing, the model page and both
+new head-to-heads read rendered, five mutations stopping the build or the tests. Next: the watch's three new names, above.
 
 ### 2026-10-21 — Nemotron 3.5 Bolt 74B-A9B is priced here, and the three pages it retired still answer
 The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 22.02 GB off the GGUF repository's
