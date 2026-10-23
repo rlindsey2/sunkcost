@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-22
+Last checked: 2026-10-23
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,47 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-23 · Flint is a row now, and nothing new arrived with it
+
+**`flint-40b-a2.5b-ud-q4` is in `data/models.json`**, and every figure in it was read again today off the
+sources themselves. unsloth's GGUF file list gives `flint-UD-Q4_K_XL.gguf` at 25,054,688,704 bytes, so
+**25.05 GB**, in one file. The BF16 `config.json` gives **49 layers, 14 of them full attention** and 35 at a
+513-token window, `num_key_value_heads` 4 by `head_dim` 128, 256 experts with 6 routed per token, 2 dense
+layers and `max_position_embeddings` **262,144**, with no `num_global_key_value_heads`, so
+`kv_cache_gb_per_8k` is 0.272 and the whole 256k window costs 7.6 GB. The safetensors index gives
+79,570,574,912 bytes at BF16, so **39,785,287,456 parameters**, against the card's 39.8B total and
+"approximately 2.5B, including the output head" active per token; the card states 262,144 tokens, Apache 2.0,
+a June 2026 knowledge cutoff, and that Recursive built it for coding agents.
+
+**Both open fields were settled rather than waited on.** Artificial Analysis still 404s on `/models/flint`, so
+the score is `null` with a TODO, which keeps Flint out of every head-to-head the way LFM2.5 24B-A2B is. The
+price is the harder one: OpenRouter lists `recursive/flint-v1.0` with **no endpoints at all** and
+`recursive/flint-v1.0:free` with one, Recursive's own at **$0 in / $0 out** at BF16 and 262,144 tokens, so
+nobody sells it by the token and a pay-back against $0 says nothing. The row is a **`nearest_size` stand-in**
+on Qwen3.6 35B-A3B at $0.05 / $0.70, 35.95B with 3B active against 39.79B with 2.5B, and that price was
+re-read today as the cheapest of its ten endpoints (Darkbloom, at FP4). The free listing is not left for a
+reader to discover: the page's first paragraph says Recursive serves it free through OpenRouter today.
+[the GGUF repo](https://huggingface.co/unsloth/flint-GGUF),
+[the weights](https://huggingface.co/RecursiveSI/flint),
+[the free endpoint](https://openrouter.ai/recursive/flint-v1.0:free).
+
+**One judgement worth recording.** Recursive publishes its own GGUFs:
+[`flint-int4-gguf`](https://huggingface.co/RecursiveSI/flint-int4-gguf) is a single Q4_1 file at
+25,992,966,976 bytes (**25.99 GB**) and
+[`flint-nvfp4-gguf`](https://huggingface.co/RecursiveSI/flint-nvfp4-gguf) is 22,863,084,160 bytes (**22.86
+GB**). unsloth's dynamic four-bit is priced instead, as Beam's is: it is the smaller of the two four-bit
+GGUFs, it is the one being downloaded (33,277 against 7,245), and K-quants are what llama.cpp readers run.
+The specifics line on the page names Recursive's own build and its size, so the choice is visible.
+
+**Nothing else.** The searches were the ones this file lists. Hugging Face's newest text-generation
+repositories since yesterday are finetunes, requantisations and sub-1B experiments, not one of them over two
+likes, and the trending list holds no name this file has not already recorded: Hy-Memory 30B-A3B and Dory 1.0
+4B are the 2026-10-19 entry's, still waiting on a price and on a four-bit build. Artificial Analysis 404s on
+`/models/spark-x2-6-4b` and `/models/ornith-1-5-122b` as well, so both remain short of a score, and
+Raon-1-mini-preview, Sage-A1.5, MemT-1.0 Nano and Flash and granite-switch-4.1-8b are unread here since
+yesterday. **Spark-X2.6 4B, Ornith 1.5 122B and Reka Edge 2603 are unchanged** and are the backlog's first
+line.
 
 ### 2026-10-22 · Beam 1.0 is a row now, and three new names arrived at once
 

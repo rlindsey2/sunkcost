@@ -40,11 +40,11 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
-      a vision model: price the text side, as Nemotron 3.5 Bolt now does, and say so on the page. Of the three
-      found on 2026-10-22, flint is the best-sourced bar a price (its only endpoint is free, so it needs a
-      stand-in), Spark-X2.6 4B would bring a generation head-to-head with the 2.5 already here, and Ornith 1.5
-      122B is a third size of a family here and another vision model.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Spark-X2.6 4B is
+      next: a new generation of a family already here, so it brings the generation head-to-head with the 2.5,
+      and it is short of a parameter count and a price. Ornith 1.5 122B is a third size of a family here and a
+      vision model, as Reka Edge 2603 is: price the text side, as Nemotron 3.5 Bolt and Flint's page do, and
+      say so on the page.
 
 - [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -73,6 +73,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
+
+### 2026-10-23 — Flint 40B-A2.5B is priced here, and its page names who serves it free
+The top backlog item wanted the best-sourced candidate as a row, and every figure in it was read today off the sources: 25.05 GB of
+UD-Q4_K_XL off unsloth's GGUF file list, 49 layers with 14 of them full attention and 35 at a 513-token window, at 4 KV heads by 128,
+off the BF16 `config.json`, 39.79B off the safetensors index against the card's 39.8B and about 2.5B active per token, 262,144 tokens
+and Apache 2.0 off the card. Artificial Analysis still 404s on it, so the index score is `null` with a TODO, the ratings wait on it
+and no pair rule can reach it, as with LFM2.5 24B-A2B. The price was the open field: the only listing of Flint is Recursive's own
+free endpoint, so the row stands in at the nearest size, Qwen3.6 35B-A3B at $0.05 / $0.70, still the cheapest of ten endpoints today,
+and the first paragraph says Recursive serves it free rather than leave a reader to find that on OpenRouter. The build priced is
+unsloth's four-bit GGUF rather than Recursive's own at 26.0 GB, and the specifics name both. The page reads finished: 38 of the 56
+machines hold it at 32k, the cheapest a Radeon AI PRO R9700, 32GB at $1,299 and 131 tok/s, 85 years to pay back, its whole 256k
+window 7.6 GB of cache, 60 pages linking in. Straight to main. Verified: 453 tests, typecheck and validate clean, the full build with
+build:functions, 327 pages every guard passing, 328 in the sitemap, 227 dates moved, the page read rendered, three mutations of the
+row all caught by validate. Oldest two entries archived. Next: Spark-X2.6 4B, above.
 
 ### 2026-10-22 — Beam 1.0 501B-A23B is priced here, and the pages that find no machine for it say which set they looked in
 The top backlog item wanted the best-sourced candidate as a row, and every figure was read again today off the sources: 306.53 GB over 8
@@ -270,30 +284,3 @@ pages go from 4-10 inbound to 5-21, median 6 to 10, no longer the thinnest here.
 dated with those 26 moved and no others, five read rendered at 320, 390 and 1100px, and 17 mutations of
 `checkMeasuredRows()`, which recomputes each 32k figure from the published one, all stopping the build.
 Watch done: Kimi K3 is out on size at 2.8T. Next: the two legacy pages no measurement reaches.
-
-### 2026-10-08 — The "Good at" column is gone from the 57 tables with nothing to put in it
-Five capability dots sat in every row of the 56 machine tables and the leaderboard's. Of those 3,545
-dots, 3,415 were the grey that means unrated: 652 of the 661 machine rows, 47 of those pages with not one rated
-row, and 31 of the leaderboard's 48. Wordless, so last run's sweep for "not rated" never saw them, and in a
-ranked table a grey row beside a coloured one is a verdict the data never made. The column is dropped rather
-than dashed. On a phone the machine tables keep a pair — memory and longest context, 254px against the 271px
-a 320px row gives, measured in Chromium — and the leaderboard loses its, because class and weights, the only
-neighbours left, want 318px. Straight to main. Verified: 452 tests, typecheck clean, the full build with
-build:functions, 320 pages every guard passing, 321 of 321 dated with those 57 moved and no others, four read
-rendered at 390 and 1100px, no `dot-unknown` left on any page, and twelve mutations all stopping the build:
-`checkCapabilityDots()` counts the site's 215 dots off the data, `checkTableWidths()` holds all 886 tables'
-rows to the columns their head names. Model watch done, nothing new to price. Next: the legacy model pages,
-the least-linked on the site; see the backlog.
-
-### 2026-10-07 — 102 pages stop printing a rating nobody has made
-The five capability dots are the one judgement on a model page rather than a figure, and 36 of the 55 models
-here have none: every dot read "not rated", 665 times over 102 pages. On 36 model pages that was five blanks
-under "How good is it, really?" and a line about this site's last ratings pass, process language on the page a
-model-name search lands on. On 35 head-to-heads it was worse than blank, because a rated column beside an
-unrated one reads as a verdict: gemma-3-12b vs gemma-4-12b rated the older model at five jobs and the newer at
-none, where the score row has it 14 against 4. A block is printed where there are ratings now; the 19 rated
-models still print all five. Straight to main. Verified: 452 tests, typecheck clean, the full build with
-build:functions, 320 pages every guard passing, 321 of 321 dated with those 102 moved and no others, four read
-rendered, the phrase gone from all 320, and ten mutations of `checkRatingBlocks()` all stopping the build.
-Closed, not done: the three over-length titles, 1 to 3 characters past 60 with no cut that keeps every name a
-searcher types. Watch: Beam, 501B-A23B, Apache 2.0, waits on its weights. Next: the same dots, wordless.

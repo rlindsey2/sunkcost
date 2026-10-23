@@ -3103,5 +3103,64 @@
       "https://huggingface.co/unsloth/Beam-1.0-501B-A23B-GGUF"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "flint-40b-a2.5b-ud-q4",
+    "display_name": "Flint 40B-A2.5B",
+    "family": "Flint",
+    "generation": "current",
+    "params_b": 39.79,
+    "active_params_b": 2.5,
+    "quantisation": "UD-Q4_K_XL",
+    "weights_gb": 25.05,
+    "kv_cache_gb_per_8k": 0.272,
+    "architecture": {
+      "n_layers": 49,
+      "n_kv_heads": 4,
+      "head_dim": 128,
+      "full_attention_layers": 14,
+      "sliding_window_layers": 35,
+      "sliding_window": 513,
+      "note": "35 of the 49 layers cache 513 tokens and stop growing there; the other 14 cache the whole context, so the full 256k window costs about 7.6 GB. The four-bit build priced here is an unsloth dynamic quant, which allocates bits differently from a plain Q4_K_M; Recursive publishes BF16 and its own four-bit GGUF, which is 26.0 GB."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Recursive built it for coding agents, to read a codebase, fix bugs and write tests: 39.8B total with about 2.5B of them active for every token, so a token reads a fraction of the 25 GB on disk. Recursive serves it free through OpenRouter today, and nobody sells it by the token.",
+    "cloud_equivalent": {
+      "name": "Qwen3.6 35B-A3B",
+      "input_price_per_mtok": 0.05,
+      "output_price_per_mtok": 0.7,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
+      "is_exact_match": false,
+      "checked": "2026-10-23",
+      "stand_in": true,
+      "stand_in_for": "qwen3.6-35b-a3b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody sells Flint by the token, and the one listing of it is free, so a pay-back against its own price would be meaningless. It has no intelligence score either. Priced as Qwen3.6 35B-A3B, the current hosted model closest to it in size: 35.95B with 3B active against 39.79B with 2.5B."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-10-23",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/RecursiveSI/flint",
+      "https://huggingface.co/unsloth/flint-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]
