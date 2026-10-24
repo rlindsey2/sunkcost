@@ -273,7 +273,10 @@ export function renderWaterline(o: WaterlineOptions): string {
       p.push(`<text x="${labelL}" y="${ty.toFixed(1)}" font-size="${10.5 * s}" fill="var(--chart-ink, #b6cfe2)" opacity="0.55">bought</text>`);
     }
     for (const t of niceTimeTicks(T)) {
-      const tx = x(t.days);
+      // the coordinate written below, not the one before it is rounded to a
+      // tenth: a tick let through on the unrounded figure is drawn up to a
+      // twentieth of a pixel further out, which is a label past the edge
+      const tx = +x(t.days).toFixed(1);
       // a tick is centred on its year, so it is the label's own width that has
       // to fit, not a fixed allowance: "4,000 yr" needs twice what "4 yr" does
       const half = (t.label.length * 10.5 * s * EM) / 2;

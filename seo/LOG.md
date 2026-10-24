@@ -40,11 +40,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Spark-X2.6 4B is
-      next: a new generation of a family already here, so it brings the generation head-to-head with the 2.5,
-      and it is short of a parameter count and a price. Ornith 1.5 122B is a third size of a family here and a
-      vision model, as Reka Edge 2603 is: price the text side, as Nemotron 3.5 Bolt and Flint's page do, and
-      say so on the page.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. MiniMax M3.1 Flash
+      is next and is the best-sourced candidate this watch has had: an exact rental price, 43 on index v4.3.2,
+      and 428B with 23B active off the card. Three calls come with it, all the agent's now: it is a vision
+      model, so price the text side as Nemotron 3.5 Bolt and Flint do; its licence is `minimax-community` and
+      wants reading; and at 249.40 GB the four-bit GGUF fits one machine here, so a smaller build may be the
+      one to price. Then Ornith 1.5 122B, a third size of a family here and a vision model too, and Reka Edge
+      2603.
 
 - [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -73,6 +75,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 ## Runs
+
+### 2026-10-24 — Spark-X2.6 4B is priced here, and the 2.5's page names it as the newer model
+The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 3.54 GB of Q4_K_M off XHToken's own
+GGUF file list, 36 layers with 9 full attention and 27 at a 512-token window, at 4 KV heads by 256, off `config.json`, 4,112,079,360 parameters off the
+safetensors index, 1,048,576 tokens and Apache 2.0 off the card. Artificial Analysis 404s on it as on the 2.5, so the score is `null` with a TODO and no
+pair rule reaches either Spark; nobody serves XHToken by the token, so the row carries the Granite 4.2 8B stand-in the 2.5 carries, $0.06 / $0.25,
+re-read today as the cheapest of its two endpoints. The parameter count is the 2.5's to the digit and the card says the architecture is too, so the one
+thing that changed is the download, 3.54 GB against 2.60; the 2.5 stays current and its note names the 2.6, following Qwen3.6 27B. All 56 machines hold
+it at 32k, the cheapest a Mac mini M6, 16GB at $899 and 24 tok/s, 77 years to pay back, its 1M window 39 GB of cache, 72 pages linking in. One find came
+with it: the RTX 4090 share card put its "150 yr" tick five thousandths of a pixel past the column, having tested it against the x before rounding and
+written the rounded one, so the chart decides on the figure it writes now. Straight to main. Verified: 453 tests, typecheck and validate clean, the full
+build with build:functions, 328 pages every guard passing, 329 dated with 243 moved, both Spark pages read rendered, five mutations of the row caught by
+validate, the card guard re-checked by putting the rounding back. Next: MiniMax M3.1 Flash, above.
 
 ### 2026-10-23 — Flint 40B-A2.5B is priced here, and its page names who serves it free
 The top backlog item wanted the best-sourced candidate as a row, and every figure in it was read today off the sources: 25.05 GB of
@@ -258,29 +273,3 @@ MoE against a dense replacement. Straight to main. Verified: 452 tests, typechec
 build:functions, 320 pages every guard passing, 321 of 321 dated with those 16 moved and no others, six read
 rendered, 15 mutations of `checkSupersededModels()` all stopping the build. Watch: Reka Edge 2603 is open
 weights with every figure citable off the repo and is a vision model, so Ryan's call, above. Next: the backlog.
-
-### 2026-10-10 — The four pages that are one model at two precisions weigh the two
-Two models here are listed twice at two precisions, and those four pages are the only ones whose subject is a
-download rather than a machine. None weighed the two. The Q8 pages were also the least-linked model pages here
-and the only ones in no head-to-head, so what a reader lands on them asking was a clause of the lede and a file
-size at the foot. Llama 3.1 8B now goes 4.9 to 8.5 GB of weights, 9.2 to 12.8 GB to hold at 32k, all 56 machines
-here to 50, $899 to $1,099 and 14 tok/s to 9.9 on the cheapest box holding both. Qwen3 32B goes 19.8 to 34.8,
-28.3 to 43.4, 36 machines to 28, $1,299 to $1,700 and 24 to 16 tok/s, both measured on the Mac Studio M3 Ultra,
-96GB, the only machine here with both builds measured. The other half has no figure: one index score both builds
-carry, the same five ratings. Straight to main. Verified: 452 tests, typecheck clean, the full build with
-build:functions, 320 pages every guard passing, 321 of 321 dated with those 4 moved and no others, four read
-rendered, and 21 mutations of `checkModelPrecision()` all stopping the build. Watch done, nothing new to price.
-Next: neither thin page gained an inbound link, and gemma-3-12b-q4 is untouched.
-
-### 2026-10-09 — 26 machine pages print the benchmarks somebody actually ran on them
-A machine page said every speed in its table was worked out from memory bandwidth, which reads as though
-nobody has run a model on the box. data/throughput.json holds 98 published figures across 27 of the 56
-machines, 70 of them on superseded models, which the calculator hides until asked and the table leaves out,
-so the page answering how fast a machine is showed no figure anyone had measured on it. The 26 pages with
-one now table the 97 their machine still holds at some window: the speed as published, at the window it was
-run at, and that measurement read at 32k. Every row links its model, closing the backlog item: the 16 legacy
-pages go from 4-10 inbound to 5-21, median 6 to 10, no longer the thinnest here. Straight to main. Verified:
-452 tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of 321
-dated with those 26 moved and no others, five read rendered at 320, 390 and 1100px, and 17 mutations of
-`checkMeasuredRows()`, which recomputes each 32k figure from the published one, all stopping the build.
-Watch done: Kimi K3 is out on size at 2.8T. Next: the two legacy pages no measurement reaches.

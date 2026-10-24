@@ -1672,7 +1672,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages. Spark-X2.6 4B is the newer model at this size: same architecture, 0.94 GB more to download.",
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
@@ -1702,6 +1702,65 @@
     "sources": [
       "https://huggingface.co/XHToken/Spark-X2.5-4B",
       "https://huggingface.co/XHToken/Spark-X2.5-4B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "spark-x2.6-4b-q4",
+    "display_name": "Spark-X2.6 4B",
+    "family": "Spark",
+    "generation": "current",
+    "params_b": 4.112,
+    "active_params_b": 4.112,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 3.54,
+    "kv_cache_gb_per_8k": 0.359,
+    "architecture": {
+      "n_layers": 36,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 9,
+      "sliding_window_layers": 27,
+      "sliding_window": 512,
+      "note": "3 sliding-window layers (512) per full-attention layer, which is what makes a million-token context tractable at this size. The shape is Spark-X2.5 4B's exactly, down to the parameter count, so the cache costs the same; the four-bit download does not, at 3.54 GB against 2.60 GB."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B built for on-device agents, with a native million-token context and three thinking levels. XHToken says it keeps Spark-X2.5 4B's architecture exactly and gains from post-training alone.",
+    "cloud_equivalent": {
+      "name": "Granite 4.2 8B",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.25,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
+      "is_exact_match": false,
+      "checked": "2026-10-24",
+      "stand_in": true,
+      "stand_in_for": "granite-4.2-8b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Spark-X2.6 4B by the token, and it has no intelligence score. Priced as Granite 4.2 8B, the current hosted model closest to it in size, which is what Spark-X2.5 4B is priced as."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M native",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-10-24",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/XHToken/Spark-X2.6-4B",
+      "https://huggingface.co/XHToken/Spark-X2.6-4B-GGUF"
     ],
     "TODO": "Capability ratings needed."
   },

@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-23
+Last checked: 2026-10-24
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,53 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-24 · Spark-X2.6 4B is a row now, and MiniMax M3.1 Flash is the best-sourced candidate this watch has had
+
+**`spark-x2.6-4b-q4` is in `data/models.json`**, and every figure in it was read again today off the sources
+themselves. XHToken's own GGUF repository gives `Spark-X2.6-4B-Q4_K_M.gguf` at 3,543,441,312 bytes, so **3.54
+GB**, with Q8_0 at 4.38 GB and the BF16 file at 8.23 GB. `config.json` gives **36 layers, 9 of them full
+attention** and 27 at a 512-token window, `num_key_value_heads` 4 by `head_dim` 256, `hidden_size` 2560, no
+expert or router fields, and `max_position_embeddings` **1,048,576**, with no `num_global_key_value_heads`, so
+`kv_cache_gb_per_8k` is 0.359 and the whole 1M window costs about 39 GB. The safetensors index gives
+**4,112,079,360 parameters**, which is Spark-X2.5 4B's figure to the digit, and the card says the model "retains
+exactly the same architecture as Spark-X2.5-4B, achieving its capability gains through improved post-training".
+Apache 2.0 and 1,048,576 tokens off the card.
+[the weights](https://huggingface.co/XHToken/Spark-X2.6-4B),
+[the GGUF repo](https://huggingface.co/XHToken/Spark-X2.6-4B-GGUF).
+
+**Both open fields were settled rather than waited on.** Artificial Analysis still 404s on
+`/models/spark-x2-6-4b`, and on `/models/spark-x2-5-4b` as well, so the score is `null` with a TODO and no pair
+rule can reach either Spark. OpenRouter lists no XHToken endpoint at all, so the row stands in at **Granite 4.2
+8B, $0.06 in / $0.25 out**, re-read today as the cheapest of its two endpoints (DeepInfra, against CoreWeave at
+$0.10 / $0.15); that is the stand-in Spark-X2.5 4B already carries, so the two generations are priced alike.
+
+**Two judgements worth recording.** Spark-X2.5 4B stays `current` rather than going `legacy`: the site's own
+precedent is Qwen3.6 27B, which is current and whose note names the newer model at its size, and neither Spark
+has an index score, so nothing here can show the 2.6 is the better model by this site's own measure. Its note
+names the 2.6 now. The second is the download: at the same quantisation label and the same parameter count the
+2.6's four-bit file is **0.94 GB larger** than the 2.5's, 3.54 GB against 2.60 GB, both read today, and the
+row's note says so rather than leaving a reader to wonder why the newer model costs more memory.
+
+**MiniMax M3.1 Flash is new here and four runs missed it.**
+[MiniMaxAI/MiniMax-M3.1-Flash](https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash), 2026-10-17, with
+[unsloth's GGUF](https://huggingface.co/unsloth/MiniMax-M3.1-Flash-GGUF) published 2026-10-23: UD-Q4_K_XL at
+249,402,105,310 bytes, so **249.40 GB**, with UD-IQ3_S at 175.45 GB and UD-Q3_K_XL at 193.95 GB. The card gives
+**approximately 428B total and 23B activated per token** and 1M of context; `text_config` gives 60 layers,
+`num_key_value_heads` 4 by `head_dim` 128, 128 experts with 4 routed and 1 shared, `hidden_size` 6144 and
+`max_position_embeddings` 1,048,576. [Artificial Analysis](https://artificialanalysis.ai/models/minimax-m3-1-flash)
+gives **43 on index v4.3.2**, which is above GLM-5.3-Flash's 42, the highest score this site carries — though
+that 42 was read on v4.3, so the two are not strictly one scale until the backlog's re-read is done. OpenRouter
+has an **exact price, $0.15 in / $0.60 out** at 1,048,576 tokens. Three things are still open: it is
+`image-text-to-text`, so the text side would be priced as Nemotron 3.5 Bolt's and Flint's are; the licence is
+`minimax-community`, not an OSI one, and has not been read here yet; and at 249.40 GB only the Mac Studio M3
+Ultra, 512GB holds it, so the four-bit build may not be the one to price. **This is the next model to add.**
+
+**Nothing else.** The searches were the ones this file lists. Hugging Face's newest text-generation
+repositories since yesterday are finetunes, abliterations and third-party requantisations, most of them of
+DeepSeek V4.1-Flash and Flint, and the trending list holds no name this file has not recorded. Raon-1-mini-preview,
+Sage-A1.5, MemT-1.0 Nano and Flash, granite-switch-4.1-8b and HuggingFaceBio's Carbon-X are unread here still.
+**Ornith 1.5 122B and Reka Edge 2603 are unchanged.**
 
 ### 2026-10-23 · Flint is a row now, and nothing new arrived with it
 
