@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-24
+Last checked: 2026-10-25
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,54 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-25 · MiniMax M3.1 Flash is a row now, and Ling 3.1 flash is the new name
+
+**`minimax-m3.1-flash-ud-q4` is in `data/models.json`**, and every figure in it was read again today off the
+sources themselves. unsloth's GGUF file list gives UD-Q4_K_XL over seven shards at 249,402,105,310 bytes, so
+**249.40 GB**, with UD-Q3_K_XL at 193.95 GB, UD-IQ3_S at 175.45 GB and UD-IQ1_M at 129.36 GB. `text_config`
+gives **60 layers, every one of them full attention**, `num_key_value_heads` 4 by `head_dim` 128, 128 experts
+with 4 routed and 1 shared, 3 dense layers, `hidden_size` 6144 and `max_position_embeddings` **1,048,576**.
+The card gives "approximately 428B total; 23B activated per token", 1M of context and the
+`minimax-community` licence; [Artificial Analysis](https://artificialanalysis.ai/models/minimax-m3-1-flash)
+gives **43**, read on the v4.3.2 page. OpenRouter lists thirteen active endpoints and the cheapest is
+**Relace at $0.09 in / $0.50 out** at 1,048,576 tokens, an exact rental match.
+[the weights](https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash),
+[the GGUF repo](https://huggingface.co/unsloth/MiniMax-M3.1-Flash-GGUF).
+
+**The sparse-attention side cache is the figure that needed finding.** MSA keeps the whole context cached and
+picks 16 blocks of 128 tokens to read, so it buys arithmetic and not memory, and on top of the main cache each
+token leaves an index key. vLLM's `MiniMaxM3IndexerCache` sizes that through `MLAAttentionSpec(num_kv_heads=1,
+head_size=index_head_dim)` with the comment "budgets one vector/token (not 2x for K+V)" and `bf16` as the
+default `indexer_kv_dtype`, so at the config's `sparse_index_dim` of 128 it is **256 B per token per layer** on
+top of the main cache's 2,048 B. `bytes_per_token_full` is 2,304 and `kv_cache_gb_per_8k` 1.132; 32k costs 4.5
+GB and the whole 1M window 145 GB, which puts the full window **past** the 384 GB both 512 GB Macs hand a
+model, where the main cache alone would have fitted it.
+[the indexer in vLLM](https://docs.vllm.ai/en/stable/api/vllm/models/minimax_m3/common/indexer/).
+
+**All three open calls were settled rather than waited on.** The four-bit build is the one priced, following
+Beam: the two 512 GB Macs hold it at 32k with 130 GB spare and nothing else here holds it at any window, so a
+three-bit build would buy a reader nothing. The licence was read: the **MiniMax Community License** grants
+non-commercial use, asks a one-time notice for commercial use, prior written authorisation above $20M of
+revenue a year, and a "Built with MiniMax M3.1-Flash" credit; its name goes in the row the way the other
+non-OSI licences here do. The vision side is priced as Nemotron 3.5 Bolt's and Flint's are, text only, with the
+1.74 GB `mmproj-BF16.gguf` named on the page as a download it does not price.
+
+**Two things worth recording.** The safetensors index reads 220,490,854,016 parameters against the card's
+428B, which is the NVFP4 expert weights packed two to a byte: 206.56B of U8 doubled, plus 10.56B at F8 and
+3.32B at BF16, comes back to about 428B. And MiniMax publishes no 16-bit weights at all — the release is MXFP8
+with its experts in NVFP4 — so the GGUF is a quant of a quant, which the row's note says. The index score was
+read on v4.3.2 and recorded as `v4.3`, the way Nemotron 3.5 Bolt's was, so one row does not claim a scale the
+other 56 are not on; the backlog's re-read moves all 57 together.
+
+**Ling 3.1 flash is new here and three runs missed it.**
+[inclusionAI/Ling-3.1-flash](https://huggingface.co/inclusionAI/Ling-3.1-flash), 2026-10-13, a generation above
+the Ling 3.0 flash this site prices at 77.80 GB. Nothing else was read off it today and no GGUF of it was
+found. **Nanbeige4.3-33B** and its base model
+([Nanbeige/Nanbeige4.3-33B](https://huggingface.co/Nanbeige/Nanbeige4.3-33B)) landed 2026-10-24 with no
+downloads and no GGUF yet. NVIDIA has two more small ones unread here, `Nemotron-Labs-Dory1.0-4B` and a 4 GB
+`Nemotron-3.5-Bolt-E4B`. Tencent's Hy-Memory-30B-A3B, Mistral's Timestral-209M and OpenMOSS's MOSS-Image are
+not this site's subject. **Ornith 1.5 122B and Reka Edge 2603 are unchanged**, and Ornith is next.
 
 ### 2026-10-24 · Spark-X2.6 4B is a row now, and MiniMax M3.1 Flash is the best-sourced candidate this watch has had
 

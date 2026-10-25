@@ -2892,6 +2892,60 @@
     "TODO": "Capability ratings needed."
   },
   {
+    "id": "minimax-m3.1-flash-ud-q4",
+    "display_name": "MiniMax M3.1 Flash",
+    "family": "MiniMax",
+    "generation": "current",
+    "params_b": 428,
+    "active_params_b": 23,
+    "quantisation": "UD-Q4_K_XL",
+    "weights_gb": 249.4,
+    "kv_cache_gb_per_8k": 1.132,
+    "architecture": {
+      "n_layers": 60,
+      "n_kv_heads": 4,
+      "head_dim": 128,
+      "full_attention_layers": 60,
+      "bytes_per_token_full": 2304,
+      "note": "Every one of the 60 layers caches the whole context: 2,048 B for the K and V of 4 KV heads at 128 wide, plus 256 B for the one index key a token leaves in the sparse-attention side cache. Sparse attention picks 16 blocks of 128 tokens to read, so it saves arithmetic and not memory, and the full 1M window costs about 145 GB. The four-bit build is an unsloth dynamic quant made from an already-quantised release: MiniMax publishes this model with its weights in MXFP8 and its expert weights in NVFP4, and no 16-bit version of it."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. 23B active out of about 428B, natively multimodal and built for coding and long agent runs. It reads images and video as well as text, and the vision encoder is a separate 1.7 GB download this page does not price.",
+    "cloud_equivalent": {
+      "name": "MiniMax M3.1 Flash",
+      "input_price_per_mtok": 0.09,
+      "output_price_per_mtok": 0.5,
+      "source": "OpenRouter, cheapest of thirteen active endpoints: Relace at FP4",
+      "source_url": "https://openrouter.ai/minimax/minimax-m3.1-flash",
+      "is_exact_match": true,
+      "checked": "2026-10-25"
+    },
+    "license": "MiniMax Community License",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M",
+    "frontier_equivalent": {
+      "tier": 2,
+      "score": 43,
+      "score_note": "very verbose: 180M output tokens over the index against a median of 100M",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 43 (very verbose: 180M output tokens over the index against a median of 100M)",
+      "url": "https://artificialanalysis.ai/models/minimax-m3-1-flash",
+      "checked": "2026-10-25",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash",
+      "https://huggingface.co/unsloth/MiniMax-M3.1-Flash-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
     "id": "hunyuan-hy3-q4",
     "display_name": "Tencent Hy3",
     "family": "Hunyuan",

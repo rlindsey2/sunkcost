@@ -40,13 +40,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. MiniMax M3.1 Flash
-      is next and is the best-sourced candidate this watch has had: an exact rental price, 43 on index v4.3.2,
-      and 428B with 23B active off the card. Three calls come with it, all the agent's now: it is a vision
-      model, so price the text side as Nemotron 3.5 Bolt and Flint do; its licence is `minimax-community` and
-      wants reading; and at 249.40 GB the four-bit GGUF fits one machine here, so a smaller build may be the
-      one to price. Then Ornith 1.5 122B, a third size of a family here and a vision model too, and Reka Edge
-      2603.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Ornith 1.5 122B
+      is next: a third size of a family already here, and a vision model, so the text side is priced the way
+      MiniMax M3.1 Flash's and Nemotron 3.5 Bolt's are. Then Reka Edge 2603, and Ling 3.1 flash, a generation
+      above the Ling 3.0 flash priced here, which has no GGUF yet.
 
 - [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -74,7 +71,31 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       reads 104 against 143. The machine and model pages print all of them as measured. The fix is a
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
+- [ ] A price ending in one decimal reads unfinished where money is expected: "and $0.5 per million output" on
+      the MiniMax M3.1 Flash page, "$0.7" on LFM2.5 24B-A2B, "$1" on Beam, across 43 distinct price pairs and
+      every head-to-head row that prints one. The site writes a price as the data states it, with no padding to
+      two places. The fix is in `src/format.ts`, which the calculator reads too, so it is a PR, not a push.
+
+- [ ] A figure in prose that nothing reads back: each `architecture.note` is printed whole in the KV cache row
+      of its model page, and three of them state what a full window costs ("the full 1M window costs about 145
+      GB" on MiniMax M3.1 Flash, 39 GB on Beam and on Spark-X2.6 4B). Every other figure on these pages is held
+      to the fields beside it; these are not, so a note can outlive a correction to the architecture it
+      describes. The guard is small: read a GB figure out of a note that names a window and check it.
+
 ## Runs
+
+### 2026-10-25 — MiniMax M3.1 Flash is priced here, and the sparse-attention cache it keeps is counted
+The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 249.40 GB of UD-Q4_K_XL over seven shards
+off unsloth's GGUF file list, 60 layers with every one of them full attention, at 4 KV heads by 128, off `text_config`, about 428B with 23B active and 1M off
+the card, 43 off Artificial Analysis, and $0.09 / $0.50 off OpenRouter, the cheapest of thirteen endpoints and an exact match. The cache was the figure that
+needed finding. MiniMax Sparse Attention keeps the whole context and reads 16 blocks of 128 tokens of it, so it buys arithmetic and not memory; on top of the
+2,048 B each token costs in the main cache it leaves an index key, which vLLM sizes at one vector per token, one head, 128 wide, bf16, so 256 B more. That is
+2,304 B a layer, 4.5 GB at 32k and 145 GB at the full 1M, and the 145 puts the whole window past the 384 GB both 512 GB Macs hand a model, where the main
+cache alone would have fitted it. All three calls the watch held are made on the page: the four-bit build is priced, following Beam, since nothing else here
+holds it at any window; the licence was read and the row names it, the MiniMax Community License, non-commercial until you send notice; and the vision side
+is text-only, with its 1.74 GB encoder named as a download the page does not price. Straight to main. Verified: 453 tests, typecheck and validate clean, the
+full build with build:functions, 330 pages every guard passing, 2 added and 187 redated with none dropped, the model page and the new head-to-head read
+rendered, five mutations of the row all caught by validate. Two findings are new backlog items above. Next: Ornith 1.5 122B, above.
 
 ### 2026-10-24 — Spark-X2.6 4B is priced here, and the 2.5's page names it as the newer model
 The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 3.54 GB of Q4_K_M off XHToken's own
