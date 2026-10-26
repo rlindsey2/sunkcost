@@ -1,6 +1,6 @@
 # SEO log
 
-Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-10-07 is in
+Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-10-13 is in
 seo/archive/ and is not required reading; it grew to 10,000 lines, which is why this one has rules.
 
 ## Rules for this file
@@ -40,23 +40,21 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Ornith 1.5 122B
-      is next: a third size of a family already here, and a vision model, so the text side is priced the way
-      MiniMax M3.1 Flash's and Nemotron 3.5 Bolt's are. Then Reka Edge 2603, and Ling 3.1 flash, a generation
-      above the Ling 3.0 flash priced here, which has no GGUF yet.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
+      next, then Ling 3.1 flash, a generation above the Ling 3.0 flash priced here, which has no GGUF yet.
 
-- [ ] Six model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
+- [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
       the models the intelligence index has scored, so an unscored model is in no pair however well sourced it
       is. The memory rule needs no score: it pairs two models that ask a machine for the same memory, which is
-      a footprint and a family name. Running that one rule over every model with a footprint would give the six
+      a footprint and a family name. Running that one rule over every model with a footprint would give the nine
       a page each, and the searches it answers are the ones the Search Console notes name.
 
-- [ ] Artificial Analysis has moved to **index v4.3.2**, and 56 rows here say v4.3. Every model page says "On
+- [ ] Artificial Analysis has moved to **index v4.3.2**, and all 62 rows here say v4.3. Every model page says "On
       the Artificial Analysis Intelligence Index v4.3 it scores N", out of `defaults.frontier_basis.name`, and
-      the 50 scores under it were read on 2026-09-11. Nemotron 3.5 Bolt's was read on the v4.3.2 page today and
-      recorded as v4.3 so that one row does not claim a scale the other 55 are not on. The fix is to re-read the
-      scores off the leaderboard and move the basis with them, which is a data edit over every scored row.
+      the 50 scores under it were read on 2026-09-11. Nemotron 3.5 Bolt's and MiniMax M3.1 Flash's were read on
+      v4.3.2 pages and recorded as v4.3 so those rows do not claim a scale the rest are not on. The fix is to
+      re-read the 53 scores off the leaderboard and move the basis with them, a data edit over every scored row.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
@@ -83,6 +81,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-10-26 — Ornith 1.5 122B is priced here, and the Qwen it is post-trained from settles two of its fields
+The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 75.84 GB of Q4_K_M off Ornith's own GGUF
+file list, 48 layers with 12 of them full attention and the other 36 linear, at 2 KV heads by 256, off `text_config`, 125,086,497,008 parameters off the
+safetensors index, MIT and 256k off the card. Two open fields were settled by the base rather than left null: Qwen3.5 122B-A10B's config matches this one on
+every architecture field and its index gives the same count to the digit, and its card states "122B in total and 10B activated", so `active_params_b` is 10.0
+from the base, not from the name, and the price is a stand-in on the same basis, Qwen3.5 122B-A10B at $0.26 / $2.08, re-read today as the cheapest of four
+endpoints. Nobody on OpenRouter serves Ornith at any size. The build priced is Ornith's own four-bit rather than unsloth's UD-Q4_K_XL at 79.71 GB, following
+the family's other two rows; the same 17 machines hold either build, so nothing hangs on it. Artificial Analysis 404s on it as on the other two Ornith models,
+so the score is `null` with a TODO and no pair rule reaches it, hence no head-to-head. The page reads finished: 17 of the 56 machines hold it at 32k, the
+cheapest a Framework Desktop, 128GB at $3,449 and 21 tok/s, 53 years to pay back, its whole 256k window 6.4 GB of cache, 26 pages linking in. Straight to
+main. Verified: 453 tests, typecheck and validate clean, the full build with build:functions, 331 pages every guard passing, 1 added and 201 redated with none
+dropped, the model page read rendered, six mutations of the row all caught by validate. Next: Reka Edge 2603, above.
 
 ### 2026-10-25 — MiniMax M3.1 Flash is priced here, and the sparse-attention cache it keeps is counted
 The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 249.40 GB of UD-Q4_K_XL over seven shards
@@ -268,29 +279,3 @@ the full build with build:functions, 320 pages every guard passing, 321 of 321 d
 others, five read rendered, and 24 mutations stopping the build, 23 on the new checkMeasuredMachines() and one on the
 guard already holding a card's price to the card. Watch: Mellum2.1 Thinking, Apache 2.0, 12.15B at 8.07 GB, every
 field but the index score and a rental price, and both of those are judgements. Next: the new backlog item, a data edit.
-
-### 2026-10-12 — 54 model pages name the fastest machine here, not "the fastest of the ones listed"
-Reading the two least-linked model pages for the backlog item turned up a false row in the answer block of all
-54. The row is chosen over every machine here that runs the model; the table under it is one machine per family,
-the cheapest of each. On 25 pages it named a machine in no table on the page, listing something the page did
-not; on 6 it named the box the row above had, one machine being both where only one runs the model. It reads
-"Fastest machine that runs it" now, carries that machine's price, and is left out where the cheapest is also
-the fastest. The price is the half that matters: both machines it ever names are graphics cards, the RTX PRO
-6000 Blackwell, 96GB on 36 pages and the RTX 5090, 32GB on 12, and $18,000 card only reads differently from a
-whole computer. Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions,
-320 pages every guard passing, 321 of 321 dated with those 54 moved and no others, four read rendered, and 12
-mutations stopping the build: 11 on the new checkFastestRow(), one on the guard already holding every speed to
-its basis. Watch: Kolibri 1 has every field but the index score, off its own repo. Next: the backlog, unchanged.
-
-### 2026-10-11 — The 16 last-generation model pages say whether the model is still worth running
-A model page answered what runs it, how fast and whether it pays back. On a last-generation model that is not
-the question: the non-brand searches here are exact model names, and a name still typed is one somebody is
-already running. Seven offered a head-to-head with a same-family successor, a link rather than an answer, and
-nine had none. The test is two figures and no judgement: a current model scoring higher on the index and
-needing no more memory at 32k. Each of the 16 has 7 to 22, so it is a count and the strongest one, not a list.
-Nine name a cheaper machine: Llama 3.3 70B wants $3,449 of
-computer, Qwen3.8 27B at four times the score wants $1,269. Two say the older model is the quicker, both an
-MoE against a dense replacement. Straight to main. Verified: 452 tests, typecheck clean, the full build with
-build:functions, 320 pages every guard passing, 321 of 321 dated with those 16 moved and no others, six read
-rendered, 15 mutations of `checkSupersededModels()` all stopping the build. Watch: Reka Edge 2603 is open
-weights with every figure citable off the repo and is a vision model, so Ryan's call, above. Next: the backlog.

@@ -1647,6 +1647,63 @@
     "TODO": "Capability ratings needed."
   },
   {
+    "id": "ornith-1.5-122b-q4",
+    "display_name": "Ornith 1.5 122B",
+    "family": "Ornith",
+    "generation": "current",
+    "params_b": 125.09,
+    "active_params_b": 10.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 75.84,
+    "kv_cache_gb_per_8k": 0.201,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 12,
+      "note": "Thirty-six of the 48 layers use linear attention and keep a fixed state whatever the context; the other 12 cache every token, so the whole 256k window costs about 6.4 GB. The shape is Qwen3.5 122B-A10B's exactly, down to the parameter count. Ornith's own four-bit GGUF is the one priced, at 75.84 GB; unsloth's dynamic UD-Q4_K_XL of the same weights is 79.71 GB."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Ornith's MIT-licensed coding and agent model, a post-train of Qwen3.5 122B-A10B: 125B total with 10B of it active for every token, so a token reads a fraction of the 76 GB on disk. It reads images as well as text, and the vision projector is a separate 0.91 GB download this page does not price.",
+    "cloud_equivalent": {
+      "name": "Qwen3.5 122B-A10B",
+      "input_price_per_mtok": 0.26,
+      "output_price_per_mtok": 2.08,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.5-122b-a10b",
+      "is_exact_match": false,
+      "checked": "2026-10-26",
+      "stand_in": true,
+      "stand_in_for": "qwen3.5-122b-a10b-ud-q4",
+      "stand_in_basis": "finetune",
+      "note": "Nobody rents Ornith 1.5 122B by the token. It is a post-train of Qwen3.5 122B-A10B with the same architecture and the same parameter count, so it is priced as that."
+    },
+    "license": "MIT",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively; up to 1M with YaRN",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-10-26",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/ornith-ai/Ornith-1.5-122B",
+      "https://huggingface.co/ornith-ai/Ornith-1.5-122B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
     "id": "spark-x2.5-4b-q4",
     "display_name": "Spark-X2.5 4B",
     "family": "Spark",

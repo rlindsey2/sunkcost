@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-25
+Last checked: 2026-10-26
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,44 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-26 · Ornith 1.5 122B is a row now, and nothing else new is worth a figure
+
+**`ornith-1.5-122b-q4` is in `data/models.json`**, and every figure in it was read again today off the
+sources themselves. Ornith's own GGUF repository gives `Ornith-1.5-122B-Q4_K_M.gguf` at 75,843,911,648
+bytes, so **75.84 GB**, with Q5_K_M at 88.71 GB, Q6_K at 102.38 GB and the BF16 file at 249.36 GB.
+`text_config` gives **48 layers, 12 of them full attention** at a `full_attention_interval` of 4, with the
+other 36 `linear_attention`, `num_key_value_heads` 2 by `head_dim` 256, 256 experts with 8 routed and 1
+shared, `hidden_size` 3072 and `max_position_embeddings` **262,144**. The safetensors index gives
+**125,086,497,008** parameters, all BF16. The card gives MIT, 256k of context and YaRN at a factor of 4.0
+for roughly 1M, and says the model is a reasoning model built by self-improvement on top of Ornith 1.0,
+which was itself built on Qwen3.5 and Gemma 4.
+[the weights](https://huggingface.co/ornith-ai/Ornith-1.5-122B),
+[Ornith's GGUF](https://huggingface.co/ornith-ai/Ornith-1.5-122B-GGUF).
+
+**The base model is identifiable to the digit, which settled two open fields.** Qwen3.5 122B-A10B's
+`config.json` is this one's on every field read above, and its safetensors index gives the same
+125,086,497,008 parameters; its card states "122B in total and 10B activated" with "8 Routed + 1 Shared"
+experts. So `active_params_b` is **10.0**, from the base rather than from the name, and the row says as
+much. And the price is a stand-in on that basis: nobody on OpenRouter serves Ornith at all, at any size —
+no match in today's 468 models — so the row carries **Qwen3.5 122B-A10B at $0.26 / $2.08**, re-read today
+as the cheapest of four active endpoints, SiliconFlow and Alibaba tied on it.
+
+**The build call went to Ornith's own.** The family's other two rows price the publisher's own Q4_K_M, and
+[unsloth's dynamic UD-Q4_K_XL](https://huggingface.co/unsloth/Ornith-1.5-122B-GGUF) of the same weights is
+79.71 GB over 3 shards. Nothing hangs on the choice: the memory step below 95 GB is 72 GB, so both builds
+are held by the same 17 of the 56 machines at 32k, and the row's note names the other figure. Artificial
+Analysis 404s on it as on the other two Ornith models, so the score is `null` with a TODO and no pair rule
+reaches it, which is why the page has no head-to-head. The vision side is priced text-only, the way
+Nemotron 3.5 Bolt's and MiniMax M3.1 Flash's are, with the 0.91 GB `mmproj` named on the page as a download
+it does not price.
+
+**Nothing else.** The searches were the ones this file lists, and Hugging Face's newest text-generation
+repositories since yesterday are finetunes, LoRA adapters and third-party requantisations; Qwen, zai-org,
+moonshotai, google and mistralai have published no new text model since the last check, and NVIDIA's new
+repositories are Cosmos and video work. A third-party EXL3 of DeepSeek V4.1-Flash-1017 came up in the sweep;
+that model was ruled out on size on 2026-10-19 and its figures are unchanged. **Reka Edge 2603 is unchanged**
+and is next, with **Ling 3.1 flash** behind it, still without a GGUF.
 
 ### 2026-10-25 · MiniMax M3.1 Flash is a row now, and Ling 3.1 flash is the new name
 
