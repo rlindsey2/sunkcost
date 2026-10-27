@@ -1319,14 +1319,15 @@
     "active_params_b": 5.1,
     "quantisation": "Q4_K_M",
     "weights_gb": 77.8,
-    "kv_cache_gb_per_8k": 0.94,
+    "kv_cache_gb_per_8k": 0.066,
     "architecture": {
       "n_layers": 42,
       "n_kv_heads": 32,
       "head_dim": 128,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
       "full_attention_layers": 7,
-      "note": "Hybrid: five linear-attention layers per full-attention layer. Those seven layers use compressed latent attention, which this figure does NOT model, so the KV cache shown is an over-estimate.",
-      "TODO": "Read kv_lora_rank from config.json and switch this entry to the latent-attention path."
+      "note": "35 of the 42 layers are linear attention and keep a state of a fixed size, which does not grow with the context. The other 7 use latent attention: each caches one 512-number compressed vector plus a 64-number rotary key per token, 1,152 bytes a layer at 16 bits, so 8,064 bytes a token for the whole model."
     },
     "capabilities": {
       "summarisation": "unknown",
@@ -1335,7 +1336,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. MIT-licensed 124B with only 5.1B active, for machines with a lot of memory.",
+    "capability_note": "Not yet rated: released after our last ratings pass. MIT-licensed 124B with only 5.1B active, for machines with a lot of memory. Ling 3.1 flash is the newer model in this family, at 560B total and 25B active.",
     "cloud_equivalent": {
       "name": "Ling 3.0 flash",
       "input_price_per_mtok": 0.021,
@@ -1362,7 +1363,7 @@
       "https://huggingface.co/inclusionAI/Ling-3.0-flash",
       "https://huggingface.co/bartowski/Ling-3.0-flash-GGUF"
     ],
-    "TODO": "Capability ratings needed. KV-cache figure over-estimates: latent attention not yet modelled."
+    "TODO": "Capability ratings needed."
   },
   {
     "id": "ling-3.0-tiny-q4",
@@ -1373,14 +1374,15 @@
     "active_params_b": 1.3,
     "quantisation": "Q4_K_M",
     "weights_gb": 4.82,
-    "kv_cache_gb_per_8k": 0.403,
+    "kv_cache_gb_per_8k": 0.057,
     "architecture": {
       "n_layers": 24,
       "n_kv_heads": 16,
       "head_dim": 128,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
       "full_attention_layers": 6,
-      "note": "Hybrid: three linear-attention layers per full-attention layer. Those layers use compressed latent attention, which this figure does NOT model, so the KV cache shown is an over-estimate.",
-      "TODO": "Read kv_lora_rank from config.json and switch this entry to the latent-attention path."
+      "note": "18 of the 24 layers are linear attention and keep a state of a fixed size, which does not grow with the context. The other 6 use latent attention: each caches one 512-number compressed vector plus a 64-number rotary key per token, 1,152 bytes a layer at 16 bits, so 6,912 bytes a token for the whole model."
     },
     "capabilities": {
       "summarisation": "unknown",
@@ -1420,7 +1422,62 @@
       "https://huggingface.co/inclusionAI/Ling-3.0-tiny",
       "https://huggingface.co/inclusionAI/Ling-3.0-tiny-GGUF"
     ],
-    "TODO": "Capability ratings needed. KV-cache figure over-estimates: latent attention not yet modelled."
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ling-3.1-flash-q4",
+    "display_name": "Ling 3.1 flash",
+    "family": "Ling",
+    "generation": "current",
+    "params_b": 560.0,
+    "active_params_b": 25.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 357.97,
+    "kv_cache_gb_per_8k": 0.085,
+    "architecture": {
+      "n_layers": 72,
+      "n_kv_heads": 64,
+      "head_dim": 128,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
+      "full_attention_layers": 9,
+      "note": "63 of the 72 layers are Kimi Delta Attention, a linear-attention layer whose state is a fixed size and does not grow with the context. The other 9 use gated latent attention: each caches one 512-number compressed vector plus a 64-number rotary key per token, 1,152 bytes a layer at 16 bits, so 10,368 bytes a token for the whole model. inclusionAI publishes the weights in FP8, so the four-bit GGUF is a requant of an already-quantised release."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. 25B active out of 560B, built for long agent runs, search and software engineering. Only nine of its 72 layers cache the whole context, so almost all of the memory it asks for goes on weights. inclusionAI published a post-training update, Ling-3.1-flash-1019, on 27 October; it is the same size and architecture, and the four-bit build priced here is of the original.",
+    "cloud_equivalent": {
+      "name": "Ling 3.1 Flash",
+      "input_price_per_mtok": 0.075,
+      "output_price_per_mtok": 0.225,
+      "source": "OpenRouter, cheapest of two active endpoints: DeepInfra and Novita tied on it",
+      "source_url": "https://openrouter.ai/inclusionai/ling-3.1-flash",
+      "is_exact_match": true,
+      "checked": "2026-10-27"
+    },
+    "license": "MIT",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k natively; the card says 1M",
+    "frontier_equivalent": {
+      "tier": 2,
+      "score": 41,
+      "score_note": "verbose: 220M output tokens over the index against a median of 140M",
+      "estimated": false,
+      "basis": "Artificial Analysis Intelligence Index v4.3: 41 (verbose: 220M output tokens over the index against a median of 140M)",
+      "url": "https://artificialanalysis.ai/models/ling-3-1-flash",
+      "checked": "2026-10-27",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/inclusionAI/Ling-3.1-flash",
+      "https://huggingface.co/bartowski/Ling-3.1-flash-GGUF"
+    ],
+    "TODO": "Capability ratings needed. Parameter count: the card says 560B, the checkpoint totals 572B because it bundles a multi-token-prediction layer."
   },
   {
     "id": "lfm2.5-2.6b-q4",

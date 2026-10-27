@@ -1183,17 +1183,17 @@ describe('the article in front of a machine name', () => {
 describe('what memory buys once two machines hold the same models', () => {
   const st = defaultState(data);
   it('stops at the longest context setting the machine still holds the model at', () => {
-    const m = data.models.find((x) => x.id === 'ling-3.0-flash-q4')!;
+    const m = data.models.find((x) => x.id === 'glm-4.5-air-q4')!;
     const spark = hw('nvidia-dgx-spark-128');
     const studio = hw('mac-studio-m5-max-128');
-    // 78 GB of weights, and the cache it leaves room for is what the two differ by
-    expect(longestContext(m, spark, data)).toBe(262144);
-    expect(longestContext(m, studio, data)).toBe(131072);
-    for (const [machine, ctx] of [[spark, 262144], [studio, 131072]] as const) {
+    // 73 GB of weights, and the cache it leaves room for is what the two differ by
+    expect(longestContext(m, spark, data)).toBe(131072);
+    expect(longestContext(m, studio, data)).toBe(65536);
+    for (const [machine, ctx] of [[spark, 131072], [studio, 65536]] as const) {
       expect(footprintGb(m, ctx)!).toBeLessThanOrEqual(machine.usable_memory_gb!);
     }
     // and one setting further is past what it has
-    expect(footprintGb(m, 262144)!).toBeGreaterThan(studio.usable_memory_gb!);
+    expect(footprintGb(m, 131072)!).toBeGreaterThan(studio.usable_memory_gb!);
   });
 
   it('never takes a model past its own context limit', () => {

@@ -1,6 +1,6 @@
 # SEO log
 
-Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-10-13 is in
+Read this file and seo/SEARCH-CONSOLE.md before doing anything. The log before 2026-10-15 is in
 seo/archive/ and is not required reading; it grew to 10,000 lines, which is why this one has rules.
 
 ## Rules for this file
@@ -40,8 +40,8 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
-      next, then Ling 3.1 flash, a generation above the Ling 3.0 flash priced here, which has no GGUF yet.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Dory 1.0 4B is
+      next, NVIDIA's own with its own GGUF repository, then LFM3 1.7B and Nanbeige4.3 33B, then Reka Edge 2603.
 
 - [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -50,11 +50,17 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       a footprint and a family name. Running that one rule over every model with a footprint would give the nine
       a page each, and the searches it answers are the ones the Search Console notes name.
 
-- [ ] Artificial Analysis has moved to **index v4.3.2**, and all 62 rows here say v4.3. Every model page says "On
+- [ ] Artificial Analysis has moved to **index v4.3.2**, and all 63 rows here say v4.3. Every model page says "On
       the Artificial Analysis Intelligence Index v4.3 it scores N", out of `defaults.frontier_basis.name`, and
-      the 50 scores under it were read on 2026-09-11. Nemotron 3.5 Bolt's and MiniMax M3.1 Flash's were read on
-      v4.3.2 pages and recorded as v4.3 so those rows do not claim a scale the rest are not on. The fix is to
-      re-read the 53 scores off the leaderboard and move the basis with them, a data edit over every scored row.
+      the 50 scores under it were read on 2026-09-11. Nemotron 3.5 Bolt's, MiniMax M3.1 Flash's and Ling 3.1
+      flash's were read on v4.3.2 pages and recorded as v4.3 so those rows do not claim a scale the rest are not
+      on. The fix is to re-read the 54 scores off the leaderboard and move the basis with them, a data edit over
+      every scored row.
+
+- [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
+      bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
+      its 262,144 ceiling builds clean and the page reads "256k tokens (1M)". Every one of the 15 notes that says
+      more than the figure is a sentence nothing checks against the number in front of it.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
@@ -81,6 +87,21 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-10-27 — Ling 3.1 flash is priced here, and the Ling family's cache goes on the latent path its data asked for
+The top backlog item wanted the best-sourced candidate as a row, and Ling 3.1 flash went ahead of Reka Edge 2603 because the one thing holding it back, a
+GGUF, has been out since 15 October. Every figure was read today: 357.97 GB of Q4_K_M over 10 shards off bartowski's file list, 72 layers at
+`layer_group_size` 8 with `kv_lora_rank` 512 and `qk_rope_head_dim` 64 off `config.json`, 560B with 25B active and MIT off the card, 41 off Artificial
+Analysis, and $0.075 / $0.225 off OpenRouter, an exact match and the cheapest of two endpoints. The card's "63 KDA + 9 Gated MLA" is settled by the
+modelling code, where a layer is full attention when `(layer_idx + 1) % layer_group_size == 0`, so nine of the 72 cache the whole context at 1,152 bytes a
+layer and the other 63 keep a state of a fixed size: 0.3 GB at 32k against 358 GB of weights. Two calls are made on the page: the ceiling is the config's
+262,144 with the note saying the card says 1M, and the build priced is the family's own four-bit, which costs nothing because the memory step below 384 GB
+usable is 192, so every build down to IQ2_M at 213.03 GB is held by the same two 512 GB Macs. That architecture is the two Ling 3.0 rows' too, and their
+data carried a TODO to read `kv_lora_rank` and switch; both are on it now, so Ling 3.0 flash's cache goes 0.94 to 0.066 GB per 8k and the machines holding
+it at 256k go 6 to 17. Five head-to-heads the pair rules re-sorted away are in `RETIRED_PAGES` with 301s. Straight to main. Verified: 453 tests with one
+repointed at a model whose cache still separates two machines, typecheck and validate clean, the full build with build:functions, 332 pages every guard
+passing, 6 added and 5 retired with 214 redated, four pages read rendered, four mutations of the row caught by validate and a fifth that was not, which is
+the new backlog item above. Next: Dory 1.0 4B, above.
 
 ### 2026-10-26 — Ornith 1.5 122B is priced here, and the Qwen it is post-trained from settles two of its fields
 The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 75.84 GB of Q4_K_M off Ornith's own GGUF
@@ -252,30 +273,3 @@ alone, which is how the bug lived: with `checkContextCost()`'s expectation mutat
 nothing and the new one named all 44 pages, and separately every wrong denominator. Watch: Underdog Saluki 27B is Qwen3.8 27B at
 two bits, 7.90 GB against 16.46, Apache 2.0 and 344,177 downloads in a week, and nobody but its publisher has measured what it
 keeps. Next: the backlog, unchanged.
-
-### 2026-10-14 — 50 model pages price the window a reader is buying for, not only the 32k the page is quoted at
-A model page prices everything at 32k and says so. The window somebody wants is usually the model's own ceiling, and
-between the two the answer can change completely; the only way to read it was one machine at a time, out of the
-"Longest context" column. The 50 pages with a longer window to price now give the footprint at both, the cache at
-both, the machines here that hold it at each, the cheapest still sold at each, and both speeds on one machine, so the
-window is the only thing that changes between them. Ministral 3 8B goes 9.8 GB to 41.7 GB, 37 machines to 20, $899 to
-$1,700 and 20 tok/s to 4.6. On 13 the window costs no more machine; on 2 nothing still sold holds it, and the two
-512 GB Macs that do are named with why neither is a purchase. Straight to main. Verified: 452 tests, typecheck clean,
-the full build with build:functions, 320 pages every guard passing, 321 of 321 dated with those 50 moved and no
-others, four read rendered, and 20 mutations of the new `checkContextCost()` all stopping the build. It caught a
-false claim before it shipped: MiniMax M2.7 stops at 200k and GLM-4.7-Flash at 198k, so the 128k each page can price
-is neither its ceiling nor the longest on offer. Watch done. Next: the new item below, Ryan's. Top item unmoved.
-
-### 2026-10-13 — 16 model pages print the speeds somebody measured running that model
-A model page's table is one machine per family, the cheapest of each, over the machines still sold at a published
-price. A benchmark gets run on the box somebody already owns, which is usually last year's, so the two sets barely
-meet: 78 of the 98 measured figures in data/throughput.json sat on no model page at all. Llama 3.1 8B Instruct has
-nine and its page printed eight speeds, every one worked out from bandwidth, under a note saying speeds are measured
-where a public benchmark exists. The 16 pages with a measurement their table misses now table every one: the machine,
-its price, the figure read at 32k, and the figure as published, linking the source that took it at the window it was
-run at. checkFastestRow() wanted narrowing too: its "nothing here is quicker" read every cell on the page, and a
-figure published at an empty window is not a figure at 32k. Straight to main. Verified: 452 tests, typecheck clean,
-the full build with build:functions, 320 pages every guard passing, 321 of 321 dated with those 16 moved and no
-others, five read rendered, and 24 mutations stopping the build, 23 on the new checkMeasuredMachines() and one on the
-guard already holding a card's price to the card. Watch: Mellum2.1 Thinking, Apache 2.0, 12.15B at 8.07 GB, every
-field but the index score and a rental price, and both of those are judgements. Next: the new backlog item, a data edit.

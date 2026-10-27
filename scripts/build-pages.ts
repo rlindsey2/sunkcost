@@ -7569,6 +7569,15 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   // 2026-10-22, to Qwen3.8 27B: Beam 1.0 scores 30, between it and Inkling Small, which
   // were neighbours on the index until it arrived.
   ['/compare/qwen3-8-27b-q4-vs-inkling-small-ud-q4/', '/models/qwen3.8-27b-q4/'],
+  // 2026-10-27: Ling 3.1 flash scores 41, between GLM-5.3-Flash and Qwen3.8 Flash Next,
+  // which were neighbours on the index until it arrived.
+  ['/compare/glm-5-3-flash-ud-q4-vs-qwen3-8-flash-next-q4/', '/models/glm-5.3-flash-ud-q4/'],
+  // and the same day, the Ling 3.0 rows moved on to the latent-attention path, which cut
+  // what they ask a machine for at 32k and re-sorted four memory neighbours around them.
+  ['/compare/ling-3-0-flash-q4-vs-glm-4-5-air-q4/', '/models/ling-3.0-flash-q4/'],
+  ['/compare/ling-3-0-flash-q4-vs-devstral-2-123b-q4/', '/models/ling-3.0-flash-q4/'],
+  ['/compare/qwen3-5-122b-a10b-ud-q4-vs-mistral-small-4-119b-q4/', '/models/qwen3.5-122b-a10b-ud-q4/'],
+  ['/compare/qwen3-5-9b-q4-vs-ling-3-0-tiny-q4/', '/models/qwen3.5-9b-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;

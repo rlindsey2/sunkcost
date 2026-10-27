@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-26
+Last checked: 2026-10-27
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,47 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-27 · Ling 3.1 flash is a row now, and its four-bit GGUF has been out for twelve days
+
+**`ling-3.1-flash-q4` is in `data/models.json`**, ahead of Reka Edge 2603, because the only thing holding it
+back was a GGUF and the GGUF has been out since 15 October. Every figure was read today off the sources.
+bartowski's repository gives `Ling-3.1-flash-Q4_K_M` at 357,969,521,664 bytes over 10 shards, so **357.97 GB**,
+with IQ4_XS at 317.08 GB, Q3_K_M at 275.06 GB and Q2_K at 219.17 GB. The card gives **560B total, 25B active**,
+MIT, and the layer split outright: **63 KDA + 9 Gated MLA (7:1)**. `config.json` gives 72 layers at
+`layer_group_size` 8, `kv_lora_rank` **512**, `qk_rope_head_dim` **64**, 512 experts with 8 routed and 1 shared,
+`hidden_size` 4096 and `max_position_embeddings` **262,144**. The modelling code settles which layers are which:
+a layer is full attention when `(layer_idx + 1) % layer_group_size == 0`, so layers 7, 15 ... 71, nine of the 72.
+Artificial Analysis gives **41** on index v4.3.2, at 220M output tokens over the index against a median of 140M,
+and OpenRouter serves it at **$0.075 / $0.225**, DeepInfra and Novita tied on it, an exact rental match.
+[the weights](https://huggingface.co/inclusionAI/Ling-3.1-flash),
+[bartowski's GGUF](https://huggingface.co/bartowski/Ling-3.1-flash-GGUF),
+[the score](https://artificialanalysis.ai/models/ling-3-1-flash).
+
+**Two calls on the page.** The card says a 1M window and the config says 262,144, which is also what OpenRouter
+serves, so the row takes 256k and its note says the card says 1M. And the quantisation costs nothing: the memory
+step below 384 GB usable is 192 GB, so every build from Q4_K_M down to IQ2_M at 213.03 GB is held by the same two
+512 GB Macs, which makes the family's own four-bit the obvious one. A post-training update,
+**Ling-3.1-flash-1019**, landed today at the same size and architecture, with 44 claimed on v4.3.2 against the
+41 Artificial Analysis publishes for the model it updates; its only GGUF so far is a community two-bit at
+226.77 GB, so the row prices the original and its note names the update.
+[the 1019 checkpoint](https://huggingface.co/inclusionAI/Ling-3.1-flash-1019).
+
+**Three new names, none of them chased yet.** **Dory 1.0 4B** is NVIDIA Nemotron Labs' own, published
+2026-10-16 with a GGUF repository of its own at 13,321 downloads, and it is the strongest of the three: a 4B
+runs on every machine here. **LFM3 1.7B** is Liquid's new generation above the LFM2.5 rows priced here,
+1,728,801,536 parameters in BF16, created 2026-10-23, licence `other`, 6,311 downloads, with VL, Audio and Omni
+siblings at 2B. **Nanbeige4.3 33B** is a new family, 33,118,977,024 parameters, Apache 2.0, created 2026-10-24,
+4,785 downloads, already requantised by half a dozen third parties. Each still needs its GGUF file sizes, its
+`config.json`, an index score and a price.
+[Dory's GGUF](https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-GGUF),
+[LFM3 1.7B](https://huggingface.co/LiquidAI/LFM3-1.7B),
+[Nanbeige4.3 33B](https://huggingface.co/Nanbeige/Nanbeige4.3-33B).
+
+**Nothing else.** The searches were the ones this file lists. Hugging Face's newest text-generation repositories
+since yesterday are third-party requantisations of models already priced here, LoRA adapters and probe uploads;
+Qwen, zai-org, moonshotai, google and mistralai have published no new text model since the last check. **Reka
+Edge 2603 is unchanged** and is still waiting, now behind the three above.
 
 ### 2026-10-26 · Ornith 1.5 122B is a row now, and nothing else new is worth a figure
 
