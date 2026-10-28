@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-27
+Last checked: 2026-10-28
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,41 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-28 · LFM3 1.7B is a row now, and Dory's weights repository has gone behind a gate
+
+**`lfm3-1.7b-q4` is in `data/models.json`**, ahead of Dory 1.0 4B, because Dory's weights repository
+answers `Invalid username or password` today on both the API and the raw `config.json`, so its
+architecture cannot be re-read; only its GGUF repository is still open. Every LFM3 figure was read today
+off the sources. Liquid's own GGUF gives `LFM3-1.7B-Q4_K_M.gguf` at 1,099,627,808 bytes, so **1.10 GB**,
+with QAD-Q4_0 at 1.05 GB, Q5_K_M at 1.26 GB, Q6_K at 1.43 GB, Q8_0 at 1.85 GB and BF16 at 3.47 GB. That
+four-bit is the smallest download this site prices, under LFM2.5 2.6B's 1.67 GB. `config.json` gives
+**24 layers**: `layer_types` lists 13 `conv`, 5 `sliding_attention` and 6 `full_attention`, at
+`num_key_value_heads` **4** by `head_dim` **128**, `sliding_window` **256**, `hidden_size` 2048 and
+`max_position_embeddings` **262,144**; the card's own table says the same split in words. There is no
+`num_global_key_value_heads` or `global_head_dim`, so the two attention kinds share a geometry. The
+safetensors index gives **1,728,801,536** parameters, all BF16, against the card's 1.73B. The licence is
+**LFM Open License v1.0** (`license_name: lfm1.0`), the same one the two LFM2.5 rows carry.
+`kv_cache_gb_per_8k` works out at **0.103 GB**: 6 growing layers at 2,048 B a token is 100.7 MB at 8k,
+and the 5 windowed layers stop at 256 tokens, 2.6 MB between them. The whole 256k window is 3.2 GB.
+[the weights](https://huggingface.co/LiquidAI/LFM3-1.7B),
+[the GGUF](https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF).
+
+**Two fields had no source and one price had moved.** Artificial Analysis 404s on LFM3 1.7B, so the index
+score is `null` with a TODO and no pair rule reaches it, hence no head-to-head. Nobody rents it:
+OpenRouter lists three `liquid/` endpoints today and all three are LFM2.5. The row stands in at Granite
+4.2 8B, as MiniCPM5 2B, Spark-X2.5 4B, Spark-X2.6 4B, Qwen3.5 4B and Ling 3.0 tiny already do — and
+reading that price today moved it: CoreWeave serves Granite 4.2 8B at **$0.06 / $0.15** against
+DeepInfra's $0.06 / $0.25, cheaper or equal on both sides, so the Granite row and its five stand-ins
+went to $0.15 with it.
+
+**Nothing else new worth a figure.** The searches were the ones this file lists. Hugging Face's newest
+text-generation repositories since yesterday are third-party requantisations, LoRA adapters and probe
+uploads. **Nanbeige4.3 33B** is still waiting, now the best-sourced candidate left; **Reka Edge 2603** is
+unchanged and behind it; **Dory 1.0 4B** is blocked on the gate above, on top of the Q5_K_M-only build and
+the twice-run recurrent layers this data has no convention for. **Clover-35B-A3B-Preview**
+(`Diffuspace/Clover-35B-A3B-Preview`, created 2026-10-24) is new on the trending list at 105 downloads
+with community GGUFs only, and has not been chased.
 
 ### 2026-10-27 · Ling 3.1 flash is a row now, and its four-bit GGUF has been out for twelve days
 

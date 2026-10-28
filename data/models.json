@@ -1395,11 +1395,11 @@
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
-      "output_price_per_mtok": 0.25,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-09-09",
+      "checked": "2026-10-28",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_score",
@@ -1503,7 +1503,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Convolution hybrid, so the context costs almost no memory. A useful floor for small machines.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Convolution hybrid, so the context costs almost no memory. A useful floor for small machines. LFM3 1.7B is Liquid's newer generation: smaller, with a 256k context and 0.57 GB less to download.",
     "cloud_equivalent": {
       "name": "LFM2.5 2.6B",
       "input_price_per_mtok": 0.0,
@@ -1534,6 +1534,65 @@
     "TODO": "Capability ratings needed."
   },
   {
+    "id": "lfm3-1.7b-q4",
+    "display_name": "LFM3 1.7B",
+    "family": "Liquid",
+    "generation": "current",
+    "params_b": 1.729,
+    "active_params_b": 1.729,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 1.1,
+    "kv_cache_gb_per_8k": 0.103,
+    "architecture": {
+      "n_layers": 24,
+      "n_kv_heads": 4,
+      "head_dim": 128,
+      "full_attention_layers": 6,
+      "sliding_window_layers": 5,
+      "sliding_window": 256,
+      "note": "Three kinds of layer in 24: 13 gated short convolutions that keep a fixed-size state, 5 sliding-window attention capped at 256 tokens, and 6 global attention. Only those 6 grow with the context, so the whole 256k window costs 3.2 GB of cache against 1.1 GB of weights."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Liquid's new generation and the smallest download on this list: a dense 1.73B post-trained for local agents and tool calling, in 16 languages. Liquid says to use retrieval for anything knowledge-heavy and not to reach for it for agentic coding or long chains of reasoning.",
+    "cloud_equivalent": {
+      "name": "Granite 4.2 8B",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.15,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
+      "is_exact_match": false,
+      "checked": "2026-10-28",
+      "stand_in": true,
+      "stand_in_for": "granite-4.2-8b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents LFM3 1.7B by the token, and it has no intelligence score. Priced as Granite 4.2 8B, the smallest current model on this list that anyone hosts, which is what the other small models here are priced as."
+    },
+    "license": "LFM 1.0 (see repo)",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-10-28",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/LiquidAI/LFM3-1.7B",
+      "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
     "id": "minicpm5-2b-q4",
     "display_name": "MiniCPM5 2B",
     "family": "MiniCPM",
@@ -1560,11 +1619,11 @@
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
-      "output_price_per_mtok": 0.25,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-09-09",
+      "checked": "2026-10-28",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_score",
@@ -1790,11 +1849,11 @@
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
-      "output_price_per_mtok": 0.25,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-09-09",
+      "checked": "2026-10-28",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_size",
@@ -1849,11 +1908,11 @@
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
-      "output_price_per_mtok": 0.25,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-24",
+      "checked": "2026-10-28",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_size",
@@ -2191,11 +2250,11 @@
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
-      "output_price_per_mtok": 0.25,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-09-09",
+      "checked": "2026-10-28",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_score",
@@ -2455,11 +2514,11 @@
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
-      "output_price_per_mtok": 0.25,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-28"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 131072,

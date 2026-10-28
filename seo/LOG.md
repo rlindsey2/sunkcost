@@ -39,9 +39,14 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
+- [ ] **Fifty rental prices were last read on 3, 9 or 15 September, and one of them had moved.** Today's
+      re-read of Granite 4.2 8B found CoreWeave at $0.06 / $0.15 where the data said $0.06 / $0.25, a figure
+      six rows divide by. Every pay-back on this site is a hardware price over a rental bill, so a stale
+      price is a wrong answer on every page that prints one. Re-read the 50 off OpenRouter, in batches.
+
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Dory 1.0 4B is
-      next, NVIDIA's own with its own GGUF repository, then LFM3 1.7B and Nanbeige4.3 33B, then Reka Edge 2603.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Nanbeige4.3 33B
+      is next, then Reka Edge 2603. Dory 1.0 4B is blocked: its weights repository is gated as of 2026-10-28.
 
 - [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -87,6 +92,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-10-28 — LFM3 1.7B is priced here, and reading its stand-in's price found one that had moved
+The top backlog item wanted the best-sourced candidate as a row, and LFM3 1.7B went ahead of Dory 1.0 4B because Dory's weights repository answers
+`Invalid username or password` today, so its architecture cannot be re-read; only its GGUF is still open. Every LFM3 figure was read today: 1.10 GB of
+Q4_K_M off Liquid's own GGUF file list, 24 layers split 13 gated short convolutions, 5 sliding attention at a 256-token window and 6 global, at 4 KV
+heads by 128, off `config.json` and said again in words on the card, 1,728,801,536 parameters off the safetensors index, 262,144 tokens and LFM Open
+License v1.0 off the card. It is the smallest download this site prices, 1.10 GB against LFM2.5 2.6B's 1.67, and only the 6 global layers grow, so its
+whole 256k window costs 3.2 GB of cache and all 56 machines hold it there. Artificial Analysis 404s on it, so the score is `null` with a TODO and no
+pair rule reaches it, hence no head-to-head. Nobody rents it either, so the row stands in at Granite 4.2 8B as the five other small models here do — and
+re-reading that price moved it: CoreWeave serves Granite at $0.06 / $0.15 against DeepInfra's $0.06 / $0.25, cheaper on both sides, so the Granite row
+and its five stand-ins went with it. That the price had been stale since 9 September is the new top backlog item above. Straight to main. Verified: 453
+tests, typecheck and validate clean, the full build with build:functions, 333 pages every guard passing, 1 added and 252 redated with none dropped, the
+new page and LFM2.5 2.6B's read rendered, eight mutations of the row all caught by validate. Next: Nanbeige4.3 33B, above.
 
 ### 2026-10-27 — Ling 3.1 flash is priced here, and the Ling family's cache goes on the latent path its data asked for
 The top backlog item wanted the best-sourced candidate as a row, and Ling 3.1 flash went ahead of Reka Edge 2603 because the one thing holding it back, a
