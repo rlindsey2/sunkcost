@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-28
+Last checked: 2026-10-29
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,23 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-29 · Nothing new worth a figure, and two models have stopped being rented
+
+**No new candidate.** The searches were the ones this file lists. Hugging Face's newest text-generation
+repositories since yesterday are third-party requantisations, LoRA adapters, abliterations and probe
+uploads; nothing with its own weights. **Nanbeige4.3 33B** is still the best-sourced candidate left and
+now has a four-bit GGUF out (`AtomicChat/Nanbeige4.3-33B-GGUF`, created 2026-10-25, 41,770 downloads), so
+the build it would be priced at is downloadable. **Reka Edge 2603** is unchanged and behind it. **Dory
+1.0 4B** is still gated. **Clover-35B-A3B-Preview** (`Diffuspace/Clover-35B-A3B-Preview`) has gone from
+105 downloads to 1,030 with community GGUFs only, and has not been chased.
+
+**What the day's work found instead.** Re-reading every rental price (LOG.md) turned up two models
+nobody rents any longer: OpenRouter lists **no endpoint at all** for `qwen/qwen3-8b` or for
+`deepseek/deepseek-r1-distill-llama-70b`, confirmed on two reads an hour apart, which took the price off
+three rows here. The watch's own lesson is that an endpoint's `status` flaps: DeepInfra's Gemma 3 27B
+endpoint read deranked at 20:18 and active at 20:35 the same evening, so a price taken off one read of
+one minute can be the wrong figure by a third.
 
 ### 2026-10-28 · LFM3 1.7B is a row now, and Dory's weights repository has gone behind a gate
 

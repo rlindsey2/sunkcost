@@ -1117,7 +1117,7 @@ function checkBoardLedes() {
   if (swap.paying !== paying.length)
     problems.push(`/hardware/ counts ${swap.paying} machines that pay back where its own table prints ${paying.length}`);
   say(
-    `Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table.`,
+    swapSentence(swap),
     'on how many of its machines another model pays back sooner than the one in the table',
   );
   const fastest = strongestAlsoFastest();
@@ -2502,6 +2502,18 @@ const DAYS_PER_DECADE = DAYS_PER_MONTH * 120;
  * table; `paying` is the machines with a figure at all. The two paragraphs print both
  * and `checkBoardLedes()` holds them to this.
  */
+/**
+ * The swap sentence, written once because the page prints it and the guard reads
+ * it back. Where every machine that pays back at all holds something that pays
+ * back sooner, the sentence says so: a count out of itself reads as a near miss,
+ * and "on the other 0" is not a clause.
+ */
+function swapSentence(swap: { beaten: number; paying: number }): string {
+  return swap.beaten === swap.paying
+    ? `Swapping the model changes it on every one of the ${swap.paying} machines that pay back at all: each of them holds something that pays back sooner than the model in the table.`
+    : `Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table.`;
+}
+
 function paybackBeaten(): { beaten: number; paying: number } {
   let beaten = 0;
   let paying = 0;
@@ -7115,7 +7127,7 @@ function hardwareIndex(): string {
 ${plateau && quickest && slowest ? `<h2>Does a dearer machine run a better model?</h2>
 <p>The short version: more money buys memory, and memory buys a stronger model in only ${numberWord(steps.length)} steps. Of the ${entries.length} machines here, ${plateau.on.length} top out at the same model, ${esc(plateau.model.display_name)}${plateau.cheapest && plateau.dearest ? `: everything from the ${esc(shortHardwareLabel(plateau.cheapest.hw))} at ${priceWithScopeText(plateau.cheapest.hw)} to the ${esc(shortHardwareLabel(plateau.dearest.hw))} at ${priceWithScopeText(plateau.dearest.hw)}` : ''}. ${aboveCount ? `${sentenceCase(numberWord(aboveCount))} hold something stronger${cheapestAbove ? `, and the cheapest of those is the ${esc(shortHardwareLabel(cheapestAbove.hw))} at ${priceWithScopeText(cheapestAbove.hw)}` : ''}, while ${holdAll.length === 1 ? 'one machine holds' : `${numberWord(holdAll.length)} hold`} all ${total} current models.` : ''} Between those steps the money buys speed, spare memory and a longer window rather than a better model.${launchLine([plateau.cheapest, plateau.dearest, cheapestAbove])}</p>
 <h2>How long each machine takes to pay for itself</h2>
-<p>Pay-back runs the other way, because the strongest model a machine holds is never the fastest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. ${decadeLine} What changes the answer is using the machine much harder. Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table. <a href="/best/">Best buys by usage</a> ranks every pair.${launchLine([quickest])}</p>` : ''}
+<p>Pay-back runs the other way, because the strongest model a machine holds is never the fastest thing it can run. At ${esc(fmtTokens(st.usage))} tokens a day on that model, the quickest figure in the table is <b>${esc(fmtDuration(quickest.days as number))}</b>, on the ${esc(shortHardwareLabel(quickest.hw))}, and the slowest is ${esc(fmtDuration(slowest.days as number))}. ${decadeLine} What changes the answer is using the machine much harder. ${swapSentence(swap)} <a href="/best/">Best buys by usage</a> ranks every pair.${launchLine([quickest])}</p>` : ''}
 <h2>Every machine here, side by side</h2>
 ${stack(`<table class="board">
 <thead><tr><th>Machine</th><th>Price</th><th>Usable memory</th><th>Models it holds, of ${total}</th><th>Strongest model it holds, and its speed</th><th>Pays back in</th></tr></thead>

@@ -27,7 +27,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/meta-llama/llama-3.1-8b-instruct",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Llama 3.1 Community License",
     "sources": [
@@ -77,7 +77,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/meta-llama/llama-3.1-8b-instruct",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Llama 3.1 Community License",
     "sources": [
@@ -121,14 +121,17 @@
     },
     "capability_note": "Quick and competent on short tasks. Reasoning mode helps a little and costs a lot of tokens.",
     "cloud_equivalent": {
-      "name": "Qwen3 8B",
-      "input_price_per_mtok": 0.117,
-      "output_price_per_mtok": 0.455,
+      "name": "Ministral 3 8B",
+      "input_price_per_mtok": 0.15,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
-      "source_url": "https://openrouter.ai/qwen/qwen3-8b",
-      "is_exact_match": true,
-      "checked": "2026-09-03",
-      "note": "Single provider on OpenRouter; price is fragile."
+      "source_url": "https://openrouter.ai/mistralai/ministral-8b-2512",
+      "is_exact_match": false,
+      "checked": "2026-10-29",
+      "note": "Nobody rents Qwen3 8B by the token any more: it has no active OpenRouter endpoint. Priced as Ministral 3 8B, the current hosted model closest to it on the intelligence index (5 against 5) and the nearest to it in size.",
+      "stand_in": true,
+      "stand_in_for": "ministral-3-8b-q4",
+      "stand_in_basis": "nearest_score"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -178,7 +181,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-14b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -228,7 +231,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-32b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -278,7 +281,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-32b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -323,12 +326,12 @@
     "capability_note": "Fast because only 3.3B parameters are active per token. Quality close to the dense 32B on everyday tasks.",
     "cloud_equivalent": {
       "name": "Qwen3 30B-A3B Instruct 2507",
-      "input_price_per_mtok": 0.048,
-      "output_price_per_mtok": 0.193,
+      "input_price_per_mtok": 0.09,
+      "output_price_per_mtok": 0.3,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-30b-a3b-instruct-2507",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -374,11 +377,11 @@
     "cloud_equivalent": {
       "name": "Qwen3-Coder 30B-A3B",
       "input_price_per_mtok": 0.07,
-      "output_price_per_mtok": 0.27,
+      "output_price_per_mtok": 0.28,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-coder-30b-a3b-instruct",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -428,7 +431,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-235b-a22b-2507",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -482,7 +485,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/google/gemma-3-12b-it",
       "is_exact_match": true,
-      "checked": "2026-09-03",
+      "checked": "2026-10-29",
       "note": "Single provider on OpenRouter; price is fragile."
     },
     "license": "Gemma Terms of Use",
@@ -533,11 +536,11 @@
     "cloud_equivalent": {
       "name": "Gemma 3 27B it",
       "input_price_per_mtok": 0.08,
-      "output_price_per_mtok": 0.45,
+      "output_price_per_mtok": 0.16,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/google/gemma-3-27b-it",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Gemma Terms of Use",
     "sources": [
@@ -587,7 +590,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/mistralai/mistral-small-3.2-24b-instruct",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -631,14 +634,17 @@
     },
     "capability_note": "Thinks out loud at length, which eats your tokens/sec budget. Good at maths, poor at tool use.",
     "cloud_equivalent": {
-      "name": "DeepSeek-R1-Distill-Llama-70B",
-      "input_price_per_mtok": 0.8,
-      "output_price_per_mtok": 0.8,
+      "name": "gpt-oss-20b",
+      "input_price_per_mtok": 0.018,
+      "output_price_per_mtok": 0.09,
       "source": "OpenRouter, cheapest active endpoint",
-      "source_url": "https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b",
+      "source_url": "https://openrouter.ai/openai/gpt-oss-20b",
       "is_exact_match": false,
-      "checked": "2026-09-03",
-      "note": "The Qwen-32B distill has no active OpenRouter endpoint; the Llama-70B distill (single provider) is the nearest hosted model in the family."
+      "checked": "2026-10-29",
+      "note": "Nobody rents DeepSeek-R1-Distill-Qwen-32B by the token any more: neither distill has an active OpenRouter endpoint. Priced as gpt-oss-20b, the current hosted model closest to it on the intelligence index (9 against 8).",
+      "stand_in": true,
+      "stand_in_for": "gpt-oss-20b-mxfp4",
+      "stand_in_basis": "nearest_score"
     },
     "license": "MIT",
     "sources": [
@@ -682,14 +688,17 @@
     },
     "capability_note": "Strong maths and reasoning for an open model, but slow and verbose. Not for agents.",
     "cloud_equivalent": {
-      "name": "DeepSeek-R1-Distill-Llama-70B",
-      "input_price_per_mtok": 0.8,
-      "output_price_per_mtok": 0.8,
+      "name": "gpt-oss-20b",
+      "input_price_per_mtok": 0.018,
+      "output_price_per_mtok": 0.09,
       "source": "OpenRouter, cheapest active endpoint",
-      "source_url": "https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b",
-      "is_exact_match": true,
-      "checked": "2026-09-03",
-      "note": "Single provider on OpenRouter; price is fragile."
+      "source_url": "https://openrouter.ai/openai/gpt-oss-20b",
+      "is_exact_match": false,
+      "checked": "2026-10-29",
+      "note": "Nobody rents DeepSeek-R1-Distill-Llama-70B by the token any more: it has no active OpenRouter endpoint. Priced as gpt-oss-20b, the current hosted model closest to it on the intelligence index (9 against 8).",
+      "stand_in": true,
+      "stand_in_for": "gpt-oss-20b-mxfp4",
+      "stand_in_basis": "nearest_score"
     },
     "license": "MIT",
     "sources": [
@@ -739,7 +748,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/meta-llama/llama-3.3-70b-instruct",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Llama 3.3 Community License",
     "sources": [
@@ -788,12 +797,12 @@
     "capability_note": "Punchy for 12 GB, with adjustable reasoning effort. High effort is slow; low effort is shallow.",
     "cloud_equivalent": {
       "name": "gpt-oss-20b",
-      "input_price_per_mtok": 0.02,
-      "output_price_per_mtok": 0.1,
+      "input_price_per_mtok": 0.018,
+      "output_price_per_mtok": 0.09,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/openai/gpt-oss-20b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -843,11 +852,11 @@
     "cloud_equivalent": {
       "name": "gpt-oss-120b",
       "input_price_per_mtok": 0.03,
-      "output_price_per_mtok": 0.17,
+      "output_price_per_mtok": 0.15,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/openai/gpt-oss-120b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -897,7 +906,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/z-ai/glm-4.5-air",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "MIT",
     "sources": [
@@ -951,7 +960,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/meta-llama/llama-4-scout",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Llama 4 Community License",
     "sources": [
@@ -1002,12 +1011,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Sizes and prices are current.",
     "cloud_equivalent": {
       "name": "Gemma 4 31B it",
-      "input_price_per_mtok": 0.09,
+      "input_price_per_mtok": 0.1,
       "output_price_per_mtok": 0.34,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/google/gemma-4-31b-it",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -1062,7 +1071,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -1118,12 +1127,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Sizes and prices are current.",
     "cloud_equivalent": {
       "name": "Qwen3.8 27B",
-      "input_price_per_mtok": 0.32,
-      "output_price_per_mtok": 2.5,
+      "input_price_per_mtok": 0.039,
+      "output_price_per_mtok": 1.25,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.8-27b",
       "is_exact_match": true,
-      "checked": "2026-09-03"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -1177,7 +1186,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/mistralai/mistral-small-2603",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "sources": [
@@ -1230,11 +1239,11 @@
     "cloud_equivalent": {
       "name": "Muse Glimmer 30B",
       "input_price_per_mtok": 0.3,
-      "output_price_per_mtok": 1.1,
+      "output_price_per_mtok": 1.2,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/meta/muse-glimmer-30b",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 131072,
@@ -1289,7 +1298,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/poolside/laguna-xs-2.1",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "OpenMDW 1.1",
     "max_context_tokens": 262144,
@@ -1344,7 +1353,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/inclusionai/ling-3.0-flash",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "MIT",
     "max_context_tokens": 262144,
@@ -1399,7 +1408,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-28",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_score",
@@ -1458,7 +1467,7 @@
       "source": "OpenRouter, cheapest of two active endpoints: DeepInfra and Novita tied on it",
       "source_url": "https://openrouter.ai/inclusionai/ling-3.1-flash",
       "is_exact_match": true,
-      "checked": "2026-10-27"
+      "checked": "2026-10-29"
     },
     "license": "MIT",
     "max_context_tokens": 262144,
@@ -1511,7 +1520,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/liquid/lfm-2.5-2.6b:free",
       "is_exact_match": true,
-      "checked": "2026-09-09",
+      "checked": "2026-10-29",
       "note": "Listed free on OpenRouter on the date checked, which makes the break-even against it meaningless — a free endpoint can never be beaten on price."
     },
     "license": "LFM 1.0 (see repo)",
@@ -1567,7 +1576,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-28",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_size",
@@ -1623,7 +1632,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-28",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_score",
@@ -1680,7 +1689,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
       "is_exact_match": false,
-      "checked": "2026-09-15",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.5-9b-q4",
       "stand_in_basis": "finetune",
@@ -1737,7 +1746,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
       "is_exact_match": false,
-      "checked": "2026-09-03",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.6-35b-a3b-q4",
       "stand_in_basis": "finetune",
@@ -1794,7 +1803,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-122b-a10b",
       "is_exact_match": false,
-      "checked": "2026-10-26",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.5-122b-a10b-ud-q4",
       "stand_in_basis": "finetune",
@@ -1853,7 +1862,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-28",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_size",
@@ -1912,7 +1921,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-28",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_size",
@@ -1971,7 +1980,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/thinkingmachines/inkling-small",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 1048576,
@@ -2028,7 +2037,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
       "is_exact_match": false,
-      "checked": "2026-09-15",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.5-9b-q4",
       "stand_in_basis": "nearest_score",
@@ -2084,12 +2093,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Google's quantisation-aware build for small machines; the published weights are already 4-bit.",
     "cloud_equivalent": {
       "name": "gpt-oss-20b",
-      "input_price_per_mtok": 0.02,
-      "output_price_per_mtok": 0.1,
+      "input_price_per_mtok": 0.018,
+      "output_price_per_mtok": 0.09,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/openai/gpt-oss-20b",
       "is_exact_match": false,
-      "checked": "2026-09-03",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "gpt-oss-20b-mxfp4",
       "stand_in_basis": "nearest_score",
@@ -2149,7 +2158,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/google/gemma-4-26b-a4b-it",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2202,7 +2211,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2254,7 +2263,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": false,
-      "checked": "2026-10-28",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "granite-4.2-8b-q4",
       "stand_in_basis": "nearest_score",
@@ -2305,12 +2314,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. The previous dense Qwen at this size; Qwen3.8 27B scores higher for the same memory.",
     "cloud_equivalent": {
       "name": "Qwen3.6 27B",
-      "input_price_per_mtok": 0.3,
+      "input_price_per_mtok": 0.25,
       "output_price_per_mtok": 2.0,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.6-27b",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2362,7 +2371,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3-coder-next",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2414,7 +2423,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-122b-a10b",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2467,7 +2476,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.8-flash",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "qwen-community-1.0",
     "max_context_tokens": 262144,
@@ -2518,7 +2527,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
       "is_exact_match": true,
-      "checked": "2026-10-28"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 131072,
@@ -2564,12 +2573,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Dense 30B; the context costs far more memory than the hybrid models of the same size.",
     "cloud_equivalent": {
       "name": "GLM-4.7-Flash",
-      "input_price_per_mtok": 0.061,
+      "input_price_per_mtok": 0.0605,
       "output_price_per_mtok": 0.4,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/z-ai/glm-4.7-flash",
       "is_exact_match": false,
-      "checked": "2026-09-09",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "glm-4.7-flash-q4",
       "stand_in_basis": "nearest_score",
@@ -2624,7 +2633,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/mistralai/ministral-8b-2512",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2675,7 +2684,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/mistralai/ministral-14b-2512",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -2721,12 +2730,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Mistral's coding model, with an unusually long context for its size.",
     "cloud_equivalent": {
       "name": "gpt-oss-20b",
-      "input_price_per_mtok": 0.02,
-      "output_price_per_mtok": 0.1,
+      "input_price_per_mtok": 0.018,
+      "output_price_per_mtok": 0.09,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/openai/gpt-oss-20b",
       "is_exact_match": false,
-      "checked": "2026-09-03",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "gpt-oss-20b-mxfp4",
       "stand_in_basis": "nearest_score",
@@ -2781,7 +2790,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/mistralai/devstral-2512",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "other (see repo)",
     "max_context_tokens": 262144,
@@ -2828,12 +2837,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. NVIDIA's Mamba hybrid: almost no KV cache, so long contexts cost nothing in memory.",
     "cloud_equivalent": {
       "name": "Nemotron 3.5 Lightning",
-      "input_price_per_mtok": 0.08,
-      "output_price_per_mtok": 0.2,
+      "input_price_per_mtok": 0.025,
+      "output_price_per_mtok": 0.12,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/nvidia/nemotron-3.5-lightning",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "OpenMDW 1.1",
     "max_context_tokens": 262144,
@@ -2881,12 +2890,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Replaces GLM-4.5-Air at a quarter of the size and a higher score.",
     "cloud_equivalent": {
       "name": "GLM-4.7-Flash",
-      "input_price_per_mtok": 0.061,
+      "input_price_per_mtok": 0.0605,
       "output_price_per_mtok": 0.4,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/z-ai/glm-4.7-flash",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "MIT",
     "max_context_tokens": 202752,
@@ -2936,12 +2945,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Ties Qwen3.8 Flash for the strongest open model, but needs a 256 GB machine.",
     "cloud_equivalent": {
       "name": "GLM-5.3-Flash",
-      "input_price_per_mtok": 0.075,
-      "output_price_per_mtok": 0.25,
+      "input_price_per_mtok": 0.0513,
+      "output_price_per_mtok": 0.0701,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/z-ai/glm-5.3-flash",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "MIT",
     "max_context_tokens": 1048576,
@@ -2988,12 +2997,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. The DeepSeek that replaced the R1 distills. Its compressed cache makes a million-token context practical.",
     "cloud_equivalent": {
       "name": "DeepSeek V4-Flash",
-      "input_price_per_mtok": 0.065,
-      "output_price_per_mtok": 0.18,
-      "source": "OpenRouter, cheapest active endpoint",
+      "input_price_per_mtok": 0.04732,
+      "output_price_per_mtok": 0.09464,
+      "source": "OpenRouter, cheapest active endpoint at 15:1 input to output",
       "source_url": "https://openrouter.ai/deepseek/deepseek-v4-flash",
       "is_exact_match": true,
-      "checked": "2026-09-09"
+      "checked": "2026-10-29"
     },
     "license": "MIT",
     "max_context_tokens": 1048576,
@@ -3044,7 +3053,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/minimax/minimax-m2.7",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "other (see repo)",
     "max_context_tokens": 204800,
@@ -3092,12 +3101,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. 23B active out of about 428B, natively multimodal and built for coding and long agent runs. It reads images and video as well as text, and the vision encoder is a separate 1.7 GB download this page does not price.",
     "cloud_equivalent": {
       "name": "MiniMax M3.1 Flash",
-      "input_price_per_mtok": 0.09,
-      "output_price_per_mtok": 0.5,
+      "input_price_per_mtok": 0.135,
+      "output_price_per_mtok": 0.54,
       "source": "OpenRouter, cheapest of thirteen active endpoints: Relace at FP4",
       "source_url": "https://openrouter.ai/minimax/minimax-m3.1-flash",
       "is_exact_match": true,
-      "checked": "2026-10-25"
+      "checked": "2026-10-29"
     },
     "license": "MiniMax Community License",
     "max_context_tokens": 1048576,
@@ -3144,12 +3153,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Tencent's Apache-licensed flagship. Needs an Ultra-class machine.",
     "cloud_equivalent": {
       "name": "Tencent Hy3",
-      "input_price_per_mtok": 0.083,
+      "input_price_per_mtok": 0.0825,
       "output_price_per_mtok": 0.33,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/tencent/hy3",
       "is_exact_match": true,
-      "checked": "2026-09-15"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -3201,7 +3210,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
       "is_exact_match": false,
-      "checked": "2026-09-03",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.6-35b-a3b-q4",
       "stand_in_basis": "finetune",
@@ -3257,7 +3266,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/liquid/lfm-2.5-24b-a2b",
       "is_exact_match": true,
-      "checked": "2026-10-20"
+      "checked": "2026-10-29"
     },
     "license": "LFM 1.0 (see repo)",
     "max_context_tokens": 131072,
@@ -3305,12 +3314,12 @@
     "capability_note": "Not yet rated: released after our last ratings pass. NVIDIA quantised this one itself, to two bits with quantisation-aware training, so that a 74B model fits in 24 GB. It reads images and video as well as text, and the vision encoder is a separate 1.7 GB download this page does not price.",
     "cloud_equivalent": {
       "name": "Qwen3.6 27B",
-      "input_price_per_mtok": 0.3,
+      "input_price_per_mtok": 0.25,
       "output_price_per_mtok": 2.0,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.6-27b",
       "is_exact_match": false,
-      "checked": "2026-10-21",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.6-27b-q4",
       "stand_in_basis": "nearest_score",
@@ -3369,7 +3378,7 @@
       "source": "OpenRouter, cheapest of five active endpoints: Nebius at FP8",
       "source_url": "https://openrouter.ai/reflection/beam-1.0-501b-a23b",
       "is_exact_match": true,
-      "checked": "2026-10-22"
+      "checked": "2026-10-29"
     },
     "license": "Apache 2.0",
     "max_context_tokens": 1048576,
@@ -3424,7 +3433,7 @@
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
       "is_exact_match": false,
-      "checked": "2026-10-23",
+      "checked": "2026-10-29",
       "stand_in": true,
       "stand_in_for": "qwen3.6-35b-a3b-q4",
       "stand_in_basis": "nearest_size",

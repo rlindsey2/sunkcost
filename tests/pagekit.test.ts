@@ -1774,9 +1774,17 @@ describe('what a month of it costs', () => {
   });
 
   it('keeps a longer span crossing at a lower level of use than a shorter one', () => {
-    const crossings = SPREAD_MONTHS.map((m) => monthlyCrossing(model, machine, data, m)).filter((c): c is number => c != null);
-    expect(crossings.length).toBeGreaterThan(1);
-    expect([...crossings].sort((a, b) => b - a)).toEqual(crossings);
+    // the ordering is the function's, not one model's: a rental cheap enough never
+    // passes the shorter spans at all, so the rule is read over every model the
+    // machine holds, and at least one of them has to reach two spans for it to mean
+    // anything
+    let reachingTwo = 0;
+    for (const m of data.models) {
+      const crossings = SPREAD_MONTHS.map((months) => monthlyCrossing(m, machine, data, months)).filter((c): c is number => c != null);
+      if (crossings.length > 1) reachingTwo++;
+      expect([...crossings].sort((a, b) => b - a), m.id).toEqual(crossings);
+    }
+    expect(reachingTwo).toBeGreaterThan(0);
   });
 
   it('is the electricity that barely moves between machines, and the machine that does not', () => {

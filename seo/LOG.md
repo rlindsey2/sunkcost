@@ -39,10 +39,16 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Fifty rental prices were last read on 3, 9 or 15 September, and one of them had moved.** Today's
-      re-read of Granite 4.2 8B found CoreWeave at $0.06 / $0.15 where the data said $0.06 / $0.25, a figure
-      six rows divide by. Every pay-back on this site is a hardware price over a rental bill, so a stale
-      price is a wrong answer on every page that prints one. Re-read the 50 off OpenRouter, in batches.
+- [ ] **LFM2.5 2.6B is priced at a free endpoint, so its page sets a machine against nothing.** Liquid lists
+      `lfm-2.5-2.6b:free` at $0 in and $0 out, which is a real listing and today's cheapest, so the page reads
+      "Renting the same model costs $0 per million input tokens" and then "buying a machine only beats that if
+      you use it hard enough", which nothing can. Flint has the same problem and the precedent for it: where the
+      only listing is free, the row stands in at the nearest hosted model. The paid Liquid endpoint is $0.35 /
+      $0.50. One of the two is this row's price; the free one cannot be.
+
+- [ ] The sweep wording added today has a mirror nothing writes: where no machine that pays back is beaten by
+      another model, `/hardware/` would read "Swapping the model changes it on 0 of the 54 machines", and the
+      self-ratio guard passes a zero. The same prices that took it to 54 of 54 can take it to 0.
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
       page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Nanbeige4.3 33B
@@ -92,6 +98,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-10-29 — Every rental price on the site re-read, and three rows nobody rents any more
+The top backlog item wanted the 50 stale prices read again off OpenRouter in batches; its endpoints API gives every provider's two prices for a model in
+one request, so all 64 rows were read today instead, twice, an hour apart. The rule, written down because it picks the figure: of a model's endpoints, the
+standard service tier only (a `flex` or `priority` tier is a different product at a different price) and active only, take the one cheapest on both prices;
+failing that, the one cheapest at this site's own 15:1 mix, which happened once, on DeepSeek V4-Flash, whose source line says so. Twenty-two rows moved. The largest is Qwen3.8 27B, the model the calculator opens on, from $0.32 / $2.50 to $0.039 / $1.25 off Chutes, of 18
+active endpoints; then GLM-5.3-Flash to $0.0513 / $0.0701, Nemotron 3.5 Lightning to $0.025 / $0.12, gpt-oss-20b to $0.018 / $0.09 and its two stand-ins
+with it. Reading twice was the day's lesson: DeepInfra's Gemma 3 27B endpoint read deranked at 20:18 and active at 20:35, a third off that row's price.
+Nobody rents **Qwen3 8B** or the **Llama-70B distill** at any price now, on either read, so they and the Qwen-32B distill are stand-ins, at Ministral 3 8B
+and at gpt-oss-20b, the nearest current hosted model on the index each way. `/hardware/` had come to read "54 of the 54 machines that pay back at all", a
+count out of itself, so the swap sentence has sweep wording and is written once for the page and its guard to share. Straight to main. Verified: 453 tests
+with one widened off a single model, typecheck and validate clean, the full build with build:functions, 333 pages every guard passing, 292 redated with
+none added or dropped, four re-priced pages read rendered, seven mutations of the new rows all caught. Next: Nanbeige4.3 33B, GGUF out since 25 October.
 
 ### 2026-10-28 — LFM3 1.7B is priced here, and reading its stand-in's price found one that had moved
 The top backlog item wanted the best-sourced candidate as a row, and LFM3 1.7B went ahead of Dory 1.0 4B because Dory's weights repository answers
@@ -250,44 +269,3 @@ mutations stopping the build. The new `checkSweepCounts()` reads it both ways: n
 itself, tables aside, and the pages the data gives a sweep have to claim it, rebuilt off the machines at the size. Watch: LFM2.5
 24B-A2B is the best-sourced candidate this watch has had, an exact rental price and only the index score missing. Next: the
 backlog is two items, both data edits and Ryan's.
-
-### 2026-10-17 — Three model pages stop offering a dearer machine that pays back no sooner
-A model page offers a second machine as the shortest pay-back, chosen over every machine here that runs the model. On three it
-named one $30 dearer than the cheapest whose figure the row below already printed: muse-glimmer-30b-q4 at 22 years against 22,
-qwen3.6-27b-q4 at 19 and qwen3.8-27b-q4 at 17, the days behind them 2 to 55 apart out of 6,000 to 8,000, which is noise on a speed
-worked out from bandwidth. The row drops out there now, the way the fastest-machine row already drops out where the cheapest
-machine is also the fastest, and 11 pages keep it because the two answers differ. That closes the top backlog item as it asked.
-Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of
-321 dated with those 3 moved and no others, all three read rendered and one of the 11 that keep the row, and 11 mutations stopping
-the build, 10 on the new `checkBestValueRow()` and one on `checkTableWidths()`. The new guard reads each Pay-back cell of the
-page's own table back against the machine beside it, so the claim and the table cannot drift apart. Watch: Beam's four-bit GGUF is
-out at 306.53 GB, which both 512 GB Macs hold with room for its 1M window, so yesterday's obstacle is gone and the quantisation is
-the call; Nemotron 3.5 Bolt 74B-A9B is new at 22.02 GB, NVIDIA's own build is two-bit and it is a vision model, so both of Ryan's
-open questions at once; Muse Spark Open is out on size. Next: the two machine pages reading "39 of the 39 current models".
-
-### 2026-10-16 — 170 pages say which models they count, and every machine page names the ones it leaves out
-A machine page counts models over the 39 the calculator counts, the current ones, and called that "the 39 open models on this
-site". This site prices 55, and 26 of those pages table published speeds for superseded models no count on them includes, so
-the page's first sentence and its snippet read as a count of everything here. Every count of that set now says current: 56
-machine ledes and their descriptions, 111 head-to-heads, /hardware/, /compare/ and /best-gpu/. Each machine page also names
-the superseded ones it holds at 32k, linked and strongest first, 3 on an RTX 3060 and 15 on an RTX PRO 6000. That closes the
-top backlog item as it asked, off a reader's question: inbound links go 5 to 61 on gemma-3-12b-q4 and 5 to 55 on
-llama-3.1-8b-q8, and the thinnest pages here are now the four largest models, at 11 to 16. Straight to main. Verified: 452
-tests, typecheck clean, the full build with build:functions, 320 pages every guard passing, 321 of 321 dated with those 170
-moved, five read rendered, and 22 mutations of the new `checkModelCountScope()`, 20 stopping the build and 2 unobservable; it
-caught two unscoped description counts on its first run. Watch: Beam is out, Apache 2.0, every field citable but the index
-version, and its one four-bit build is NVFP4 at 293.63 GB, which nothing here with room for it runs. Next: the backlog.
-
-### 2026-10-15 — 50 model pages say which set of machines they are counting
-A model page counts machines twice. The sentence under its table counts all 56 the site lists, which answers whether the box
-somebody already owns runs the model: a discontinued card and an unpriced Mac still run one. The section pricing a longer window
-counts the 37 still sold at a published price, which answers what to buy. Neither said so, so 44 pages read "All 56 machines on
-this site run it at 32k" and, two sections later, "37 machines here hold Gemma 3 12B it at 32k": two counts of one claim at one
-window, differing, both right. Every count in that section now carries its set and the size of it, in the words the section's own
-other branch already used. Straight to main. Verified: 452 tests, typecheck clean, the full build with build:functions, 320 pages
-every guard passing, 321 of 321 dated with those 50 moved and no others, one page read rendered in full and the new paragraph on
-ten more, covering all three of its branches, and 13 mutations all stopping the build. The new `checkMachineCountScope()` holds
-alone, which is how the bug lived: with `checkContextCost()`'s expectation mutated to agree with the page, the old guard saw
-nothing and the new one named all 44 pages, and separately every wrong denominator. Watch: Underdog Saluki 27B is Qwen3.8 27B at
-two bits, 7.90 GB against 16.46, Apache 2.0 and 344,177 downloads in a week, and nobody but its publisher has measured what it
-keeps. Next: the backlog, unchanged.
