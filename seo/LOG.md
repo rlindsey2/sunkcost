@@ -51,8 +51,9 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       self-ratio guard passes a zero. The same prices that took it to 54 of 54 can take it to 0.
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Nanbeige4.3 33B
-      is next, then Reka Edge 2603. Dory 1.0 4B is blocked: its weights repository is gated as of 2026-10-28.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
+      next, then SenseNova-Loop-9B-Preview, new on 28 October and unread here. Dory 1.0 4B is blocked: its
+      weights repository is gated as of 2026-10-28.
 
 - [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -98,6 +99,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-10-30 — Nanbeige4.3 33B is priced here, and its plain dense cache is what sets two cards furthest apart
+The top backlog item wanted the best-sourced candidate as a row, and Nanbeige4.3 33B went first because its four-bit GGUF has been out since 25 October.
+Every figure was read today: 20.79 GB of Q4_K_M off bartowski's file list, the most-downloaded GGUF of it; 52 layers at 8 KV heads by 128 off
+`config.json`, with no `layer_types`, sliding window or expert fields, the plainest architecture this site prices; 33,118,977,024 parameters off the
+safetensors index, all of them active; 524,288 tokens and Apache 2.0 off the card. The plainness is the page's point: every layer caches the whole
+context, so the cache is 1.745 GB per 8k, three times Qwen3.8 27B's at a similar size and second only to Granite 4.2 30B's among the models a 32 GB card
+holds. That makes it the widest headroom row on the R9700 against RTX PRO 6000 head-to-head, 32k against 256k, a ratio of 8 where nothing else beat 4.
+Artificial Analysis 404s on it, so the score is `null` with a TODO and no pair rule reaches it, hence no head-to-head. Nobody rents it either, OpenRouter
+listing no Nanbeige model on either of two reads, so the row stands in at Gemma 4 31B it, the closest hosted model dense the same way, 31.27B all-active
+against 33.12B, re-read today as CoreWeave's $0.10 / $0.34; Laguna XS 2.1 is nearer in size but 3B of it runs per token, a cheaper thing to serve.
+Straight to main. Verified: 453 tests with two repointed off facts this row changes, typecheck and validate clean, the full build with build:functions,
+334 pages every guard passing, 1 added and 224 redated with none dropped, the page read rendered, eight mutations of the row caught. Next: Reka Edge 2603.
 
 ### 2026-10-29 — Every rental price on the site re-read, and three rows nobody rents any more
 The top backlog item wanted the 50 stale prices read again off OpenRouter in batches; its endpoints API gives every provider's two prices for a model in

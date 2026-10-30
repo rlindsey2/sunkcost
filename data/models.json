@@ -3457,5 +3457,61 @@
       "https://huggingface.co/unsloth/flint-GGUF"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "nanbeige4.3-33b-q4",
+    "display_name": "Nanbeige4.3 33B",
+    "family": "Nanbeige",
+    "generation": "current",
+    "params_b": 33.12,
+    "active_params_b": 33.12,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 20.79,
+    "kv_cache_gb_per_8k": 1.745,
+    "architecture": {
+      "n_layers": 52,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Every one of the 52 layers caches the whole context, at eight KV heads by 128 wide, so nothing here slows the cache down as it grows."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Nanbeige built it for coding and tool use, and it is dense: every one of its 33.12B parameters runs for every token, so a token reads the whole 21 GB on disk. English and Chinese.",
+    "cloud_equivalent": {
+      "name": "Gemma 4 31B it",
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.34,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-4-31b-it",
+      "is_exact_match": false,
+      "checked": "2026-10-30",
+      "stand_in": true,
+      "stand_in_for": "gemma-4-31b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody sells Nanbeige4.3 by the token, so there is no price of its own to buy against. Priced as Gemma 4 31B it, the closest hosted model that is dense the same way: 31.27B with every parameter active, against 33.12B. Laguna XS 2.1 is nearer in total size at 33.44B, but only 3B of it runs per token, which is a cheaper thing to serve."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 524288,
+    "max_context_note": "512k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-10-30",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Nanbeige/Nanbeige4.3-33B",
+      "https://huggingface.co/bartowski/Nanbeige_Nanbeige4.3-33B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]

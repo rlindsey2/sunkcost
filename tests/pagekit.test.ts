@@ -404,7 +404,9 @@ describe('the memory question', () => {
     for (const model of data.models) {
       const working = kvWorking(model, CTX);
       if (working == null) continue;
-      expect(working).toContain(`${kvCacheGb(model, CTX)!.toFixed(1)} GB`);
+      // against the site's own formatter, not a second rounding of the same number:
+      // Nanbeige4.3 33B's cache lands on a whole 7 GB at 32k, which is written without a nought
+      expect(working).toContain(fmtGb1(kvCacheGb(model, CTX)));
     }
   });
 });
@@ -1256,10 +1258,14 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(widest).not.toBeNull();
     const ratio = (r: { a: number | null; b: number | null }) => (r.a ?? 0) / (r.b ?? 1);
     for (const r of rows) expect(ratio(r)).toBeLessThanOrEqual(ratio(widest));
-    // 64k to 256k beats 128k to 256k, though the second is the larger number of tokens
-    expect(ratio(widest)).toBe(4);
+    expect(ratio(widest)).toBe(8);
     expect(widest.a).toBe(262144);
-    expect(widest.b).toBe(65536);
+    expect(widest.b).toBe(32768);
+    // a ratio rather than a gap: 64k to 256k beats 256k to 512k, the larger number of tokens
+    const m = (id: string) => data.models.find((x) => x.id === id)!;
+    const byRatio = { model: m('gemma-4-12b-q4'), a: 262144, b: 65536 };
+    const byGap = { model: m('gemma-4-31b-q4'), a: 524288, b: 262144 };
+    expect(widestHeadroom([byGap, byRatio])).toBe(byRatio);
   });
 
   it('keeps the page\'s order on a tie, and has nothing to name when nothing differs', () => {

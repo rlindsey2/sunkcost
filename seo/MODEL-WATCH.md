@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-29
+Last checked: 2026-10-30
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,45 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-30 · Nanbeige4.3 33B is a row now, and its plain dense cache is what sets two cards furthest apart
+
+**`nanbeige4.3-33b-q4` is in `data/models.json`**, the candidate this file has carried since 24 October, and
+every figure was read today off the sources. bartowski's GGUF gives `Nanbeige_Nanbeige4.3-33B-Q4_K_M.gguf` at
+20,788,825,216 bytes, so **20.79 GB**, with Q5_K_M at 25.07, Q6_K at 29.02, Q8_0 at 35.20 and BF16 at 66.24
+over two shards; it is the most-downloaded GGUF of the model, 90,952 against AtomicChat's 45,848, whose own
+four-bit is an imatrix build rather than a plain Q4_K_M. `config.json` is as plain as this site sees:
+`LlamaForCausalLM`, **52 layers**, `num_key_value_heads` **8** by `head_dim` **128**, `hidden_size` 7168, no
+`layer_types`, no `sliding_window`, no expert or router fields, and `max_position_embeddings` **524,288**, which
+the card says again in words — "a context length of up to 524,288 tokens (512K)". The safetensors index gives
+`total_size` 66,237,954,048 bytes of BF16, so **33,118,977,024 parameters**, and nothing is sparse, so all of it
+runs for every token. The licence is **Apache 2.0**, off the card's front matter and the repository tag.
+[the weights](https://huggingface.co/Nanbeige/Nanbeige4.3-33B),
+[the GGUF](https://huggingface.co/bartowski/Nanbeige_Nanbeige4.3-33B-GGUF).
+
+**The cache is the figure worth knowing.** Every one of the 52 layers caches the whole context at 4,096 bytes a
+token, so `kv_cache_gb_per_8k` is **1.745 GB** — second only to Granite 4.2 30B's 2.147 among the models a 32 GB
+card holds, and three times Qwen3.8 27B's at a similar size, because nothing here is windowed or linear. That
+is what makes it the widest headroom row on the R9700/RTX PRO 6000 head-to-head: the Radeon AI PRO R9700, 32GB
+takes it to 32k and the RTX PRO 6000 Blackwell, 96GB to 256k, a ratio of 8 where no other shared model beat 4.
+The whole 512k window costs about 112 GB of cache on top of the weights.
+
+**Two fields have no source.** Artificial Analysis 404s on it, so the score is `null` with a TODO and no pair
+rule reaches it, hence no head-to-head. Nobody rents it: OpenRouter lists no `nanbeige` model at all, so the row
+stands in at **Gemma 4 31B it**, the closest hosted model dense the same way, 31.27B with every parameter active
+against 33.12B, re-read today as CoreWeave's $0.10 / $0.34, cheapest on both prices of the eleven active
+standard-tier endpoints and unchanged from yesterday; two reads ten minutes apart agreed, and neither listed
+Nanbeige. Laguna XS 2.1 is nearer in total size at 33.44B and was not used: 3B of it runs per token, which is a
+cheaper thing to serve.
+
+**Nothing new today.** The searches were the ones this file lists. Hugging Face's newest text-generation
+repositories since yesterday are third-party requantisations, NPU exports and abliterations; nothing with its
+own weights. **Reka Edge 2603** is the best-sourced candidate left. **Dory 1.0 4B** is still gated.
+**Clover-35B-A3B-Preview** has gone from 1,030 downloads to 1,505 with community GGUFs only, and has not been
+chased. One name is genuinely new and worth a look tomorrow: **SenseNova-Loop-9B-Preview**
+([sensenova/SenseNova-Loop-9B-Preview](https://huggingface.co/sensenova/SenseNova-Loop-9B-Preview), created
+2026-10-28, 12 downloads), with two community GGUFs of it put up today and nothing read off it here yet. At 9B
+it would run on every machine this site prices.
 
 ### 2026-10-29 · Nothing new worth a figure, and two models have stopped being rented
 
