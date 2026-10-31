@@ -7156,6 +7156,20 @@ ${stack(`<table class="board">
 /* --------------------- what a token costs either way --------------------- */
 
 /**
+ * How many of the machine's models pay it back, written once because the page
+ * prints it and `checkTokenCost()` reads it back. Where every model the machine
+ * holds pays back, the sentence says so: a count out of itself reads as a near
+ * miss when it is the strongest thing the page can say. The other half of the
+ * sum is a model whose rented million costs less than the electricity to
+ * generate it, which the paragraph below the table names and counts.
+ */
+function paybackSentence(priced: number, total: number): string {
+  return priced === total
+    ? `Every one of the ${total} models here pays the machine back at some point.`
+    : `${priced} of the ${total} models here pay the machine back at some point; on the other ${total - priced} a rented million costs less than the electricity to generate it.`;
+}
+
+/**
  * The page the rest of the site is an instance of: what a token costs to rent
  * against what it costs to generate, and how many of them it takes before the
  * machine has paid for itself.
@@ -7256,7 +7270,6 @@ function tokenCostPage(): string {
 
   // where renting wins outright, counted over every machine and model that can be priced
   let beaten = 0;
-  let free = 0;
   let wins = 0;
   const lostOn = new Map<string, Model>();
   for (const h of data.hardware) {
@@ -7267,22 +7280,20 @@ function tokenCostPage(): string {
       if (v.model?.id !== m.id || !v.calc) continue;
       const c = tokenCost(m, h, rowFor(v, m)!.throughput.tokensPerSec!, data);
       if (!c) continue;
-      if (c.rented === 0) free++;
-      else if (c.rented > c.generated) wins++;
+      if (c.rented > c.generated) wins++;
       else {
         beaten++;
         lostOn.set(m.id, m);
       }
     }
   }
-  const pairs = wins + beaten + free;
+  const pairs = wins + beaten;
   // where the API wins on price it is worth saying which models, because so far it
   // has been one: a dense model priced as the much lighter one nobody rents it beside
   const losers = [...lostOn.values()];
   const loser = losers.length === 1 ? losers[0] : null;
   const loserCe = loser?.cloud_equivalent;
   const loserStandIn = loser && loserCe?.stand_in ? data.models.find((m) => m.display_name === loserCe.name) ?? null : null;
-  const freeModels = [...new Set(costs.filter((c) => c.cost.rented === 0).map((c) => c.row.model))];
 
   const body = `<article class="prose">
 <h1>Is a local LLM cheaper than an API?</h1>
@@ -7308,7 +7319,7 @@ ${stack(`<table class="board">
 <thead><tr><th>Model</th><th>Rented</th><th>Generated</th><th>Cheaper by</th><th>Pays the machine back at</th></tr></thead>
 <tbody>${costs.map(costRow).join('\n')}</tbody>
 </table>`, { fig: 4 })}
-<p class="note">${priced.length} of the ${costs.length} models here pay the machine back at some point${freeModels.length ? `. ${freeModels.map((m) => esc(m.display_name)).join(' and ')} ${freeModels.length === 1 ? 'does not, because it is' : 'do not, because they are'} listed free by the cheapest host on the date checked, and a free endpoint cannot be beaten on price` : ''}. A model nobody rents is priced as its closest hosted match and the row says so.</p>
+<p class="note">${paybackSentence(priced.length, costs.length)} A model nobody rents is priced as its closest hosted match and the row says so.</p>
 
 <h2>The token count holds still. The date moves.</h2>
 <p>Break-even on this site is usually a number of months, and months depend on how hard you work the machine. Counted in tokens it does not: the saving on each million is the same at any level of use, so the count that covers ${fmtUsd(hw.price_usd)} is the same too. Here is ${esc(dm.display_name)} on a ${esc(label)} at the five levels the calculator names.</p>
@@ -7328,7 +7339,7 @@ ${stack(`<table class="board">
 <p class="note">Each row is a mix the calculator offers, and the one marked default is what every other figure on this site is priced at: ${esc(data.defaults.use_cases.find((u) => u.ratio === st.ratio)?.note ?? '')}, which is why it sends the most.</p>
 
 <h2>Where renting still wins</h2>
-<p>Of the ${n(pairs)} machine-and-model pairings this site can price, electricity beats the API on ${n(wins)}. On ${n(free)} the model is listed free by the cheapest host, so there is nothing to beat. ${
+<p>Of the ${n(pairs)} machine-and-model pairings this site can price, electricity beats the API on ${n(wins)}. ${
     loser
       ? `The remaining ${n(beaten)} are all one model, ${esc(loser.display_name)}${
           loserCe?.stand_in
@@ -7828,6 +7839,14 @@ function checkTokenCost() {
     for (const [side, v] of [['rented', c.cost.rented], ['generated', c.cost.generated]] as const)
       if (!html.includes(`>${fmtPerMtok(v)}<`))
         problems.push(`${path} does not print ${fmtPerMtok(v)}, what a million tokens of ${c.row.model.display_name} costs ${side}`);
+  }
+
+  // the sweep under the table, both ways round: the sentence the data writes is the
+  // sentence on the page, so the sweep wording cannot be dropped where the data holds
+  // it and cannot be claimed where it does not
+  {
+    const said = paybackSentence(costs.filter((c) => c.cost.breakevenTokens != null).length, costs.length);
+    if (!html.includes(said)) problems.push(`${path} does not say "${said}", which is what the ${costs.length} models on it come to`);
   }
 
   // the claim the page is built on: the same count of tokens at every level of use

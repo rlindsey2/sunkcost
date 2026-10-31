@@ -39,21 +39,15 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **LFM2.5 2.6B is priced at a free endpoint, so its page sets a machine against nothing.** Liquid lists
-      `lfm-2.5-2.6b:free` at $0 in and $0 out, which is a real listing and today's cheapest, so the page reads
-      "Renting the same model costs $0 per million input tokens" and then "buying a machine only beats that if
-      you use it hard enough", which nothing can. Flint has the same problem and the precedent for it: where the
-      only listing is free, the row stands in at the nearest hosted model. The paid Liquid endpoint is $0.35 /
-      $0.50. One of the two is this row's price; the free one cannot be.
-
 - [ ] The sweep wording added today has a mirror nothing writes: where no machine that pays back is beaten by
       another model, `/hardware/` would read "Swapping the model changes it on 0 of the 54 machines", and the
       self-ratio guard passes a zero. The same prices that took it to 54 of 54 can take it to 0.
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
-      next, then SenseNova-Loop-9B-Preview, new on 28 October and unread here. Dory 1.0 4B is blocked: its
-      weights repository is gated as of 2026-10-28.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Spark-X2.6 1.7B is
+      next, citable on every field, with one call to make: XHToken's own four-bit is 1.77 GB and bartowski's
+      1.09, a 62% gap on the same label. Then Reka Edge 2603. SenseNova-Loop-9B-Preview and RWKV7-G1l each need
+      a judgement first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
 
 - [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -99,6 +93,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-10-31 — LFM2.5 2.6B is priced at Liquid's paid endpoint, and a free listing can no longer be a price
+The top backlog item wanted the `$0 / $0` row off this page. Both slugs were read twice today, minutes apart: Liquid lists the model as
+`liquid/lfm-2.5-2.6b` at **$0.35 / $0.50** with the full 128k context, and as `liquid/lfm-2.5-2.6b:free` at $0 capped at 64k. The paid one is the row,
+exact-match, with the source line on the page saying which of the two it is and the capability note naming the free listing and its half window.
+`validate-data.ts` now rejects a rental price of zero outright, and a negative with its own message: a bill of zero is a sum with no answer, and the
+page had read "renting costs $0" and then "buying only beats that if you use it hard enough".
+That guard made three sentences unreachable, every one written for this row. `/local-llm-vs-api-cost/` came to read "33 of the 33 models here pay the
+machine back", which the sweep guard stopped the build over, and "On 0 the model is listed free, so there is nothing to beat", which it did not. Both
+free clauses are gone and the count has sweep wording in a `paybackSentence()` the page and `checkTokenCost()` share, the shape `swapSentence()` set on
+29 October. 15 pages changed, the best of them the ones that had said never: `/best/` lists it at 16 GB and the Llama 3.3 70B head-to-head goes from
+"never pays for itself" to 53 years. Straight to main. Verified: 453 tests, typecheck and validate clean, the full build
+with build:functions, 334 pages every guard passing, 15 changed with none added or dropped, four read rendered, five mutations caught: zero in each
+price, a negative, the sweep wording dropped, the sweep claimed on the wrong count. Watch done, nothing new. Next: Spark-X2.6 1.7B, above.
 
 ### 2026-10-30 — Nanbeige4.3 33B is priced here, and its plain dense cache is what sets two cards furthest apart
 The top backlog item wanted the best-sourced candidate as a row, and Nanbeige4.3 33B went first because its four-bit GGUF has been out since 25 October.

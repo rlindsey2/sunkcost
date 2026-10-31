@@ -1512,16 +1512,16 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Convolution hybrid, so the context costs almost no memory. A useful floor for small machines. LFM3 1.7B is Liquid's newer generation: smaller, with a 256k context and 0.57 GB less to download.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Convolution hybrid, so the context costs almost no memory. A useful floor for small machines. Liquid also serves it free on OpenRouter at half the context, 64k against 128k, so the paid endpoint is what the pay-back here is counted against. LFM3 1.7B is Liquid's newer generation: smaller, with a 256k context and 0.57 GB less to download.",
     "cloud_equivalent": {
       "name": "LFM2.5 2.6B",
-      "input_price_per_mtok": 0.0,
-      "output_price_per_mtok": 0.0,
-      "source": "OpenRouter, cheapest active endpoint",
-      "source_url": "https://openrouter.ai/liquid/lfm-2.5-2.6b:free",
+      "input_price_per_mtok": 0.35,
+      "output_price_per_mtok": 0.5,
+      "source": "OpenRouter, Liquid's paid endpoint, not the free listing beside it",
+      "source_url": "https://openrouter.ai/liquid/lfm-2.5-2.6b",
       "is_exact_match": true,
-      "checked": "2026-10-29",
-      "note": "Listed free on OpenRouter on the date checked, which makes the break-even against it meaningless — a free endpoint can never be beaten on price."
+      "checked": "2026-10-31",
+      "note": "Liquid is the only provider and lists the model twice: this endpoint at $0.35 / $0.50 with the full 128k context, and a free one capped at 64k. The paid listing is the price here, because a free endpoint leaves no bill for a machine to beat."
     },
     "license": "LFM 1.0 (see repo)",
     "max_context_tokens": 131072,

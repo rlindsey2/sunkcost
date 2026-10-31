@@ -6,12 +6,12 @@
       "changed": "2026-09-27"
     },
     "/best-gpu/": {
-      "hash": "e313cac3f1460cbc",
-      "changed": "2026-10-30"
+      "hash": "67dfec9965d611c4",
+      "changed": "2026-10-31"
     },
     "/best/": {
-      "hash": "663225ab9e254ab2",
-      "changed": "2026-10-29"
+      "hash": "6ebc18bc44e792fe",
+      "changed": "2026-10-31"
     },
     "/compare/": {
       "hash": "0f5061f3cabc5f5e",
@@ -182,8 +182,8 @@
       "changed": "2026-10-29"
     },
     "/compare/lfm2-5-2-6b-q4-vs-devstral-small-2-24b-q4/": {
-      "hash": "82e23e9d89b4e023",
-      "changed": "2026-10-29"
+      "hash": "9201e1fb22c33aa2",
+      "changed": "2026-10-31"
     },
     "/compare/ling-3-0-flash-q4-vs-minimax-m2-7-q4/": {
       "hash": "a2ba8a095c04646d",
@@ -214,8 +214,8 @@
       "changed": "2026-09-28"
     },
     "/compare/llama-3-3-70b-q4-vs-lfm2-5-2-6b-q4/": {
-      "hash": "294f11d367a19f7a",
-      "changed": "2026-10-07"
+      "hash": "1327817498ee50b9",
+      "changed": "2026-10-31"
     },
     "/compare/llama-4-scout-q4-vs-ministral-3-14b-q4/": {
       "hash": "f7632fe95da20664",
@@ -1026,60 +1026,60 @@
       "changed": "2026-10-30"
     },
     "/how-much-memory/128gb/": {
-      "hash": "40625dd74bebed5b",
-      "changed": "2026-10-30"
+      "hash": "bd14ae08bf3bad98",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/12gb/": {
-      "hash": "7d35705bda0f3bd2",
-      "changed": "2026-10-30"
+      "hash": "58d0e3befdcbbf5a",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/16gb/": {
-      "hash": "bc6f44add1d2956f",
-      "changed": "2026-10-30"
+      "hash": "e06972c290359610",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/192gb/": {
       "hash": "48f9b084be2b399b",
       "changed": "2026-10-30"
     },
     "/how-much-memory/24gb/": {
-      "hash": "b76aaa8fed761d39",
-      "changed": "2026-10-30"
+      "hash": "6a0bae3528671833",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/256gb/": {
       "hash": "949d8c842441734f",
       "changed": "2026-10-30"
     },
     "/how-much-memory/32gb/": {
-      "hash": "e284af9fd6dd9cbb",
-      "changed": "2026-10-30"
+      "hash": "0f76a4723a144fb0",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/36gb/": {
-      "hash": "2a65d54a74e49333",
-      "changed": "2026-10-30"
+      "hash": "6911a992698d4580",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/48gb/": {
-      "hash": "8c6b97abd7d8f037",
-      "changed": "2026-10-30"
+      "hash": "09e7297f52aa02c6",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/512gb/": {
       "hash": "a45cd7132295cc15",
       "changed": "2026-10-30"
     },
     "/how-much-memory/64gb/": {
-      "hash": "37e5c5c3605f57a4",
-      "changed": "2026-10-30"
+      "hash": "9a80f12e9d93c8fd",
+      "changed": "2026-10-31"
     },
     "/how-much-memory/96gb/": {
-      "hash": "e1ed1798ce525cfc",
-      "changed": "2026-10-30"
+      "hash": "02812d082efa3dc3",
+      "changed": "2026-10-31"
     },
     "/leaderboard/": {
       "hash": "5a4e680b03188e86",
       "changed": "2026-10-30"
     },
     "/local-llm-vs-api-cost/": {
-      "hash": "374af80703a2b491",
-      "changed": "2026-10-30"
+      "hash": "c38dd2f291ed1a5f",
+      "changed": "2026-10-31"
     },
     "/models/beam-1.0-501b-a23b-ud-q4/": {
       "hash": "408407db709b3c28",
@@ -1178,8 +1178,8 @@
       "changed": "2026-10-30"
     },
     "/models/lfm2.5-2.6b-q4/": {
-      "hash": "b631638230a83880",
-      "changed": "2026-10-29"
+      "hash": "42d405bbe167b8bf",
+      "changed": "2026-10-31"
     },
     "/models/lfm2.5-24b-a2b-q4/": {
       "hash": "6e8e171fe184da79",

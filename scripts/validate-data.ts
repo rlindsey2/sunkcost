@@ -1,7 +1,8 @@
 /**
  * Checks the JSON data files for shape and internal consistency. Run before build.
  * Fails on: broken references, negative numbers, KV-cache figures that disagree with
- * the architecture, stand-in power figures without a note. Warns on nulls (TODOs).
+ * the architecture, stand-in power figures without a note, rental prices of zero.
+ * Warns on nulls (TODOs).
  */
 import { readFileSync } from 'node:fs';
 import { kvCacheGbPer8kFromArchitecture } from '../src/fit';
@@ -55,6 +56,13 @@ for (const m of models) {
   if (!ce) errors.push(`${m.id}: cloud_equivalent missing`);
   else {
     if (ce.input_price_per_mtok == null || ce.output_price_per_mtok == null) errors.push(`${m.id}: no rental price — add the OpenRouter price, or a stand-in from the closest hosted model`);
+    else if (ce.input_price_per_mtok < 0 || ce.output_price_per_mtok < 0) errors.push(`${m.id}: rental price of $${ce.input_price_per_mtok} / $${ce.output_price_per_mtok} — a price cannot be negative`);
+    // A free endpoint is a real listing and not a price. Every page here divides a machine's
+    // price by the rental bill it saves, and a bill of zero is a sum with no answer: the page
+    // would read "renting the same model costs $0" and then "buying only beats that if you use
+    // it hard enough", which nothing can. Where a provider lists a model free, the price is its
+    // own paid endpoint if it has one, else a stand-in from the closest hosted model.
+    else if (ce.input_price_per_mtok === 0 || ce.output_price_per_mtok === 0) errors.push(`${m.id}: rental price of $${ce.input_price_per_mtok} / $${ce.output_price_per_mtok} — a free listing is not a price to pay back against; use the paid endpoint for this model, or a stand-in from the closest hosted model`);
     if (ce.stand_in) {
       const target = models.find((x) => x.id === ce.stand_in_for);
       if (!target) errors.push(`${m.id}: stand-in points at unknown model ${ce.stand_in_for}`);

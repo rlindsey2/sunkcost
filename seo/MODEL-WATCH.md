@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-30
+Last checked: 2026-10-31
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,47 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-10-31 · Spark-X2.6 1.7B is the best-sourced candidate on this list, and its two four-bit builds differ by 62%
+
+**Nothing new with its own weights today.** The searches were the ones this file lists. Hugging Face's newest
+text-generation repositories since yesterday are third-party requantisations, NPU and LiteRT exports,
+abliterations and finetunes. Three names are worth writing down, two of them already open for days.
+
+**Spark-X2.6 1.7B (`XHToken/Spark-X2.6-1.7B`) is citable on every field and goes to the front of the queue.**
+It is the small sibling of Spark-X2.6 4B, which this site priced on 24 October, created 2026-10-19 at 1,307
+downloads, Apache 2.0. `config.json` gives **28 layers** on a `layer_types` list of 3 sliding to 1 full — **7
+full attention and 21 at a 512-token window** — with `num_key_value_heads` **2** by `head_dim` **256**, and
+`max_position_embeddings` **1,048,576**. The safetensors index gives `total_parameters` **1,707,657,216**, all
+of them active. **The call a run has to make is which four-bit build to price**, because the two differ by more
+than the usual rounding: XHToken's own `Spark-X2.6-1.7B-Q4_K_M.gguf` is 1,768,720,512 bytes (**1.77 GB**) and
+bartowski's, put up today, is 1,088,465,824 (**1.09 GB**), a 62% gap on the same quantisation label, which at
+this size is the embedding table being left wide in one of them. The 4B row follows XHToken's own build and the
+family precedent says to do the same here; bartowski's would be the smallest download on the site, under LFM3
+1.7B's 1.10 GB, and that is a claim worth not making on the looser of two readings.
+[the weights](https://huggingface.co/XHToken/Spark-X2.6-1.7B),
+[XHToken's GGUF](https://huggingface.co/XHToken/Spark-X2.6-1.7B-GGUF),
+[bartowski's](https://huggingface.co/bartowski/Spark-X2.6-1.7B-GGUF).
+
+**SenseNova-Loop-9B-Preview** ([sensenova/SenseNova-Loop-9B-Preview](https://huggingface.co/sensenova/SenseNova-Loop-9B-Preview),
+created 2026-10-28) was yesterday's name to look at, and it has gone from 12 downloads to 566 with one MLX
+quant of it up today and no GGUF. Two things rule it out for now. It is a vision and video model —
+`SenseNovaLoopForConditionalGeneration`, an `image_token_id`, `patch_conv3d` and a `video_preprocessor_config.json`
+— so it needs the judgement Reka Edge needs. And its `loop_settings` run layers 4 to 28 twice over, `counts: [2]`
+with `eval_count: 2`, which costs no extra cache but doubles the arithmetic per token, so this site's
+bandwidth estimate would read about twice the speed the model can reach. Its `text_config` is otherwise plain
+enough to price: `layer_types` at 3 linear to 1 full on a `full_attention_interval` of 4, `head_dim` 256.
+
+**RWKV7-G1l is new today at 7.2B and 13.3B** ([RWKV/RWKV7-G1l-13.3B-20261031](https://huggingface.co/RWKV/RWKV7-G1l-13.3B-20261031),
+Apache 2.0, with community GGUFs of the 7.2B already up). `config.json` is `Rwkv7ForCausalLM`, **61 layers**,
+`num_heads` 64 by `head_dim` 64, and **no attention layer at all**: the whole context lives in a fixed-size wkv
+state. Every row in `data/models.json` has at least one layer that grows with the context, and
+`kvCacheGbPer8kFromArchitecture()` has no convention for one that has none, so this is a data-model decision
+before it is a row. It is the first model on this list where the context is genuinely free, which is worth
+having a page about once the convention exists.
+
+**The rest are unchanged.** **Reka Edge 2603** is behind Spark-X2.6 1.7B now, on the same vision judgement.
+**Dory 1.0 4B** is still gated. **Clover-35B-A3B-Preview** has community GGUFs only and has not been chased.
 
 ### 2026-10-30 · Nanbeige4.3 33B is a row now, and its plain dense cache is what sets two cards furthest apart
 
