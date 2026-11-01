@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-10-31
+Last checked: 2026-11-01
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,51 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-01 · Spark-X2.6 1.7B is a row now, and the publisher's own four-bit is a four-bit label on an eight-bit file
+
+**`spark-x2.6-1.7b-q4` is in `data/models.json`**, the candidate this file put at the front of the queue
+yesterday, and every figure was read today. `config.json` is `Spark2_5ForCausalLM`: **28 layers**,
+`num_key_value_heads` **2** by `head_dim` **256**, `sliding_window` **512**, `max_position_embeddings`
+**1,048,576**. The GGUF carries the layer split as data — `spark2_5.attention.sliding_window_pattern` is 28
+booleans repeating [true, true, true, false] — so **21 layers windowed and 7 full attention**, which settles
+the 3-to-1 reading off `layer_types`. The safetensors index gives `total_parameters` **1,707,657,216**, all
+active, and the card gives Apache 2.0, the million-token context and three thinking levels.
+[the weights](https://huggingface.co/XHToken/Spark-X2.6-1.7B),
+[bartowski's GGUF](https://huggingface.co/bartowski/Spark-X2.6-1.7B-GGUF),
+[XHToken's](https://huggingface.co/XHToken/Spark-X2.6-1.7B-GGUF),
+[mradermacher's](https://huggingface.co/mradermacher/Spark-X2.6-1.7B-GGUF).
+
+**The open call is made on what is inside the files.** Three publishers' bf16 and Q8_0 of these weights agree
+to within a kilobyte (3,420,932,640 and 1,820,113,440 bytes in XHToken's own repo), and so do two four-bit
+builds: bartowski's Q4_K_M at 1,088,465,824 bytes (**1.09 GB**) and mradermacher's at 1,107,459,104
+(**1.11 GB**). XHToken's own file at the same label is 1,768,720,512 (**1.77 GB**), 97% of the eight-bit all
+three publish. Its GGUF header says why: `general.file_type` is **15**, the Q4_K_M label, but
+`token_embd.weight` is **BF16** at 0.537 GB and a separate `output.weight` is **Q8_0** at 0.285, so 0.82 GB of
+a 1.77 GB download is the 131,072-token vocabulary at 16 and 8 bits. bartowski's holds the same table at Q5_K,
+0.185 GB. **The row is priced at 1.09 GB**, because this site's weights figure is what a four-bit of the whole
+model costs, which is what every other row here states, and the page prints all three figures. Reading a GGUF
+header is worth doing again: `curl -r 0-12000000` the file and parse the KV block and tensor table.
+
+**The same check makes the Spark-X2.6 4B row a backlog item.** XHToken's Spark-X2.5-4B Q4_K_M holds
+`token_embd` at Q6_K with no separate output tensor, 2,600,224,352 bytes; its Spark-X2.6-4B Q4_K_M holds
+`token_embd` at BF16 (0.671 GB) plus `output.weight` at Q8_0 (0.357), 3,543,441,312 bytes — while the two
+repos' Q8_0 (4,375,021,152 and 4,375,021,824) and bf16 (8,229,920,352 and 8,229,921,024) agree to a kilobyte.
+So 0.75 GB of the 0.94 GB this site reported as the newer 4B's extra download is the quantiser's recipe. The
+two sentences that said it was the model are reworded today; the 4B's price still comes from XHToken's file,
+and finding a community four-bit of it is the backlog item.
+
+**Nothing new with its own weights today.** The searches were the ones this file lists, plus Hugging Face's
+newest text-generation repositories and its trending list. Today's new repositories are requantisations, NPU
+and WebGPU exports, abliterations and finetunes; the trending list holds no name this file has not recorded.
+Three names are worth writing down for the first time, none chased: **Groot-280B-A16B-261023**
+([GrootTeam](https://huggingface.co/GrootTeam/Groot-280B-A16B-261023), created 2026-10-23, 148 downloads) with
+the publisher's own GGUF beside it, which at 280B with 16B active would be the first row of its shape here;
+**Apex-35B-V1.0** ([Apexintelligence-AI](https://huggingface.co/Apexintelligence-AI/Apex-35B-V1.0), created
+2026-10-28, 1,002 downloads, Apache 2.0), which ships a `processor_config.json`, so it needs the vision
+judgement Reka Edge needs and has no GGUF; and **Octen-WebGR-4B**, a 4B at 755 downloads. **The rest are
+unchanged.** **Reka Edge 2603** is the best-sourced candidate left. **SenseNova-Loop-9B-Preview** and
+**RWKV7-G1l** each need the judgement in yesterday's entry. **Dory 1.0 4B** is still gated.
 
 ### 2026-10-31 · Spark-X2.6 1.7B is the best-sourced candidate on this list, and its two four-bit builds differ by 62%
 

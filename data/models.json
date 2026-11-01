@@ -1568,7 +1568,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Liquid's new generation and the smallest download on this list: a dense 1.73B post-trained for local agents and tool calling, in 16 languages. Liquid says to use retrieval for anything knowledge-heavy and not to reach for it for agentic coding or long chains of reasoning.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Liquid's new generation, and with Spark-X2.6 1.7B one of the two smallest downloads here: a dense 1.73B post-trained for local agents and tool calling, in 16 languages. Liquid says to use retrieval for anything knowledge-heavy and not to reach for it for agentic coding or long chains of reasoning.",
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
@@ -1854,7 +1854,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages. Spark-X2.6 4B is the newer model at this size: same architecture, 0.94 GB more to download.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages. Spark-X2.6 4B is the newer model at this size: the same architecture, and 0.94 GB more to download, most of which is how XHToken packed its four-bit file rather than more model.",
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
@@ -1904,7 +1904,7 @@
       "full_attention_layers": 9,
       "sliding_window_layers": 27,
       "sliding_window": 512,
-      "note": "3 sliding-window layers (512) per full-attention layer, which is what makes a million-token context tractable at this size. The shape is Spark-X2.5 4B's exactly, down to the parameter count, so the cache costs the same; the four-bit download does not, at 3.54 GB against 2.60 GB."
+      "note": "3 sliding-window layers (512) per full-attention layer, which is what makes a million-token context tractable at this size. Spark-X2.5 4B's shape exactly, down to the parameter count, so the cache costs the same. The download is bigger for a reason outside the model: XHToken's four-bit of this one leaves the embedding table at 16 bits where the 2.5's four-bit quantises it, which is 0.75 GB of the 0.94 GB between its 3.54 GB and the 2.5's 2.60."
     },
     "capabilities": {
       "summarisation": "unknown",
@@ -3511,6 +3511,66 @@
     "sources": [
       "https://huggingface.co/Nanbeige/Nanbeige4.3-33B",
       "https://huggingface.co/bartowski/Nanbeige_Nanbeige4.3-33B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "spark-x2.6-1.7b-q4",
+    "display_name": "Spark-X2.6 1.7B",
+    "family": "Spark",
+    "generation": "current",
+    "params_b": 1.708,
+    "active_params_b": 1.708,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 1.09,
+    "kv_cache_gb_per_8k": 0.139,
+    "architecture": {
+      "n_layers": 28,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 7,
+      "sliding_window_layers": 21,
+      "sliding_window": 512,
+      "note": "Spark-X2.6 4B's pattern over fewer layers: 3 sliding-window layers (512) per full-attention layer, 28 in place of 36, at two KV heads rather than four, so a cached token costs half as much in each layer that grows. The whole 1M window is 15.1 GB of cache against 1.09 GB of weights."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 1.7B for on-device use, with a native million-token context, three thinking levels, English and Chinese. The 1.09 GB priced here is bartowski's four-bit, and mradermacher's comes to 1.11; XHToken's own file carries the same Q4_K_M label at 1.77 GB, because it keeps the 131,072-token embedding table at 16 bits and the output layer over it at 8, which is 0.82 GB of the download.",
+    "cloud_equivalent": {
+      "name": "Granite 4.2 8B",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.15,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
+      "is_exact_match": false,
+      "checked": "2026-11-01",
+      "stand_in": true,
+      "stand_in_for": "granite-4.2-8b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Spark-X2.6 1.7B by the token, and it has no intelligence score. Priced as Granite 4.2 8B, the smallest current model on this list that anyone hosts, which is what the other small models here are priced as."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M native",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-01",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/XHToken/Spark-X2.6-1.7B",
+      "https://huggingface.co/bartowski/Spark-X2.6-1.7B-GGUF",
+      "https://huggingface.co/XHToken/Spark-X2.6-1.7B-GGUF"
     ],
     "TODO": "Capability ratings needed."
   }
