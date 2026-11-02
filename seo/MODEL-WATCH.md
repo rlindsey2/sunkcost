@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-01
+Last checked: 2026-11-02
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,50 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-02 · Hy-Memory 30B-A3B goes to the front of the queue, on 48 layers that all cache the whole context
+
+**Tencent's `Hy-Memory-30B-A3B` is citable on every architecture field and its publisher ships the four-bit
+itself.** Created 2026-10-15, 6,130 downloads on the weights, Apache 2.0 off the repository tag. `config.json`
+is `HYV3ForCausalLM`: **48 layers**, `num_key_value_heads` **4** by `head_dim` **128**, `num_attention_heads`
+32, `max_position_embeddings` **262,144**, 128 experts with **8 active** and one shared, `first_k_dense_replace`
+1, so layer 0 is dense and the other 47 are sparse. There is **no window and no linear layer** anywhere in the
+config — no `sliding_window`, no `layer_types`, no `sliding_window_pattern`, nothing with `conv` or `mamba` in
+the key — so all 48 layers cache the whole context at 2,048 bytes a token, which is **0.75 GB per 8k**, a
+little under half Nanbeige4.3 33B's at a similar total size because 4 KV heads do the work of its 8. The HF API
+gives `safetensors.total` **30,064,725,888** parameters, and the card says "30B params" with "~3B active".
+Tencent's own GGUF repository lists **`Hy-Memory-30B-A3B-Q4_K_M.gguf` at 18,236,702,464 bytes (18.24 GB)**,
+with Q3_K_M at 14.45, Q6_K at 24.71 and Q8_0 at 31.99, plus two mixed builds that hold the attention at Q8_0
+and push the experts to IQ1_M and IQ2_XXS (8.03 and 9.14 GB) — a shape nothing here prices yet and worth a
+second row later rather than a judgement now. rapatsky's third-party GGUF is the more downloaded of the two at
+95,716 against 32,441, which is the one reading that does not follow the publisher; the figure above is
+Tencent's own, as the Hy3 row here already is.
+[the weights](https://huggingface.co/tencent/Hy-Memory-30B-A3B),
+[Tencent's GGUF](https://huggingface.co/tencent/Hy-Memory-30B-A3B-GGUF),
+[rapatsky's](https://huggingface.co/rapatsky/Hy-Memory-30B-A3B-GGUF).
+
+**Two fields are open and both are the usual two.** Nobody has been checked for renting it yet, so the run that
+adds it reads OpenRouter and either prices it exactly or stands it in: the nearest hosted match on the site's
+own basis is a 30B mixture of experts with about 3B running per token, which is what Qwen3.6 35B-A3B,
+KAT-Coder V2.5 and Laguna XS 2.1 all are. Artificial Analysis has not been checked either. **The one thing
+worth saying on the page** is what the model is for: the card calls it a "compact long-term-memory writer
+model", the write path in Mem0, MemOS and Hy-Memory, which decides what a memory bank keeps. That is a narrow
+job, and the capability note should say so rather than let a 30B score be read as a general one. The site
+already prices Tencent Hy3 at 295B-A21B, so this would be the family's small row.
+
+**Nothing else new with its own weights today.** The searches were the ones this file lists, plus Hugging Face's
+newest text-generation repositories and its trending list. Today's new repositories are requantisations, NPU,
+LiteRT and WebGPU exports, abliterations, LoRAs and course homework; the trending list holds two more names
+worth writing down and neither chased: **Hemmingway-1.5** ([HemmingwayAI](https://huggingface.co/HemmingwayAI/Hemmingway-1.5),
+created 2026-10-24, 2,201 downloads) with a third-party exl3 up today and no GGUF, and **Hydrogen-1.0**
+([deep-principle](https://huggingface.co/deep-principle/Hydrogen-1.0), created 2026-10-31, 0 downloads), which
+is too new to have a quantisation of any kind. A third-party GGUF named `Mistral-Large-4-1T-A52B` appeared
+today; at 1T total a four-bit is past the 384 GB this site's roomiest machine hands a model, so it runs on
+nothing here whatever the weights turn out to be, and it was not chased.
+
+**The rest are unchanged.** **Reka Edge 2603** is behind Hy-Memory now, on the vision judgement it has needed
+since 26 October. **SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need the judgement in the 31 October
+entry. **Dory 1.0 4B** is still gated.
 
 ### 2026-11-01 · Spark-X2.6 1.7B is a row now, and the publisher's own four-bit is a four-bit label on an eight-bit file
 

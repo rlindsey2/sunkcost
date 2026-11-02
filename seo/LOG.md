@@ -39,10 +39,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] The sweep wording added today has a mirror nothing writes: where no machine that pays back is beaten by
-      another model, `/hardware/` would read "Swapping the model changes it on 0 of the 54 machines", and the
-      self-ratio guard passes a zero. The same prices that took it to 54 of 54 can take it to 0.
-
 - [ ] **Spark-X2.6 4B's weights figure is 0.75 GB of packaging.** Its 3.54 GB is XHToken's own Q4_K_M, whose
       `token_embd` is BF16 and whose `output.weight` is a second copy at Q8_0; the 2.5's 2.60 GB holds the same
       table at Q6_K, and the two repos' Q8_0 and bf16 agree to a kilobyte. The figure feeds every speed estimate
@@ -51,9 +47,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       — mradermacher, bartowski and AtomicChat all list the 1.7B and none the 4B. Re-check, then re-price both.
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is
-      next, on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the
-      watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Hy-Memory 30B-A3B
+      is next, citable on every architecture field, with the price and the index score left to read. Reka Edge
+      2603 is behind it on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement
+      first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
 
 - [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -99,6 +96,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-11-02 — The sweep wording has its empty half, and the guard that read a count out of itself reads one out of nothing
+The top backlog item wanted the mirror of the sweep sentence. `/hardware/` reads "on 54 of the 54 machines" today; the same prices the other way would
+have read "on 0 of the 54" with "on the other 54" after it, and no guard stopped either half. Three writers turn a count into prose here and each had
+words for the full end and a fraction for everything else, so all three have three shapes now: `swapSentence()` and `paybackSentence()` moved out of
+`build-pages.ts` into `src/pagekit.ts`, where a test holds them at every count rather than at the one today's data reaches, and `countOfSet()` says
+"none of the 50" where it said "0 of the 50". `checkSweepCounts()` is the guard the item named: it read every page's prose for a count divided by itself
+and let one divided into nothing pass, so it now flags `0 of the N` and the clause that goes empty beside a sweep, "the other 0". Nothing a visitor
+reads moved, 335 pages with no date changed, which is what a guard should cost. Straight to main. Verified: 458 tests, five new and pinning both
+sentences at every count from 0 to 54, typecheck and validate clean, the full build with build:functions, 335 pages every guard passing, both paragraphs
+read rendered, four mutations caught: each sentence's empty branch dropped at the count that reaches it, the sweep branch dropped so the fraction wrote
+"54 of the 54" and "the other 0", and `countOfSet()`'s, which `checkModelCountScope()` caught first. Watch done: Tencent's Hy-Memory 30B-A3B is the new
+front of the queue, citable on 48 layers at 4 KV heads by 128 and 18.24 GB of its publisher's own four-bit. Next: add it.
 
 ### 2026-11-01 — Spark-X2.6 1.7B is priced here, at the four-bit two quantisers agree on rather than its publisher's
 The top backlog item wanted the best-sourced candidate as a row, and every figure was read today: 28 layers at 2 KV heads by 256 with a 512-token window

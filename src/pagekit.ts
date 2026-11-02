@@ -1367,10 +1367,47 @@ export const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
  * A count against the set it was taken out of. Where the two are the same
  * number the ratio stops being one: "39 of the 39 current models fit" is a
  * clean sweep written in the shape of a near miss, and a reader skimming a
- * first paragraph reads the shape before the numbers. A table column of
- * ratios is a different thing and keeps its form; this is for prose.
+ * first paragraph reads the shape before the numbers. The empty end reads the
+ * same way round: "0 of the 39 current models fit" is a plain no written as a
+ * fraction. A table column of ratios is a different thing and keeps its form;
+ * this is for prose.
  */
-export const countOfSet = (n: number, total: number) => (n === total ? `all ${total}` : `${n} of the ${total}`);
+export const countOfSet = (n: number, total: number) =>
+  n === total ? `all ${total}` : n === 0 ? `none of the ${total}` : `${n} of the ${total}`;
+
+/**
+ * What `/hardware/` says about swapping the model, written here because the page
+ * prints it and `checkBoardLedes()` reads the same sentence back. The count in it
+ * has three shapes, and only the middle one is a fraction. A sweep written as "54
+ * of the 54" reads as a near miss; an empty count written as "0 of the 54
+ * machines, and on the other 54" reads as a sentence that stopped halfway, and
+ * the same prices that take the figure to every machine can take it to none. So
+ * both ends get a sentence of their own. Where nothing pays back there is no
+ * count to make, and the paragraph this belongs to is not written at all.
+ */
+export function swapSentence(swap: { beaten: number; paying: number }): string {
+  if (swap.paying === 0) return '';
+  if (swap.beaten === 0)
+    return `Swapping the model does not change it: on every one of the ${swap.paying} machines that pay back at all, nothing else the machine holds pays back sooner than the model in the table.`;
+  if (swap.beaten === swap.paying)
+    return `Swapping the model changes it on every one of the ${swap.paying} machines that pay back at all: each of them holds something that pays back sooner than the model in the table.`;
+  return `Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table.`;
+}
+
+/**
+ * How many of a machine's models pay it back, the sweep under the table on
+ * `/local-llm-vs-api-cost/`, written here for the same reason and read back by
+ * `checkTokenCost()`. Three shapes again: every model, none of them, or a
+ * fraction. The other half of the sum is a model whose rented million costs less
+ * than the electricity to generate it, which is what the empty end is made of.
+ */
+export function paybackSentence(priced: number, total: number): string {
+  if (total === 0) return '';
+  if (priced === total) return `Every one of the ${total} models here pays the machine back at some point.`;
+  if (priced === 0)
+    return `None of the ${total} models here pays the machine back at any point: on every one of them a rented million costs less than the electricity to generate it.`;
+  return `${priced} of the ${total} models here pay the machine back at some point; on the other ${total - priced} a rented million costs less than the electricity to generate it.`;
+}
 
 /**
  * What a model page says under its table of machines. The table names the

@@ -15,12 +15,12 @@ import {
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, maxContextNote, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
-  monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost,
+  monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost, paybackSentence,
   nearestCompleteComputer, NUMBER_WORDS, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  strongestShared, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
+  strongestShared, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -1116,10 +1116,9 @@ function checkBoardLedes() {
   const swap = paybackBeaten();
   if (swap.paying !== paying.length)
     problems.push(`/hardware/ counts ${swap.paying} machines that pay back where its own table prints ${paying.length}`);
-  say(
-    swapSentence(swap),
-    'on how many of its machines another model pays back sooner than the one in the table',
-  );
+  const swapSaid = swapSentence(swap);
+  if (swapSaid)
+    say(swapSaid, 'on how many of its machines another model pays back sooner than the one in the table');
   const fastest = strongestAlsoFastest();
   if (!fastest.length) say('the strongest model a machine holds is never the fastest thing it can run', 'why a dearer machine takes longer to pay for itself');
   else
@@ -2499,21 +2498,9 @@ const DAYS_PER_DECADE = DAYS_PER_MONTH * 120;
  *
  * So the page counts the machines instead of assuming them. `beaten` is the machines
  * where some other model the machine holds pays back sooner than the one in the
- * table; `paying` is the machines with a figure at all. The two paragraphs print both
- * and `checkBoardLedes()` holds them to this.
+ * table; `paying` is the machines with a figure at all. `swapSentence()` writes the
+ * two into the sentence the page prints, and `checkBoardLedes()` holds them to it.
  */
-/**
- * The swap sentence, written once because the page prints it and the guard reads
- * it back. Where every machine that pays back at all holds something that pays
- * back sooner, the sentence says so: a count out of itself reads as a near miss,
- * and "on the other 0" is not a clause.
- */
-function swapSentence(swap: { beaten: number; paying: number }): string {
-  return swap.beaten === swap.paying
-    ? `Swapping the model changes it on every one of the ${swap.paying} machines that pay back at all: each of them holds something that pays back sooner than the model in the table.`
-    : `Swapping the model changes it on ${swap.beaten} of the ${swap.paying} machines that pay back at all; on the other ${swap.paying - swap.beaten}, nothing else the machine holds pays back sooner than the model in the table.`;
-}
-
 function paybackBeaten(): { beaten: number; paying: number } {
   let beaten = 0;
   let paying = 0;
@@ -7156,20 +7143,6 @@ ${stack(`<table class="board">
 /* --------------------- what a token costs either way --------------------- */
 
 /**
- * How many of the machine's models pay it back, written once because the page
- * prints it and `checkTokenCost()` reads it back. Where every model the machine
- * holds pays back, the sentence says so: a count out of itself reads as a near
- * miss when it is the strongest thing the page can say. The other half of the
- * sum is a model whose rented million costs less than the electricity to
- * generate it, which the paragraph below the table names and counts.
- */
-function paybackSentence(priced: number, total: number): string {
-  return priced === total
-    ? `Every one of the ${total} models here pays the machine back at some point.`
-    : `${priced} of the ${total} models here pay the machine back at some point; on the other ${total - priced} a rented million costs less than the electricity to generate it.`;
-}
-
-/**
  * The page the rest of the site is an instance of: what a token costs to rent
  * against what it costs to generate, and how many of them it takes before the
  * machine has paid for itself.
@@ -11782,12 +11755,18 @@ checkModelCountScope();
  * before the numbers: two counts, one smaller than the other. Every such
  * sentence on the site says all of them instead.
  *
+ * A count of nothing is the same mistake at the other end of the same set. "0
+ * of the 54 machines" is a plain no written as a fraction, and the clause that
+ * follows one is worse: "on the other 54" after it, or "on the other 0" after a
+ * sweep, is a sentence that stopped halfway. The prices that take a figure to
+ * every machine can take it to none, so the empty end is read here too.
+ *
  * The guard reads it both ways. No prose and no snippet may print a figure out
- * of itself, and the pages that do hold everything have to say so, which is
- * what stops the sweep wording being dropped again where the data no longer
- * reaches it. A ratio in a table is a different thing — "2 of 2" under a column
- * head naming the pair is how a table says it — so the tables come out before
- * the text is read.
+ * of itself or out of nothing, and the pages that do hold everything have to
+ * say so, which is what stops the sweep wording being dropped again where the
+ * data no longer reaches it. A ratio in a table is a different thing — "2 of 2"
+ * under a column head naming the pair is how a table says it — so the tables
+ * come out before the text is read.
  */
 function checkSweepCounts() {
   const problems: string[] = [];
@@ -11795,9 +11774,17 @@ function checkSweepCounts() {
   const prose = (page: (typeof meta)[number]) =>
     `${unesc(mainOf(page.html).replace(/<table[^]*?<\/table>/g, ' ').replace(/<[^>]+>/g, ' '))} ${page.description}`.replace(/\s+/g, ' ');
 
-  for (const page of meta)
-    for (const hit of prose(page).matchAll(/\b(\d+) of (?:the )?(\d+)\b/g))
+  for (const page of meta) {
+    const text = prose(page);
+    for (const hit of text.matchAll(/\b(\d+) of (?:the )?(\d+)\b/g)) {
       if (hit[1] === hit[2]) problems.push(`${page.path} counts ${hit[1]} out of itself: "${hit[0]}"`);
+      if (hit[1] === '0') problems.push(`${page.path} writes a count of nothing as a fraction: "${hit[0]}"`);
+    }
+    // the clause on the far side of a fraction, which goes empty at whichever
+    // end the count lands on
+    for (const hit of text.matchAll(/\b(?:the other|the remaining) 0\b/g))
+      problems.push(`${page.path} names the far side of a count it has already swept: "${hit[0]}"`);
+  }
 
   // the size pages, where the count opens the description a search result
   // shows. Both ways round: the sweep has to be claimed where the data holds
@@ -11849,11 +11836,11 @@ function checkSweepCounts() {
   if (!steps) problems.push(`no size page prints the step sentence that counts what the roomiest machine at a size holds`);
 
   if (problems.length) {
-    console.error(`\n${problems.length} count${problems.length === 1 ? '' : 's'} is written as a ratio of itself:`);
+    console.error(`\n${problems.length} count${problems.length === 1 ? '' : 's'} is written as a ratio of itself or of nothing:`);
     for (const x of [...new Set(problems)].slice(0, 8)) console.error(`  ${x}`);
     process.exit(1);
   }
-  console.log(`  sweeps: ${sweeps} machines and ${sweptSizes} memory size${sweptSizes === 1 ? '' : 's'} hold all ${total} current models at ${ctxLabel(CTX)} and say so, over ${sizes} size descriptions and ${steps} step sentences read back, and no prose on any page divides a count by itself`);
+  console.log(`  sweeps: ${sweeps} machines and ${sweptSizes} memory size${sweptSizes === 1 ? '' : 's'} hold all ${total} current models at ${ctxLabel(CTX)} and say so, over ${sizes} size descriptions and ${steps} step sentences read back, and no prose on any page divides a count by itself or by nothing`);
 }
 checkSweepCounts();
 

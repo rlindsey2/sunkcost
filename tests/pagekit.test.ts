@@ -11,7 +11,8 @@ import {
   memorySizePath,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
   leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
-  costMachine, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
+  costMachine, countOfSet, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
+  paybackSentence, swapSentence,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, nearestCompleteComputer, SPREAD_MONTHS,
   modelSoftware, otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
@@ -2923,5 +2924,63 @@ describe('one size of memory, and the machines sold with it', () => {
     const odd = { ...data, hardware: [...data.hardware, { ...hw('mac-mini-m6-16'), id: 'unknown-16', usable_memory_gb: null }] } as unknown as Dataset;
     expect(machinesAtSize(16, odd).map((h) => h.id)).not.toContain('unknown-16');
     expect(memoryLevels(16, odd).flatMap((l) => l.machines).map((h) => h.id)).not.toContain('unknown-16');
+  });
+});
+
+describe('a count out of a set, at both ends of it', () => {
+  // Three of these sentences are written from a count and the size of the set it
+  // came out of, and each had a clean sweep written as a fraction until the shape
+  // was given its own words. The empty end is the same mistake the other way
+  // round: "0 of the 54 machines, and on the other 54" is a fraction with nothing
+  // in it, and the prices that take a figure to every machine can take it to none.
+  it('writes a sweep, an empty count and a fraction as three different things', () => {
+    expect(countOfSet(39, 39)).toBe('all 39');
+    expect(countOfSet(0, 39)).toBe('none of the 39');
+    expect(countOfSet(28, 39)).toBe('28 of the 39');
+  });
+
+  it('says swapping the model changes nothing, where it changes nothing', () => {
+    expect(swapSentence({ beaten: 0, paying: 54 })).toBe(
+      'Swapping the model does not change it: on every one of the 54 machines that pay back at all, nothing else the machine holds pays back sooner than the model in the table.',
+    );
+    expect(swapSentence({ beaten: 54, paying: 54 })).toBe(
+      'Swapping the model changes it on every one of the 54 machines that pay back at all: each of them holds something that pays back sooner than the model in the table.',
+    );
+    expect(swapSentence({ beaten: 15, paying: 54 })).toBe(
+      'Swapping the model changes it on 15 of the 54 machines that pay back at all; on the other 39, nothing else the machine holds pays back sooner than the model in the table.',
+    );
+    // nothing pays back, so there is no count to make and no sentence to print
+    expect(swapSentence({ beaten: 0, paying: 0 })).toBe('');
+  });
+
+  it('says none of the models pay the machine back, where none of them do', () => {
+    expect(paybackSentence(0, 33)).toBe(
+      'None of the 33 models here pays the machine back at any point: on every one of them a rented million costs less than the electricity to generate it.',
+    );
+    expect(paybackSentence(33, 33)).toBe('Every one of the 33 models here pays the machine back at some point.');
+    expect(paybackSentence(20, 33)).toBe(
+      '20 of the 33 models here pay the machine back at some point; on the other 13 a rented million costs less than the electricity to generate it.',
+    );
+    expect(paybackSentence(0, 0)).toBe('');
+  });
+
+  it('writes no fraction with a zero on either side of it, at any count', () => {
+    for (let n = 0; n <= 54; n++) {
+      for (const said of [swapSentence({ beaten: n, paying: 54 }), paybackSentence(n, 54), countOfSet(n, 54)]) {
+        expect([n, /\b0 of the\b/.test(said)]).toEqual([n, false]);
+        expect([n, /\bthe other 0\b/.test(said)]).toEqual([n, false]);
+        expect([n, /\b54 of the 54\b/.test(said)]).toEqual([n, false]);
+      }
+    }
+  });
+
+  it('reads as finished copy at every count', () => {
+    for (let n = 0; n <= 54; n++)
+      for (const said of [swapSentence({ beaten: n, paying: 54 }), paybackSentence(n, 54)]) {
+        expect([n, said.endsWith('.')]).toEqual([n, true]);
+        expect([n, said[0]]).toEqual([n, said[0].toUpperCase()]);
+        for (const bad of ['undefined', 'NaN', 'null', ' .', '  ', ' ,'])
+          expect([n, bad, said.includes(bad)]).toEqual([n, bad, false]);
+      }
   });
 });
