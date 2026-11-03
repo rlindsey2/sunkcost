@@ -47,24 +47,25 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       — mradermacher, bartowski and AtomicChat all list the 1.7B and none the 4B. Re-check, then re-price both.
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Hy-Memory 30B-A3B
-      is next, citable on every architecture field, with the price and the index score left to read. Reka Edge
-      2603 is behind it on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement
-      first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Clover-35B-A3B-Preview
+      is next, citable on every size and architecture field off its publisher's own four-bit, and priced as the
+      Qwen3.6 35B-A3B it was built from; the judgement left is block diffusion, which is not what this site's speed
+      estimate assumes. Reka Edge 2603 is behind it on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l
+      each need a judgement first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
 
-- [ ] Nine model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
+- [ ] Thirteen model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
       the models the intelligence index has scored, so an unscored model is in no pair however well sourced it
       is. The memory rule needs no score: it pairs two models that ask a machine for the same memory, which is
-      a footprint and a family name. Running that one rule over every model with a footprint would give the nine
+      a footprint and a family name. Running that one rule over every model with a footprint would give the thirteen
       a page each, and the searches it answers are the ones the Search Console notes name.
 
-- [ ] Artificial Analysis has moved to **index v4.3.2**, and all 63 rows here say v4.3. Every model page says "On
-      the Artificial Analysis Intelligence Index v4.3 it scores N", out of `defaults.frontier_basis.name`, and
-      the 50 scores under it were read on 2026-09-11. Nemotron 3.5 Bolt's, MiniMax M3.1 Flash's and Ling 3.1
-      flash's were read on v4.3.2 pages and recorded as v4.3 so those rows do not claim a scale the rest are not
-      on. The fix is to re-read the 54 scores off the leaderboard and move the basis with them, a data edit over
-      every scored row.
+- [ ] Artificial Analysis is on **Intelligence Index v5.0** now, read off the leaderboard on 2026-11-03, and all
+      67 rows here say v4.3. Every model page says "On the Artificial Analysis Intelligence Index v4.3 it scores
+      N", out of `defaults.frontier_basis.name`, and the 50 scores under it were read on 2026-09-11. v5.0 counts
+      nine evaluations, among them Terminal-Bench 4.0 and FrontierCode 2.0, so it is a different scale rather than
+      a revision of the old one and the scores will move. The fix is to re-read the 54 scores off the leaderboard
+      and move the basis and `frontier_reference` with them, a data edit over every scored row.
 
 - [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
       bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
@@ -96,6 +97,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       describes. The guard is small: read a GB figure out of a note that names a window and check it.
 
 ## Runs
+
+### 2026-11-03 — Hy-Memory 30B-A3B is priced here, on 48 layers that cache the whole window and a four-bit two quantisers agree on
+The top candidate is a row, every field read today: 48 layers at 4 KV heads by 128 with no sliding window and no linear layer in `config.json`, 262,144
+tokens, 30,064,725,888 parameters off the HF API against the card's "~3B active", Apache 2.0 off the repository. Tencent's own Q4_K_M is 18,236,702,464
+bytes and rapatsky's 18,236,702,240, so the 18.24 GB is two quantisers' figure rather than one publisher's, which is the check the Spark-X2.6 rows still
+want. The cache is 0.805 GB per 8k, Qwen3 30B-A3B Instruct 2507's geometry to the layer: 3.2 GB at 32k against 25.8 at 256k, which moves the cheapest
+machine that holds it from $1,269 to $1,700. Nobody rents it on either of two reads of OpenRouter's 453 today, and Artificial Analysis lists only Hy3
+and Hy3-preview of Tencent's, so the score is null with a TODO and no pair rule reaches it, hence no head-to-head. It stands in at GLM-4.7-Flash, 31.22B
+with 3B active against 30.06B and about 3B, re-read today as Cloudflare's $0.0605 / $0.40; the Qwen row is nearer on every field but it is previous
+generation, which `tests/calc.test.ts` forbids a stand-in from borrowing. Straight to main. Verified: 458 tests, typecheck and validate clean, the full
+build with build:functions, 336 pages every guard passing, 1 added and 231 redated with none dropped, the new page read rendered, 8 mutations all caught.
+Watch done: nothing new with its own weights, and Artificial Analysis has moved to index v5.0, which the re-read item above now carries. Next:
+Clover-35B-A3B-Preview, which has its publisher's own four-bit at 23.00 GB now and one judgement left, on block diffusion.
 
 ### 2026-11-02 — The sweep wording has its empty half, and the guard that read a count out of itself reads one out of nothing
 The top backlog item wanted the mirror of the sweep sentence. `/hardware/` reads "on 54 of the 54 machines" today; the same prices the other way would

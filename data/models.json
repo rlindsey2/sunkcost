@@ -3573,5 +3573,62 @@
       "https://huggingface.co/XHToken/Spark-X2.6-1.7B-GGUF"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "hy-memory-30b-a3b-q4",
+    "display_name": "Hy-Memory 30B-A3B",
+    "family": "Hunyuan",
+    "generation": "current",
+    "params_b": 30.06,
+    "active_params_b": 3,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 18.24,
+    "kv_cache_gb_per_8k": 0.805,
+    "architecture": {
+      "n_layers": 48,
+      "n_kv_heads": 4,
+      "head_dim": 128,
+      "note": "Every one of the 48 layers caches the whole context, at four key-value heads by 128 wide. The config states no sliding window and no linear-attention layer, so nothing here caps what a long window costs: the cache grows with every token you keep, all the way to the 256k ceiling."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Tencent built it for one job: writing the memory bank behind Mem0, MemOS and Hy-Memory, deciding what a long-running agent keeps and how new evidence changes what it already holds. Thirty billion parameters with about three running per token, English and Chinese, and not a general chat model.",
+    "cloud_equivalent": {
+      "name": "GLM-4.7-Flash",
+      "input_price_per_mtok": 0.0605,
+      "output_price_per_mtok": 0.4,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/z-ai/glm-4.7-flash",
+      "is_exact_match": false,
+      "checked": "2026-11-03",
+      "stand_in": true,
+      "stand_in_for": "glm-4.7-flash-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Hy-Memory 30B-A3B by the token, on two reads of OpenRouter's 453 models today. Priced as GLM-4.7-Flash, the closest current hosted model by size: 31.22B total with 3B running per token, against 30.06B and about 3B. Qwen3 30B-A3B Instruct 2507 is nearer again, on the same 48 layers at four KV heads by 128, but it is a previous-generation model, and a stand-in here is always a current one."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-03",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/tencent/Hy-Memory-30B-A3B",
+      "https://huggingface.co/tencent/Hy-Memory-30B-A3B-GGUF",
+      "https://huggingface.co/rapatsky/Hy-Memory-30B-A3B-GGUF"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]

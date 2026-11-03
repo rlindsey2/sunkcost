@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-02
+Last checked: 2026-11-03
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,45 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-03 · Nothing new with its own weights, and Clover-35B-A3B has its publisher's own four-bit now
+
+**Hy-Memory 30B-A3B is a row here.** Every field was re-read today off the repository and both open fields are
+settled: nobody rents it, on two reads of OpenRouter's 453 models, so it is priced as GLM-4.7-Flash, the nearest
+current hosted model by size, and Artificial Analysis does not list it — only Hy3 and Hy3-preview carry Tencent's
+name on today's leaderboard. One correction to yesterday's entry: this site states a cache in billions of bytes,
+so 48 layers at 4 KV heads by 128 is **0.805 GB per 8k**, not the 0.75 the entry wrote, which is the same number
+in GiB. Tencent's `Q4_K_M` at 18,236,702,464 bytes and rapatsky's at 18,236,702,240 agree to 224 bytes, so the
+18.24 GB is two quantisers' figure rather than one publisher's.
+
+**Artificial Analysis has moved again, to Intelligence Index v5.0**, read off the leaderboard today: nine
+evaluations, among them AA-Briefcase v1.1, Terminal-Bench 4.0 and FrontierCode 2.0. The backlog item for re-reading
+the 54 scores now has v5.0 as its target, not the v4.3.2 it was written against.
+
+**Clover-35B-A3B-Preview is the best-sourced candidate on this list, and one judgement decides it.**
+`Diffuspace/Clover-35B-A3B-Preview` (created 2026-10-24, 3,017 downloads, 233 likes, Apache 2.0) has the publisher's
+own GGUF repository now, created 2026-10-29 and already at 43,329 downloads, where this file last recorded community
+builds only: **`Clover-35B-A3B-Preview-Q4_K_M.gguf` at 22,998,009,248 bytes (23.00 GB)**, with Q4_0 at 19.59 and Q8_0
+at 37.86. `config.json` is `CloverMoeModelLM`: **40 layers**, `layer_types` alternating three `linear_attention` to one
+`full_attention` for **10 full-attention layers**, `num_key_value_heads` **2** by `head_dim` **256**,
+`max_position_embeddings` **131,072**, one shared expert. The HF API gives `safetensors.total` **34,661,350,848**, and
+the card says "35B-parameter mixture-of-experts backbone with approximately 3B active parameters per token". That is
+the same 40/10/2/256 geometry as the Qwen3.6 35B-A3B row here, which the card says it was built from, so the price
+would be that row's as a finetune the way KAT-Coder's and Ornith's are. **The judgement is block diffusion.** The card
+calls it "block diffusion generation" and the config carries a `denoising_config` and a `mask_token_id`: it does not
+generate one token at a time, so this site's speed estimate, which divides memory bandwidth by the bytes a token
+reads, is not obviously the right model for it. The run that adds it either finds a published tokens-a-second figure
+or says on the page what the estimate assumes.
+[the weights](https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview),
+[the GGUF](https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview-GGUF).
+
+**Nothing new with its own weights today.** The searches were the ones this file lists, plus the 250 newest
+text-generation repositories and the trending list. Every repository created today is a requantisation, an
+abliteration, a LoRA, an ONNX or OpenVINO export, a tournament checkpoint or coursework, and none has a download yet.
+Of the two names written down yesterday, **Hemmingway-1.5** is at 2,348 downloads from 2,201 with no GGUF of any kind,
+and **Hydrogen-1.0** ([deep-principle](https://huggingface.co/deep-principle/Hydrogen-1.0), 56 downloads, 212 likes)
+now reports `safetensors.total` **753,329,940,480**: a four-bit of three quarters of a trillion parameters lands well
+past the 384 GB this site's roomiest machine hands a model, so it is out on size whenever a four-bit appears.
 
 ### 2026-11-02 · Hy-Memory 30B-A3B goes to the front of the queue, on 48 layers that all cache the whole context
 
