@@ -1854,7 +1854,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages. Spark-X2.6 4B is the newer model at this size: the same architecture, and 0.94 GB more to download, most of which is how XHToken packed its four-bit file rather than more model.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B with a native million-token context and 200+ languages. Spark-X2.6 4B is the newer model at this size: the same architecture, the same parameter count and the same 2.60 GB of four-bit weights, so a machine that runs one runs the other.",
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
@@ -1895,7 +1895,7 @@
     "params_b": 4.112,
     "active_params_b": 4.112,
     "quantisation": "Q4_K_M",
-    "weights_gb": 3.54,
+    "weights_gb": 2.6,
     "kv_cache_gb_per_8k": 0.359,
     "architecture": {
       "n_layers": 36,
@@ -1904,7 +1904,7 @@
       "full_attention_layers": 9,
       "sliding_window_layers": 27,
       "sliding_window": 512,
-      "note": "3 sliding-window layers (512) per full-attention layer, which is what makes a million-token context tractable at this size. Spark-X2.5 4B's shape exactly, down to the parameter count, so the cache costs the same. The download is bigger for a reason outside the model: XHToken's four-bit of this one leaves the embedding table at 16 bits where the 2.5's four-bit quantises it, which is 0.75 GB of the 0.94 GB between its 3.54 GB and the 2.5's 2.60."
+      "note": "3 sliding-window layers (512) per full-attention layer, which is what makes a million-token context tractable at this size. Spark-X2.5 4B's shape exactly, down to the parameter count, so the cache and the download both come to the same figure."
     },
     "capabilities": {
       "summarisation": "unknown",
@@ -1913,7 +1913,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B built for on-device agents, with a native million-token context and three thinking levels. XHToken says it keeps Spark-X2.5 4B's architecture exactly and gains from post-training alone.",
+    "capability_note": "Not yet rated: released after our last ratings pass. Dense 4B built for on-device agents, with a native million-token context and three thinking levels. XHToken says it keeps Spark-X2.5 4B's architecture exactly and gains from post-training alone. The 2.60 GB priced here is the four-bit three quantisers agree on, and on the 2.5's figure to within a kilobyte; XHToken's own file carries the same Q4_K_M label at 3.54 GB, because it keeps the embedding table at 16 bits, a second copy of it at 8 for the output layer, and the attention output projections at 8 as well. Those three choices are the whole 0.94 GB between the files.",
     "cloud_equivalent": {
       "name": "Granite 4.2 8B",
       "input_price_per_mtok": 0.06,
@@ -1942,6 +1942,7 @@
     },
     "sources": [
       "https://huggingface.co/XHToken/Spark-X2.6-4B",
+      "https://huggingface.co/mradermacher/Spark-X2.6-4B-GGUF",
       "https://huggingface.co/XHToken/Spark-X2.6-4B-GGUF"
     ],
     "TODO": "Capability ratings needed."

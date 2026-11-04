@@ -1,7 +1,8 @@
 /**
  * Checks the JSON data files for shape and internal consistency. Run before build.
- * Fails on: broken references, negative numbers, KV-cache figures that disagree with
- * the architecture, stand-in power figures without a note, rental prices of zero.
+ * Fails on: broken references, negative numbers, weights that are not a positive figure,
+ * KV-cache figures that disagree with the architecture, stand-in power figures without a
+ * note, rental prices of zero.
  * Warns on nulls (TODOs).
  */
 import { readFileSync } from 'node:fs';
@@ -42,6 +43,10 @@ for (const m of models) {
   if (modelIds.has(m.id)) errors.push(`duplicate model id ${m.id}`);
   modelIds.add(m.id);
   if (m.weights_gb == null) warnings.push(`${m.id}: weights_gb is null (TODO)`);
+  // Every speed on the site is a machine's bandwidth divided by this figure, and every fit
+  // is the figure plus a cache against the memory a machine hands a model. A zero makes an
+  // infinite tok/s; a negative makes a model that leaves a machine roomier for holding it.
+  else if (typeof m.weights_gb !== 'number' || m.weights_gb <= 0) errors.push(`${m.id}: weights_gb must be a positive number`);
   for (const k of CAPABILITY_KEYS) {
     const r = m.capabilities?.[k];
     if (!['green', 'amber', 'red', 'unknown'].includes(r)) errors.push(`${m.id}: capability ${k} is ${r}`);

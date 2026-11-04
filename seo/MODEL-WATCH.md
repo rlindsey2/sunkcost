@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-03
+Last checked: 2026-11-04
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,40 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-04 · Nothing new with its own weights, and three quantisers settle the Spark-X2.6 4B figure
+
+**The Spark-X2.6 4B backlog item is closed, and the answer was on Hugging Face all along.** This file wrote on
+2026-11-01 that no community four-bit of the 4B existed; three do, and they agree. `Q4_K_M` is
+**2,600,225,568** bytes at [mradermacher](https://huggingface.co/mradermacher/Spark-X2.6-4B-GGUF),
+**2,600,225,152** at [ss-lab](https://huggingface.co/ss-lab/Spark-X2.6-4B-GGUF) and **2,600,225,120** at
+[prithivMLmods](https://huggingface.co/prithivMLmods/XHToken-Spark-X2.6-4B-GGUF), within 450 bytes of each other
+and within 1,216 bytes of the 2.5's, which four quantisers publish at 2,600,224,xxx: XHToken's own, abenzerps',
+sizzlebop's and ngquocvinh's. bartowski's 4B is 2,621,104,768 on his own recipe, Myric's 2,544,472,416, and
+`iiinnnn88/Spark-X2.6-4B-GGUF` and `Felladrin/gguf-sharded-Q4_K_M-Spark-X2.6-4B` are XHToken's own file
+re-uploaded whole and in seven shards. Every repository's Q8_0 lands on 4,375,021,8xx–4,375,022,3xx and every
+bf16 on 8,229,920,xxx–8,229,921,xxx, so the weights themselves are not in question.
+
+**Reading the two headers accounts for every byte of the 0.94 GB gap, and none of it is model.** Both files say
+`general.file_type` 15, the Q4_K_M label. mradermacher's has 290 tensors and a tied `token_embd.weight` at
+**Q6_K** (0.275 GB). XHToken's has 291: `token_embd.weight` at **BF16** (0.671 GB), a separate `output.weight`
+at **Q8_0** (0.357), the 36 `attn_output` projections at Q8_0 where mradermacher has Q4_K (0.401 against 0.212),
+and the 36 `attn_gate` tensors at BF16. Those three choices come to 943,216,640 bytes against an observed
+943,215,744. The row is re-priced at **2.60 GB** today, the same rule the 1.7B row was priced on: this site's
+weights figure is what a four-bit of the whole model costs. The 2.5's 2.60 GB needed no change, so the backlog
+item's "re-price both" resolves to one row moving and the other confirmed where it stood.
+
+**Nothing new with its own weights today.** The searches were the ones this file lists, plus the 120 newest
+text-generation repositories and the trending list. Three names are worth writing down, none chased:
+**RakutenAI-3.0.1** ([Rakuten](https://huggingface.co/Rakuten/RakutenAI-3.0.1), created today, 1 like, Apache
+2.0), a DeepSeek-V3-architecture finetune of RakutenAI-3.0 whose `safetensors.total` is **684,489,845,504**, so
+a four-bit would sit on the 384 GB line this site's roomiest machine draws and it has no GGUF; and two
+derivatives that are not their own models, **Phoenix-69B-A6.6B** (a pruned, distilled GGUF of
+Qwen3.8-Flash-Next, 0 downloads) and **Gemory-26B-A4B** (an abliterated LoRA merge of Gemma 4 26B-A4B).
+Everything else created today is a requantisation, an export, an abliteration or coursework. **Clover-35B-A3B-Preview**
+is still the best-sourced candidate, with the block-diffusion judgement of yesterday's entry left to make.
+**Reka Edge 2603** is behind it on a vision judgement, **SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need
+a judgement first, and **Dory 1.0 4B** is still gated.
 
 ### 2026-11-03 · Nothing new with its own weights, and Clover-35B-A3B has its publisher's own four-bit now
 

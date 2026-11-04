@@ -39,13 +39,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Backlog (ordered by expected traffic impact)
 
-- [ ] **Spark-X2.6 4B's weights figure is 0.75 GB of packaging.** Its 3.54 GB is XHToken's own Q4_K_M, whose
-      `token_embd` is BF16 and whose `output.weight` is a second copy at Q8_0; the 2.5's 2.60 GB holds the same
-      table at Q6_K, and the two repos' Q8_0 and bf16 agree to a kilobyte. The figure feeds every speed estimate
-      on the page, so it reads 60% slow against the build most people run. Two sentences are reworded already;
-      the fix is a four-bit of the whole model to price it at, which no community build of the 2.6 4B yet gives
-      — mradermacher, bartowski and AtomicChat all list the 1.7B and none the 4B. Re-check, then re-price both.
-
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
       page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Clover-35B-A3B-Preview
       is next, citable on every size and architecture field off its publisher's own four-bit, and priced as the
@@ -91,12 +84,37 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       two places. The fix is in `src/format.ts`, which the calculator reads too, so it is a PR, not a push.
 
 - [ ] A figure in prose that nothing reads back: each `architecture.note` is printed whole in the KV cache row
-      of its model page, and three of them state what a full window costs ("the full 1M window costs about 145
-      GB" on MiniMax M3.1 Flash, 39 GB on Beam and on Spark-X2.6 4B). Every other figure on these pages is held
-      to the fields beside it; these are not, so a note can outlive a correction to the architecture it
-      describes. The guard is small: read a GB figure out of a note that names a window and check it.
+      of its model page, and seven of them state what a window costs in cache: 145 GB at 1M on MiniMax M3.1
+      Flash, 38.74 on Beam, 15.05 on Spark-X2.6 1.7B, and at 256k 7.55 on Flint, 6.44 on Ornith 1.5 122B, 3.22
+      on LFM3 1.7B and 2.15 on Nemotron 3.5 Bolt. All seven agree with `kvCacheGb()` to the rounding today, and
+      not one of them is held there, so a note can outlive a correction to the architecture it describes: the
+      2026-10-27 run moved both Ling 3.0 rows' cache by a factor of 14 and their notes happened not to quote
+      one. The guard is small: read a GB figure out of a note that names a window and check it against the
+      fields beside it.
+
+- [ ] **A weights figure says 2.60 GB and nothing says which file it came from.** `weights_gb` is one rounded
+      number a row, the repository behind it is somewhere in `sources` among the card, the config and the GGUF,
+      and the byte count is nowhere. That is why the Spark-X2.6 4B figure stood for eleven days: re-checking it
+      meant re-reading every repository. A `weights_bytes` and the file's own URL beside it would make a figure
+      re-checkable in one request and let `validate-data.ts` hold the rounded GB against the bytes. It would also
+      make a plausibility check possible: every four-bit row here is 4.34 to 5.37 bits a parameter except Nemotron
+      3.5 Lightning at 6.45, which is bartowski's real Q4_K_M, where the two XHToken files that were wrong came
+      to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-04 — Spark-X2.6 4B is re-priced at the four-bit three quantisers agree on, and every byte of the gap is accounted for
+The top backlog item said no community four-bit of the 4B existed; three do, and they agree. `Q4_K_M` is 2,600,225,568 bytes at mradermacher, and
+2,600,225,152 and 2,600,225,120 at ss-lab and prithivMLmods: within 450 bytes of each other and 1,216 of the 2.5's, which four quantisers publish at
+2,600,224,xxx. Every repository's Q8_0 and bf16 of either model agrees to a kilobyte, so the weights themselves were never in question. Reading the two
+GGUF headers accounts for the whole 0.94 GB and none of it is model: both say `general.file_type` 15, mradermacher's holds a tied `token_embd` at Q6_K
+(0.275 GB), XHToken's one at BF16 (0.671) plus a second `output.weight` at Q8_0 (0.357), its 36 `attn_output` projections at Q8_0 rather than Q4_K (0.401
+against 0.212) and its 36 `attn_gate` at BF16, which predicts 943,216,640 bytes against 943,215,744 observed. The row is 2.60 GB on the rule the 1.7B was
+priced on, and the 2.5's 2.60 is held rather than moved, so the item's "re-price both" is one row re-priced and one confirmed. 21 pages changed with none
+added or dropped, the five 16 GB machines and the twelve memory sizes among them, and the 4B's cheapest machine reads 30 tok/s where it read 24.
+`validate-data.ts` gained the guard the figure wanted: weights that are not a positive number, where a zero had made an infinite tok/s. Straight to main.
+Verified: 458 tests, typecheck and validate clean, the full build with build:functions, 336 pages every guard passing, both Spark pages read rendered,
+seven mutations of the row caught and an eighth not, which is the note-figure item above. Watch done, nothing new. Next: Clover-35B-A3B-Preview.
 
 ### 2026-11-03 — Hy-Memory 30B-A3B is priced here, on 48 layers that cache the whole window and a four-bit two quantisers agree on
 The top candidate is a row, every field read today: 48 layers at 4 KV heads by 128 with no sliding window and no linear layer in `config.json`, 262,144
@@ -257,29 +275,3 @@ machines hold it at 32k, the cheapest a Radeon AI PRO R9700, 32GB at $1,299 and 
 window 7.6 GB of cache, 60 pages linking in. Straight to main. Verified: 453 tests, typecheck and validate clean, the full build with
 build:functions, 327 pages every guard passing, 328 in the sitemap, 227 dates moved, the page read rendered, three mutations of the
 row all caught by validate. Oldest two entries archived. Next: Spark-X2.6 4B, above.
-
-### 2026-10-22 — Beam 1.0 501B-A23B is priced here, and the pages that find no machine for it say which set they looked in
-The top backlog item wanted the best-sourced candidate as a row, and every figure was read again today off the sources: 306.53 GB over 8
-shards off unsloth's GGUF file list, 52 layers with 9 full attention and 43 at a 512-token window, at 8 KV heads by 128, off the BF16
-`config.json`, 501.27B against the card's 23.4B active, 1M and Apache 2.0 off the card, 30 off Artificial Analysis. Both judgements the
-watch held are made on the page: the four-bit GGUF rather than Reflection's own NVFP4, the only build the machines with room for it can
-read, and the price names its provider, Nebius at $0.25 / $1.00, cheapest of five endpoints. It is the largest thing priced here, and
-the first model nothing still sold at a published price holds at any window, which found two false claims waiting on that case: three
-head-to-heads opened "No machine on this list runs X", and the leaderboard's machine column read "nothing on the list", of a model two
-512 GB Macs hold. Both name the set and its size now, and the leaderboard's note says what does hold it. Adding it retired one
-head-to-head the ladder re-sorted around, 301'd to the model page its address names first. Straight to main. Verified: 453 tests with
-two rewritten, typecheck and validate clean, the full build with build:functions, 326 pages every guard passing, the model page and both
-new head-to-heads read rendered, five mutations stopping the build or the tests. Next: the watch's three new names, above.
-
-### 2026-10-21 — Nemotron 3.5 Bolt 74B-A9B is priced here, and the three pages it retired still answer
-The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 22.02 GB off the GGUF repository's
-file list, 88 blocks with 8 of them attention at 2 KV heads by 128 off the BF16 `config.json`, 74.89B with 9B active, IQ2 and 256k off the card,
-OpenMDW-1.1 off its front matter, 21 off Artificial Analysis. Two judgements the watch held for Ryan are made on the page: NVIDIA's own two-bit build
-is priced rather than unsloth's 50.22 GB four-bit, because that quantisation is trained and built for a 24 GB card, and the vision side is a separate
-1.7 GB download the row does not price. Nobody rents it, so the price is a stand-in, Qwen3.6 27B at 22 against 21. The page reads finished: 41 of the
-56 machines hold it at 32k, the cheapest a Framework Desktop, 32GB at $1,269 and 48 tok/s, 17 years to pay back, its whole 256k window 2.1 GB of
-cache, 94 pages linking in. Adding it retired three head-to-heads the pair rules chose by score and by memory, so `RETIRED_PAGES` 301s all three to
-the model page their address names first, and `checkRetiredPages()` stops the build on a page in the committed ledger it no longer writes and does not
-redirect. Straight to main. Verified: 453 tests, one of which counted 56 models by hand and now counts the data, typecheck and validate clean, the
-full build with build:functions, 324 pages every guard passing, four mutations of the new guard stopping the build, the page read rendered. Next: Beam
-1.0 and Reka Edge 2603 on the watch.
