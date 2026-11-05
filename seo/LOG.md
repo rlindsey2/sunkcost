@@ -40,10 +40,11 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Clover-35B-A3B-Preview
-      is next, citable on every size and architecture field off its publisher's own four-bit, and priced as the
-      Qwen3.6 35B-A3B it was built from; the judgement left is block diffusion, which is not what this site's speed
-      estimate assumes. Reka Edge 2603 is behind it on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Ripple-65B-Preview is
+      next, a dense 65B at 80 layers with 64 of them on a 1,024-token window, 8 KV heads by 128 and a 2M ceiling,
+      with 38.80 GB of Q4_K_M that two community quantisers agree on; the publisher ships no GGUF of its own, so the
+      judgement left is which four-bit to price, and the card itself still wants reading for the active-parameter
+      and context claims. Reka Edge 2603 is behind it on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l
       each need a judgement first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
 
 - [ ] Thirteen model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
@@ -54,7 +55,7 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       a page each, and the searches it answers are the ones the Search Console notes name.
 
 - [ ] Artificial Analysis is on **Intelligence Index v5.0** now, read off the leaderboard on 2026-11-03, and all
-      67 rows here say v4.3. Every model page says "On the Artificial Analysis Intelligence Index v4.3 it scores
+      68 rows here say v4.3. Every model page says "On the Artificial Analysis Intelligence Index v4.3 it scores
       N", out of `defaults.frontier_basis.name`, and the 50 scores under it were read on 2026-09-11. v5.0 counts
       nine evaluations, among them Terminal-Bench 4.0 and FrontierCode 2.0, so it is a different scale rather than
       a revision of the old one and the scores will move. The fix is to re-read the 54 scores off the leaderboard
@@ -62,7 +63,7 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
       bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
-      its 262,144 ceiling builds clean and the page reads "256k tokens (1M)". Every one of the 15 notes that says
+      its 262,144 ceiling builds clean and the page reads "256k tokens (1M)". Every one of the 16 notes that says
       more than the figure is a sentence nothing checks against the number in front of it.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
@@ -102,6 +103,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-05 — Clover 35B-A3B Preview is priced here, and the speed block diffusion is quick at is not the speed this site estimates
+The top backlog item wanted the best-sourced candidate as a row, and every field was read today: 40 layers with `layer_types` alternating three
+linear-attention to one full-attention for 10 full-attention layers, 2 KV heads by 256 and 131,072 tokens off `config.json`; 34,661,350,848
+parameters off the HF API against the card's "approximately 3B active"; Apache 2.0 and the Qwen3.6-35B-A3B base off the repository; and
+22,998,009,248 bytes of DiffuSpace's own Q4_K_M, which its GGUF card states as both 21.42 GiB and 23.00 GB. That geometry is the Qwen3.6 35B-A3B
+row's to the layer, so the cache is 0.168 GB per 8k and the price is that row's as a finetune, the way KAT-Coder's is: $0.05 / $0.70 at Darkbloom,
+cheapest of 11 active endpoints on both prices, re-read today. Nobody rents Clover on either of two reads of OpenRouter's 454 and Artificial
+Analysis 404s on it, so the score is null with a TODO and no pair rule reaches it. The judgement left was block diffusion, and the page answers it
+rather than the estimate doing so: the launch blog's 680 tok/s on a GB300, 515 on an H200 and 101.8 at INT4 on a 16 GB RTX 5070 Ti are machines
+this site does not price, and that card holds neither four-bit of this model, so the page keeps the bandwidth estimate and says in words what it
+assumes, one pass over the active weights a token where a diffusion step can settle more than one. Straight to main. Verified: 458 tests,
+typecheck and validate clean, the full build with build:functions, 337 pages every guard passing, 1 added and 227 redated with none dropped, the
+page read rendered twice, 13 mutations of the row all caught. Watch done: Ripple-65B-Preview is new, well sourced and next.
 
 ### 2026-11-04 — Spark-X2.6 4B is re-priced at the four-bit three quantisers agree on, and every byte of the gap is accounted for
 The top backlog item said no community four-bit of the 4B existed; three do, and they agree. `Q4_K_M` is 2,600,225,568 bytes at mradermacher, and

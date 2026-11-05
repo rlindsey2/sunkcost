@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-04
+Last checked: 2026-11-05
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,54 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-05 · Clover-35B-A3B-Preview is a row, and Ripple-65B-Preview is the new front of the queue
+
+**Clover-35B-A3B-Preview is priced here, and the block-diffusion judgement is made on the page rather than in the
+estimate.** Every field was re-read today: 40 layers with `layer_types` alternating three `linear_attention` to one
+`full_attention` for 10 full-attention layers, `num_key_value_heads` 2 by `head_dim` 256, `max_position_embeddings`
+131,072, all off `config.json`; `safetensors.total` 34,661,350,848 off the HF API against the card's "approximately
+3B active parameters per token"; Apache 2.0 and the Qwen3.6-35B-A3B base off the repository; and
+`Clover-35B-A3B-Preview-Q4_K_M.gguf` at 22,998,009,248 bytes off DiffuSpace's own GGUF repository, which also
+states the three sizes in GiB and in decimal, so the 23.00 GB is the publisher's own arithmetic as well as this
+site's. That geometry is the Qwen3.6 35B-A3B row's to the layer, so the cache is 0.168 GB per 8k and the price is
+that row's as a finetune, the way KAT-Coder's is: $0.05 / $0.70 at Darkbloom, cheapest of 11 active endpoints on
+both prices, re-read today. Nobody rents Clover itself, on two reads of OpenRouter's 454 models, and Artificial
+Analysis 404s on it, so the score is null with a TODO and no pair rule reaches it.
+
+**The judgement was speed, and no published figure is on a machine this site prices.** The launch blog gives three:
+680 tokens a second on a single GB300 at BF16 and batch size 1, 515 on an H200 against 365 for a DFlash2 Qwen, and
+101.8 on MATH-500 from an INT4 build on a 16 GB RTX 5070 Ti against 48.5 for similarly sized MiniCPM and Qwen
+models. None of those machines is priced here, the 16 GB card holds neither the 23.00 GB four-bit this row prices
+nor the 19.59 GB Q4_0, and the blog does not say what it offloaded, so none of them is a throughput row. The page
+keeps this site's bandwidth estimate and says in words what it assumes: one pass over the active weights a token,
+where block diffusion can settle more than one token a step. The ceiling note says the other thing a reader needs,
+that the 128k covers the prompt and the response together, which the card states twice.
+[the weights](https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview),
+[the GGUF](https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview-GGUF),
+[the blog](https://diffuspace.ai/blog/clover-35b/).
+
+**Ripple-65B-Preview is new and well-sourced, and it is the next candidate.**
+[`ricursiveAI/Ripple-65B-Preview`](https://huggingface.co/ricursiveAI/Ripple-65B-Preview) (created 2026-11-04, 939
+downloads, 239 likes, Apache 2.0) is a dense model, not a mixture of experts: `safetensors.total` 64,782,689,360,
+80 layers at `num_key_value_heads` 8 by `head_dim` 128, `layer_types` 64 `sliding_attention` at a 1,024-token
+window to 16 `full_attention`, and `max_position_embeddings` 2,097,152, which would be the longest ceiling here.
+The publisher ships NVFP4 and DFlash2 builds but no GGUF; two community `Q4_K_M` files agree, 38,798,820,576 bytes
+at [AtomicChat](https://huggingface.co/AtomicChat/Ripple-65B-Preview-GGUF) and 38,798,813,312 at
+[mrfakename](https://huggingface.co/mrfakename/Ripple-65B-Preview-GGUF), 7,264 bytes apart, and their Q8_0 totals
+agree as closely, so 38.80 GB is two quantisers' figure. What is left is the card: the active-parameter and
+licence lines were read off the API's `cardData`, and the next run reads the card itself for the context claim and
+for whether the 2M window is conditional.
+
+**Nothing else new with its own weights today.** The searches were the ones this file lists, plus the 200 newest
+text-generation repositories and the trending list. Two names are worth recording and neither was chased:
+**Moon-Beam-8B-A1B-Preview** ([tablinum](https://huggingface.co/tablinum/Moon-Beam-8B-A1B-Preview), created today,
+0 downloads, MIT, 7,893,389,856 parameters on a `bailing_hybrid` backbone), too new to have a download or a GGUF;
+and **Hydrogen-1.0** ([deep-principle](https://huggingface.co/deep-principle/Hydrogen-1.0)), now at 19,960
+downloads and 247 likes, still carrying the judgement this file left on it on 2026-10-31. Everything else created
+today is a requantisation, an abliteration, a LoRA, an ONNX or OpenVINO export, or coursework. **Reka Edge 2603**
+is behind Ripple on a vision judgement, **SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need a judgement
+first, and **Dory 1.0 4B** is still gated.
 
 ### 2026-11-04 · Nothing new with its own weights, and three quantisers settle the Spark-X2.6 4B figure
 

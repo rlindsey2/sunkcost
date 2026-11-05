@@ -3631,5 +3631,64 @@
       "https://huggingface.co/rapatsky/Hy-Memory-30B-A3B-GGUF"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "clover-35b-a3b-q4",
+    "display_name": "Clover 35B-A3B Preview",
+    "family": "Clover",
+    "generation": "current",
+    "params_b": 34.66,
+    "active_params_b": 3.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 23.0,
+    "kv_cache_gb_per_8k": 0.168,
+    "architecture": {
+      "n_layers": 40,
+      "n_kv_heads": 2,
+      "head_dim": 256,
+      "full_attention_layers": 10,
+      "note": "Hybrid: three linear-attention layers to every full-attention one, so 10 of the 40 hold a growing cache and the other 30 keep a state of a fixed size. The bidirectional attention inside a diffusion block comes from learned parameters, which are counted in the weights above, so the cache geometry is Qwen3.6 35B-A3B's to the layer."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. It is DiffuSpace's first model, and a diffusion model rather than a left-to-right one: each block of 32 positions starts masked and the confident ones are filled in parallel, so one step can settle more than one token. Thirty-five billion parameters with about three running per token, text only, built from Qwen3.6 35B-A3B. The speeds here are worked out the way every estimate on this site is, from memory bandwidth against one pass over the active weights, which is the cost of one token at a time. DiffuSpace reports 680 tokens a second on a GB300 and 101.8 at INT4 on a 16 GB RTX 5070 Ti, neither of them a machine priced here.",
+    "cloud_equivalent": {
+      "name": "Qwen3.6 35B-A3B",
+      "input_price_per_mtok": 0.05,
+      "output_price_per_mtok": 0.7,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b",
+      "is_exact_match": false,
+      "checked": "2026-11-05",
+      "stand_in": true,
+      "stand_in_for": "qwen3.6-35b-a3b-q4",
+      "stand_in_basis": "finetune",
+      "note": "Nobody rents Clover 35B-A3B Preview by the token, on two reads of OpenRouter's 454 models today. It is a finetune of Qwen3.6 35B-A3B and shares its architecture to the layer, so it is priced as that: $0.05 and $0.70 per million tokens at Darkbloom, the cheapest of 11 active endpoints on both prices."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "the prompt and the generated response share it",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-05",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview",
+      "https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview/raw/main/config.json",
+      "https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview-GGUF",
+      "https://diffuspace.ai/blog/clover-35b/"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]
