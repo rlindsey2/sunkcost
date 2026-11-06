@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-05
+Last checked: 2026-11-06
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,59 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-06 · Ripple-65B-Preview is a row, somebody rents it now, and the card's own ceiling is half the config's
+
+**Ripple-65B-Preview is priced here, and every field was read today.** Dense, not a mixture of experts, and the card
+says so twice: "a 65B parameter dense Transformer model pretrained on 12 trillion tokens", with the comparison table
+giving active params as **65B** against total **65B**. `safetensors.total` is 64,782,689,360 off the HF API. `config.json`
+gives 80 layers at `num_key_value_heads` 8 by `head_dim` 128, `layer_types` four `sliding_attention` to one
+`full_attention` for 64 windowed to 16 growing, `sliding_window` 1024, and no `num_global_key_value_heads`, so both
+groups share a geometry. That puts the cache at 0.805 GB per 8k, a third of Llama 3.3 70B's 2.684 at a comparable size,
+which is the page's point: the window is the whole of the difference between them. Apache 2.0 off the repository and the
+LICENSE file.
+
+**The four-bit is two quantisers' figure, and the gap between them is not model.** `Ripple-65B-Preview-Q4_K_M.gguf` is
+38,798,820,576 bytes at [AtomicChat](https://huggingface.co/AtomicChat/Ripple-65B-Preview-GGUF) and 38,798,813,312 at
+[mrfakename](https://huggingface.co/mrfakename/Ripple-65B-Preview-GGUF), 7,264 bytes apart; their Q8_0 totals are
+68,840,113,568 and 68,840,106,304, the same 7,264 apart. A constant gap across two precisions is metadata, not weights,
+so 38.80 GB is the row. It comes to 4.79 bits a parameter, inside the 4.34-to-5.37 band every other four-bit row here
+sits in. AtomicChat also ships an `AD-Q4_K_M` at 40,426,079,712 on its own recipe, which is not the file priced.
+
+**Two judgements, and the sources settle both.** The first was the ceiling: `max_position_embeddings` is 2,097,152 and
+the card states "support for up to 1Mi (1,048,576 tokens) of context". The card wins, and the note says what the other
+figure is — long-context training and LC SFT both ran at 2M sequence length, which the recipe table states. GMI Cloud,
+the one endpoint renting it, also serves 1,048,576, so three sources agree on what you actually get. The second was
+speed: the only published figure is "250 tok/s on 2xB200 batch=8", neither a machine priced here nor one request at a
+time, so no throughput row and the page says in words what the estimate assumes.
+
+**Somebody rents it, which the 2026-11-05 entry could not say.** `ricursiveai/ripple-65b-preview` is live on
+[OpenRouter](https://openrouter.ai/ricursiveai/ripple-65b-preview) at **$0.20 / $0.60** per million, one endpoint, GMI
+Cloud, bf16 at the full 1M window, read twice today against OpenRouter's 458 models. So the row is an exact match
+rather than a stand-in. Artificial Analysis 404s on the model page and lists neither "Ripple" nor "Ricursive" on the
+leaderboard, so the score is null with a TODO and no pair rule reaches it, hence no head-to-head.
+
+**Ricursive names a machine this site prices, and the claim checks out.** The card says "At only 65B total parameters,
+the model can fit on consumer hardware such as the NVIDIA DGX Spark." On this site's arithmetic the weights and the
+whole 1M window come to 107.79 GB against the Spark's 119.5 GB usable, so it holds at every window, not just at a short
+one. That is the first time a publisher's hardware claim here could be tested against a machine already in the data.
+[the weights](https://huggingface.co/ricursiveAI/Ripple-65B-Preview),
+[the config](https://huggingface.co/ricursiveAI/Ripple-65B-Preview/raw/main/config.json).
+
+**Two worth recording, neither chased.** **Arete-27B** ([NousResearch](https://huggingface.co/NousResearch/Arete-27B),
+created today, 0 downloads, 7 likes, Apache 2.0, 27,356,728,560 parameters) is a supervised finetune of Qwen3.8-27B with
+"no architectural modification" by its own card, so it would carry that row's geometry and cache exactly, the way
+KAT-Coder and Clover are priced; nobody has quantised it yet and there is no GGUF to size, so it waits. **Kimi-K3.1-Pro**
+([moonshotai](https://huggingface.co/moonshotai/Kimi-K3.1-Pro), created 2026-11-02, 1,450 likes, trending first) is out
+on size with a figure this time: `safetensors.total` 2,780,110,363,392, so 2.78T parameters, which at any four-bit is
+past 384 GB usable by a factor of three and runs on nothing here at any window. Its licence is its own
+`kimi-k3.1-pro`, not an open one, and it is `image-text-to-text`. Same ruling as Kimi K3 on 2026-10-09.
+
+**Nothing else new with its own weights.** The searches were the ones this file lists, plus the 100 newest
+text-generation repositories and the trending list. Everything else created today is a requantisation, an abliteration,
+a LoRA, an MLX or OpenVINO export, or coursework. **Reka Edge 2603** is next on a vision judgement,
+**SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need a judgement first (2026-10-31), **Hydrogen-1.0** still carries
+its 2026-10-31 judgement at 19,960 downloads, and **Dory 1.0 4B** is still gated.
 
 ### 2026-11-05 · Clover-35B-A3B-Preview is a row, and Ripple-65B-Preview is the new front of the queue
 

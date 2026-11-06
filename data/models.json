@@ -3690,5 +3690,64 @@
       "https://diffuspace.ai/blog/clover-35b/"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "ripple-65b-q4",
+    "display_name": "Ripple 65B Preview",
+    "family": "Ripple",
+    "generation": "current",
+    "params_b": 64.78,
+    "active_params_b": 64.78,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 38.8,
+    "kv_cache_gb_per_8k": 0.805,
+    "architecture": {
+      "n_layers": 80,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 64,
+      "sliding_window": 1024,
+      "note": "Four layers on a 1,024-token window to every one that caches the whole context, so 16 of the 80 grow and the other 64 stop. All 80 carry eight KV heads at 128 wide, the same as Llama 3.3 70B, which caches every token in all 80 of its own layers: the window is the whole of the difference between them."
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Every parameter runs on every token: this is a dense model, where most of what the open labs ship at this strength is a mixture of experts. Ricursive built it thin and deep, 80 narrow layers rather than fewer wide ones, and put four layers on a short 1,024-token window for every layer that caches the whole context. That ratio is the reason a model this size can hold a long window on a desktop machine, and Ricursive says it fits an NVIDIA DGX Spark, which the machines listed here bear out. Text only, trained mostly on English and code. The speeds here are worked out from memory bandwidth, the way every estimate on this site is; the one figure Ricursive publishes is 250 tokens a second on two B200s at batch size 8, which is neither a machine priced here nor one request at a time.",
+    "cloud_equivalent": {
+      "name": "Ripple 65B Preview",
+      "input_price_per_mtok": 0.2,
+      "output_price_per_mtok": 0.6,
+      "source": "OpenRouter, the only active endpoint",
+      "source_url": "https://openrouter.ai/ricursiveai/ripple-65b-preview",
+      "is_exact_match": true,
+      "checked": "2026-11-06",
+      "note": "One provider rents it, GMI Cloud, serving the unquantised weights at the full 1M window. It is the only active endpoint on either price."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "long-context training ran at twice this, and the publisher supports the shorter figure",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-06",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/ricursiveAI/Ripple-65B-Preview",
+      "https://huggingface.co/ricursiveAI/Ripple-65B-Preview/raw/main/config.json",
+      "https://huggingface.co/AtomicChat/Ripple-65B-Preview-GGUF",
+      "https://huggingface.co/mrfakename/Ripple-65B-Preview-GGUF",
+      "https://openrouter.ai/ricursiveai/ripple-65b-preview"
+    ],
+    "TODO": "Capability ratings needed."
   }
 ]

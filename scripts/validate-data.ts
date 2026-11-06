@@ -52,6 +52,19 @@ for (const m of models) {
     if (!['green', 'amber', 'red', 'unknown'].includes(r)) errors.push(`${m.id}: capability ${k} is ${r}`);
   }
   if (Object.values(m.capabilities).includes('unknown') && !m.TODO) errors.push(`${m.id}: unknown rating needs a TODO`);
+  // Where both groups are counted, the cache is worked out from the two counts and
+  // never from n_layers, so n_layers can drift without the figure moving: Ripple 65B's
+  // 80 could read 60 against 16 growing and 64 windowed and still agree to the
+  // gigabyte. The layer count is what the model pages say in prose beside the cache,
+  // so the two counts have to fit inside it. They need not fill it — 13 of LFM3
+  // 1.7B's 24 layers are convolutions that cache nothing and are in neither group.
+  const arch = m.architecture;
+  if (arch?.n_layers != null && (arch.full_attention_layers != null || arch.sliding_window_layers != null)) {
+    const counted = (arch.full_attention_layers ?? 0) + (arch.sliding_window_layers ?? 0);
+    if (counted > arch.n_layers) {
+      errors.push(`${m.id}: ${counted} layers are counted as caching (${arch.full_attention_layers ?? 0} full, ${arch.sliding_window_layers ?? 0} windowed) and the model has ${arch.n_layers}`);
+    }
+  }
   const derived = kvCacheGbPer8kFromArchitecture(m);
   if (derived == null) warnings.push(`${m.id}: no architecture; KV cache falls back to kv_cache_gb_per_8k`);
   else if (m.kv_cache_gb_per_8k == null || Math.abs(derived - m.kv_cache_gb_per_8k) / derived > 0.02) {

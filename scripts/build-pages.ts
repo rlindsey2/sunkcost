@@ -5145,7 +5145,18 @@ ${machineSiblingNote(a, b)}${tiers ? `\n${tierSizeNote(a, b)}` : ''}${step && !t
               const holds = cf.length === df.length
                 ? `both hold ${cf.length} of the ${va.rows.length} current models here`
                 : `the ${lc} holds ${cf.length} of the ${va.rows.length} current models here and the ${ld} ${df.length}`;
+              // A card is priced without the PC around it, so $1,999 beside the card's
+              // own name reads as a whole computer; see checkCardPrices(). Three of
+              // these pairs have a card on one side, and the shape that fits them names
+              // both machines, which is the shape that sets the card's name next to the
+              // price. Saying the scope costs 32 of the 155 characters and leaves none
+              // of these three a shape that fits. So where one side is a card, the
+              // counts get a shape that names no price and owes nothing: the two prices
+              // are the first row of the page's own table either way, and the counts
+              // are what a search result can use.
+              const cardHere = [cheap, dear].some((h) => h.price_scope === 'card_only');
               return [
+                ...(cardHere ? [`${sentenceCase(holds)}. What the same money buys.`] : []),
                 `${at}, ${holds}. What the same money buys, and which pays back sooner.`,
                 `${at}, ${holds}. What the same money buys.`,
                 `${lc} or ${ld} for the same money: what each holds, how fast it runs it and which pays back sooner.`,

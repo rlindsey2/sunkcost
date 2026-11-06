@@ -40,12 +40,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Ripple-65B-Preview is
-      next, a dense 65B at 80 layers with 64 of them on a 1,024-token window, 8 KV heads by 128 and a 2M ceiling,
-      with 38.80 GB of Q4_K_M that two community quantisers agree on; the publisher ships no GGUF of its own, so the
-      judgement left is which four-bit to price, and the card itself still wants reading for the active-parameter
-      and context claims. Reka Edge 2603 is behind it on a vision judgement. SenseNova-Loop-9B-Preview and RWKV7-G1l
-      each need a judgement first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is next
+      and the judgement on it is vision: no row here prices a vision projector in the weights, and Muse Glimmer 30B's
+      architecture note is the only place the site says a projector exists. Arete-27B is behind it, a supervised
+      finetune of Qwen3.8-27B with no architectural change by its own card, so it would carry that row's geometry
+      the way KAT-Coder and Clover do; nobody has quantised it yet, so it waits on a GGUF to size.
+      SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the watch entry of 2026-10-31.
+      Dory 1.0 4B is blocked: its repository is gated.
 
 - [ ] Thirteen model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
       — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
@@ -103,6 +104,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-06 — Ripple 65B Preview is priced here, and a dense 65B holds a million tokens because 64 of its 80 layers stop at 1,024
+The top backlog item wanted the best-sourced candidate as a row, and every field was read today: 80 layers at 8 KV heads by 128, `layer_types` four `sliding_attention` at a
+1,024-token window to one `full_attention` for 64 windowed to 16 growing; `safetensors.total` 64,782,689,360, dense by the card; Apache 2.0 off the repository. The four-bit is
+two quantisers' figure, 38,798,820,576 bytes at AtomicChat and 38,798,813,312 at mrfakename, their Q8_0 totals the same 7,264 apart, so the gap is metadata rather than weights:
+38.80 GB, 4.79 bits a parameter. That window ratio is the page's point, 0.805 GB per 8k against Llama 3.3 70B's 2.684 at the same heads, so the whole 1M window costs 68.99 GB
+and Ricursive's claim that it fits an NVIDIA DGX Spark holds at every window, 107.79 against 119.5 usable. The ceiling is the card's 1Mi rather than the config's 2M, which
+long-context training used and GMI Cloud does not serve. Somebody rents it now, which yesterday's watch could not say: $0.20 / $0.60, one endpoint, so exact match rather than
+stand-in. Artificial Analysis 404s, so the score is null with a TODO and no pair rule reaches it, and 250 tok/s on 2xB200 at batch 8 is no throughput row. The build stopped on
+`checkCardPrices()` and was right to: this row splits the Framework Desktop 64GB and RTX 5090 fit counts, which turned the same-money description into one naming the 5090
+beside its $1,999, so that branch now gives the counts a shape pricing nothing, on all three pairs with a card. `validate-data.ts` gained the guard the row's note wanted: where
+both layer groups are counted the cache ignores `n_layers`, so 80 could read 60 and still agree. Straight to main. Verified: 458 tests, typecheck and validate clean, the full
+build with build:functions, 338 pages every guard passing, 1 added and 203 redated with none dropped, the page read rendered twice, 14 mutations run and 13 caught, the 14th
+stripped by the renderer. Oldest two entries archived. Watch done: Arete-27B is a Qwen3.8-27B finetune with no GGUF yet, Kimi-K3.1-Pro out on size at 2.78T. Next: Reka Edge 2603.
 
 ### 2026-11-05 — Clover 35B-A3B Preview is priced here, and the speed block diffusion is quick at is not the speed this site estimates
 The top backlog item wanted the best-sourced candidate as a row, and every field was read today: 40 layers with `layer_types` alternating three
@@ -263,30 +278,3 @@ holds it at any window; the licence was read and the row names it, the MiniMax C
 is text-only, with its 1.74 GB encoder named as a download the page does not price. Straight to main. Verified: 453 tests, typecheck and validate clean, the
 full build with build:functions, 330 pages every guard passing, 2 added and 187 redated with none dropped, the model page and the new head-to-head read
 rendered, five mutations of the row all caught by validate. Two findings are new backlog items above. Next: Ornith 1.5 122B, above.
-
-### 2026-10-24 — Spark-X2.6 4B is priced here, and the 2.5's page names it as the newer model
-The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 3.54 GB of Q4_K_M off XHToken's own
-GGUF file list, 36 layers with 9 full attention and 27 at a 512-token window, at 4 KV heads by 256, off `config.json`, 4,112,079,360 parameters off the
-safetensors index, 1,048,576 tokens and Apache 2.0 off the card. Artificial Analysis 404s on it as on the 2.5, so the score is `null` with a TODO and no
-pair rule reaches either Spark; nobody serves XHToken by the token, so the row carries the Granite 4.2 8B stand-in the 2.5 carries, $0.06 / $0.25,
-re-read today as the cheapest of its two endpoints. The parameter count is the 2.5's to the digit and the card says the architecture is too, so the one
-thing that changed is the download, 3.54 GB against 2.60; the 2.5 stays current and its note names the 2.6, following Qwen3.6 27B. All 56 machines hold
-it at 32k, the cheapest a Mac mini M6, 16GB at $899 and 24 tok/s, 77 years to pay back, its 1M window 39 GB of cache, 72 pages linking in. One find came
-with it: the RTX 4090 share card put its "150 yr" tick five thousandths of a pixel past the column, having tested it against the x before rounding and
-written the rounded one, so the chart decides on the figure it writes now. Straight to main. Verified: 453 tests, typecheck and validate clean, the full
-build with build:functions, 328 pages every guard passing, 329 dated with 243 moved, both Spark pages read rendered, five mutations of the row caught by
-validate, the card guard re-checked by putting the rounding back. Next: MiniMax M3.1 Flash, above.
-
-### 2026-10-23 — Flint 40B-A2.5B is priced here, and its page names who serves it free
-The top backlog item wanted the best-sourced candidate as a row, and every figure in it was read today off the sources: 25.05 GB of
-UD-Q4_K_XL off unsloth's GGUF file list, 49 layers with 14 of them full attention and 35 at a 513-token window, at 4 KV heads by 128,
-off the BF16 `config.json`, 39.79B off the safetensors index against the card's 39.8B and about 2.5B active per token, 262,144 tokens
-and Apache 2.0 off the card. Artificial Analysis still 404s on it, so the index score is `null` with a TODO, the ratings wait on it
-and no pair rule can reach it, as with LFM2.5 24B-A2B. The price was the open field: the only listing of Flint is Recursive's own
-free endpoint, so the row stands in at the nearest size, Qwen3.6 35B-A3B at $0.05 / $0.70, still the cheapest of ten endpoints today,
-and the first paragraph says Recursive serves it free rather than leave a reader to find that on OpenRouter. The build priced is
-unsloth's four-bit GGUF rather than Recursive's own at 26.0 GB, and the specifics name both. The page reads finished: 38 of the 56
-machines hold it at 32k, the cheapest a Radeon AI PRO R9700, 32GB at $1,299 and 131 tok/s, 85 years to pay back, its whole 256k
-window 7.6 GB of cache, 60 pages linking in. Straight to main. Verified: 453 tests, typecheck and validate clean, the full build with
-build:functions, 327 pages every guard passing, 328 in the sitemap, 227 dates moved, the page read rendered, three mutations of the
-row all caught by validate. Oldest two entries archived. Next: Spark-X2.6 4B, above.
