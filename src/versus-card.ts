@@ -155,6 +155,33 @@ export function rankedModels(data: Dataset): Model[] {
 }
 
 /**
+ * Every model a head-to-head rule may reach, one per display name: the ranked models
+ * first, then the ones the intelligence index has not placed, by id.
+ *
+ * Two of the three pair rules need a score to work at all. The ladder is cut from the
+ * index, and the generation rule breaks a tie on it. The memory rule needs neither: it
+ * pairs two models that ask a machine for the same memory, which is a footprint and a
+ * family name, and a model with no score has both. Cutting that rule from the ranked
+ * list left fifteen models in no pair at all, among them every model this site priced
+ * before Artificial Analysis got to it, and the search those pages answer — one model
+ * against another at the size a machine holds — is the search the Search Console notes
+ * say this site is first seen on.
+ *
+ * The ranked models keep their order so an unscored model never displaces one on the
+ * ladder, which is cut from `rankedModels` directly. Within the unscored, id order is
+ * what makes the build repeatable: there is no score to sort them by.
+ */
+export function pairableModels(data: Dataset): Model[] {
+  const ranked = rankedModels(data);
+  const named = new Set(ranked.map((m) => m.display_name));
+  const unplaced = data.models
+    .filter((m) => m.frontier_equivalent?.score == null && !named.has(m.display_name))
+    .filter((m, i, xs) => xs.findIndex((x) => x.display_name === m.display_name) === i)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  return [...ranked, ...unplaced];
+}
+
+/**
  * Every graphics card on the list, dearest first. A card is the one class of machine
  * bought as a part rather than as a computer, and the part is what people put against
  * another part, so every card gets a head-to-head with every other card and not only
@@ -514,11 +541,15 @@ export const MODEL_MEMORY_GAP = 0.1;
  * of it. One pair per model, its own nearest, rather than every pair inside a band —
  * a band writes a grid of near-identical pages around the crowded sizes and leaves the
  * smallest and largest models with none.
+ *
+ * This is the one rule cut from `pairableModels` rather than `rankedModels`, because it
+ * is the one that asks nothing of the intelligence index. A model with no score still
+ * has a footprint and a family, which is all the rule reads.
  */
 export function memoryNeighbourPairs(data: Dataset): [Model, Model][] {
   const ctx = data.defaults.context.default_tokens;
   const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
-  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const ranked = pairableModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
   const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
   const out: [Model, Model][] = [];
   const seen = new Set<string>();
@@ -529,8 +560,11 @@ export function memoryNeighbourPairs(data: Dataset): [Model, Model][] {
     if (!near) continue;
     if (Math.abs(need(near) - need(m)) / Math.min(need(near), need(m)) > MODEL_MEMORY_GAP) continue;
     // the pair is equal on memory by construction, so what orders it is the one figure
-    // the page leads with, the same way round as every rung of the ladder
-    const score = (x: Model) => x.frontier_equivalent?.score ?? 0;
+    // the page leads with, the same way round as every rung of the ladder. A model the
+    // index has not placed sorts below every model it has, and two unplaced models fall
+    // through to the footprint, which is the next figure the page prints. Unplaced is
+    // -1 rather than 0 so that it stays below every score the index can give.
+    const score = (x: Model) => x.frontier_equivalent?.score ?? -1;
     const [first, second] =
       score(m) !== score(near)
         ? score(m) > score(near) ? [m, near] : [near, m]

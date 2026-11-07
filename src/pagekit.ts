@@ -2008,7 +2008,10 @@ export function modelVerdict(
     const [placed, score, other] = sa != null ? [a.display_name, sa, b.display_name] : [b.display_name, sb!, a.display_name];
     out.push(`${placed} scores ${score} on the intelligence index, and ${other} has not been placed on it.`);
   } else {
-    out.push('Neither model has been placed on the intelligence index.');
+    // both sides unplaced, which the memory rule reaches: two models that ask a machine
+    // for the same memory and neither of them scored. The paragraph still has to name
+    // them, because on a page where both start on one machine no other sentence does.
+    out.push(`Neither ${a.display_name} nor ${b.display_name} has been placed on the intelligence index.`);
   }
 
   const ca = ra[0];

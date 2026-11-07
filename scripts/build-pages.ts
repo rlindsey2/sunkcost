@@ -25,7 +25,7 @@ import {
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
-  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, memoryTierPairs, modelComparePath, modelGenerationPairs, modelPairs, rankedModels, sameSiliconPairs,
+  MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, memoryTierPairs, modelComparePath, modelGenerationPairs, modelPairs, pairableModels, rankedModels, sameSiliconPairs,
   versusCardPath,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
 } from '../src/versus-card';
@@ -177,6 +177,37 @@ function checkMeta() {
       console.warn(
         `  note: ${list.length} ${what} over ${max} characters and will be cut in search results, longest ${Math.max(...list.map((p) => p[what === 'titles' ? 'title' : 'description'].length))} (${list[0].path})`,
       );
+}
+
+/**
+ * A value that was null where a figure was expected, printed. Nothing on this site is
+ * allowed to read as a figure gone missing: a reader who sees "null" where a score
+ * should be learns only that the page is broken, and the rule here is that a figure the
+ * data does not have is said in words. The score column of the match-up list printed one
+ * the day the memory rule first reached a model the index has not placed, and no check
+ * caught it, because every guard on this build reads one page type and this is a mistake
+ * any of them could make. So it is read over all of them at once: the body a reader
+ * sees, the title and the description a search result shows.
+ */
+function checkNoMissingValues() {
+  const problems: string[] = [];
+  const bare = /\b(?:null|undefined|NaN|Infinity)\b/;
+  for (const p of meta) {
+    const body = unesc(
+      mainOf(p.html)
+        .replace(/<(script|style)[\s\S]*?<\/\1>/g, ' ')
+        .replace(/<[^>]*>/g, ' '),
+    );
+    for (const [what, text] of [['words', body], ['title', p.title], ['description', p.description]] as const) {
+      const hit = text.match(bare);
+      if (hit) problems.push(`${p.path} prints "${hit[0]}" in its ${what}, where a figure the data does not have should be said in words`);
+    }
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} page${problems.length === 1 ? ' prints' : 's print'} a value that is missing rather than saying so`);
+  }
+  console.log(`  no value on any of the ${meta.length} pages reads as a figure gone missing`);
 }
 
 /**
@@ -6691,7 +6722,7 @@ ${only.length > shownRunners.length ? `<p class="note">${only.length - shownRunn
             };
           })()
         : {
-            long: 'Neither model has been placed on the intelligence index.',
+            long: `Neither ${a.display_name} nor ${b.display_name} has been placed on the intelligence index.`,
             short: 'Neither model has been placed on the intelligence index.',
           };
 
@@ -6852,6 +6883,18 @@ function matchUpKindsList(kinds: { clause: string }[]): string {
  * itself uses, so the index cannot promise something the page behind it does
  * not say.
  */
+/**
+ * The score column of the match-up list, where the memory rule pairs a model the
+ * intelligence index has not placed. Printing nothing in half the cell would read as a
+ * figure gone missing, so the cell says what the page behind it says: not placed.
+ */
+function pairScores(a: Model, b: Model): string {
+  const [sa, sb] = [a.frontier_equivalent?.score ?? null, b.frontier_equivalent?.score ?? null];
+  if (sa == null && sb == null) return '<span class="dim">neither placed</span>';
+  const cell = (s: number | null) => (s == null ? '<span class="dim">not placed</span>' : String(s));
+  return `${cell(sa)} vs ${cell(sb)}`;
+}
+
 function compareIndex(): string {
   const st = defaultState(data);
   const ctxK = Math.round(st.ctx / 1024);
@@ -6899,7 +6942,7 @@ function compareIndex(): string {
       const shared = cheapestRunsBoth(a, b, ra, rb);
       return `<tr>
   <td class="c-model"><a href="${esc(modelComparePath(a, b))}">${esc(a.display_name)} vs ${esc(b.display_name)}</a></td>
-  <td class="c-score">${a.frontier_equivalent!.score} vs ${b.frontier_equivalent!.score}</td>
+  <td class="c-score">${pairScores(a, b)}</td>
   <td class="c-pair">${fmtGb(a.weights_gb)} vs ${fmtGb(b.weights_gb)}</td>
   <td class="c-hw">${shared ? `<a href="/hardware/${esc(shared.hw.id)}/">${esc(hardwareLabel(shared.hw))}</a> ${priceWithScope(shared.hw)}` : '<span class="dim">none listed</span>'}</td>
   <td>${shared ? `<a href="${esc(calcLink({ hw: shared.hw.id, model: a.id }, data))}">Open in the calculator</a>` : ''}</td>
@@ -7585,6 +7628,13 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   ['/compare/ling-3-0-flash-q4-vs-devstral-2-123b-q4/', '/models/ling-3.0-flash-q4/'],
   ['/compare/qwen3-5-122b-a10b-ud-q4-vs-mistral-small-4-119b-q4/', '/models/qwen3.5-122b-a10b-ud-q4/'],
   ['/compare/qwen3-5-9b-q4-vs-ling-3-0-tiny-q4/', '/models/qwen3.5-9b-q4/'],
+  // 2026-11-07: the memory rule now reads every model with a footprint rather than only
+  // the scored ones, and four pairs had a nearer neighbour among the models the index has
+  // not placed.
+  ['/compare/nemotron-3-5-bolt-74b-a9b-iq2-vs-qwen3-30b-a3b-2507-q4/', '/models/nemotron-3.5-bolt-74b-a9b-iq2/'],
+  ['/compare/nemotron-3-5-bolt-74b-a9b-iq2-vs-qwen3-coder-30b-a3b-q4/', '/models/nemotron-3.5-bolt-74b-a9b-iq2/'],
+  ['/compare/granite-4-2-30b-q4-vs-nemotron-3-5-lightning-30b-q4/', '/models/granite-4.2-30b-q4/'],
+  ['/compare/ling-3-0-flash-q4-vs-mistral-small-4-119b-q4/', '/models/ling-3.0-flash-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;
@@ -8973,7 +9023,10 @@ function checkMemoryNeighbours() {
   const problems: string[] = [];
   const ctx = data.defaults.context.default_tokens;
   const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
-  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  // the same pool the rule is cut from: every model with a footprint, placed on the
+  // index or not. Reading the ranked list here would call every pair the rule makes with
+  // an unplaced model a fault
+  const ranked = pairableModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
   const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
   const nearest = (m: Model) =>
     ranked
@@ -8997,7 +9050,7 @@ function checkMemoryNeighbours() {
       problems.push(`${path} is ${Math.round(spread * 100)}% apart in what it needs at ${Math.round(ctx / 1024)}k, past the ${Math.round(MODEL_MEMORY_GAP * 100)}% this rule allows`);
     if (nearest(a)?.id !== b.id && nearest(b)?.id !== a.id)
       problems.push(`${path} is neither model's nearest in memory outside its own family`);
-    const [sa, sb] = [a.frontier_equivalent?.score ?? 0, b.frontier_equivalent?.score ?? 0];
+    const [sa, sb] = [a.frontier_equivalent?.score ?? -1, b.frontier_equivalent?.score ?? -1];
     if (sa < sb || (sa === sb && need(a) > need(b)))
       problems.push(`${path} does not put the stronger model first, or the smaller where the two score the same`);
     for (const m of [a, b])
@@ -10620,6 +10673,7 @@ function checkRetiredPages() {
 }
 
 checkMeta();
+checkNoMissingValues();
 checkDescriptionFigures();
 checkLinks();
 checkSectionLinks();

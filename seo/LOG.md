@@ -45,18 +45,14 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       architecture note is the only place the site says a projector exists. Arete-27B is behind it, a supervised
       finetune of Qwen3.8-27B with no architectural change by its own card, so it would carry that row's geometry
       the way KAT-Coder and Clover do; nobody has quantised it yet, so it waits on a GGUF to size.
-      SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the watch entry of 2026-10-31.
-      Dory 1.0 4B is blocked: its repository is gated.
-
-- [ ] Thirteen model pages have no head-to-head, and nothing about those models is the reason. All three pair rules
-      — the ladder, the generation swap, the memory neighbour — are cut from `rankedModels()`, which keeps only
-      the models the intelligence index has scored, so an unscored model is in no pair however well sourced it
-      is. The memory rule needs no score: it pairs two models that ask a machine for the same memory, which is
-      a footprint and a family name. Running that one rule over every model with a footprint would give the thirteen
-      a page each, and the searches it answers are the ones the Search Console notes name.
+      TwIL-8B (2026-11-07) is the best-sourced of them after Reka Edge and the judgement on it is the licence: it is a
+      GRPO finetune of Granite 4.2 8B with the publisher's own Q4_K_M and a config, and its repo says `other` while
+      carrying an Apache file beside it. SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the
+      watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
 
 - [ ] Artificial Analysis is on **Intelligence Index v5.0** now, read off the leaderboard on 2026-11-03, and all
-      68 rows here say v4.3. Every model page says "On the Artificial Analysis Intelligence Index v4.3 it scores
+      68 rows here say v4.3. Nanbeige4.3 33B is scored on v5.0 and on nothing else, so its row stays unscored
+      until this is done, and the next model the watch finds will be in the same position. Every model page says "On the Artificial Analysis Intelligence Index v4.3 it scores
       N", out of `defaults.frontier_basis.name`, and the 50 scores under it were read on 2026-09-11. v5.0 counts
       nine evaluations, among them Terminal-Bench 4.0 and FrontierCode 2.0, so it is a different scale rather than
       a revision of the old one and the scores will move. The fix is to re-read the 54 scores off the leaderboard
@@ -104,6 +100,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-07 — The memory head-to-head reads every model with a footprint, so the fifteen the index has not placed have a page each
+The backlog item wanted those fifteen off the no-pair list, and nothing about the models was the reason: all three pair rules were cut from `rankedModels()`, which keeps
+only scored rows. Two of them need a score — the ladder is the index in order and the generation rule breaks a tie on it — and the memory rule needs none, because it reads
+a footprint and a family name. It is now cut from a new `pairableModels()`, the ranked rows then the unplaced by id, so nothing displaces a rung of the ladder. 16 pages
+added, 14 of the 15 paired; Ripple 65B Preview stays out because its nearest is 19.4% away, past the tenth the rule allows. 4 pages came down where a scored model's nearest
+neighbour is now an unplaced one, each with a 301 to the model page of the side it named first: Nemotron 3.5 Bolt's two Qwen3 30B-A3B pairs, Granite 4.2 30B vs Nemotron 3.5
+Lightning, Ling 3.0 flash vs Mistral Small 4. The change exposed two holes and both are shut. The match-up list printed the two scores with a non-null assertion, so an
+unplaced side would have read "null"; it now says "not placed", and a new `checkNoMissingValues()` reads every page's words, title and description for a bare null, undefined
+or NaN, because that mistake belongs to no one page type. And the lede on a pair where neither side is placed named neither model, which no other sentence does when both
+start on one machine; it now names both. Straight to main. Verified: 459 tests, typecheck and validate clean, the full build with build:functions, 350 pages every guard
+passing, 16 added and 4 retired against the ledger with a 301 each, two of the new pages read rendered, 4 mutations run and 4 caught, one of them by the guard it prompted.
+Watch done: nothing addable. Nanbeige4.3 33B has a score now and it is on v5.0, so it goes in with that item; TwIL-8B is a new candidate on a licence read; Drex Max v1 is
+out on kind. Next: the v5.0 re-read, which is now two rows' worth of reason as well as 68.
 
 ### 2026-11-06 — Ripple 65B Preview is priced here, and a dense 65B holds a million tokens because 64 of its 80 layers stop at 1,024
 The top backlog item wanted the best-sourced candidate as a row, and every field was read today: 80 layers at 8 KV heads by 128, `layer_types` four `sliding_attention` at a

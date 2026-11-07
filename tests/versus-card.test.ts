@@ -3,6 +3,7 @@ import {
   chipStepPairs, clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
   generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
   memoryNeighbourPairs, MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard,
+  pairableModels,
   rankedModels,
   versusCardPath, versusCardSvg, wrapText, VS_HEIGHT,
   VS_WIDTH,
@@ -468,7 +469,7 @@ describe('the pairs the cards and the pages cut', () => {
       // a rung of the ladder is always the stronger side first; a generation pair is the
       // older side first, and the newer one is usually — but not always — the stronger
       if (!gens.some(([x, y]) => key(x, y) === key(a, b)))
-        expect(a.frontier_equivalent!.score!).toBeGreaterThanOrEqual(b.frontier_equivalent!.score!);
+        expect(a.frontier_equivalent?.score ?? -1).toBeGreaterThanOrEqual(b.frontier_equivalent?.score ?? -1);
     }
   });
 
@@ -676,7 +677,7 @@ describe('models of different families that need about the same memory', () => {
   const pairs = memoryNeighbourPairs(data);
   const ctx = data.defaults.context.default_tokens;
   const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
-  const ranked = rankedModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const ranked = pairableModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
   const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
   const nearest = (m: Model) =>
     ranked
@@ -687,15 +688,29 @@ describe('models of different families that need about the same memory', () => {
     expect(pairs.length).toBeGreaterThan(0);
   });
 
-  it('takes two scored models from different families, the stronger one first', () => {
+  it('takes two models from different families, the stronger one first', () => {
     for (const [a, b] of pairs) {
       expect(a.family).not.toBe(b.family);
       expect(ranked.map((m) => m.id)).toContain(a.id);
       expect(ranked.map((m) => m.id)).toContain(b.id);
-      const [sa, sb] = [a.frontier_equivalent!.score!, b.frontier_equivalent!.score!];
+      // a model the index has not placed sorts below every model it has
+      const [sa, sb] = [a.frontier_equivalent?.score ?? -1, b.frontier_equivalent?.score ?? -1];
       expect(sa).toBeGreaterThanOrEqual(sb);
       // where the index cannot order them, the smaller of the two goes first
       if (sa === sb) expect(need(a)).toBeLessThanOrEqual(need(b));
+    }
+  });
+
+  it('reaches the models the index has not placed, which is the whole of what it asks', () => {
+    const unplaced = pairs.flatMap(([a, b]) => [a, b]).filter((m) => m.frontier_equivalent?.score == null);
+    expect(unplaced.length).toBeGreaterThan(0);
+    // this is the one rule that needs no score, so a model with a footprint and a
+    // neighbour inside the gap is in a pair whether the index has placed it or not
+    for (const m of ranked) {
+      const near = nearest(m);
+      if (!near) continue;
+      if (Math.abs(need(near) - need(m)) / Math.min(need(near), need(m)) > MODEL_MEMORY_GAP) continue;
+      expect(pairs.some(([a, b]) => a.id === m.id || b.id === m.id)).toBe(true);
     }
   });
 

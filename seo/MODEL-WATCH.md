@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-06
+Last checked: 2026-11-07
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,50 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-07 · Nothing new to price, three names recorded for the first time, and Nanbeige4.3 33B has a score now
+
+**No candidate is addable today, and the run went on the backlog instead.** The searches were the ones this file
+lists, plus Artificial Analysis's open-weights launch page and the trending text-generation list. Everything new
+either is already here, is already ruled out, or has no file to size.
+
+**Nanbeige4.3 33B has an index score, and it is on the v5.0 scale.** Artificial Analysis lists it at **20 on
+Intelligence Index v5.0**, dated 2026-11-05, which is the first score this file has seen published on v5.0 for a model
+already in `data/models.json`. Its row here is unscored, so this is the one figure that would move it onto the
+leaderboard — but every other row says v4.3, and mixing the two scales on one table is the thing the backlog's v5.0
+item exists to stop. It goes in with that item, not before it.
+[the launch page](https://artificialanalysis.ai/articles/recent-open-weights-model-launches).
+
+**Three names this file has not recorded, none of them addable yet.**
+**TwIL-8B** ([webAI](https://huggingface.co/webAI-Official/TwIL-8B), created 2026-10-14, 15,324 downloads) is the best
+of them and worth chasing: a GRPO finetune of `ibm-granite/granite-4.2-8b`, which is a row here already, with the
+publisher's own `TwIL-8B-Q4_K_M-balanced.gguf` at **5,347,917,568 bytes** beside a verbose build 320 bytes off it, and
+`config.json` giving 40 layers at `num_key_value_heads` 8, `hidden_size` 4096 over 32 heads and `max_position_embeddings`
+131,072. `safetensors.total` is 8,791,592,960. What stops it is the licence: the repo says `other` and carries both a
+`LICENSE.md` and an `apache-2.0-LICENSE.txt`, and which one governs the weights has to be read before a row claims
+either. [the config](https://huggingface.co/webAI-Official/TwIL-8B/raw/main/config.json).
+**ERNIE-5.5-Flash-Base** ([baidu](https://huggingface.co/baidu/ERNIE-5.5-Flash-Base), created 2026-10-21) is a 286.2B
+mixture of experts by `safetensors.total` 286,245,697,882, published fp8 across 128 shards, licence `other`. It is a
+**base** model rather than an instruct one, nobody has quantised it, and this site prices neither, so there is nothing
+to enter.
+**Axion-1.0-35B** ([Axion1-0](https://huggingface.co/Axion1-0/Axion-1.0-35B), created 2026-10-16, 919 downloads) is
+35,107,181,936 parameters on a `qwen3_5_moe` architecture, Apache 2.0, tagged `image-text-to-text` and `reproduction`.
+No GGUF, and it needs the vision judgement Reka Edge needs.
+
+**Drex Max v1 is ruled out on kind.** Nace AI published weights for a dense 27B around 2026-11-01, and it is not a
+model that generates text: it answers a typed question about a context by returning a probability for each of up to 255
+options. This site prices tokens in and out against an API's token prices, and a model with no output tokens has no
+figure on either side. Its licence is Open RAIL-M, free below $1M of revenue or funding, which no row here carries
+either. Same ruling as Shieldstral 1.0 on 2026-10-11.
+[the write-up, sponsored by Nace AI](https://www.marktechpost.com/2026/11/01/nace-ai-open-sources-drex-max-v1-local-inference/).
+
+**The rest are unchanged.** **Inkling 2 Small** scores 31 on the index and its weights are still not published, which
+is the only thing between it and a row. **NVIDIA Cosmos 3** (2026-11-05) is interactive world models, not this site's
+subject, as Cosmos was on 2026-10-19. **DeepSeek V4.1-Flash** came back as the month's headline open release and is
+already ruled out on size (2026-10-19). **Kimi-K3.1-Pro** is out on size at 2.78T (2026-11-06). **Arete-27B** is
+unchanged at 989 downloads with still no GGUF to size. **Reka Edge 2603** is the best-sourced candidate left and needs
+the vision judgement. **SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need a judgement first (2026-10-31),
+**Hydrogen-1.0** carries its 2026-10-31 judgement, and **Dory 1.0 4B** is still gated.
 
 ### 2026-11-06 · Ripple-65B-Preview is a row, somebody rents it now, and the card's own ceiling is half the config's
 
