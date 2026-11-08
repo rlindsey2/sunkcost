@@ -195,7 +195,21 @@ export interface Defaults {
   use_cases: { id: string; label: string; ratio: number; note?: string }[];
   frontier_tiers: { tier: number; min_score: number; label: string; anthropic: string | null; openai: string | null; plain: string }[];
   frontier_reference_note?: string;
-  frontier_basis?: { name: string | null; url: string | null; checked: string | null; note?: string; estimated_note?: string };
+  frontier_basis?: {
+    name: string | null;
+    url: string | null;
+    checked: string | null;
+    /** The index version the scores below are on. Every scored row records the same one. */
+    version?: string;
+    note?: string;
+    estimated_note?: string;
+    /**
+     * The index the publisher has moved to, where it is not the one the scores
+     * here are on. A reader who follows the link finds this one, so the pages
+     * say so rather than leaving the two numbers to disagree in silence.
+     */
+    superseded_by?: { name: string; url: string; checked: string; scored_here: number; note?: string };
+  };
   frontier_reference?: { name: string; short?: string; score: number; score_alt?: number; url?: string }[];
   frontier_scale_max?: number;
   nearly_fits_ratio: number;

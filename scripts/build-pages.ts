@@ -13,14 +13,14 @@ import {
   DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, indexBasisNote, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, maxContextNote, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost, paybackSentence,
   nearestCompleteComputer, NUMBER_WORDS, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  strongestShared, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
+  scoredModels, scoresReadLine, strongestShared, supersededIndexLine, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -2250,6 +2250,60 @@ function checkModelGenerations() {
  * that row names the cheapest machine that holds it at a shorter window, marks the
  * window and opens the calculator at it, which is held to the data here the same way.
  */
+/**
+ * A score with no date on it, and a link to an index that no longer prints it.
+ * Both were true of all 54 model pages: the figure said "v4.3" and the page it
+ * cited had moved to v5.0.1, where ten of these models score something else and
+ * the other 44 score nothing. Nothing on the build could tell, because the
+ * version was a label in the data that no page read back. So every page that
+ * prints a model's index score has to print the date that score was read, and
+ * where the data records a newer index, name it. `validate-data.ts` holds the
+ * other half: no row may carry a score from a version the basis does not name.
+ */
+function checkIndexBasis() {
+  const problems: string[] = [];
+  const basis = data.defaults.frontier_basis;
+  const sup = basis?.superseded_by;
+  const words = (html: string) => unesc(mainOf(html).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ');
+  let dated = 0;
+  for (const m of scoredModels(data)) {
+    const page = meta.find((p) => p.path === `/models/${m.id}/`);
+    if (!page) {
+      problems.push(`${m.display_name} is scored and has no page of its own`);
+      continue;
+    }
+    const text = words(page.html);
+    const fe = m.frontier_equivalent!;
+    if (!text.includes(`${fe.score}`)) problems.push(`${page.path} does not print the ${fe.score} it is ranked on`);
+    if (!fe.checked) problems.push(`${m.id} is scored with no date, so its page cannot say when`);
+    else if (!text.includes(fe.checked)) problems.push(`${page.path} prints a score of ${fe.score} and never says it was read on ${fe.checked}`);
+    else dated++;
+    if (sup && !text.includes(sup.name)) problems.push(`${page.path} cites an index that ${sup.name} has replaced and does not say so`);
+  }
+  // and the one page that is the whole ranking says it too, where every reader
+  // comparing two scores arrives
+  if (sup) {
+    const board = meta.find((p) => p.path === '/leaderboard/');
+    if (!board) problems.push('/leaderboard/ is not built');
+    else {
+      const text = words(board.html);
+      if (!text.includes(sup.name)) problems.push(`/leaderboard/ ranks on ${basis?.version} and does not say ${sup.name} has replaced it`);
+      // and the span it prints is the span of the rows it ranks, not one date
+      // standing in for 54 read on five
+      const said = scoresReadLine(data).replace(/<[^>]*>/g, '');
+      if (said && !text.includes(said)) problems.push(`/leaderboard/ does not say the scores were ${said}`);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(sup.checked)) problems.push(`the newer index was read on "${sup.checked}", which is not a date`);
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what the pages say about the index the scores are on`);
+  }
+  console.log(
+    `  ${dated} scored models each print the date their score was read${sup ? `, and every one of them and the leaderboard name ${sup.name} as having replaced ${basis?.version}` : ''}`,
+  );
+}
+
 function checkLeaderboardLinks() {
   const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
   const problems: string[] = [];
@@ -2869,7 +2923,7 @@ ${shortened.length || offMarket.length ? `<p class="note">Each machine named is 
 ${unplaced.length ? `<h2>Models the index has not scored yet</h2>
 <p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <h2>How to read the scores</h2>
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, read on ${esc(data.defaults.frontier_basis?.checked ?? '')}. Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, ${scoresReadLine(data)}. ${supersededIndexLine(data)} Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>.</p>
 </article>`;
 
   return pageShell(
@@ -4041,7 +4095,7 @@ ${cheapest
 <p>${fe?.score != null
       ? `On the ${fe.url ? `<a href="${esc(fe.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}</a>` : esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
       : 'It has not been placed on the intelligence index yet.'}
- <a href="/leaderboard/">See the whole table</a>.</p>
+ <a href="/leaderboard/">See the whole table</a>.</p>${indexBasisNote(m, data) ? `\n<p class="note">${indexBasisNote(m, data)}</p>` : ''}
 ${caps ? `<ul class="caps">${caps}</ul>
 ` : ''}${versusLine}
 ${supersededSection(m)}<h2>${costHeading(m)}</h2>
@@ -10725,6 +10779,7 @@ checkMissedMachines();
 checkHiddenModels();
 checkFamilyReach();
 checkModelGenerations();
+checkIndexBasis();
 checkLeaderboardLinks();
 checkLeaderboardBuilds();
 checkBestGpu();

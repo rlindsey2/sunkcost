@@ -727,6 +727,59 @@ export function tierLabel(m: Model, data: Dataset): string {
 }
 
 /**
+ * How many models here are scored at all. The ranking's own denominator: the
+ * sentence about the index and the guard on the data both count the same rows.
+ */
+export function scoredModels(data: Dataset): Model[] {
+  return data.models.filter((m) => m.frontier_equivalent?.score != null);
+}
+
+/**
+ * When the scores were read, across all of them. The basis carries one date and
+ * the leaderboard printed it as the date for every row, which four of the 54 have
+ * never been: they were added later and read then, on the same index. One date
+ * where they agree, the span where they do not.
+ */
+export function scoresReadLine(data: Dataset): string {
+  const dates = [...new Set(scoredModels(data).map((m) => m.frontier_equivalent!.checked).filter(Boolean) as string[])].sort();
+  const basis = data.defaults.frontier_basis?.checked;
+  if (!dates.length) return basis ? `read on ${esc(basis)}` : '';
+  return dates.length === 1 ? `read on ${esc(dates[0])}` : `read between ${esc(dates[0])} and ${esc(dates[dates.length - 1])}`;
+}
+
+/**
+ * What a reader cannot get from the score itself: the link beside it no longer
+ * leads to the index the number is on. Artificial Analysis replaced v4.3 with
+ * v5.0.1, which counts other evaluations and had been run on ten of these
+ * models, so following the link finds either a different number or none at all.
+ * Leaving that to be discovered is the page keeping a figure a reader cannot
+ * check it against. Written here because the leaderboard and all 54 model pages
+ * print the same sentences and a test holds them at every count.
+ */
+export function supersededIndexLine(data: Dataset): string {
+  const basis = data.defaults.frontier_basis;
+  const sup = basis?.superseded_by;
+  const version = basis?.version?.trim();
+  if (!sup || !version) return '';
+  const total = scoredModels(data).length;
+  const rest = total - sup.scored_here;
+  return [
+    `<a href="${esc(sup.url)}" rel="noopener">${esc(sup.name)}</a> has replaced ${esc(version)} at the source, on a different set of evaluations, so a score on it is not comparable with one here.`,
+    rest === total
+      ? `Read on ${esc(sup.checked)} it covered none of the ${total} models ranked on this site, so the figures here stay on ${esc(version)}.`
+      : `Read on ${esc(sup.checked)} it covered ${countOfSet(sup.scored_here, total)} models ranked on this site and not the other ${rest}, so the figures here stay on ${esc(version)}, the one scale that covers all of them.`,
+  ].join(' ');
+}
+
+/** The same, under the one sentence on a model page that prints that model's score. */
+export function indexBasisNote(m: Model, data: Dataset): string {
+  const fe = m.frontier_equivalent;
+  if (fe?.score == null) return '';
+  const read = fe.checked ? `That score was read on ${esc(fe.checked)}.` : '';
+  return [read, supersededIndexLine(data)].filter(Boolean).join(' ');
+}
+
+/**
  * The same rule for the markers beside a figure that are not tier labels: a
  * quantisation, the model a price stands in for, the label on a level of use.
  * The phrase wraps between its words wherever a column is narrow, but a word

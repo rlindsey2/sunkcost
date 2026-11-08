@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-07
+Last checked: 2026-11-08
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,52 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-08 · Nothing to price, and the index this site ranks on has been replaced rather than revised
+
+**No candidate is addable today, and the run went on the v5.0 backlog item instead.** The searches were the ones this
+file lists, plus Hugging Face's newest text-generation feed, its trending text-generation list, and Artificial
+Analysis's open-weights launch page.
+
+**Artificial Analysis is on Intelligence Index v5.0.1, and it has been run on 10 of the 54 models scored here.** The
+leaderboard names the version itself, and its own model list carries a v5.0.1 score for Gemma 4 31B (4.38 against 15
+on v4.3), Qwen3.8 27B (20.11 / 34), Mistral Small 4 (4.30 / 11), Muse Glimmer 30B (6.34 / 18), Inkling Small (12.91 /
+26), Granite 4.2 8B (5.10 / 12), Nemotron 3.5 Lightning (5.53 / 14), GLM-5.3-Flash (27.80 / 42), MiniMax M3.1 Flash
+(29.06 / 43) and Beam 1.0 (17.73 / 30), and `null` for the other 44 — checked on the board and again on the model
+pages of Llama 3.1 8B, Qwen3.8 Flash Next, Qwen3.6 27B, GLM-4.5-Air and MiniMax M2.7. The nine evaluations it counts
+are not the old ones either: Terminal-Bench 4.0, FrontierCode 2.0, CritPt v2 Hard, HLE Diamond, GDPval, MLCR, SciCode,
+Terminal-Bench Science and AutomationBench. So the re-read that item wanted cannot be done on one scale yet; today's
+LOG entry has what was done instead.
+[the leaderboard](https://artificialanalysis.ai/leaderboards/models).
+
+**TwIL-8B is out on licence, and the question is answered rather than left open.** Its `LICENSE.md` is the **webAI
+Non-Commercial License ver. 1.0**, whose 3.3 reads "The Work and any derivative works thereof only may be used or
+intended for use non-commercially", and the card states `license_name: webai-non-commercial-license-ver.-1.0`. The
+`apache-2.0-LICENSE.txt` sitting beside it is the Granite 4.2 8B base's, passed through: webAI's **Air-26B-A4B**
+(created 2026-11-04, 9,776 downloads), one GGUF of `google/gemma-4-26B-A4B-it` with an `mmproj` projector, carries the
+identical pair of files under the same non-commercial name. Two licences here are conditional on commercial use
+rather than closed to it — LFM 1.0 on the three Liquid rows and the MiniMax Community License, which M3.1 Flash's row
+names as wanting notice — and webAI's permits none at all, with no threshold or notice that unlocks it. The people
+this site is for are costing out machines for work. And the row would be a near-duplicate besides: Granite 4.2 8B is
+priced here at 5.35 GB on the same 40 layers at 8 KV heads by 128, against TwIL's 5.35 GB from 5,347,917,568 bytes, so
+the page would answer every question the Granite page already answers.
+[the licence](https://huggingface.co/webAI-Official/TwIL-8B/blob/main/LICENSE.md),
+[the card](https://huggingface.co/webAI-Official/TwIL-8B),
+[Air-26B-A4B](https://huggingface.co/webAI-Official/Air-26B-A4B-gguf).
+
+**Two more names, both ruled out.** **Hydrogen-1.0** ([deep-principle](https://huggingface.co/deep-principle/Hydrogen-1.0),
+created 2026-10-31, 26,011 downloads) is a 753.33B GLM-5.3 finetune by `safetensors.total` 753,329,940,480, published
+BF16 across 303 shards, MIT on the card. Nobody has quantised it, and at GLM-5.3-Flash's four-bit rate of 188.99 GB
+for 321.3B parameters the same weights would want about 443 GB against the 384 GB usable of the roomiest machine here,
+so it runs on nothing this site prices. **Qwen3.8-27B-DSpine-b16**
+([tencent](https://huggingface.co/tencent/Qwen3.8-27B-DSpine-b16), created 2026-11-07) is 2,025,912,064 parameters,
+Apache 2.0, tagged `draft-model` and `speculative-decoding`: a draft model to run in front of Qwen3.8-27B rather than
+one anybody runs on its own. Out on kind, the same ruling as Drex Max v1.
+
+**The rest are unchanged.** **Reka Edge 2603** is the best-sourced candidate left and still needs the vision
+judgement. **Arete-27B** is a Qwen3.8-27B finetune with no GGUF to size. **SenseNova-Loop-9B-Preview** and
+**RWKV7-G1l** each need a judgement first, in the entry of 2026-10-31. **Nanbeige4.3 33B** has a v5.0.1 score and
+nothing else, so it waits on the item above. **Inkling 2 Small** still has no weights. **Dory 1.0 4B** is gated.
 
 ### 2026-11-07 · Nothing new to price, three names recorded for the first time, and Nanbeige4.3 33B has a score now
 

@@ -45,18 +45,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       architecture note is the only place the site says a projector exists. Arete-27B is behind it, a supervised
       finetune of Qwen3.8-27B with no architectural change by its own card, so it would carry that row's geometry
       the way KAT-Coder and Clover do; nobody has quantised it yet, so it waits on a GGUF to size.
-      TwIL-8B (2026-11-07) is the best-sourced of them after Reka Edge and the judgement on it is the licence: it is a
-      GRPO finetune of Granite 4.2 8B with the publisher's own Q4_K_M and a config, and its repo says `other` while
-      carrying an Apache file beside it. SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the
-      watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
+      SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the watch entry of 2026-10-31.
+      Dory 1.0 4B is blocked: its repository is gated.
 
-- [ ] Artificial Analysis is on **Intelligence Index v5.0** now, read off the leaderboard on 2026-11-03, and all
-      68 rows here say v4.3. Nanbeige4.3 33B is scored on v5.0 and on nothing else, so its row stays unscored
-      until this is done, and the next model the watch finds will be in the same position. Every model page says "On the Artificial Analysis Intelligence Index v4.3 it scores
-      N", out of `defaults.frontier_basis.name`, and the 50 scores under it were read on 2026-09-11. v5.0 counts
-      nine evaluations, among them Terminal-Bench 4.0 and FrontierCode 2.0, so it is a different scale rather than
-      a revision of the old one and the scores will move. The fix is to re-read the 54 scores off the leaderboard
-      and move the basis and `frontier_reference` with them, a data edit over every scored row.
+- [ ] **The move to Intelligence Index v5.0.1 waits on Artificial Analysis.** It scores 10 of the 54 rows here and
+      not the other 44 (read 2026-11-08, count in `frontier_basis.superseded_by`), so switching would null 44 and take
+      the ladder, the "smartest first" sort and the generation pair rule with it. Re-check the count each watch; when
+      most of the 54 are covered, move every scored row, `frontier_reference` (v5.0.1 scores Opus 5.5, Sonnet 5.5 and
+      Haiku 5.5, not the Opus 5, Sonnet 5 and Haiku 4.5 the bands are set from), the band rule and
+      `frontier_scale_max` in one edit. Nanbeige4.3 33B stays unscored until then, on 20.11 and nothing on v4.3.
+
+- [ ] The calculator's own score line has none of what the generated pages gained on 2026-11-08: it prints each row's
+      `basis` string, "Artificial Analysis Intelligence Index v4.3: N", with no read date and no word that the index
+      has moved. `src/render.ts` is a PR, not a push.
 
 - [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
       bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
@@ -100,6 +101,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-08 — The index these 54 scores are on has been replaced, not revised, so every page that prints one dates it and says so
+The backlog wanted the v4.3 scores re-read on v5.0, and that re-read cannot be done: Artificial Analysis is on Intelligence Index v5.0.1 and its own
+model data carries a v5.0.1 score for 10 of the 54 scored rows here and `null` for the other 44, checked on the leaderboard and again on five model
+pages. Switching would null 44 scores and take the ladder, the "smartest first" sort and the generation pair rule with it, so the item above keeps the
+count and the scores stay on v4.3, the one scale covering all 54. What a visitor could not see is that the link beside a score no longer leads to that
+number: Gemma 4 31B reads 15 here and 4.38 there, Qwen3.8 Flash Next 40 here and nothing there. So `frontier_basis` now states its own `version` and
+the index that replaced it, and each of the 54 model pages prints the date its own score was read and names v5.0.1 under it. The leaderboard says the
+same and prints the span its rows were read over, 2026-09-11 to 2026-10-27, where it printed one date for all 54 and four were never read that day.
+`validate-data.ts` holds what a page cannot: no row may carry a score from a version the basis does not name, a scored row needs its read date, the
+basis name must end in its own version, and the newer index needs a date, a URL and a count of these rows short of all of them. `checkIndexBasis()`
+holds the pages. Straight to main. Verified: 462 tests, typecheck and validate clean, the full build with build:functions, 350 pages every guard
+passing, none added or dropped, 55 redated, the leaderboard and three model pages read rendered, 13 mutations run and 13 caught. Watch done: nothing
+addable, and TwIL-8B is out on licence, its `LICENSE.md` being webAI's own non-commercial 1.0. Next: Reka Edge 2603 on the vision judgement.
 
 ### 2026-11-07 — The memory head-to-head reads every model with a footprint, so the fifteen the index has not placed have a page each
 The backlog item wanted those fifteen off the no-pair list, and nothing about the models was the reason: all three pair rules were cut from `rankedModels()`, which keeps
@@ -262,29 +277,3 @@ it at 256k go 6 to 17. Five head-to-heads the pair rules re-sorted away are in `
 repointed at a model whose cache still separates two machines, typecheck and validate clean, the full build with build:functions, 332 pages every guard
 passing, 6 added and 5 retired with 214 redated, four pages read rendered, four mutations of the row caught by validate and a fifth that was not, which is
 the new backlog item above. Next: Dory 1.0 4B, above.
-
-### 2026-10-26 — Ornith 1.5 122B is priced here, and the Qwen it is post-trained from settles two of its fields
-The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 75.84 GB of Q4_K_M off Ornith's own GGUF
-file list, 48 layers with 12 of them full attention and the other 36 linear, at 2 KV heads by 256, off `text_config`, 125,086,497,008 parameters off the
-safetensors index, MIT and 256k off the card. Two open fields were settled by the base rather than left null: Qwen3.5 122B-A10B's config matches this one on
-every architecture field and its index gives the same count to the digit, and its card states "122B in total and 10B activated", so `active_params_b` is 10.0
-from the base, not from the name, and the price is a stand-in on the same basis, Qwen3.5 122B-A10B at $0.26 / $2.08, re-read today as the cheapest of four
-endpoints. Nobody on OpenRouter serves Ornith at any size. The build priced is Ornith's own four-bit rather than unsloth's UD-Q4_K_XL at 79.71 GB, following
-the family's other two rows; the same 17 machines hold either build, so nothing hangs on it. Artificial Analysis 404s on it as on the other two Ornith models,
-so the score is `null` with a TODO and no pair rule reaches it, hence no head-to-head. The page reads finished: 17 of the 56 machines hold it at 32k, the
-cheapest a Framework Desktop, 128GB at $3,449 and 21 tok/s, 53 years to pay back, its whole 256k window 6.4 GB of cache, 26 pages linking in. Straight to
-main. Verified: 453 tests, typecheck and validate clean, the full build with build:functions, 331 pages every guard passing, 1 added and 201 redated with none
-dropped, the model page read rendered, six mutations of the row all caught by validate. Next: Reka Edge 2603, above.
-
-### 2026-10-25 — MiniMax M3.1 Flash is priced here, and the sparse-attention cache it keeps is counted
-The top backlog item wanted the best-sourced candidate as a row, and every figure was read today off the sources: 249.40 GB of UD-Q4_K_XL over seven shards
-off unsloth's GGUF file list, 60 layers with every one of them full attention, at 4 KV heads by 128, off `text_config`, about 428B with 23B active and 1M off
-the card, 43 off Artificial Analysis, and $0.09 / $0.50 off OpenRouter, the cheapest of thirteen endpoints and an exact match. The cache was the figure that
-needed finding. MiniMax Sparse Attention keeps the whole context and reads 16 blocks of 128 tokens of it, so it buys arithmetic and not memory; on top of the
-2,048 B each token costs in the main cache it leaves an index key, which vLLM sizes at one vector per token, one head, 128 wide, bf16, so 256 B more. That is
-2,304 B a layer, 4.5 GB at 32k and 145 GB at the full 1M, and the 145 puts the whole window past the 384 GB both 512 GB Macs hand a model, where the main
-cache alone would have fitted it. All three calls the watch held are made on the page: the four-bit build is priced, following Beam, since nothing else here
-holds it at any window; the licence was read and the row names it, the MiniMax Community License, non-commercial until you send notice; and the vision side
-is text-only, with its 1.74 GB encoder named as a download the page does not price. Straight to main. Verified: 453 tests, typecheck and validate clean, the
-full build with build:functions, 330 pages every guard passing, 2 added and 187 redated with none dropped, the model page and the new head-to-head read
-rendered, five mutations of the row all caught by validate. Two findings are new backlog items above. Next: Ornith 1.5 122B, above.

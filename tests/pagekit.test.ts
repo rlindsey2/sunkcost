@@ -17,7 +17,7 @@ import {
   modelSoftware, otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, strongestShared, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
+  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, indexBasisNote, scoredModels, scoresReadLine, strongestShared, supersededIndexLine, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
 } from '../src/pagekit';
 import { fingerprint, mainOf } from '../src/page-dates';
 import {
@@ -2467,6 +2467,52 @@ describe('the calculator’s assumptions panel, which prints the same fields the
       if (!v) continue;
       expect([m.id, indexVersion(data.defaults.frontier_basis?.name, v)]).toEqual([m.id, '']);
     }
+  });
+
+  it('holds every score on one index version, the one the basis names', () => {
+    const basis = data.defaults.frontier_basis!;
+    expect(basis.version).toBeTruthy();
+    expect(basis.name!.endsWith(basis.version!)).toBe(true);
+    for (const m of scoredModels(data)) {
+      expect([m.id, m.frontier_equivalent!.index_version]).toEqual([m.id, basis.version]);
+      expect([m.id, m.frontier_equivalent!.checked]).toEqual([m.id, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)]);
+    }
+  });
+
+  it('says a score was read on its own date, and the whole table over the span of all of them', () => {
+    const dates = scoredModels(data).map((m) => m.frontier_equivalent!.checked!);
+    const span = scoresReadLine(data);
+    if (new Set(dates).size === 1) expect(span).toBe(`read on ${dates[0]}`);
+    else expect(span).toBe(`read between ${[...dates].sort()[0]} and ${[...dates].sort().at(-1)}`);
+    // the note under a score opens on that row's own date, not the span
+    const beam = data.models.find((m) => m.id === 'beam-1.0-501b-a23b-ud-q4')!;
+    expect(indexBasisNote(beam, data)).toContain(`That score was read on ${beam.frontier_equivalent!.checked}.`);
+    // and an unscored model has nothing to date
+    const unscored = data.models.find((m) => m.frontier_equivalent?.score == null)!;
+    expect(indexBasisNote(unscored, data)).toBe('');
+  });
+
+  it('names the index that replaced the one the scores are on, at every count it could cover', () => {
+    const total = scoredModels(data).length;
+    const sup = data.defaults.frontier_basis!.superseded_by!;
+    const said = supersededIndexLine(data);
+    expect(said).toContain(sup.name);
+    expect(said).toContain(sup.url);
+    expect(said).toContain(`${sup.scored_here} of the ${total}`);
+    expect(said).toContain(`the other ${total - sup.scored_here}`);
+    // a count that goes empty is a plain no, and has no "the other N" half to it
+    const at = (n: number) => {
+      const d = { ...data, defaults: { ...data.defaults, frontier_basis: { ...data.defaults.frontier_basis!, superseded_by: { ...sup, scored_here: n } } } };
+      return supersededIndexLine(d);
+    };
+    expect(at(0)).toContain(`covered none of the ${total} models`);
+    expect(at(0)).not.toContain('the other');
+    expect(at(1)).toContain(`1 of the ${total} models`);
+    expect(at(total - 1)).toContain('and not the other 1,');
+    // and nothing to say where the data records no newer index
+    const none = { ...data, defaults: { ...data.defaults, frontier_basis: { ...data.defaults.frontier_basis!, superseded_by: undefined } } };
+    expect(supersededIndexLine(none)).toBe('');
+    expect(indexBasisNote(data.models.find((m) => m.id === 'beam-1.0-501b-a23b-ud-q4')!, none)).toBe('That score was read on 2026-10-22.');
   });
 });
 

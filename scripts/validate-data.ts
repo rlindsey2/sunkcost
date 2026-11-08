@@ -38,6 +38,10 @@ for (const h of hardware) {
   }
 }
 
+const basis = defaults.frontier_basis;
+const basisVersion = basis?.version?.trim() ?? '';
+const scoredRows = models.filter((m) => m.frontier_equivalent?.score != null).length;
+
 const modelIds = new Set<string>();
 for (const m of models) {
   if (modelIds.has(m.id)) errors.push(`duplicate model id ${m.id}`);
@@ -98,6 +102,13 @@ for (const m of models) {
     const expected = defaults.frontier_tiers.filter((t) => fe.score! >= t.min_score).at(-1)?.tier ?? 0;
     if (fe.tier !== expected) errors.push(`${m.id}: frontier tier ${fe.tier} disagrees with score ${fe.score} (expected ${expected})`);
     if (!fe.url && !fe.basis) errors.push(`${m.id}: frontier score needs a basis or url`);
+    // A ranking is only a ranking if every score on it is on one scale. The
+    // version each row carries was a label nothing read, so a score off a newer
+    // index could sit in the ladder beside the old ones and sort against them.
+    if (basisVersion && fe.index_version !== basisVersion) {
+      errors.push(`${m.id}: score is on index ${fe.index_version ?? 'nothing stated'} and the ranking is on ${basisVersion}, which cannot be sorted together`);
+    }
+    if (!fe.checked) errors.push(`${m.id}: frontier score needs the date it was read`);
   } else if (fe.tier != null) errors.push(`${m.id}: frontier tier without a score`);
 }
 
@@ -123,6 +134,26 @@ for (const t of throughput) {
 }
 
 if (!/^\d{4}-\d{2}-\d{2}$/.test(defaults.data_last_checked)) errors.push('defaults.data_last_checked must be YYYY-MM-DD');
+
+// The basis names its version in prose and states it as a field. Both are printed,
+// so they have to be the same string, and the field is what every row is held against.
+if (basis) {
+  if (!basisVersion) errors.push('defaults.frontier_basis.version is required; it is the scale every score is held to');
+  else if (basis.name && !basis.name.trim().endsWith(basisVersion)) {
+    errors.push(`defaults.frontier_basis: name "${basis.name}" does not end in its own version ${basisVersion}`);
+  }
+  const sup = basis.superseded_by;
+  if (sup) {
+    for (const k of ['name', 'url', 'checked'] as const) if (!sup[k]) errors.push(`defaults.frontier_basis.superseded_by.${k} is required`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(sup.checked ?? '')) errors.push('defaults.frontier_basis.superseded_by.checked must be YYYY-MM-DD');
+    if (sup.name === basis.name) errors.push('defaults.frontier_basis.superseded_by names the same index the scores are on');
+    // the count is a figure on the page, so it has to be a count of these rows
+    if (!Number.isInteger(sup.scored_here) || sup.scored_here < 0 || sup.scored_here > scoredRows) {
+      errors.push(`defaults.frontier_basis.superseded_by.scored_here must be a whole number of the ${scoredRows} scored rows, not ${sup.scored_here}`);
+    }
+    if (sup.scored_here === scoredRows) errors.push('defaults.frontier_basis.superseded_by scores every row here, so the ranking should move to it rather than note it');
+  }
+}
 for (const k of ['efficiency_dense', 'efficiency_moe'] as const) if (!(defaults.estimate[k] > 0 && defaults.estimate[k] <= 1)) errors.push(`defaults.estimate.${k} must be in (0, 1]`);
 
 for (const w of warnings) console.warn(`warn  ${w}`);

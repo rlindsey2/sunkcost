@@ -163,7 +163,15 @@
     "name": "Artificial Analysis Intelligence Index v4.3",
     "url": "https://artificialanalysis.ai/leaderboards/models",
     "checked": "2026-09-11",
-    "note": "One consistent public aggregate, re-read across every model on 2026-09-11 so the ranking is on a single scale. Hybrid models are shown at their reasoning or highest-effort figure, with the alternative noted per model. Some scores are Artificial Analysis's own estimate rather than a measured run of the full suite; those are marked.",
+    "version": "v4.3",
+    "note": "One consistent public aggregate, read across 50 of the models on 2026-09-11 and across the four added since on the dates their own rows carry, all of them on v4.3, so the ranking is on a single scale. Hybrid models are shown at their reasoning or highest-effort figure, with the alternative noted per model. Some scores are Artificial Analysis's own estimate rather than a measured run of the full suite; those are marked.",
+    "superseded_by": {
+      "name": "Artificial Analysis Intelligence Index v5.0.1",
+      "url": "https://artificialanalysis.ai/leaderboards/models",
+      "checked": "2026-11-08",
+      "scored_here": 10,
+      "note": "Artificial Analysis replaced v4.3 with a differently constituted index, read as v5.0.1 off the leaderboard on 2026-11-08. Read that day, it carried a v5.0.1 score for 10 of the 54 models scored here (Gemma 4 31B, Qwen3.8 27B, Mistral Small 4, Muse Glimmer 30B, Inkling Small, Granite 4.2 8B, Nemotron 3.5 Lightning, GLM-5.3-Flash, MiniMax M3.1 Flash, Beam 1.0) and none for the other 44, so there is no v5.0.1 figure to rank the whole table on. The new scale also runs lower: Gemma 4 31B is 4.4 on it against 15 on v4.3, and Qwen3.8 27B 20.1 against 34. The hosted reference lineup is stale on it too, since v5.0.1 scores Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5 rather than the Opus 5, Sonnet 5 and Haiku 4.5 the bands are set from. Re-check whether the other 44 have been run; the switch is a single edit over every scored row and the reference lineup together, not a partial one."
+    },
     "estimated_note": "Marked 'estimated' where Artificial Analysis imputed the score rather than running the full v4.3 suite. 26 of the models here carry that mark.",
     "band_rule": "Each band starts at about 80% of its reference model's score — Haiku-class at 15 (Claude Haiku 4.5 scores 18), Sonnet-class at 30 (Claude Sonnet 5 scores 38) — the same proportions the first version used. The frontier band starts halfway between Claude Sonnet 5 and Claude Opus 5 (51), because the hosted top tier is bunched too tightly for a percentage rule."
   },
