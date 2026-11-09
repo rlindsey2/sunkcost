@@ -106,6 +106,24 @@ export interface FrontierEquivalent {
   estimated?: boolean | null;
 }
 
+export interface ModelVision {
+  /** the model takes images as well as text; weights_gb is the language model alone */
+  reads_images: true;
+  /**
+   * The smallest vision projector the GGUF repository behind this row publishes, which is
+   * what a llama.cpp run loads on top of the weights to feed the model pictures. Null where
+   * no repository this row cites publishes one, with projector_TODO saying so.
+   */
+  projector_gb: number | null;
+  projector_bytes: number | null;
+  projector_file: string | null;
+  projector_source_url: string | null;
+  projector_TODO?: string;
+  /** the repository whose own card states the model reads images */
+  source_url: string;
+  checked: string;
+}
+
 export interface Model {
   id: string;
   display_name: string;
@@ -125,6 +143,8 @@ export interface Model {
   weights_gb: number | null;
   kv_cache_gb_per_8k: number | null;
   architecture?: ModelArchitecture;
+  /** set on every row: an object where the model reads images, null where it is text only */
+  vision?: ModelVision | null;
   capabilities: Record<CapabilityKey, Rating>;
   capability_note: string;
   cloud_equivalent: CloudEquivalent;

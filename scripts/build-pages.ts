@@ -20,7 +20,7 @@ import {
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  scoredModels, scoresReadLine, strongestShared, supersededIndexLine, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, widestHeadroom, withModified, type Runner,
+  scoredModels, scoresReadLine, strongestShared, supersededIndexLine, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, visionFleetLine, visionSpec, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -2304,6 +2304,57 @@ function checkIndexBasis() {
   );
 }
 
+function checkVisionNotes() {
+  const problems: string[] = [];
+  const words = (html: string) => unesc(mainOf(html).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ');
+  const vision = data.models.filter((m) => m.vision);
+  let sized = 0;
+  for (const m of data.models) {
+    const page = meta.find((p) => p.path === `/models/${m.id}/`);
+    if (!page) continue;
+    const text = words(page.html);
+    const says = /reads images as well as text/.test(text);
+    const v = m.vision;
+    if (!v) {
+      // the sentence belongs to the models that earn it, so a text-only page may not
+      // carry it and a row that loses its vision entry may not keep the words
+      if (says) problems.push(`${page.path} says it reads images and the row is text only`);
+      continue;
+    }
+    if (!says) problems.push(`${page.path} is a model that reads images and never says so`);
+    if (!/the weights above are the language model/.test(text)) {
+      problems.push(`${page.path} prints ${fmtGb(m.weights_gb)} of weights on a model that reads images and does not say the figure is the language model`);
+    }
+    if (v.projector_gb == null) {
+      // no figure, so no figure may be implied: the page says a projector is needed
+      if (!/loads a vision projector too/.test(text)) problems.push(`${page.path} has no projector figure and does not say a projector is needed`);
+      if (/vision projector, mmproj/.test(text)) problems.push(`${page.path} names a projector file and the row carries none`);
+    } else {
+      const gb = fmtGb(v.projector_gb);
+      if (!text.includes(`separate ${gb} vision projector`)) problems.push(`${page.path} does not print its ${gb} vision projector`);
+      if (!v.projector_file || !text.includes(v.projector_file)) problems.push(`${page.path} prints a projector size and not the file it was read off`);
+      const anchored = v.projector_source_url
+        ? new RegExp(`<a href="${esc(v.projector_source_url).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*><code>[^<]*${(v.projector_file ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</code></a>`).test(page.html)
+        : false;
+      if (!anchored) problems.push(`${page.path} names ${v.projector_file} and does not link it to the repository that publishes it`);
+      sized++;
+    }
+  }
+  // and the one page that asserts the weights column is the download says it too
+  const said = visionFleetLine(data);
+  const board = meta.find((p) => p.path === '/leaderboard/');
+  if (said && board && !words(board.html).includes(said.replace(/<[^>]*>/g, ''))) {
+    problems.push('/leaderboard/ calls the weights the download and does not say which of its rows read images');
+  }
+  if (problems.length) {
+    console.error(problems.slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} fault${problems.length === 1 ? '' : 's'} in what the pages say about the models that read images`);
+  }
+  console.log(
+    `  ${vision.length} models that read images each say the weights are the language model, ${sized} of them with the projector file and its size, and the other ${data.models.length - vision.length} pages say nothing of images`,
+  );
+}
+
 function checkLeaderboardLinks() {
   const html = meta.find((p) => p.path === '/leaderboard/')?.html ?? '';
   const problems: string[] = [];
@@ -2923,7 +2974,7 @@ ${shortened.length || offMarket.length ? `<p class="note">Each machine named is 
 ${unplaced.length ? `<h2>Models the index has not scored yet</h2>
 <p class="note">${unplaced.length} more open models on this site are not in the table above: ${unplaced.map((m) => `<a href="/models/${esc(m.id)}/">${esc(m.display_name)}</a>`).join(', ')}. Their pages show what each one needs and what runs it.</p>` : ''}
 <h2>How to read the scores</h2>
-<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, ${scoresReadLine(data)}. ${supersededIndexLine(data)} Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>.</p>
+<p class="note">${esc(data.defaults.frontier_basis?.estimated_note ?? '')} Scores are the ${data.defaults.frontier_basis?.url ? `<a href="${esc(data.defaults.frontier_basis.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? '')}</a>` : esc(data.defaults.frontier_basis?.name ?? '')}, ${scoresReadLine(data)}. ${supersededIndexLine(data)} Hybrid models are shown at their reasoning or highest-effort score, with the alternative noted on each model's page and, on the hosted rows above, beside the score itself. Weights are the download; a running model also needs a cache the size of your context window, so see <a href="/how-much-memory/">how much memory each size really takes</a>. ${visionFleetLine(data) ?? ''}</p>
 </article>`;
 
   return pageShell(
@@ -4115,7 +4166,7 @@ ${contextCostSection(m)}${measuredWithSection(m, perFamily)}${cheapest ? shorter
 <dl class="specs">
   <dt>Parameters</dt><dd>${fmtNum(m.params_b, 1)}B${m.active_params_b && m.active_params_b < m.params_b ? `, of which ${fmtNum(m.active_params_b, 1)}B are active per token` : ''}</dd>
   <dt>Quantisation</dt><dd>${esc(m.quantisation)}${alsoAt.map((o) => ` — also listed here at <a href="/models/${esc(o.id)}/">${esc(o.quantisation)}</a>, which is ${fmtGb(o.weights_gb)}`).join('')}</dd>
-  <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>
+  <dt>Weights on disk</dt><dd>${fmtGb(m.weights_gb)}</dd>${visionSpec(m) ? `\n  <dt>Images</dt><dd>${visionSpec(m)}</dd>` : ''}
   <dt>KV cache</dt><dd>${endStop(`${fmtGb(kvCacheGb(m, ctx))} at ${Math.round(ctx / 1024)}k context${m.architecture?.note ? ` — ${esc(m.architecture.note)}` : ''}`)} <a href="${SECTIONS.weightsAndCache}">How weights and cache add up</a>.</dd>
   <dt>Maximum context</dt><dd>${m.max_context_tokens ? `${ctxLabel(m.max_context_tokens)} tokens` : 'unknown'}${maxContextNote(m) ? ` (${esc(maxContextNote(m)!)})` : ''}</dd>
   <dt>Licence</dt><dd>${esc(m.license)}</dd>
@@ -10780,6 +10831,7 @@ checkHiddenModels();
 checkFamilyReach();
 checkModelGenerations();
 checkIndexBasis();
+checkVisionNotes();
 checkLeaderboardLinks();
 checkLeaderboardBuilds();
 checkBestGpu();

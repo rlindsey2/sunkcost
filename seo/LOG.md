@@ -40,13 +40,24 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Reka Edge 2603 is next
-      and the judgement on it is vision: no row here prices a vision projector in the weights, and Muse Glimmer 30B's
-      architecture note is the only place the site says a projector exists. Arete-27B is behind it, a supervised
-      finetune of Qwen3.8-27B with no architectural change by its own card, so it would carry that row's geometry
-      the way KAT-Coder and Clover do; nobody has quantised it yet, so it waits on a GGUF to size.
-      SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the watch entry of 2026-10-31.
-      Dory 1.0 4B is blocked: its repository is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. GLM-5.3-SLIM is next:
+      179.86 GB of expert-pruned GLM-5.3 at IQ2_M, which is the first build of GLM-5.3 this site's memory reaches,
+      and it needs the pruned parameter count, the layer geometry read rather than assumed from the base, and a
+      GLM-5.3-Flash stand-in price. Arete-27B is behind it, a supervised finetune of Qwen3.8-27B with no
+      architectural change by its own card, so it would carry that row's geometry the way KAT-Coder and Clover do;
+      nobody has quantised it yet, so it waits on a GGUF to size. SenseNova-Loop-9B-Preview and RWKV7-G1l each need
+      a judgement first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
+
+- [ ] **Nine of the 24 models that read images have no projector figure**, so their pages say a projector loads
+      beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
+      Gemma 4 builds whose own GGUF repositories publish none this site cites. Each needs the repository its
+      `weights_gb` actually came from pinned down first, which is the same thing the `weights_bytes` item below
+      needs, so the two want doing together.
+
+- [ ] A cited source on a live page is gone: `bartowski/google_gemma-4-12B-it-GGUF`, in the Gemma 4 12B row's
+      `sources` and linked in its Sources line, now answers 401 to the Hugging Face API and to an anonymous fetch.
+      `checkSourceLinks()` reads the shape of a URL and never asks whether it resolves, so every one of the 295
+      source links on this site could rot the same way without a page saying so.
 
 - [ ] **The move to Intelligence Index v5.0.1 waits on Artificial Analysis.** It scores 10 of the 54 rows here and
       not the other 44 (read 2026-11-08, count in `frontier_basis.superseded_by`), so switching would null 44 and take
@@ -101,6 +112,22 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-09 — Twenty-four of the models priced here read images, and every page called the language weights the whole download
+The backlog's vision judgement turned out to have been made already and never written down: a survey of all 69 rows against their own repository cards
+on the Hugging Face API found **24 carrying an `image-text-to-text` tag**, Gemma 3 and Gemma 4 among them, each priced at its language weights with the
+vision projector a second file nothing on the site mentioned. Five rows said so by hand in prose, and one of those five was wrong — Muse Glimmer 30B's
+architecture note read "~1.4 GB" against the 3,847,367,584-byte projector bartowski publishes, 3.85 GB, which stood because no check could see a figure
+inside a sentence. So `vision` is a field now, set on every row, an object or an explicit null, so a new row cannot read as text-only by omission. Where
+a repository the row already cites publishes a projector the field carries its bytes, its rounded GB and the file's own name: 15 rows, read today, and
+the model page names and links the file. The other 9 say a projector loads beside the weights and invent no size for it. The five hand-written sentences
+are gone, and `validate-data.ts` now refuses a projector size written into any note. Guards: the GB must be the bytes rounded, a projector may not equal
+or exceed the weights it loads beside, both URLs must be sources the row already cites, a figure may not sit beside a TODO, and `checkVisionNotes()`
+holds every page's words both ways. Reka Edge 2603 is ruled out in the same pass, on licence: BSL 1.1 forbids hosting it as an API, so no rental price
+for it can exist, and this site pays a machine back against one. Straight to main. Verified: 467 tests, typecheck and validate clean, the full build with
+build:functions, 350 pages every guard passing, none added or dropped, 25 redated and no page whose words did not move, four read rendered, 20
+mutations run and 20 caught, the last only once the guard it exposed stopped reading the Sources line as proof of its own link. Watch done:
+GLM-5.3-SLIM is new and next. Next: the projector figures for the nine, with the `weights_bytes` item.
 
 ### 2026-11-08 — The index these 54 scores are on has been replaced, not revised, so every page that prints one dates it and says so
 The backlog wanted the v4.3 scores re-read on v5.0, and that re-read cannot be done: Artificial Analysis is on Intelligence Index v5.0.1 and its own
@@ -249,31 +276,3 @@ and at gpt-oss-20b, the nearest current hosted model on the index each way. `/ha
 count out of itself, so the swap sentence has sweep wording and is written once for the page and its guard to share. Straight to main. Verified: 453 tests
 with one widened off a single model, typecheck and validate clean, the full build with build:functions, 333 pages every guard passing, 292 redated with
 none added or dropped, four re-priced pages read rendered, seven mutations of the new rows all caught. Next: Nanbeige4.3 33B, GGUF out since 25 October.
-
-### 2026-10-28 — LFM3 1.7B is priced here, and reading its stand-in's price found one that had moved
-The top backlog item wanted the best-sourced candidate as a row, and LFM3 1.7B went ahead of Dory 1.0 4B because Dory's weights repository answers
-`Invalid username or password` today, so its architecture cannot be re-read; only its GGUF is still open. Every LFM3 figure was read today: 1.10 GB of
-Q4_K_M off Liquid's own GGUF file list, 24 layers split 13 gated short convolutions, 5 sliding attention at a 256-token window and 6 global, at 4 KV
-heads by 128, off `config.json` and said again in words on the card, 1,728,801,536 parameters off the safetensors index, 262,144 tokens and LFM Open
-License v1.0 off the card. It is the smallest download this site prices, 1.10 GB against LFM2.5 2.6B's 1.67, and only the 6 global layers grow, so its
-whole 256k window costs 3.2 GB of cache and all 56 machines hold it there. Artificial Analysis 404s on it, so the score is `null` with a TODO and no
-pair rule reaches it, hence no head-to-head. Nobody rents it either, so the row stands in at Granite 4.2 8B as the five other small models here do — and
-re-reading that price moved it: CoreWeave serves Granite at $0.06 / $0.15 against DeepInfra's $0.06 / $0.25, cheaper on both sides, so the Granite row
-and its five stand-ins went with it. That the price had been stale since 9 September is the new top backlog item above. Straight to main. Verified: 453
-tests, typecheck and validate clean, the full build with build:functions, 333 pages every guard passing, 1 added and 252 redated with none dropped, the
-new page and LFM2.5 2.6B's read rendered, eight mutations of the row all caught by validate. Next: Nanbeige4.3 33B, above.
-
-### 2026-10-27 — Ling 3.1 flash is priced here, and the Ling family's cache goes on the latent path its data asked for
-The top backlog item wanted the best-sourced candidate as a row, and Ling 3.1 flash went ahead of Reka Edge 2603 because the one thing holding it back, a
-GGUF, has been out since 15 October. Every figure was read today: 357.97 GB of Q4_K_M over 10 shards off bartowski's file list, 72 layers at
-`layer_group_size` 8 with `kv_lora_rank` 512 and `qk_rope_head_dim` 64 off `config.json`, 560B with 25B active and MIT off the card, 41 off Artificial
-Analysis, and $0.075 / $0.225 off OpenRouter, an exact match and the cheapest of two endpoints. The card's "63 KDA + 9 Gated MLA" is settled by the
-modelling code, where a layer is full attention when `(layer_idx + 1) % layer_group_size == 0`, so nine of the 72 cache the whole context at 1,152 bytes a
-layer and the other 63 keep a state of a fixed size: 0.3 GB at 32k against 358 GB of weights. Two calls are made on the page: the ceiling is the config's
-262,144 with the note saying the card says 1M, and the build priced is the family's own four-bit, which costs nothing because the memory step below 384 GB
-usable is 192, so every build down to IQ2_M at 213.03 GB is held by the same two 512 GB Macs. That architecture is the two Ling 3.0 rows' too, and their
-data carried a TODO to read `kv_lora_rank` and switch; both are on it now, so Ling 3.0 flash's cache goes 0.94 to 0.066 GB per 8k and the machines holding
-it at 256k go 6 to 17. Five head-to-heads the pair rules re-sorted away are in `RETIRED_PAGES` with 301s. Straight to main. Verified: 453 tests with one
-repointed at a model whose cache still separates two machines, typecheck and validate clean, the full build with build:functions, 332 pages every guard
-passing, 6 added and 5 retired with 214 redated, four pages read rendered, four mutations of the row caught by validate and a fifth that was not, which is
-the new backlog item above. Next: Dory 1.0 4B, above.

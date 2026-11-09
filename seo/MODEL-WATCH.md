@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-08
+Last checked: 2026-11-09
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,48 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-09 · Reka Edge 2603 is ruled out on licence, and the vision judgement it waited on turned out to be made already
+
+**No candidate is addable today, and the run went on the vision judgement instead.** The searches were the ones this
+file lists, plus Hugging Face's newest text-generation feed and its trending list off the API, and a November release
+roundup. Everything new is already here, already ruled out, or a requantisation, an abliteration or a finetune.
+
+**Reka Edge 2603 is out on licence, and vision is not what rules it out.** The judgement this file has carried since
+2026-10-11 was whether this site prices a vision-language model at all, and the survey behind today's change answers
+it: **24 of the 69 rows already read images**, Gemma 3 and Gemma 4 among them, and the site has been pricing them at
+their language weights all along. So a VLM is a row here, at its language weights, with the projector named beside
+them. What stops Reka Edge is its `LICENSE`, **Business Source License 1.1**, whose Usage Limitation forbids
+"Operating, hosting or offering the Licensed Work as a hosted model, vision language model API or inference service".
+No endpoint for it can legally exist, so there is no rental price for a machine to pay back against, and
+`cloud_equivalent` could only ever be a stand-in. Production use needs a commercial licence from Reka above $1M of
+annual gross revenue, and for any government, public-sector or academic body at any size. The two conditional
+licences here — LFM 1.0 and the MiniMax Community License — are conditions on commercial use, and all five of their
+rows have a real paid endpoint; this one closes off the comparison the site is built on. The repo is also unchanged
+since 2026-04-24 at 1,177 downloads.
+[the licence](https://huggingface.co/RekaAI/reka-edge-2603/raw/main/LICENSE),
+[the repo](https://huggingface.co/RekaAI/reka-edge-2603).
+
+**GLM-5.3-SLIM is a new candidate, and it puts GLM-5.3 inside this site's memory for the first time.** Scantist
+published a neural-architecture-search pruning of `zai-org/GLM-5.3` down to 192 experts, quantised UD-IQ2_M with an
+imatrix, created 2026-11-02, 1,295 likes and 7,884 downloads. Its six shards total **179,861,261,600 bytes = 179.86
+GB** off the repo's own blob sizes, which is inside the 384 GB usable of the roomiest machine here and just under
+GLM-5.3-Flash's 188.99 GB, where GLM-5.3 itself was ruled out on size. What it still needs: the parameter count after
+pruning, the layer geometry (the pruning cuts experts, so the cache should be GLM-5.3's, and that wants reading rather
+than assuming), and a `cloud_equivalent` — nobody serves a pruned build, so the stand-in would be GLM-5.3-Flash. The
+licence is GLM-5.3's own, passed through. Two judgements come with it: a pruned derivative is not the model it is
+named after, and IQ2_M is a two-bit build, which the site carries once already on Nemotron 3.5 Bolt.
+[the repository](https://huggingface.co/Scantist/GLM-5.3-SLIM-GGUF).
+
+**Three names closed.** **Pika H3 Flex** ([Pika-Labs](https://huggingface.co/Pika-Labs/Pika-H3-Flex)) is a
+text-to-video model published as adapters on MiniMax H3, so it is out on kind. **Qwen4 does not exist**: the
+`Qwen4-27B` and `Qwen4-Flash-Next` repositories are third-party renames, and Qwen itself has published no new text
+model since Qwen3.8-Flash-Next on 2026-08-24. **Drex Max v1** and **Qwen3.8-27B-DSpine-b16** keep their rulings.
+
+**The rest are unchanged.** **Arete-27B** is the best-sourced candidate left and still has no GGUF to size.
+**SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need a judgement first, in the entry of 2026-10-31.
+**Nanbeige4.3 33B** has a v5.0.1 score and nothing else. **Inkling 2 Small** still has no weights. **Dory 1.0 4B**
+is gated. **TwIL-8B** and **Hydrogen-1.0** carry their 2026-11-08 rulings.
 
 ### 2026-11-08 · Nothing to price, and the index this site ranks on has been replaced rather than revised
 

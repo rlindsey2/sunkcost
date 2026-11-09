@@ -17,7 +17,7 @@ import {
   modelSoftware, otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, indexBasisNote, scoredModels, scoresReadLine, strongestShared, supersededIndexLine, tierLabel, tierName, titleHardwareLabel, verdictLine, widestHeadroom, withModified, type LdNode,
+  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, indexBasisNote, scoredModels, scoresReadLine, strongestShared, supersededIndexLine, tierLabel, tierName, titleHardwareLabel, verdictLine, visionFleetLine, visionSpec, widestHeadroom, withModified, type LdNode,
 } from '../src/pagekit';
 import { fingerprint, mainOf } from '../src/page-dates';
 import {
@@ -3028,5 +3028,74 @@ describe('a count out of a set, at both ends of it', () => {
         for (const bad of ['undefined', 'NaN', 'null', ' .', '  ', ' ,'])
           expect([n, bad, said.includes(bad)]).toEqual([n, bad, false]);
       }
+  });
+});
+
+describe('what a model that reads images costs beyond its weights', () => {
+  const vision = (models as Model[]).filter((m) => m.vision);
+
+  it('prices the projector as a file beside the weights, never folded into them', () => {
+    expect(vision.length).toBeGreaterThan(0);
+    for (const m of vision) {
+      const said = visionSpec(m)!;
+      expect([m.id, said.includes('the weights above are the language model')]).toEqual([m.id, true]);
+      expect([m.id, said.endsWith('on top of every figure on this page.')]).toEqual([m.id, true]);
+      // the sentence carries a size only where the data has one, and never a bare null
+      const tail = said.split('language model.')[1];
+      expect([m.id, /\d/.test(tail)]).toEqual([m.id, m.vision!.projector_gb != null]);
+      for (const bad of ['undefined', 'NaN', 'null', '— GB', '  ']) {
+        expect([m.id, bad, said.includes(bad)]).toEqual([m.id, bad, false]);
+      }
+    }
+  });
+
+  it('names the file every projector figure was read off, and links where it lives', () => {
+    for (const m of vision) {
+      const v = m.vision!;
+      if (v.projector_gb == null) continue;
+      const said = visionSpec(m)!;
+      expect([m.id, said.includes(v.projector_file!)]).toEqual([m.id, true]);
+      expect([m.id, said.includes(v.projector_source_url!)]).toEqual([m.id, true]);
+      // the rounded GB is the byte count, so a corrected file cannot leave it behind
+      expect([m.id, Math.round(v.projector_bytes! / 1e7) / 100]).toEqual([m.id, v.projector_gb]);
+      expect([m.id, v.projector_gb < m.weights_gb!]).toEqual([m.id, true]);
+    }
+  });
+
+  // The survey behind the field: every row whose own repository card carried an
+  // image-text-to-text tag when the Hugging Face API was read on 2026-11-09. A row
+  // that loses its entry reads as text only again, which no other guard can see,
+  // so the list is held here and a retired row is struck from it in the same push.
+  const SURVEYED = [
+    'gemma-3-12b-q4', 'gemma-3-27b-q4', 'mistral-small-3.2-24b-q4', 'llama-4-scout-q4', 'gemma-4-31b-q4',
+    'qwen3.6-35b-a3b-q4', 'qwen3.8-27b-q4', 'muse-glimmer-30b-q4', 'ornith-1.5-9b-q4', 'ornith-1.5-35b-a3b-q4',
+    'ornith-1.5-122b-q4', 'inkling-small-ud-q4', 'gemma-4-12b-q4', 'gemma-4-e4b-q4', 'gemma-4-26b-a4b-q4',
+    'qwen3.5-9b-q4', 'qwen3.5-4b-q4', 'qwen3.6-27b-q4', 'qwen3.5-122b-a10b-ud-q4', 'qwen3.8-flash-next-q4',
+    'glm-5.3-flash-ud-q4', 'minimax-m3.1-flash-ud-q4', 'kat-coder-v2.5-q4', 'nemotron-3.5-bolt-74b-a9b-iq2',
+  ];
+
+  it('keeps an entry on every row the survey found reading images', () => {
+    const here = new Set((models as Model[]).map((m) => m.id));
+    for (const id of SURVEYED.filter((x) => here.has(x))) {
+      const m = (models as Model[]).find((x) => x.id === id)!;
+      expect([id, m.vision?.reads_images ?? null]).toEqual([id, true]);
+    }
+  });
+
+  it('says nothing of images on a text-only model', () => {
+    for (const m of (models as Model[]).filter((x) => !x.vision)) {
+      expect([m.id, visionSpec(m)]).toEqual([m.id, null]);
+    }
+  });
+
+  it('counts the models that read images where the weights are called the download', () => {
+    const said = visionFleetLine(data)!;
+    expect(said).toContain('read images as well as text');
+    expect(said).toContain(numberWord(vision.length));
+    expect(said.endsWith('.')).toBe(true);
+    expect(said[0]).toBe(said[0].toUpperCase());
+    for (const bad of ['undefined', 'NaN', 'null', '0 of']) expect(said.includes(bad)).toBe(false);
+    // the count is the data's, not a number written into the sentence
+    expect(visionFleetLine({ ...data, models: (models as Model[]).filter((m) => !m.vision) })).toBe(null);
   });
 });

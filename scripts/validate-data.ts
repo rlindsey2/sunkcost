@@ -94,6 +94,58 @@ for (const m of models) {
     }
     if (typeof ce.is_exact_match !== 'boolean') errors.push(`${m.id}: is_exact_match must be boolean`);
   }
+  // Every page reads weights_gb as the whole download, and on a model that takes images it
+  // is the language model alone: the vision projector is a second file. The field is set on
+  // every row, an object or an explicit null, so a new row cannot leave the question open
+  // and read as text only by omission.
+  if (!('vision' in m)) errors.push(`${m.id}: vision is required — an object where the model reads images, null where it is text only`);
+  const vis = m.vision;
+  if (vis) {
+    if (vis.reads_images !== true) errors.push(`${m.id}: vision.reads_images must be true; a text-only row has vision null`);
+    if (!vis.source_url) errors.push(`${m.id}: vision needs the source_url of the repository whose card states it reads images`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(vis.checked ?? '')) errors.push(`${m.id}: vision.checked must be YYYY-MM-DD`);
+    // Both URLs are repositories the row already cites, so a reader following the
+    // Sources line lands on the card and the file the two figures were read off.
+    const repoOf = (u: string) => u.match(/^https:\/\/huggingface\.co\/([^/]+\/[^/]+)/)?.[1] ?? null;
+    const cited = new Set((m.sources ?? []).map(repoOf).filter(Boolean));
+    for (const k of ['source_url', 'projector_source_url'] as const) {
+      const u = vis[k];
+      if (!u) continue;
+      const repo = repoOf(u);
+      if (!repo) errors.push(`${m.id}: vision.${k} "${u}" is not a Hugging Face repository`);
+      else if (!cited.has(repo)) errors.push(`${m.id}: vision.${k} cites ${repo}, which is not in this row's sources`);
+    }
+    const parts = [vis.projector_gb, vis.projector_bytes, vis.projector_file, vis.projector_source_url];
+    if (parts.some((v) => v != null) && parts.some((v) => v == null)) {
+      errors.push(`${m.id}: a projector figure needs its bytes, its file name and the repository that publishes it, or all four null`);
+    }
+    if (vis.projector_gb == null) {
+      if (!vis.projector_TODO) errors.push(`${m.id}: no projector figure needs a projector_TODO saying why`);
+    } else {
+      if (vis.projector_TODO) errors.push(`${m.id}: projector_TODO sits beside a projector figure of ${vis.projector_gb} GB`);
+      if (typeof vis.projector_gb !== 'number' || vis.projector_gb <= 0) errors.push(`${m.id}: vision.projector_gb must be a positive number`);
+      // The GB on the page is the byte count rounded, so the two cannot drift apart: a
+      // corrected file size that leaves the old GB behind is the mistake this catches.
+      const rounded = Math.round((vis.projector_bytes ?? 0) / 1e7) / 100;
+      if (Math.abs(rounded - vis.projector_gb) > 0.005) {
+        errors.push(`${m.id}: vision.projector_gb ${vis.projector_gb} is not ${vis.projector_bytes} bytes rounded (${rounded})`);
+      }
+      // A projector is a vision tower, not a language model. One larger than the weights it
+      // sits beside means the two figures were read off the wrong files.
+      if (m.weights_gb != null && vis.projector_gb >= m.weights_gb) {
+        errors.push(`${m.id}: vision projector ${vis.projector_gb} GB is not smaller than the ${m.weights_gb} GB of weights it loads beside`);
+      }
+      if (!/\.gguf$/i.test(vis.projector_file ?? '')) errors.push(`${m.id}: vision.projector_file should be the GGUF the figure was read off, not "${vis.projector_file}"`);
+    }
+  }
+  // A projector size written into prose is a figure nothing reads back: Muse Glimmer's
+  // note said "~1.4 GB" against the 3.85 GB file bartowski publishes, and stood because
+  // no check could see it. The vision field states the size now, so the notes do not.
+  for (const [where, text] of [['architecture.note', m.architecture?.note], ['capability_note', m.capability_note]] as const) {
+    if (!text) continue;
+    const said = text.match(/(?:vision |multimodal |mm)?(?:projector|vision encoder)[^.]*?(~?\d+(?:\.\d+)?)\s?GB/i);
+    if (said) errors.push(`${m.id}: ${where} states a projector of ${said[1]} GB, which belongs in vision.projector_gb where it is held against the file`);
+  }
   if (m.active_params_b != null && m.active_params_b > m.params_b) errors.push(`${m.id}: active params exceed total`);
   if (m.max_context_tokens == null) warnings.push(`${m.id}: max_context_tokens is null (TODO)`);
   const fe = m.frontier_equivalent;
@@ -158,5 +210,6 @@ for (const k of ['efficiency_dense', 'efficiency_moe'] as const) if (!(defaults.
 
 for (const w of warnings) console.warn(`warn  ${w}`);
 for (const e of errors) console.error(`error ${e}`);
-console.log(`${hardware.length} hardware, ${models.length} models, ${throughput.length} throughput rows; ${warnings.length} warnings, ${errors.length} errors`);
+const visionRows = models.filter((m) => m.vision).length;
+console.log(`${hardware.length} hardware, ${models.length} models (${visionRows} read images), ${throughput.length} throughput rows; ${warnings.length} warnings, ${errors.length} errors`);
 if (errors.length) process.exit(1);

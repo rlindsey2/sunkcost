@@ -1156,6 +1156,44 @@ export function maxContextNote(m: Model): string | null {
 }
 
 /**
+ * What a model that reads images costs beyond its language weights.
+ *
+ * Every figure on this site is the weights plus a KV cache, and on a model that
+ * takes pictures the weights are the language model alone: llama.cpp loads the
+ * vision tower from a second file, the multimodal projector, and only when you
+ * feed it an image. So the sentence says the figures are the text run and names
+ * the file, and where no repository behind the row publishes one it says a
+ * projector is needed without inventing a size for it.
+ */
+/**
+ * The leaderboard asserts that the weights column is the download. On a model
+ * that reads images it is the language model alone, so the sentence says how
+ * many of the rows that is and sends the reader to the page that has the file.
+ */
+export function visionFleetLine(data: Dataset): string | null {
+  const vis = data.models.filter((m) => m.vision);
+  if (!vis.length) return null;
+  const sized = vis.filter((m) => m.vision!.projector_gb != null).length;
+  const lead = `${numberWord(vis.length)} of these models read images as well as text, and there the download is the language model alone`;
+  if (sized === 0) return `${lead}, with a vision projector loading beside it.`;
+  if (sized === vis.length) return `${lead}: each one's own page prices the vision projector that loads beside it.`;
+  return `${lead}: ${numberWord(sized)} of their pages price the vision projector that loads beside it.`;
+}
+
+export function visionSpec(m: Model): string | null {
+  const v = m.vision;
+  if (!v) return null;
+  const lead = 'It reads images as well as text, and the weights above are the language model.';
+  if (v.projector_gb == null) {
+    return `${lead} Feeding it pictures loads a vision projector too, a separate file on top of every figure on this page.`;
+  }
+  const file = v.projector_source_url
+    ? `<a href="${esc(v.projector_source_url)}" rel="noopener"><code>${esc(v.projector_file)}</code></a>`
+    : `<code>${esc(v.projector_file)}</code>`;
+  return `${lead} Feeding it pictures loads a separate ${fmtGb(v.projector_gb)} vision projector, ${file}, on top of every figure on this page.`;
+}
+
+/**
  * The longest context the calculator offers that this machine still holds this
  * model at. Fit is the site's own: the weights plus the KV cache at that length
  * against usable memory, and never past the model's own context limit. So a
