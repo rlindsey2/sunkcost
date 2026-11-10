@@ -41,12 +41,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
       page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. GLM-5.3-SLIM is next:
-      179.86 GB of expert-pruned GLM-5.3 at IQ2_M, which is the first build of GLM-5.3 this site's memory reaches,
-      and it needs the pruned parameter count, the layer geometry read rather than assumed from the base, and a
-      GLM-5.3-Flash stand-in price. Arete-27B is behind it, a supervised finetune of Qwen3.8-27B with no
-      architectural change by its own card, so it would carry that row's geometry the way KAT-Coder and Clover do;
-      nobody has quantised it yet, so it waits on a GGUF to size. SenseNova-Loop-9B-Preview and RWKV7-G1l each need
-      a judgement first, in the watch entry of 2026-10-31. Dory 1.0 4B is blocked: its repository is gated.
+      179.86 GB of expert-pruned GLM-5.3 at IQ2_M, the first build of GLM-5.3 this site's memory reaches. Its card
+      states the pruned count, 563B, and the layer geometry, 78 blocks with the MTP layer cut, so what is left open
+      is the cache and the stand-in price: GLM-5.3 attends through a DSA indexer, which is not the geometry
+      `architecture` describes on any row here, and that wants reading before a `kv_cache_gb_per_8k` can be entered.
+      SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the watch entry of 2026-10-31.
+      Dory 1.0 4B is blocked: its repository is gated.
 
 - [ ] **Nine of the 24 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -73,7 +73,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
       bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
       its 262,144 ceiling builds clean and the page reads "256k tokens (1M)". Every one of the 16 notes that says
-      more than the figure is a sentence nothing checks against the number in front of it.
+      more than the figure is a sentence nothing checks against the number in front of it. The same guard lets a
+      note vanish: with `max_context_note` set to null on a row that had one, the page simply prints the figure
+      alone and the build passes, because the rule that reads a note's own clause only runs on the notes that are
+      still there. Caught by mutation on 2026-11-10; the two holes are one rewrite.
 
 - [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
       ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
@@ -112,6 +115,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-10 — Arete-27B is priced here, and its parameter count is the one figure its card does not state
+The watch unblocked the backlog's own next-best candidate: bartowski published an Arete-27B GGUF on 2026-11-06, which was the one thing the row waited on, and
+every other field could be read today. So **Arete-27B is a row**, Nous Research's supervised fine-tune of Qwen3.8-27B: 17.20 GB at bartowski's Q4_K_M, a 0.93 GB
+vision projector beside it, and the cache geometry read off Arete's own config rather than assumed from the base, 16 of 64 layers holding a growing cache at 4 KV
+heads of 256. Its parameter count is the interesting one. The card says "27B" and nothing more, so the row carries **27.36B**, the repository's own safetensors
+index at bf16 halved, against the base's 27.78B: the 0.42B between them is the multi-token-prediction head Nous disabled in training and did not ship, and the
+row's TODO says where the figure came from so the next run can re-check it in one request. Nobody rents it, so Qwen3.8 27B stands in on price, and Artificial
+Analysis has not placed it, so the page says so rather than guessing a class. Two head-to-heads came down with a 301 each: Arete needs 19.35 GB at 32k, which
+puts it between the three 27B models that were each other's nearest neighbour across families, so Qwen3.6 27B and Qwen3.8 27B both have a nearer one now.
+Straight to main. Verified: 467 tests, typecheck and validate clean, the full build with build:functions, 352 pages every guard passing, 4 added and 2 retired
+against the ledger, 250 redated, the model page and one new head-to-head read rendered, 12 mutations run and 10 caught; the misses are `vision` set to null, which
+no guard here can see without fetching a repository, and a ceiling note deleted, which is now on the `checkContextCeilings()` item. Watch done: GLM-5.3-SLIM's
+card closes two of its three fields, and Kimi K3.1 Pro, ERNIE-5.5-Flash-Base, PLaMo 3 Translate and Inkling 2 Small are closed. Next: GLM-5.3-SLIM's DSA cache.
 
 ### 2026-11-09 — Twenty-four of the models priced here read images, and every page called the language weights the whole download
 The backlog's vision judgement turned out to have been made already and never written down: a survey of all 69 rows against their own repository cards

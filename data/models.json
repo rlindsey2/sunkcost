@@ -4019,5 +4019,74 @@
       "https://openrouter.ai/ricursiveai/ripple-65b-preview"
     ],
     "TODO": "Capability ratings needed."
+  },
+  {
+    "id": "arete-27b-q4",
+    "display_name": "Arete-27B",
+    "family": "Arete",
+    "generation": "current",
+    "params_b": 27.36,
+    "active_params_b": 27.36,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 17.2,
+    "kv_cache_gb_per_8k": 0.537,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 0,
+      "note": "Hybrid: 48 linear-attention layers; only 16 full-attention layers hold a growing KV cache. The fine-tuning changed no layer of Qwen3.8 27B, so the geometry here is that model's."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 0.93,
+      "projector_bytes": 927607104,
+      "projector_file": "mmproj-NousResearch_Arete-27B-f16.gguf",
+      "projector_source_url": "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF",
+      "source_url": "https://huggingface.co/NousResearch/Arete-27B",
+      "checked": "2026-11-10"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. Nous Research fine-tuned Alibaba's Qwen3.8-27B to change how it answers on politically sensitive subjects and left the rest alone: supervised fine-tuning on 52.8 million tokens of text over two epochs, no reinforcement learning, no change to any layer, and the vision encoder frozen, with another open model, Inkling, as the teacher. On Nous's own 803-prompt evaluation, judged by Grok 4.7, factual recall rose from 2.32 to 2.98 out of 5 and the share of answers taking the Chinese state's framing fell from 22% to 0.9%. Those are Nous's own figures rather than an independent test, and nobody has placed this model on the index the rest of this site is ranked by. The checkpoint also ships without the base model's multi-token-prediction head, so it carries slightly fewer parameters than Qwen3.8 27B even though the Q4_K_M file priced here is the larger of the two.",
+    "cloud_equivalent": {
+      "name": "Qwen3.8 27B",
+      "input_price_per_mtok": 0.039,
+      "output_price_per_mtok": 1.25,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.8-27b",
+      "is_exact_match": false,
+      "checked": "2026-11-10",
+      "stand_in": true,
+      "stand_in_for": "qwen3.8-27b-q4",
+      "stand_in_basis": "finetune",
+      "note": "Nobody rents Arete-27B by the token, on a read of OpenRouter's whole model list today. It is a fine-tune of Qwen3.8 27B and shares its architecture to the layer, so it is priced as that: $0.039 and $1.25 per million tokens at Chutes, the cheapest of 25 active endpoints on both prices taken together."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k, the same ceiling as the model it was fine-tuned from; Nous trained it at 64k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-10",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/NousResearch/Arete-27B",
+      "https://huggingface.co/NousResearch/Arete-27B/raw/main/config.json",
+        "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF",
+      "https://openrouter.ai/qwen/qwen3.8-27b"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 54,713,457,120 bytes of bf16 weights in the repository's model.safetensors.index.json divided by two, not a figure the card states: the card says only 27B. The base model's index comes to 27.78B, and the 0.42B of difference is the multi-token-prediction head this checkpoint does not ship."
   }
 ]

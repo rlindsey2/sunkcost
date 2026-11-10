@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-09
+Last checked: 2026-11-10
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,46 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-10 · Arete-27B is a row here, and GLM-5.3-SLIM's own card closes two of the three fields it was waiting on
+
+**Arete-27B became addable today, and it is priced.** The entry of 2026-11-09 said it was the best-sourced candidate
+left and waited only on a GGUF to size. bartowski published one on 2026-11-06, 53,927 downloads, so every field could
+be read today: **Q4_K_M at 17,203,416,064 bytes = 17.20 GB**, and an `mmproj` at f16 of **927,607,104 bytes = 0.93 GB**,
+both off the repository's own blob sizes. Parameters are **27.36B**, the 54,713,457,120 bytes of bf16 weights in the
+repository's `model.safetensors.index.json` halved, which is not a figure the card states: the card says "27B". The base
+model's own index comes to 27.78B, and the 0.42B between them is the multi-token-prediction head Nous disabled in
+training and did not ship, the 15 `mtp.*` tensors in Qwen's index being absent from Arete's. The cache geometry is read
+off Arete's own `config.json` and is Qwen3.8 27B's to the layer: 64 layers, every fourth one full attention, 4 KV heads
+at 256 wide, 262,144 positions. The card says the fine-tuning ran at 64k and changed no layer, with the vision encoder
+frozen, so the row carries the base's geometry the way KAT-Coder and Clover carry theirs. Licence is **Apache 2.0** in
+the repository's own `LICENSE`. Nobody rents it, on a read of OpenRouter's whole model list today, so Qwen3.8 27B stands
+in at $0.039 and $1.25. Artificial Analysis has not placed it: its Nous Research creator page lists seven Hermes and
+DeepHermes models and no Arete, and `/models/arete-27b` is a 404.
+[the repository](https://huggingface.co/NousResearch/Arete-27B),
+[the GGUF](https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF),
+[the licence](https://huggingface.co/NousResearch/Arete-27B/raw/main/LICENSE),
+[Artificial Analysis on Nous Research](https://artificialanalysis.ai/models/creators/nous-research).
+
+**GLM-5.3-SLIM needs less than the 2026-11-09 entry thought.** Its card states the pruned parameter count outright,
+**563B against the 753B of the 256-expert build**, and the layer geometry with it: `glm-dsa.block_count` 79 to 78,
+the MTP layer `blk.78` removed, dense layers 0-2 and MoE layers 3-77, every other tensor byte-identical to Unsloth's
+`UD-IQ2_M`. So two of its three open fields are closed. What is left is the cache: GLM-5.3 attends through a DSA
+indexer, which is not the geometry `architecture` describes on any row here, and until that is read rather than
+assumed the row cannot carry a `kv_cache_gb_per_8k` the validator would recompute. The stand-in price is the other,
+and GLM-5.3-Flash is the obvious one. [the repository](https://huggingface.co/Scantist/GLM-5.3-SLIM-GGUF).
+
+**Nothing else is addable, and four names are closed.** **Kimi K3.1 Pro** (created 2026-11-02, 30,721 downloads) is
+2.8T parameters with 104B active, past the 384 GB usable of the roomiest machine here at any quantisation this site
+would enter. **ERNIE-5.5-Flash-Base** is a base model rather than an instruct one, and its licence is limited to a
+defined territory. **PLaMo 3 Translate** is four translation models under a revenue-conditioned community licence, so
+out on kind. **Inkling 2 Small** has no weights: Thinking Machines announced it on 2026-11-05 at 594B total and 17B
+active, on its own Tinker platform, with Apache 2.0 promised after external safety testing, and nothing has appeared
+on Hugging Face since. Searched: the queries this file lists, Hugging Face's newest text-generation feed off the API,
+and the weekly local-AI roundup for 31 October to 6 November.
+[Kimi K3.1 Pro](https://huggingface.co/moonshotai/Kimi-K3.1-Pro),
+[ERNIE-5.5-Flash-Base](https://huggingface.co/baidu/ERNIE-5.5-Flash-Base),
+[the roundup](https://toolhalla.ai/blog/this-week-in-local-ai-2026-11-06).
 
 ### 2026-11-09 · Reka Edge 2603 is ruled out on licence, and the vision judgement it waited on turned out to be made already
 

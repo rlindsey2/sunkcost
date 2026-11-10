@@ -7740,6 +7740,11 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   ['/compare/nemotron-3-5-bolt-74b-a9b-iq2-vs-qwen3-coder-30b-a3b-q4/', '/models/nemotron-3.5-bolt-74b-a9b-iq2/'],
   ['/compare/granite-4-2-30b-q4-vs-nemotron-3-5-lightning-30b-q4/', '/models/granite-4.2-30b-q4/'],
   ['/compare/ling-3-0-flash-q4-vs-mistral-small-4-119b-q4/', '/models/ling-3.0-flash-q4/'],
+  // 2026-11-10: Arete-27B needs 19.35 GB at 32k, which puts it between the three 27B
+  // models that were each other's nearest neighbour across families, so Qwen3.6 27B and
+  // Qwen3.8 27B both have a nearer one now.
+  ['/compare/qwen3-6-27b-q4-vs-gemma-3-27b-q4/', '/models/qwen3.6-27b-q4/'],
+  ['/compare/qwen3-8-27b-q4-vs-muse-glimmer-30b-q4/', '/models/qwen3.8-27b-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;
