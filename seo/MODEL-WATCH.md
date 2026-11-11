@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-10
+Last checked: 2026-11-11
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,43 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-11 · GLM-5.3-SLIM is a row here, and the cache figure it waited on is on its own card
+
+**GLM-5.3-SLIM is priced.** The one open field was the cache: GLM-5.3 attends through a DSA indexer, which no row here
+described, so it could not be assumed from the geometry of anything else. It did not need assuming. GLM-5.3's own
+`config.json` gives **78 layers, `kv_lora_rank` 512 and `qk_rope_head_dim` 64**, so every layer caches a 576-wide latent,
+1,152 bytes a token, and `indexer_types` lists **21 "full" against 57 "shared"**, so only the 21 hold index keys of their own.
+Scantist's card then states what llama.cpp reports for this exact build: **93 KiB a token, MLA 87.75 KiB plus DSA indexer
+5.25 KiB**, which is 78 x 1,152 and 21 x 256 to the byte. So the row carries `kv_bytes_per_token_total` **95,232** and
+`kv_cache_gb_per_8k` **0.780**, and nothing in it is assumed. The six shards come to **179,861,261,600 bytes = 179.86 GB**
+off the repository's own blob sizes, the card gives **563B** parameters after pruning, the licence is the **GLM-5.3 License**
+passed through from the base, and `max_position_embeddings` is **1,048,576**. Active parameters are the figure neither card
+states: [Artificial Analysis](https://artificialanalysis.ai/models/glm-5-3) gives GLM-5.3 **40B of 753B**, and the pruning
+cuts the experts a layer holds, not the eight it routes a token to, so the active count is unchanged. The score is the one
+thing still missing: Artificial Analysis has placed GLM-5.3 at 32 on **v5.0.1 only**, which this site does not yet rank on,
+and has not placed the pruned build at all, so the row reads "not listed" the way Arete and Nanbeige4.3 do. Price: nobody
+rents a pruned build, and the stand-in is **GLM-5.3 itself at $0.0699 in and $1.40 out at Wafer**, the cheapest of 45 active
+endpoints, which needed a stand-in that borrows from a model this site prices no row for.
+[the repository](https://huggingface.co/Scantist/GLM-5.3-SLIM-GGUF),
+[the config](https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json),
+[the licence](https://huggingface.co/zai-org/GLM-5.3/raw/main/LICENSE).
+
+**Four new names, all closed.** **LongCat-2.5** (meituan-longcat, created 2026-11-04, 490 downloads, MIT) is
+1.78T parameters by `safetensors.total`, so past the 384 GB usable of the roomiest machine here at any quantisation
+this site would enter. **KLM-1.6** (MinimaLabs, 2026-11-09) is a 0.099B base model, out on kind twice over.
+**mirage** (Cactus-Compute, 2026-11-05, 14,615 downloads) ships one `.cact` file for Cactus's own runtime and is an
+object-detection and OCR model rather than a language model. **S5-nano** (maritaca-ai, 2026-11-02, 1,249 downloads)
+is a 4.66B Portuguese fine-tune on Qwen3.5's architecture, Apache 2.0, with no GGUF; worth a second look if one
+appears, though Qwen3.5 4B is already priced at the same size. Searched: the queries this file lists, Hugging Face's
+newest text-generation feed and both trending feeds off the API, and a November release roundup.
+[LongCat-2.5](https://huggingface.co/meituan-longcat/LongCat-2.5),
+[S5-nano](https://huggingface.co/maritaca-ai/S5-nano).
+
+**The rest are unchanged.** **SenseNova-Loop-9B-Preview** and **RWKV7-G1l** each need a judgement first, in the entry
+of 2026-10-31. **Nanbeige4.3 33B** has a v5.0.1 score and nothing else. **Inkling 2 Small** still has no weights.
+**Dory 1.0 4B** is gated. **TwIL-8B**, **Air-26B-A4B**, **Hydrogen-1.0**, **Axion-1.0-35B**, **Kimi K3.1 Pro**,
+**ERNIE-5.5-Flash-Base** and **PLaMo 3 Translate** carry their rulings.
 
 ### 2026-11-10 · Arete-27B is a row here, and GLM-5.3-SLIM's own card closes two of the three fields it was waiting on
 

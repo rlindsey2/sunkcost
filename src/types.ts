@@ -56,8 +56,16 @@ export interface CloudEquivalent {
   note?: string;
   /** nobody rents this model; the price is borrowed from the closest hosted match */
   stand_in?: boolean;
+  /**
+   * Where the hosted match is a row here, its id, and the price has to stay equal to that
+   * row's so a reprice carries. Where it is a model this site does not price locally — the
+   * full-size original of a pruned or two-bit build, say — `stand_in_hosted` names it
+   * instead and the price is read from its own listing. Exactly one of the two is set, so a
+   * forgotten `stand_in_for` cannot quietly drop the price out of the check.
+   */
   stand_in_for?: string;
-  stand_in_basis?: 'finetune' | 'nearest_score' | 'nearest_size';
+  stand_in_hosted?: string;
+  stand_in_basis?: 'finetune' | 'nearest_score' | 'nearest_size' | 'base_model';
 }
 
 export interface ModelArchitecture {

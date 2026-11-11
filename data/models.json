@@ -3203,6 +3203,68 @@
     "TODO": "Capability ratings needed."
   },
   {
+    "id": "glm-5.3-slim-ud-iq2-m",
+    "display_name": "GLM-5.3-SLIM",
+    "family": "GLM",
+    "generation": "current",
+    "params_b": 563.0,
+    "active_params_b": 40.0,
+    "quantisation": "UD-IQ2_M",
+    "weights_gb": 179.86,
+    "kv_cache_gb_per_8k": 0.78,
+    "architecture": {
+      "n_layers": 78,
+      "n_kv_heads": 64,
+      "head_dim": null,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
+      "kv_bytes_per_token_total": 95232,
+      "note": "Latent attention with a sparse-attention indexer beside it. All 78 blocks cache one 512-wide compressed vector plus 64 RoPE dimensions, 1,152 bytes a token; 21 of them compute their own index keys and cache 256 bytes more, and the other 57 share the keys of one that does. That comes to 93 KiB a token, the figure the publisher's own llama.cpp run reports."
+    },
+    "vision": null,
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. This is GLM-5.3 with a quarter of its experts removed and the rest left at about 2.6 bits a weight: 192 of the original 256 routed experts survive in each of the 75 mixture-of-experts layers, picked by an architecture search, and the surviving weights are copied byte for byte out of Unsloth's two-bit build rather than quantised again. On the publisher's own runs it scores 92.7% on HumanEval, 84.8% on GPQA-Diamond and 71.4% on a 570-question MMLU subset; they did not run the unpruned build on the same harness, so the cost of cutting the experts is not measured there. Two losses stack, the missing experts and the two-bit weights, and the publisher reports a clear fall on Chinese knowledge questions. Nobody has placed this build on the index the rest of this site is ranked by.",
+    "cloud_equivalent": {
+      "name": "GLM-5.3",
+      "input_price_per_mtok": 0.0699,
+      "output_price_per_mtok": 1.4,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/z-ai/glm-5.3",
+      "is_exact_match": false,
+      "checked": "2026-11-11",
+      "stand_in": true,
+      "stand_in_hosted": "GLM-5.3",
+      "stand_in_basis": "base_model",
+      "note": "Nobody rents the pruned build by the token. It is priced as GLM-5.3 itself, the model these weights are cut down from and one this site does not price as a row of its own: $0.0699 in and $1.40 out at Wafer, the cheapest of 45 active endpoints. Renting GLM-5.3 buys the whole 256-expert model at full precision, so the rented side of every sum here is the better model of the two."
+    },
+    "license": "GLM-5.3 License",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-11",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/Scantist/GLM-5.3-SLIM-GGUF",
+      "https://huggingface.co/zai-org/GLM-5.3/raw/main/config.json",
+      "https://huggingface.co/zai-org/GLM-5.3/raw/main/LICENSE",
+      "https://artificialanalysis.ai/models/glm-5-3"
+    ],
+    "TODO": "Capability ratings needed. Active parameters are Artificial Analysis's figure for GLM-5.3, 40B of 753B, read 2026-11-11; the pruning cuts the experts a layer holds and not the eight it routes a token to, so the active count is unchanged and neither card states one."
+  },
+  {
     "id": "deepseek-v4-flash-ud-q4",
     "display_name": "DeepSeek V4-Flash",
     "family": "DeepSeek",

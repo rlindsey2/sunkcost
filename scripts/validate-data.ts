@@ -86,10 +86,24 @@ for (const m of models) {
     // own paid endpoint if it has one, else a stand-in from the closest hosted model.
     else if (ce.input_price_per_mtok === 0 || ce.output_price_per_mtok === 0) errors.push(`${m.id}: rental price of $${ce.input_price_per_mtok} / $${ce.output_price_per_mtok} — a free listing is not a price to pay back against; use the paid endpoint for this model, or a stand-in from the closest hosted model`);
     if (ce.stand_in) {
-      const target = models.find((x) => x.id === ce.stand_in_for);
-      if (!target) errors.push(`${m.id}: stand-in points at unknown model ${ce.stand_in_for}`);
-      else if (target.cloud_equivalent.stand_in) errors.push(`${m.id}: stand-in ${target.id} is itself a stand-in`);
-      else if (target.cloud_equivalent.input_price_per_mtok !== ce.input_price_per_mtok || target.cloud_equivalent.output_price_per_mtok !== ce.output_price_per_mtok) errors.push(`${m.id}: stand-in price no longer matches ${target.id}`);
+      // A stand-in borrows from one of two kinds of model, and says which. A row here keeps
+      // the two prices equal, so repricing the row carries the borrower with it. A hosted
+      // model this site prices no row for — the full-size original of a pruned or two-bit
+      // build — carries its own listing and the date it was read, because no row can hold it.
+      if ((ce.stand_in_for == null) === (ce.stand_in_hosted == null))
+        errors.push(`${m.id}: a stand-in names either a row here in stand_in_for or, in stand_in_hosted, a hosted model this site prices no row for, and exactly one of the two`);
+      if (ce.stand_in_for != null) {
+        const target = models.find((x) => x.id === ce.stand_in_for);
+        if (!target) errors.push(`${m.id}: stand-in points at unknown model ${ce.stand_in_for}`);
+        else if (target.cloud_equivalent.stand_in) errors.push(`${m.id}: stand-in ${target.id} is itself a stand-in`);
+        else if (target.cloud_equivalent.input_price_per_mtok !== ce.input_price_per_mtok || target.cloud_equivalent.output_price_per_mtok !== ce.output_price_per_mtok) errors.push(`${m.id}: stand-in price no longer matches ${target.id}`);
+      }
+      if (ce.stand_in_hosted != null) {
+        if (models.some((x) => x.display_name === ce.stand_in_hosted))
+          errors.push(`${m.id}: ${ce.stand_in_hosted} is a row here, so the stand-in belongs in stand_in_for where the two prices are held equal`);
+        if (ce.name !== ce.stand_in_hosted) errors.push(`${m.id}: the stand-in is priced as ${ce.stand_in_hosted} and the page names ${ce.name}`);
+        if (!ce.source_url || !ce.checked) errors.push(`${m.id}: a stand-in on ${ce.stand_in_hosted}, which no row here prices, needs the listing the price came from and the date it was read`);
+      }
       if (!ce.stand_in_basis || !ce.note) errors.push(`${m.id}: stand-in needs a basis and a note saying nobody rents it`);
     }
     if (typeof ce.is_exact_match !== 'boolean') errors.push(`${m.id}: is_exact_match must be boolean`);

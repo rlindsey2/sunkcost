@@ -40,13 +40,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. GLM-5.3-SLIM is next:
-      179.86 GB of expert-pruned GLM-5.3 at IQ2_M, the first build of GLM-5.3 this site's memory reaches. Its card
-      states the pruned count, 563B, and the layer geometry, 78 blocks with the MTP layer cut, so what is left open
-      is the cache and the stand-in price: GLM-5.3 attends through a DSA indexer, which is not the geometry
-      `architecture` describes on any row here, and that wants reading before a `kv_cache_gb_per_8k` can be entered.
-      SenseNova-Loop-9B-Preview and RWKV7-G1l each need a judgement first, in the watch entry of 2026-10-31.
-      Dory 1.0 4B is blocked: its repository is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Every candidate left
+      needs a judgement before a figure. **RWKV7-G1l** is the one worth making: 61 layers and not one that grows,
+      the whole context in a fixed state, where every row here has at least one growing layer and
+      `kvCacheGbPer8kFromArchitecture()` has no convention for none. It is the first model on the list whose
+      context is genuinely free, which is a page people would search for. **SenseNova-Loop-9B-Preview** runs
+      layers 4 to 28 twice over, so this site's bandwidth estimate would read about double the speed it reaches,
+      and it has no GGUF. **Dory 1.0 4B** is gated. Both in the watch entry of 2026-10-31.
 
 - [ ] **Nine of the 24 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -69,6 +69,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 - [ ] The calculator's own score line has none of what the generated pages gained on 2026-11-08: it prints each row's
       `basis` string, "Artificial Analysis Intelligence Index v4.3: N", with no read date and no word that the index
       has moved. `src/render.ts` is a PR, not a push.
+
+- [ ] `n_layers` is decoration on a row that carries `kv_bytes_per_token_total`. The cache comes straight off the
+      total, so setting GLM-5.3-SLIM's 78 layers to 45 moves no figure and fails no guard, while the note printed
+      beside it on the page says "all 78 blocks". Two rows carry the field, both with a note that states the
+      geometry the number is summed from. The fix is to hold the total against that geometry. Caught by mutation
+      on 2026-11-11.
 
 - [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
       bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
@@ -115,6 +121,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-11 — GLM-5.3-SLIM is priced here, and the DSA cache it waited on is published on its own card
+The top backlog item wanted the best-sourced candidate as a row, and GLM-5.3-SLIM's one open field turned out to be published rather than open. GLM-5.3 attends
+through a DSA indexer no row here described, so the cache was read instead of assumed: `config.json` gives 78 layers each caching a 576-wide latent, 1,152 bytes
+a token, and `indexer_types` lists 21 "full" against 57 "shared", so only 21 hold index keys of their own. Scantist's card states what llama.cpp reports for this
+exact build, 93 KiB a token at MLA 87.75 plus indexer 5.25, which is 78 x 1,152 and 21 x 256 to the byte, so the row carries `kv_bytes_per_token_total` 95,232.
+With it: 179.86 GB off the six shards, 563B after pruning, the GLM-5.3 License passed through, 1M of context, and active parameters, which neither card states,
+off Artificial Analysis's 40B of 753B for GLM-5.3, the pruning cutting the experts a layer holds and not the eight it routes a token to. Nobody rents a pruned
+build, and the model it is cut from is not a row here, which the stand-in rule could not say: it borrowed only from a row, so the only price the schema allowed
+was GLM-5.3-Flash's $0.0701 output against GLM-5.3's $1.40, a twentyfold understatement. A stand-in now names either a row, whose price it must still match, or
+a hosted model this site prices no row for, which carries its own listing and read date, and exactly one of the two. Straight to main. Verified: 468 tests with
+one added, typecheck and validate clean, the full build with build:functions, 354 pages every guard passing, 2 added and none retired of 195 redated, the model
+page and the new head-to-head read rendered, 12 mutations run and 10 caught, both misses now backlog items. Watch done: four names, closed. Next: RWKV7-G1l.
 
 ### 2026-11-10 — Arete-27B is priced here, and its parameter count is the one figure its card does not state
 The watch unblocked the backlog's own next-best candidate: bartowski published an Arete-27B GGUF on 2026-11-06, which was the one thing the row waited on, and
@@ -267,29 +286,3 @@ free clauses are gone and the count has sweep wording in a `paybackSentence()` t
 "never pays for itself" to 53 years. Straight to main. Verified: 453 tests, typecheck and validate clean, the full build
 with build:functions, 334 pages every guard passing, 15 changed with none added or dropped, four read rendered, five mutations caught: zero in each
 price, a negative, the sweep wording dropped, the sweep claimed on the wrong count. Watch done, nothing new. Next: Spark-X2.6 1.7B, above.
-
-### 2026-10-30 — Nanbeige4.3 33B is priced here, and its plain dense cache is what sets two cards furthest apart
-The top backlog item wanted the best-sourced candidate as a row, and Nanbeige4.3 33B went first because its four-bit GGUF has been out since 25 October.
-Every figure was read today: 20.79 GB of Q4_K_M off bartowski's file list, the most-downloaded GGUF of it; 52 layers at 8 KV heads by 128 off
-`config.json`, with no `layer_types`, sliding window or expert fields, the plainest architecture this site prices; 33,118,977,024 parameters off the
-safetensors index, all of them active; 524,288 tokens and Apache 2.0 off the card. The plainness is the page's point: every layer caches the whole
-context, so the cache is 1.745 GB per 8k, three times Qwen3.8 27B's at a similar size and second only to Granite 4.2 30B's among the models a 32 GB card
-holds. That makes it the widest headroom row on the R9700 against RTX PRO 6000 head-to-head, 32k against 256k, a ratio of 8 where nothing else beat 4.
-Artificial Analysis 404s on it, so the score is `null` with a TODO and no pair rule reaches it, hence no head-to-head. Nobody rents it either, OpenRouter
-listing no Nanbeige model on either of two reads, so the row stands in at Gemma 4 31B it, the closest hosted model dense the same way, 31.27B all-active
-against 33.12B, re-read today as CoreWeave's $0.10 / $0.34; Laguna XS 2.1 is nearer in size but 3B of it runs per token, a cheaper thing to serve.
-Straight to main. Verified: 453 tests with two repointed off facts this row changes, typecheck and validate clean, the full build with build:functions,
-334 pages every guard passing, 1 added and 224 redated with none dropped, the page read rendered, eight mutations of the row caught. Next: Reka Edge 2603.
-
-### 2026-10-29 — Every rental price on the site re-read, and three rows nobody rents any more
-The top backlog item wanted the 50 stale prices read again off OpenRouter in batches; its endpoints API gives every provider's two prices for a model in
-one request, so all 64 rows were read today instead, twice, an hour apart. The rule, written down because it picks the figure: of a model's endpoints, the
-standard service tier only (a `flex` or `priority` tier is a different product at a different price) and active only, take the one cheapest on both prices;
-failing that, the one cheapest at this site's own 15:1 mix, which happened once, on DeepSeek V4-Flash, whose source line says so. Twenty-two rows moved. The largest is Qwen3.8 27B, the model the calculator opens on, from $0.32 / $2.50 to $0.039 / $1.25 off Chutes, of 18
-active endpoints; then GLM-5.3-Flash to $0.0513 / $0.0701, Nemotron 3.5 Lightning to $0.025 / $0.12, gpt-oss-20b to $0.018 / $0.09 and its two stand-ins
-with it. Reading twice was the day's lesson: DeepInfra's Gemma 3 27B endpoint read deranked at 20:18 and active at 20:35, a third off that row's price.
-Nobody rents **Qwen3 8B** or the **Llama-70B distill** at any price now, on either read, so they and the Qwen-32B distill are stand-ins, at Ministral 3 8B
-and at gpt-oss-20b, the nearest current hosted model on the index each way. `/hardware/` had come to read "54 of the 54 machines that pay back at all", a
-count out of itself, so the swap sentence has sweep wording and is written once for the page and its guard to share. Straight to main. Verified: 453 tests
-with one widened off a single model, typecheck and validate clean, the full build with build:functions, 333 pages every guard passing, 292 redated with
-none added or dropped, four re-priced pages read rendered, seven mutations of the new rows all caught. Next: Nanbeige4.3 33B, GGUF out since 25 October.

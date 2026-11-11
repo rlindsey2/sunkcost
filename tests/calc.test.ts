@@ -406,17 +406,41 @@ describe('a model nobody rents', () => {
     expect(['surfaces', 'never']).toContain(v.verdict.kind);
   });
 
+  it('can borrow from a hosted model this site prices no row for, and still shows the listing', () => {
+    const m = data.models.find((x) => x.id === 'glm-5.3-slim-ud-iq2-m')!;
+    const ce = m.cloud_equivalent;
+    expect(ce.stand_in).toBe(true);
+    expect(ce.stand_in_for).toBeUndefined();
+    expect(ce.stand_in_hosted).toBe('GLM-5.3');
+    expect(ce.note).toMatch(/Nobody rents/);
+    expect(ce.source_url).toMatch(/openrouter\.ai/);
+    const v = computeView(parseState('?hw=mac-studio-m5-ultra-256&m=glm-5.3-slim-ud-iq2-m', data), data);
+    expect(v.model?.id).toBe('glm-5.3-slim-ud-iq2-m');
+    expect(v.calc).not.toBeNull();
+    expect(['surfaces', 'never']).toContain(v.verdict.kind);
+  });
+
   it('leaves no model without a price, and never borrows from a borrower', () => {
     for (const m of data.models) {
       const ce = m.cloud_equivalent;
       expect(ce.input_price_per_mtok, m.id).not.toBeNull();
       if (ce.stand_in) {
-        const src = data.models.find((x) => x.id === ce.stand_in_for);
-        expect(src, m.id).toBeDefined();
-        expect(src!.cloud_equivalent.stand_in, m.id).toBeFalsy();
-        expect(src!.generation, m.id).not.toBe('legacy');
-        expect([src!.cloud_equivalent.input_price_per_mtok, src!.cloud_equivalent.output_price_per_mtok], m.id)
-          .toEqual([ce.input_price_per_mtok, ce.output_price_per_mtok]);
+        // one of the two kinds of stand-in, never both and never neither
+        expect(ce.stand_in_for == null, m.id).not.toBe(ce.stand_in_hosted == null);
+        if (ce.stand_in_for != null) {
+          const src = data.models.find((x) => x.id === ce.stand_in_for);
+          expect(src, m.id).toBeDefined();
+          expect(src!.cloud_equivalent.stand_in, m.id).toBeFalsy();
+          expect(src!.generation, m.id).not.toBe('legacy');
+          expect([src!.cloud_equivalent.input_price_per_mtok, src!.cloud_equivalent.output_price_per_mtok], m.id)
+            .toEqual([ce.input_price_per_mtok, ce.output_price_per_mtok]);
+        } else {
+          // a model this site prices no row for: it carries its own listing and read date
+          expect(data.models.some((x) => x.display_name === ce.stand_in_hosted), m.id).toBe(false);
+          expect(ce.name, m.id).toBe(ce.stand_in_hosted);
+          expect(ce.source_url, m.id).toBeTruthy();
+          expect(ce.checked, m.id).toBeTruthy();
+        }
       }
     }
   });
