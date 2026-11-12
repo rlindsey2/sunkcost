@@ -1156,6 +1156,28 @@ export function maxContextNote(m: Model): string | null {
 }
 
 /**
+ * Why a row's ceiling note cannot be printed as it stands, or null where it can.
+ *
+ * Two mistakes, neither visible to a rule that only asks whether the words on
+ * the page came out of the data. A note that is nothing but a figure reads as
+ * the ceiling it sits beside, so one that differs from it contradicts the
+ * number in front of it: "256k tokens (1M)". And a ceiling whose note is gone
+ * prints bare, which is the right page for a plain ceiling and the wrong one
+ * for the sixteen that need a word, so the note is required on every row and a
+ * plain ceiling states its own figure, the way forty of them do.
+ */
+export function ceilingNoteFault(m: Model): string | null {
+  if (m.max_context_tokens == null) return null;
+  const note = m.max_context_note?.trim();
+  if (!note) return 'a ceiling needs a note; a row with nothing to add states its own figure, which prints as the figure alone';
+  const rest = maxContextNote(m);
+  if (rest != null && /^(?:up to |about |around |~)?[\d.,]+\s*[kKmM]?\s*(?:tokens)?$/.test(rest)) {
+    return `the note adds "${rest}" to a ceiling of ${ctxLabel(m.max_context_tokens)} tokens, and a bare figure beside the ceiling can only be read as the ceiling`;
+  }
+  return null;
+}
+
+/**
  * What a model that reads images costs beyond its language weights.
  *
  * Every figure on this site is the weights plus a KV cache, and on a model that

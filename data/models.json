@@ -690,7 +690,7 @@
     ],
     "family": "DeepSeek",
     "max_context_tokens": 131072,
-    "max_context_note": "128k in config; the card does not state one for the distills",
+    "max_context_note": "128k, from the model's own config; DeepSeek's card states no context length for the distilled models",
     "frontier_equivalent": {
       "tier": 0,
       "score": 8,
@@ -745,7 +745,7 @@
     ],
     "family": "DeepSeek",
     "max_context_tokens": 131072,
-    "max_context_note": "128k in config; the card does not state one for the distills",
+    "max_context_note": "128k, from the model's own config; DeepSeek's card states no context length for the distilled models",
     "frontier_equivalent": {
       "tier": 0,
       "score": 8,
@@ -1150,7 +1150,7 @@
     "TODO": "Capability ratings needed.",
     "family": "Qwen",
     "max_context_tokens": 262144,
-    "max_context_note": "256k natively; up to 1M",
+    "max_context_note": "256k natively; up to 1M with YaRN",
     "frontier_equivalent": {
       "tier": 1,
       "score": 19,
@@ -2118,7 +2118,7 @@
     },
     "license": "Apache 2.0",
     "max_context_tokens": 1048576,
-    "max_context_note": "1M (model_max_length; the config states no max_position_embeddings)",
+    "max_context_note": "1M, which the repository's config states as a maximum length rather than as a limit on token positions",
     "frontier_equivalent": {
       "tier": 1,
       "score": 26,

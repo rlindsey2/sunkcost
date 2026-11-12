@@ -13,7 +13,7 @@ import {
   DAYS_PER_MONTH, familyNoun, familyReach, familyReachNote, fitsOf, fitsShorter, fmtDuration, fmtGb, fmtGb1, fmtHours, fmtNum, fmtTokens, fmtUsd, FONT_PRELOAD, FOOTER_LINKS,
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
-  headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, indexBasisNote, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
+  ceilingNoteFault, headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, indexBasisNote, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
   machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, maxContextNote, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost, paybackSentence,
   nearestCompleteComputer, NUMBER_WORDS, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
@@ -12073,7 +12073,21 @@ function checkContextCeilings() {
       continue;
     }
     const rest = said.slice(`${label} tokens`.length).trim();
+    // The note is read off the data here rather than off the page, so the line
+    // is held in both directions. Reading the page alone let a note be dropped
+    // without a word: the figure printed bare, which is what a plain ceiling
+    // prints, and nothing knew the row had more to say.
+    const fault = ceilingNoteFault(m);
+    if (fault) {
+      problems.push(`${path}: ${fault}`);
+      continue;
+    }
+    const want = maxContextNote(m);
     if (!rest) {
+      if (want != null) {
+        problems.push(`${path} prints its ceiling alone and the data says "${want}" of it`);
+        continue;
+      }
       plain++;
       continue;
     }
@@ -12083,8 +12097,8 @@ function checkContextCeilings() {
       continue;
     }
     notes++;
-    if (!(m.max_context_note ?? '').includes(inside[1]))
-      problems.push(`${path} says "${inside[1]}" of its ceiling and the data's note reads "${m.max_context_note ?? ''}"`);
+    if (inside[1] !== want)
+      problems.push(`${path} says "${inside[1]}" of its ceiling and the data's note gives "${want ?? 'nothing to print'}"`);
     if (opens.test(inside[1])) problems.push(`${path} opens its ceiling note with the ceiling again: "${inside[1]}"`);
     if (/\(/.test(inside[1])) problems.push(`${path} nests a bracket inside its ceiling note: "${inside[1]}"`);
   }
@@ -12134,7 +12148,7 @@ function checkContextCeilings() {
     for (const x of [...new Set(problems)].slice(0, 8)) console.error(`  ${x}`);
     process.exit(1);
   }
-  console.log(`  context ceilings: ${ledes} model pages open on the ceiling the data gives them and print it in the specifics, ${notes} with a note that says more than the figure and ${plain} with the figure alone, ${said} of them keeping what the data says past the figure, and ${rows} head-to-heads set two ceilings in one row`);
+  console.log(`  context ceilings: ${ledes} model pages open on the ceiling the data gives them and print it in the specifics, ${notes} with a note that says more than the figure, word for word as the data has it, and ${plain} with the figure alone because the data adds nothing to it, ${said} keeping what the data says past the figure, and ${rows} head-to-heads set two ceilings in one row`);
 }
 checkContextCeilings();
 

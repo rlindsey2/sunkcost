@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-11
+Last checked: 2026-11-12
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,58 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-12 · RWKV7-G1l is out on kind, and Raon-1 nano is the best-sourced candidate left
+
+**RWKV7-G1l is ruled out, and it is the kind of model rather than the architecture that rules it out.**
+Both cards say so in their own words. The weights card: "This checkpoint is a **base model** ... the included chat
+template is a prompt interface, not a claim that the checkpoint is a safety-aligned assistant." The GGUF card is
+blunter — "This is a base language model, not a safety-aligned instruction-tuned assistant ... the model may not
+follow instructions consistently" — and its troubleshooting table answers "the model does not follow the requested
+instruction" with "Remember that this is a base model." This site pays a machine back against the API a person would
+otherwise rent, and every endpoint rents an instruction-following assistant, so a payback figure here would set a base
+checkpoint against an instruct price. Nobody rents it either, on a read of the hosted lists, so even the stand-in would
+be an instruct model. Same ruling as **ERNIE-5.5-Flash-Base** on 2026-11-10. The figures were read anyway, in case
+BlinkDL ships an aligned G1: 61 layers and no attention layer at all, `num_heads` 64 by `head_dim` 64, **13,270,298,624**
+parameters, **Apache 2.0**, a release context of **34,304 tokens**, and Q4_K_M at **8,457,371,584 bytes = 8.46 GB** in the
+repository's own file table. With it goes the data-model question the backlog carried: nothing here needs a convention
+for a model whose whole context is free, because the two hybrid rows that keep fixed-state layers already ignore them
+and no row that would be all of them can be priced.
+[the weights](https://huggingface.co/RWKV/RWKV7-G1l-13.3B-20261031),
+[the GGUF](https://huggingface.co/shoumenchougou/RWKV7-G1l-13.3B-GGUF),
+[the config](https://huggingface.co/RWKV/RWKV7-G1l-13.3B-20261031/raw/main/config.json).
+
+**Raon-1 nano is next, and its card closes almost every field.** KRAFTON AI, created 2026-10-29, with the publisher's
+own GGUF, MLX and LiteRT-LM builds up on 2026-11-10 — `raon-1-nano-Q4_K_M.gguf` at **2,082,677,632 bytes = 2.08 GB**,
+1,893 downloads. It is an instruct model by its own card, "designed to follow instructions, maintain conversational
+context, and call the right tools in both Korean and English", **Apache 2.0**, and natively **262,144** tokens, which
+`max_position_embeddings` states again. The architecture is a hybrid this site has a convention for: **18 of the 24
+layers are Raon Delta Attention with a fixed-size state and only the 6 latent-attention layers cache anything**, at
+`kv_lora_rank` 512 and `qk_rope_head_dim` 64, so 1,152 bytes a token a layer and **6,912 bytes a token** in all, which
+is the card's own "about 7 KiB per token in BF16" to the rounding. Open: the parameter count is a judgement rather
+than a lookup, because the card gives **3.1B total of which 1.5B is a per-layer embedding table** and calls the model
+1.5B effective; plus a score, a price and a capability note.
+[the weights](https://huggingface.co/KRAFTON/Raon-1-nano),
+[the GGUF](https://huggingface.co/KRAFTON/Raon-1-nano-gguf),
+[the config](https://huggingface.co/KRAFTON/Raon-1-nano/raw/main/config.json).
+
+**Three other new names, all closed.** **Qwen3.8-27B-DSpine-b16** (tencent, 2026-11-07, 207 likes) is a 2.03B draft
+model for speculative decoding, so it runs beside Qwen3.8 27B rather than instead of anything. **Climb-1.1-Photon**
+(2026-11-12) is a 0.75B fine-tune of Qwen3.5. **Synin-Quantum-1.0-300B-A47B-Base-PT** (2026-11-12) is a base model and
+a re-upload of ERNIE 4.5's architecture, out on kind and on size. Searched: the queries this file lists, Hugging Face's
+newest text-generation feed and its trending feed, and a November release roundup.
+[DSpine](https://huggingface.co/tencent/Qwen3.8-27B-DSpine-b16).
+
+**The index count has moved, and not by much.** Qwen3.8 Flash Next now carries **29 on v5.0.1**, which the count of 10
+read on 2026-11-08 did not include, so at least 11 of the 54 scored rows here are on the new index. Ling 3.1 flash
+still reads N/A there, "No publicly available API". The leaderboard answers a fetch truncated, so the count itself
+wants the full re-read its backlog item describes rather than a figure off a partial page.
+[Qwen3.8 Flash Next](https://artificialanalysis.ai/models/qwen3-8-flash-next).
+
+**The rest are unchanged.** **SenseNova-Loop-9B-Preview** still needs the judgement in the entry of 2026-10-31.
+**Nanbeige4.3 33B** has a v5.0.1 score and nothing else. **Inkling 2 Small** still has no weights. **Dory 1.0 4B** is
+gated. **S5-nano**, **TwIL-8B**, **Air-26B-A4B**, **Hydrogen-1.0**, **Axion-1.0-35B**, **Kimi K3.1 Pro**,
+**ERNIE-5.5-Flash-Base**, **LongCat-2.5**, **KLM-1.6** and **PLaMo 3 Translate** carry their rulings.
 
 ### 2026-11-11 · GLM-5.3-SLIM is a row here, and the cache figure it waited on is on its own card
 

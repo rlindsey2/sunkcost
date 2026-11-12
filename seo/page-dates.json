@@ -1150,12 +1150,12 @@
       "changed": "2026-11-10"
     },
     "/models/deepseek-r1-distill-llama-70b-q4/": {
-      "hash": "13504e7e07f14057",
-      "changed": "2026-11-10"
+      "hash": "f1eca864b35df4a7",
+      "changed": "2026-11-12"
     },
     "/models/deepseek-r1-distill-qwen-32b-q4/": {
-      "hash": "039623b14d5786f5",
-      "changed": "2026-11-10"
+      "hash": "fc590df6c244455a",
+      "changed": "2026-11-12"
     },
     "/models/deepseek-v4-flash-ud-q4/": {
       "hash": "cb065baf7faa9ab2",
@@ -1238,8 +1238,8 @@
       "changed": "2026-11-10"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "7310fe15e09011ae",
-      "changed": "2026-11-11"
+      "hash": "8806b265d58610fa",
+      "changed": "2026-11-12"
     },
     "/models/kat-coder-v2.5-q4/": {
       "hash": "6dbfe8596d1e4aa9",
@@ -1394,8 +1394,8 @@
       "changed": "2026-11-10"
     },
     "/models/qwen3.6-35b-a3b-q4/": {
-      "hash": "a1ab0e3f14a5b904",
-      "changed": "2026-11-10"
+      "hash": "8a304b118be02c40",
+      "changed": "2026-11-12"
     },
     "/models/qwen3.8-27b-q4/": {
       "hash": "2945582dda33c826",

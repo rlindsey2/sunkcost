@@ -6,6 +6,7 @@ import {
   machineIndexLine,
   machinesAtSize,
   maxContextNote,
+  ceilingNoteFault,
   machinesThatHold,
   memoryLevels,
   memorySizePath,
@@ -1443,9 +1444,33 @@ describe('what memory buys once two machines hold the same models', () => {
     expect(ceiling(1048576, '1M native')).toBeNull();
     expect(ceiling(262144, '256k natively')).toBeNull();
     expect(ceiling(262144, '256k natively; up to 1M with YaRN')).toBe('up to 1M with YaRN');
-    expect(ceiling(1048576, '1M (model_max_length)')).toBe('model_max_length');
+    expect(ceiling(1048576, '1M (the card says so twice)')).toBe('the card says so twice');
     // and a note that never claimed to be the figure is left alone
     expect(ceiling(40960, '32k natively; 128k with YaRN')).toBe('32k natively; 128k with YaRN');
+  });
+
+  it('refuses a ceiling note that contradicts the figure beside it, or is not there at all', () => {
+    // Both of these built clean before: the page printed "256k tokens (1M)" off a
+    // note that was only a figure, and a note deleted from a row left the figure
+    // standing alone, which is what a plain ceiling prints.
+    const fault = (tokens: number | null, note: string | null) =>
+      ceilingNoteFault({ ...data.models[0], max_context_tokens: tokens, max_context_note: note });
+    expect(fault(262144, '1M')).toMatch(/bare figure/);
+    expect(fault(262144, '256k natively; up to 1M')).toMatch(/bare figure/);
+    expect(fault(262144, '131072 tokens')).toMatch(/bare figure/);
+    expect(fault(262144, null)).toMatch(/needs a note/);
+    expect(fault(262144, '   ')).toMatch(/needs a note/);
+    // the figure restated, said either way, is the row saying the ceiling is plain
+    expect(fault(262144, '256k')).toBeNull();
+    expect(fault(1048576, '1M native')).toBeNull();
+    // and a figure that says what it is stays
+    expect(fault(262144, '256k natively; up to 1M with YaRN')).toBeNull();
+    expect(fault(262144, '256k natively; the card says 1M')).toBeNull();
+    expect(fault(40960, '32k natively; 128k with YaRN')).toBeNull();
+    // a row with no ceiling has nothing to annotate
+    expect(fault(null, null)).toBeNull();
+    // and every row on the site passes its own rule
+    for (const m of data.models) expect([m.id, ceilingNoteFault(m)]).toEqual([m.id, null]);
   });
 
   it('opens the calculator on the configuration the length was measured at', () => {

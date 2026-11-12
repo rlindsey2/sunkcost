@@ -40,13 +40,14 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. Every candidate left
-      needs a judgement before a figure. **RWKV7-G1l** is the one worth making: 61 layers and not one that grows,
-      the whole context in a fixed state, where every row here has at least one growing layer and
-      `kvCacheGbPer8kFromArchitecture()` has no convention for none. It is the first model on the list whose
-      context is genuinely free, which is a page people would search for. **SenseNova-Loop-9B-Preview** runs
-      layers 4 to 28 twice over, so this site's bandwidth estimate would read about double the speed it reaches,
-      and it has no GGUF. **Dory 1.0 4B** is gated. Both in the watch entry of 2026-10-31.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Raon-1 nano** is
+      the one to make: KRAFTON's instruct model, its own publisher's GGUF at 2.08 GB, Apache 2.0, 256k, and a
+      hybrid of 18 fixed-state layers to 6 that cache, whose per-token cache the card states and the geometry
+      confirms. Its one judgement is the parameter count, 3.1B total of which 1.5B is a per-layer embedding
+      table against 1.5B the card calls effective, which decides the bandwidth estimate as well as the figure
+      on the page. Figures in the watch entry of 2026-11-12. **SenseNova-Loop-9B-Preview** runs layers 4 to 28
+      twice over, so this site's bandwidth estimate would read about double the speed it reaches, and it has no
+      GGUF (2026-10-31). **Dory 1.0 4B** is gated.
 
 - [ ] **Nine of the 24 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -60,8 +61,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       source links on this site could rot the same way without a page saying so.
 
 - [ ] **The move to Intelligence Index v5.0.1 waits on Artificial Analysis.** It scores 10 of the 54 rows here and
-      not the other 44 (read 2026-11-08, count in `frontier_basis.superseded_by`), so switching would null 44 and take
-      the ladder, the "smartest first" sort and the generation pair rule with it. Re-check the count each watch; when
+      not the other 44 (read 2026-11-08, count in `frontier_basis.superseded_by`; Qwen3.8 Flash Next has one now too,
+      found 2026-11-12, so the figure the leaderboard prints is a read that has aged rather than a count that is
+      wrong), so switching would null 44 and take the ladder, the "smartest first" sort and the generation pair
+      rule with it. Re-check the count each watch; when
       most of the 54 are covered, move every scored row, `frontier_reference` (v5.0.1 scores Opus 5.5, Sonnet 5.5 and
       Haiku 5.5, not the Opus 5, Sonnet 5 and Haiku 4.5 the bands are set from), the band rule and
       `frontier_scale_max` in one edit. Nanbeige4.3 33B stays unscored until then, on 20.11 and nothing on v4.3.
@@ -75,19 +78,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       beside it on the page says "all 78 blocks". Two rows carry the field, both with a note that states the
       geometry the number is summed from. The fix is to hold the total against that geometry. Caught by mutation
       on 2026-11-11.
-
-- [ ] `checkContextCeilings()` lets a ceiling note contradict the ceiling it sits beside. It asks only that the
-      bracket on the page be a substring of `max_context_note`, so setting Ling 3.1 flash's note to "1M" against
-      its 262,144 ceiling builds clean and the page reads "256k tokens (1M)". Every one of the 16 notes that says
-      more than the figure is a sentence nothing checks against the number in front of it. The same guard lets a
-      note vanish: with `max_context_note` set to null on a row that had one, the page simply prints the figure
-      alone and the build passes, because the rule that reads a note's own clause only runs on the notes that are
-      still there. Caught by mutation on 2026-11-10; the two holes are one rewrite.
-
-- [ ] Two `max_context_note` fields are written in library field names, which is what a visitor now reads beside the
-      ceiling: Inkling Small prints "model_max_length; the config states no max_position_embeddings" and the two
-      DeepSeek distills "in config; the card does not state one for the distills". The figures are right and the
-      caveats are real, so the fix is the wording, which is a data edit, now the agent's.
 
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
@@ -121,6 +111,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-12 — A ceiling and the words beside it are one line, and nothing held the two together
+The backlog's two ceiling items were one rewrite, so they are done together. Four notes read as finished copy now rather than as library fields: Inkling Small's
+"model_max_length; the config states no max_position_embeddings" says the figure is a maximum length rather than a limit on token positions, the two DeepSeek distills'
+"in config; the card does not state one for the distills" names the config and DeepSeek's card, and a fourth the new guard found, Qwen3.6 35B-A3B's "256k tokens (up to
+1M)", says with YaRN, which is how its card reaches 1,010,000 and what its three sibling rows already said. The guard is `ceilingNoteFault()` in
+pagekit, read by `validate-data.ts` and by `checkContextCeilings()`, and it shuts both holes mutation found. A note that is nothing but a figure is refused, because
+beside the ceiling it can only be read as the ceiling: that is the "256k tokens (1M)" case, and it also catches a ceiling corrected while its note was left behind. And
+a ceiling may not be left noteless, so a note cannot vanish into a page printing the figure alone; the 53 rows with nothing to add state their own figure, as before. The
+page is held both ways: each of the 18 printed notes is the data's words exactly, and a row whose data says more may not print bare. Straight to main. Verified: 469
+tests with one added, typecheck and validate clean, the full build with build:functions, 354 pages every guard passing, none added or retired, the 4 pages whose words
+moved redated and no others, all four read rendered, 12 mutations run and 9 caught with 1 control; the misses are a note's wording, which no guard can judge, and a note
+edited down to a legal restatement, which cannot be told from a correction. Watch done: RWKV7-G1l is out on kind, a base model by both its own cards, which closes the
+top backlog item and the fixed-state convention with it. Next: Raon-1 nano as a row.
 
 ### 2026-11-11 — GLM-5.3-SLIM is priced here, and the DSA cache it waited on is published on its own card
 The top backlog item wanted the best-sourced candidate as a row, and GLM-5.3-SLIM's one open field turned out to be published rather than open. GLM-5.3 attends

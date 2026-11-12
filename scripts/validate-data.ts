@@ -7,6 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { kvCacheGbPer8kFromArchitecture } from '../src/fit';
+import { ceilingNoteFault } from '../src/pagekit';
 import { CAPABILITY_KEYS, type Hardware, type Model, type Throughput, type Defaults } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -162,6 +163,11 @@ for (const m of models) {
   }
   if (m.active_params_b != null && m.active_params_b > m.params_b) errors.push(`${m.id}: active params exceed total`);
   if (m.max_context_tokens == null) warnings.push(`${m.id}: max_context_tokens is null (TODO)`);
+  // The ceiling and the words beside it are read as one line on the model page, and
+  // nothing held the two together: a note could state a figure the ceiling contradicts,
+  // or go missing altogether, and the page would print either without complaint.
+  const ceiling = ceilingNoteFault(m);
+  if (ceiling) errors.push(`${m.id}: ${ceiling}`);
   const fe = m.frontier_equivalent;
   if (!fe) warnings.push(`${m.id}: no frontier_equivalent`);
   else if (fe.score != null) {
