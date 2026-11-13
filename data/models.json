@@ -4146,9 +4146,72 @@
     "sources": [
       "https://huggingface.co/NousResearch/Arete-27B",
       "https://huggingface.co/NousResearch/Arete-27B/raw/main/config.json",
-        "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF",
+      "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF",
       "https://openrouter.ai/qwen/qwen3.8-27b"
     ],
     "TODO": "Capability ratings needed. Parameters are the 54,713,457,120 bytes of bf16 weights in the repository's model.safetensors.index.json divided by two, not a figure the card states: the card says only 27B. The base model's index comes to 27.78B, and the 0.42B of difference is the multi-token-prediction head this checkpoint does not ship."
+  },
+  {
+    "id": "raon-1-nano-q4",
+    "display_name": "Raon-1 nano",
+    "family": "Raon",
+    "generation": "current",
+    "params_b": 3.1,
+    "active_params_b": 1.5,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 2.08,
+    "kv_cache_gb_per_8k": 0.057,
+    "architecture": {
+      "n_layers": 24,
+      "n_kv_heads": null,
+      "head_dim": null,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
+      "full_attention_layers": 6,
+      "sliding_window_layers": 0,
+      "note": "Hybrid: 18 of the 24 layers are Raon Delta Attention, which holds a fixed-size state however long the context, and only the 6 latent-attention layers cache a token at all. Each of those keeps one 512-wide compressed vector plus 64 key channels its heads share, 1,152 bytes a token, so 6,912 bytes a token across the six, which rounds to the 7 KiB a token KRAFTON states for this build. The whole 256k window is 1.8 GB of cache against 2.08 GB of weights."
+    },
+    "vision": null,
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The small model in KRAFTON AI's Raon family, post-trained to follow instructions, hold a conversation and call tools in Korean and English, with thinking on by default in its chat template. It is dense, and 1.6B of its 3.1B parameters are a per-layer embedding table: every layer looks up a 256-wide vector for the token in hand and adjusts its own output with it, so a token reads about 1.5B parameters rather than all of them, which is the figure KRAFTON calls effective. It was cut down from Raon-1 mini preview, a 30B-A4B mixture of experts, by pruning and distillation. The 2.08 GB priced here is KRAFTON's own Q4_K_M; the same build with the multi-token-prediction module beside it, for speculative decoding, is 2.15 GB.",
+    "cloud_equivalent": {
+      "name": "Granite 4.2 8B",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.15,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/ibm-granite/granite-4.2-8b",
+      "is_exact_match": false,
+      "checked": "2026-11-13",
+      "stand_in": true,
+      "stand_in_for": "granite-4.2-8b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Raon-1 nano by the token. KRAFTON serves it from a playground and a hosted API of its own, which publish no price per token and whose terms reserve the right to charge fees later, and no endpoint on OpenRouter's whole model list carries it today. It has no intelligence score either, so it is priced as Granite 4.2 8B, the smallest current model on this list that anyone hosts, which is what the other small models here are priced as."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k native",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-13",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/KRAFTON/Raon-1-nano",
+      "https://huggingface.co/KRAFTON/Raon-1-nano/raw/main/config.json",
+      "https://huggingface.co/KRAFTON/Raon-1-nano-gguf",
+      "https://openrouter.ai/ibm-granite/granite-4.2-8b"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the main model's 3.1B, which both cards state, and leave out the 55M multi-token-prediction module, because the Q4_K_M file priced here does not carry it. The 1.5B of active parameters is what KRAFTON calls effective: 1.6B of the 3.1B is the per-layer embedding table, of which a token reads 24 rows of 256."
   }
 ]

@@ -40,16 +40,22 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Raon-1 nano** is
-      the one to make: KRAFTON's instruct model, its own publisher's GGUF at 2.08 GB, Apache 2.0, 256k, and a
-      hybrid of 18 fixed-state layers to 6 that cache, whose per-token cache the card states and the geometry
-      confirms. Its one judgement is the parameter count, 3.1B total of which 1.5B is a per-layer embedding
-      table against 1.5B the card calls effective, which decides the bandwidth estimate as well as the figure
-      on the page. Figures in the watch entry of 2026-11-12. **SenseNova-Loop-9B-Preview** runs layers 4 to 28
-      twice over, so this site's bandwidth estimate would read about double the speed it reaches, and it has no
-      GGUF (2026-10-31). **Dory 1.0 4B** is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Olmo 3.1 32B
+      Instruct** is the one to make, and it is a gap in the back catalogue rather than a new release: AI2's
+      fully open 32B of 2025-12-10, Apache 2.0, with GGUFs from bartowski, unsloth and lmstudio-community, so
+      it would be a legacy row beside the sixteen already here. Every field is open and every one is readable
+      in a few requests; check Artificial Analysis for a score. Entry of 2026-11-13.
+      **SenseNova-Loop-9B-Preview** runs layers 4 to 28 twice over, so this site's bandwidth estimate would
+      read about double the speed it reaches, and it has no GGUF (2026-10-31). **Dory 1.0 4B** is gated.
 
-- [ ] **Nine of the 24 models that read images have no projector figure**, so their pages say a projector loads
+- [ ] **A ceiling note that says one word past its figure escapes the guard built for it.** `ceilingNoteFault()`
+      refuses a note that is nothing but a figure, so "256k tokens (1M)" is caught; "256k native" against a
+      ceiling of 128k is not, because the bare-figure test reads the whole note and "native" sits past the
+      figure. 22 rows carry a note of that shape, so a corrected ceiling with its note left behind would print
+      the contradiction on any of them. The fix is to read the figure a note opens with, whatever follows it,
+      and refuse one that disagrees with the ceiling beside it. Caught by mutation on 2026-11-13.
+
+- [ ] **Nine of the 25 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
       Gemma 4 builds whose own GGUF repositories publish none this site cites. Each needs the repository its
       `weights_gb` actually came from pinned down first, which is the same thing the `weights_bytes` item below
@@ -93,13 +99,14 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       two places. The fix is in `src/format.ts`, which the calculator reads too, so it is a PR, not a push.
 
 - [ ] A figure in prose that nothing reads back: each `architecture.note` is printed whole in the KV cache row
-      of its model page, and seven of them state what a window costs in cache: 145 GB at 1M on MiniMax M3.1
+      of its model page, and eight of them state what a window costs in cache: 145 GB at 1M on MiniMax M3.1
       Flash, 38.74 on Beam, 15.05 on Spark-X2.6 1.7B, and at 256k 7.55 on Flint, 6.44 on Ornith 1.5 122B, 3.22
-      on LFM3 1.7B and 2.15 on Nemotron 3.5 Bolt. All seven agree with `kvCacheGb()` to the rounding today, and
-      not one of them is held there, so a note can outlive a correction to the architecture it describes: the
+      on LFM3 1.7B, 2.15 on Nemotron 3.5 Bolt and 1.8 on Raon-1 nano. Eight more state what a token costs,
+      Raon-1 nano's 6,912 bytes among them. All of them agree with `kvCacheGb()` to the rounding today, and
+      not one is held there, so a note can outlive a correction to the architecture it describes: the
       2026-10-27 run moved both Ling 3.0 rows' cache by a factor of 14 and their notes happened not to quote
-      one. The guard is small: read a GB figure out of a note that names a window and check it against the
-      fields beside it.
+      one, and mutation on 2026-11-13 moved both of Raon-1 nano's figures with nothing noticing. The guard is
+      small: read a GB or a bytes-a-token figure out of a note and check it against the fields beside it.
 
 - [ ] **A weights figure says 2.60 GB and nothing says which file it came from.** `weights_gb` is one rounded
       number a row, the repository behind it is somewhere in `sources` among the card, the config and the GGUF,
@@ -111,6 +118,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-13 — Raon-1 nano is priced here, and 18 of its 24 layers cache nothing, so a token costs 6,912 bytes
+The top backlog item's named candidate is a row. **Raon-1 nano**, KRAFTON's instruct model for Korean and English: 2.08 GB at the publisher's own Q4_K_M, Apache 2.0, 256k of
+context, and a hybrid where only the 6 latent-attention layers of 24 keep a cache at all. The parameter count the watch left open closed on KRAFTON's second card rather than on a
+judgement: the weights card's 3.1B total including a 1.5B per-layer embedding table and the GGUF card's 3.2B including a 1.6B one agree once the 55M multi-token-prediction module
+the plain Q4_K_M does not carry is taken out, so the row reads 3.1B total and 1.5B active, the treatment Gemma 4 E4B already has. The cache was read rather than assumed, and the
+two forms are an order of magnitude apart: the repository's own PyTorch code caches each layer's keys and values materialised per head, 120 KiB a token, while the latent form the
+config states is the 512-wide vector plus the 64 key channels the heads share, 1,152 bytes a layer and 6,912 across the six, the 7 KiB a token both cards claim. Nobody rents it —
+KRAFTON's own playground and API publish no per-token price and OpenRouter has no endpoint — so Granite 4.2 8B stands in. Straight to main. Verified: 469 tests, typecheck and
+validate clean, every stage of the build with its cards drawn in a run of their own, 356 pages every guard passing, 2 added and none retired against a ledger of 254 redated, the
+model page and the new head-to-head read rendered, 16 mutations run and 12 caught with 1 control, the weights one only because halving it took a page down. Of the four misses two
+are the note item above, one is the new ceiling item, and one is active parameters set to the total, which the row's TODO records. Watch done: GLiDE-9B is out on kind. Next: Olmo
+3.1 32B Instruct as a row.
 
 ### 2026-11-12 — A ceiling and the words beside it are one line, and nothing held the two together
 The backlog's two ceiling items were one rewrite, so they are done together. Four notes read as finished copy now rather than as library fields: Inkling Small's
@@ -276,17 +296,3 @@ in at Granite 4.2 8B, re-read as CoreWeave's $0.06 / $0.15; Artificial Analysis 
 and no pair rule reaches it, hence no head-to-head. The same check found the 4B pair's 0.94 GB gap is mostly the quantiser, so the two sentences calling
 it the model are reworded and re-pricing it is the new top backlog item. Straight to main. Verified: 453 tests, typecheck and validate clean, the full
 build with build:functions, 335 pages every guard passing, 1 added and 246 redated with none dropped, the new page and the 4B's read rendered, 12 mutations all caught.
-
-### 2026-10-31 — LFM2.5 2.6B is priced at Liquid's paid endpoint, and a free listing can no longer be a price
-The top backlog item wanted the `$0 / $0` row off this page. Both slugs were read twice today, minutes apart: Liquid lists the model as
-`liquid/lfm-2.5-2.6b` at **$0.35 / $0.50** with the full 128k context, and as `liquid/lfm-2.5-2.6b:free` at $0 capped at 64k. The paid one is the row,
-exact-match, with the source line on the page saying which of the two it is and the capability note naming the free listing and its half window.
-`validate-data.ts` now rejects a rental price of zero outright, and a negative with its own message: a bill of zero is a sum with no answer, and the
-page had read "renting costs $0" and then "buying only beats that if you use it hard enough".
-That guard made three sentences unreachable, every one written for this row. `/local-llm-vs-api-cost/` came to read "33 of the 33 models here pay the
-machine back", which the sweep guard stopped the build over, and "On 0 the model is listed free, so there is nothing to beat", which it did not. Both
-free clauses are gone and the count has sweep wording in a `paybackSentence()` the page and `checkTokenCost()` share, the shape `swapSentence()` set on
-29 October. 15 pages changed, the best of them the ones that had said never: `/best/` lists it at 16 GB and the Llama 3.3 70B head-to-head goes from
-"never pays for itself" to 53 years. Straight to main. Verified: 453 tests, typecheck and validate clean, the full build
-with build:functions, 334 pages every guard passing, 15 changed with none added or dropped, four read rendered, five mutations caught: zero in each
-price, a negative, the sweep wording dropped, the sweep claimed on the wrong count. Watch done, nothing new. Next: Spark-X2.6 1.7B, above.

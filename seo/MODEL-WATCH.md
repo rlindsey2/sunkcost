@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-12
+Last checked: 2026-11-13
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,45 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-13 · Raon-1 nano is priced here, and the cache its card claims is the geometry its config states
+
+**Raon-1 nano is a row.** Yesterday's open field closed on a second card rather than on a judgement: KRAFTON publishes two, and they
+differ. The weights card says "3.1B total, including a 1.5B per-layer embedding table" against 1.5B effective; the GGUF card says
+"3.2B parameters, including a 1.6B per-layer embedding table". They agree once the 55M multi-token-prediction module is taken out,
+which the weights card states separately and the plain `Q4_K_M` file does not carry — 3.1B in the main model, 1.6B of it the per-layer
+table, 1.5B left — so the row carries **3.1B total and 1.5B active**, the treatment Gemma 4 E4B already has here, because a token reads
+24 rows of 256 out of that table and not the table. The **cache** was read rather than assumed, and the two forms are an order of
+magnitude apart: the repository's own PyTorch code caches each MLA layer's keys and values materialised per head, `[B, H, T, 192]` and
+`[B, H, T, 128]` over 32 heads, which would be 120 KiB a token, while the latent form the config describes is the 512-wide compressed
+vector plus the 64 key channels the heads share — 1,152 bytes a layer, **6,912 bytes a token** over the 6 MLA layers, which is the
+"about 7 KiB per token in BF16" both cards state for this build. Those 64 channels are not RoPE: the model is NoPE and the code says
+they "are never rotated". Also **2,082,677,632 bytes = 2.08 GB** at KRAFTON's own Q4_K_M, **Apache 2.0**, **262,144** tokens, 18 of 24
+layers Raon Delta Attention with a fixed-size state. Nobody rents it by the token: KRAFTON's playground and hosted API publish no
+per-token price and the licence reserves the right to charge later, and OpenRouter's whole list carries no endpoint for it, so Granite
+4.2 8B stands in as it does for the other small models here. Not on Artificial Analysis, checked by name and by URL.
+[the weights](https://huggingface.co/KRAFTON/Raon-1-nano),
+[the config](https://huggingface.co/KRAFTON/Raon-1-nano/raw/main/config.json),
+[the GGUF](https://huggingface.co/KRAFTON/Raon-1-nano-gguf).
+
+**GLiDE-9B is out on kind.** fastino's 7.94B (2026-11-01, bartowski's GGUF on 2026-11-12) returns a probability for every option of a
+typed question and nothing else — "Nothing is generated", and its tags are `decision-model` and `classification`. Every payback here
+sets a machine against the API a person would otherwise rent to write tokens, and this model writes none.
+[GLiDE-9B](https://huggingface.co/fastino/GLiDE-9B).
+
+**Olmo 3.1 32B Instruct has never been looked at here**, which makes it a gap in the back catalogue rather than a model from this
+week: AI2's fully open 32B, created 2025-12-10, **Apache 2.0**, 21,063 downloads, with GGUFs from bartowski, unsloth
+and lmstudio-community. It would be a legacy row, and this site prices 16 of those. Open: every figure. Worth a run of its own once the
+candidates above are in.
+[the weights](https://huggingface.co/allenai/Olmo-3.1-32B-Instruct),
+[bartowski's GGUF](https://huggingface.co/bartowski/allenai_Olmo-3.1-32B-Instruct-GGUF).
+
+**The rest are unchanged.** **SenseNova-Loop-9B-Preview** still needs the judgement in the entry of 2026-10-31. **Nanbeige4.3 33B** has
+a v5.0.1 score and nothing else, and **Inkling 2 Small** still has no weights. **Dory 1.0 4B** is gated. **MiMo-V2.6-Flash**, **Kolibri
+1**, **Apodex 1.1 Mini**, **S5-nano**, **TwIL-8B**, **Air-26B-A4B**, **Hydrogen-1.0**, **Axion-1.0-35B**, **Kimi K3.1 Pro**,
+**ERNIE-5.5-Flash-Base**, **LongCat-2.5**, **KLM-1.6**, **RWKV7-G1l** and **PLaMo 3 Translate** carry their rulings. Searched: the
+queries this file lists, Hugging Face's newest text-generation feed, its trending feed and everything created since 2026-11-12 by
+downloads and by likes, and a November release roundup.
 
 ### 2026-11-12 · RWKV7-G1l is out on kind, and Raon-1 nano is the best-sourced candidate left
 
