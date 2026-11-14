@@ -41,12 +41,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
       page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Olmo 3.1 32B
-      Instruct** is the one to make, and it is a gap in the back catalogue rather than a new release: AI2's
-      fully open 32B of 2025-12-10, Apache 2.0, with GGUFs from bartowski, unsloth and lmstudio-community, so
-      it would be a legacy row beside the sixteen already here. Every field is open and every one is readable
-      in a few requests; check Artificial Analysis for a score. Entry of 2026-11-13.
-      **SenseNova-Loop-9B-Preview** runs layers 4 to 28 twice over, so this site's bandwidth estimate would
-      read about double the speed it reaches, and it has no GGUF (2026-10-31). **Dory 1.0 4B** is gated.
+      Think** is the one to make, the reasoning sibling of the row added 2026-11-14 and the same geometry to the
+      layer, so the open fields are its own weights file, its ceiling and its score. **SenseNova-Loop-9B-Preview**
+      runs layers 4 to 28 twice over, so this site's bandwidth estimate would read about double the speed it
+      reaches, and it has no GGUF (2026-10-31). **Dory 1.0 4B** is gated.
 
 - [ ] **A ceiling note that says one word past its figure escapes the guard built for it.** `ceilingNoteFault()`
       refuses a note that is nothing but a figure, so "256k tokens (1M)" is caught; "256k native" against a
@@ -118,6 +116,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-14 — Olmo 3.1 32B Instruct is priced here, and three of its four layers stop at 4,096 tokens
+The top backlog item's named candidate is a row. **Olmo 3.1 32B Instruct**, Ai2's fully open 32B: 19.48 GB at bartowski's Q4_K_M, Apache 2.0, 64k of context reached by scaling the positions of a
+model pretrained at 8,192, and a sliding-window hybrid where only 16 of 64 layers grow with the window. The cache was read off the quantised file rather than the config, because bartowski's
+conversion renames the architecture to `olmo2`: had the window not survived that rename the figure would have been 2.147 GB instead of 1.342, so the GGUF header was parsed to see
+`olmo2.attention.sliding_window = 4096` and its 64-boolean pattern in the file this site actually prices. Parameters are the 32,233,522,176 the safetensors index counts, the total Hugging Face reads
+out of that GGUF too, against a card and a size label that say only 32B. Nobody rents it: no OpenRouter endpoint on a read of the whole list, and Artificial Analysis publishes a page whose index reads N/A against "No
+publicly available API", so Gemma 4 31B it stands in, the nearest current dense row anybody hosts; Qwen3 32B is nearer in size and is what Ai2's own table compares against, but it is
+superseded and a stand-in may not borrow from a superseded row. The row is `current`, not `legacy`: Ai2 has published nothing newer, and `legacy` prints as "superseded". Straight to main.
+Verified: 469 tests, typecheck and validate clean, the whole build passing every guard, 358 pages against 356 with the model page and one head-to-head added and 237 redated, both read rendered.
+12 mutations of the new row, 7 caught and 1 control; all 5 misses are open backlog items, two of them `weights_gb` and `params_b`, which the `weights_bytes` item would hold against each other,
+and two the ceiling-note item, which a stale "128k" note beside a 64k ceiling walks straight through. Watch done: nothing new to price, and Edge0's new 120B and 145B builds keep the family's
+2026-10-17 ruling on what they are. Next: Olmo 3.1 32B Think.
 
 ### 2026-11-13 — Raon-1 nano is priced here, and 18 of its 24 layers cache nothing, so a token costs 6,912 bytes
 The top backlog item's named candidate is a row. **Raon-1 nano**, KRAFTON's instruct model for Korean and English: 2.08 GB at the publisher's own Q4_K_M, Apache 2.0, 256k of
@@ -270,29 +281,3 @@ generation, which `tests/calc.test.ts` forbids a stand-in from borrowing. Straig
 build with build:functions, 336 pages every guard passing, 1 added and 231 redated with none dropped, the new page read rendered, 8 mutations all caught.
 Watch done: nothing new with its own weights, and Artificial Analysis has moved to index v5.0, which the re-read item above now carries. Next:
 Clover-35B-A3B-Preview, which has its publisher's own four-bit at 23.00 GB now and one judgement left, on block diffusion.
-
-### 2026-11-02 — The sweep wording has its empty half, and the guard that read a count out of itself reads one out of nothing
-The top backlog item wanted the mirror of the sweep sentence. `/hardware/` reads "on 54 of the 54 machines" today; the same prices the other way would
-have read "on 0 of the 54" with "on the other 54" after it, and no guard stopped either half. Three writers turn a count into prose here and each had
-words for the full end and a fraction for everything else, so all three have three shapes now: `swapSentence()` and `paybackSentence()` moved out of
-`build-pages.ts` into `src/pagekit.ts`, where a test holds them at every count rather than at the one today's data reaches, and `countOfSet()` says
-"none of the 50" where it said "0 of the 50". `checkSweepCounts()` is the guard the item named: it read every page's prose for a count divided by itself
-and let one divided into nothing pass, so it now flags `0 of the N` and the clause that goes empty beside a sweep, "the other 0". Nothing a visitor
-reads moved, 335 pages with no date changed, which is what a guard should cost. Straight to main. Verified: 458 tests, five new and pinning both
-sentences at every count from 0 to 54, typecheck and validate clean, the full build with build:functions, 335 pages every guard passing, both paragraphs
-read rendered, four mutations caught: each sentence's empty branch dropped at the count that reaches it, the sweep branch dropped so the fraction wrote
-"54 of the 54" and "the other 0", and `countOfSet()`'s, which `checkModelCountScope()` caught first. Watch done: Tencent's Hy-Memory 30B-A3B is the new
-front of the queue, citable on 48 layers at 4 KV heads by 128 and 18.24 GB of its publisher's own four-bit. Next: add it.
-
-### 2026-11-01 — Spark-X2.6 1.7B is priced here, at the four-bit two quantisers agree on rather than its publisher's
-The top backlog item wanted the best-sourced candidate as a row, and every figure was read today: 28 layers at 2 KV heads by 256 with a 512-token window
-off `config.json`, the GGUF's own 28-boolean `sliding_window_pattern` settling the split at 21 windowed to 7 full, 1,707,657,216 parameters off the
-safetensors index, 1,048,576 tokens and Apache 2.0 off the card. The open call was which four-bit to price, and the files answer it. Three publishers'
-bf16 (3.42 GB) and Q8_0 (1.82 GB) of these weights agree to within a kilobyte; bartowski's Q4_K_M is 1.09 GB and mradermacher's 1.11, while XHToken's own
-file at the same label is 1.77 GB, 97% of its own eight-bit. Its GGUF header says why: `general.file_type` 15, the Q4_K_M label, with `token_embd` left at
-BF16 and a second `output.weight` at Q8_0, so 0.82 GB of that download is the vocabulary. The row is 1.09 GB, which edges LFM3 1.7B's 1.10 as the smallest
-download here, and the page prints all three figures. Nobody rents any XHToken model, on either of two reads of OpenRouter's 452 today, so the row stands
-in at Granite 4.2 8B, re-read as CoreWeave's $0.06 / $0.15; Artificial Analysis 404s on it as on both other Spark rows, so the score is null with a TODO
-and no pair rule reaches it, hence no head-to-head. The same check found the 4B pair's 0.94 GB gap is mostly the quantiser, so the two sentences calling
-it the model are reworded and re-pricing it is the new top backlog item. Straight to main. Verified: 453 tests, typecheck and validate clean, the full
-build with build:functions, 335 pages every guard passing, 1 added and 246 redated with none dropped, the new page and the 4B's read rendered, 12 mutations all caught.

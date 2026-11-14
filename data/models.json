@@ -4213,5 +4213,67 @@
       "https://openrouter.ai/ibm-granite/granite-4.2-8b"
     ],
     "TODO": "Capability ratings needed. Parameters are the main model's 3.1B, which both cards state, and leave out the 55M multi-token-prediction module, because the Q4_K_M file priced here does not carry it. The 1.5B of active parameters is what KRAFTON calls effective: 1.6B of the 3.1B is the per-layer embedding table, of which a token reads 24 rows of 256."
+  },
+  {
+    "id": "olmo-3.1-32b-instruct-q4",
+    "display_name": "Olmo 3.1 32B Instruct",
+    "family": "Olmo",
+    "generation": "current",
+    "params_b": 32.23,
+    "active_params_b": 32.23,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 19.48,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 48,
+      "sliding_window": 4096,
+      "note": "16 of the 64 layers grow with the context; the other 48 stop at a 4,096-token window, three local layers to every global one. Both kinds cache the same geometry, eight KV heads by 128 wide, so a token costs 4,096 bytes in whichever layer holds it."
+    },
+    "vision": null,
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The largest instruction-following model of Ai2's Olmo 3 family. Ai2 publishes the pretraining data, the post-training datasets, the training code and the intermediate checkpoints alongside the weights, all under Apache 2.0. It is dense, English-only, and built from the Olmo-3-32B base through supervised fine-tuning, preference optimisation and reinforcement learning on verifiable rewards. Its chat template takes tool definitions and tells the model its own knowledge stops at December 2024. On Ai2's own evaluation table it beats Qwen3 32B with thinking off at maths and competition problems, 93.4 against 84.3 on MATH and 67.8 against 27.9 on AIME 2024, and trails it on general knowledge, 80.9 against 85.8 on MMLU and 48.6 against 54.4 on GPQA. Those are the publisher's figures, and nobody has placed this model on the index the rest of this site is ranked by.",
+    "cloud_equivalent": {
+      "name": "Gemma 4 31B it",
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.34,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-4-31b-it",
+      "is_exact_match": false,
+      "checked": "2026-11-14",
+      "stand_in": true,
+      "stand_in_for": "gemma-4-31b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Olmo 3.1 32B Instruct by the token: no endpoint on OpenRouter's whole model list carries it, and Artificial Analysis records it as having no publicly available API. It has no intelligence score either, so it is priced as Gemma 4 31B it, the closest current model on this list that is dense the same way: 31.27B with every parameter active, against 32.23B. Qwen3 32B is nearer in size at 32.76B, and is the model Ai2's own evaluation table sets this one against, but it has been superseded: this site does not price a model anybody would buy today against the rental for one that has been replaced."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 65536,
+    "max_context_note": "64k, which the config reaches by scaling the positions of a model pretrained at 8,192 tokens",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Artificial Analysis has a page for this model and no score on it: the index reads N/A, against \"No publicly available API\".",
+      "url": "https://artificialanalysis.ai/models/olmo-3-1-32b-instruct",
+      "checked": "2026-11-14",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct",
+      "https://huggingface.co/allenai/Olmo-3.1-32B-Instruct/raw/main/config.json",
+      "https://huggingface.co/bartowski/allenai_Olmo-3.1-32B-Instruct-GGUF",
+      "https://openrouter.ai/google/gemma-4-31b-it"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 32,233,522,176 the repository's model.safetensors.index.json counts, which Hugging Face's own summary of bartowski's GGUF gives as that file's total too; Ai2's card and the file's general.size_label say only 32B. The 19.48 GB is bartowski's Q4_K_M file, 19,482,035,872 bytes."
   }
 ]

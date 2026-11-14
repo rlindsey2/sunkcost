@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-13
+Last checked: 2026-11-14
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,48 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-14 · Olmo 3.1 32B Instruct is a row, and the sliding window is in the file this site prices
+
+**Olmo 3.1 32B Instruct is a row.** The back-catalogue gap the entry of 2026-11-13 named is closed, and every field read
+off a primary source in one pass. **32,233,522,176 parameters**, which the repository's `model.safetensors.index.json`
+counts and Hugging Face's own summary of bartowski's GGUF gives as that file's total; Ai2's card and the
+file's `general.size_label` say only 32B. **19,482,035,872 bytes = 19.48 GB** at
+bartowski's `Q4_K_M`, 4.83 bits a parameter, inside the 4.34 to 5.37 band every other four-bit row here sits in.
+**Apache 2.0**, dense, English only, **65,536** tokens. The **cache** was read off the quantised file rather than taken
+from the config alone, because the conversion renames the architecture: the GGUF declares `general.architecture = olmo2`,
+and it carries `olmo2.attention.sliding_window = 4096` and an `olmo2.attention.sliding_window_pattern` of 64 booleans,
+three local layers to every global one. So 16 of the 64 layers grow with the context and 48 stop at 4,096 tokens, each
+caching eight KV heads by 128 wide: 4,096 bytes a token in whichever layer holds it, 1.342 GB at 8k. Had the pattern not
+survived the conversion the figure would have been 2.147 GB, the same as Qwen3 32B, so this one was worth opening the
+file for. Nobody rents it: no OpenRouter endpoint on a read of the whole list, and Artificial Analysis publishes a page
+for it whose index reads N/A against "No publicly available API", so it has no score either. Priced as Gemma 4 31B it,
+the nearest current dense row anybody hosts. Qwen3 32B is nearer in size at 32.76B and is what Ai2's own evaluation table
+sets it against, but it is superseded and the site does not borrow a price from a superseded row.
+[the weights](https://huggingface.co/allenai/Olmo-3.1-32B-Instruct),
+[the config](https://huggingface.co/allenai/Olmo-3.1-32B-Instruct/raw/main/config.json),
+[bartowski's GGUF](https://huggingface.co/bartowski/allenai_Olmo-3.1-32B-Instruct-GGUF).
+
+**Olmo 3.1 is Ai2's newest, so the row is current rather than legacy.** Ai2 has published no text model since, checked
+by author feed: nothing after Olmo 3.1 of 2025-12-10 but 8B research builds. `legacy` on this site prints as
+"superseded" and pairs a row with the current one of its family, and neither is true here, so a model a year old carries
+`current` honestly. Olmo 3.1 32B Think is the obvious sibling and is not in yet; it is a separate run.
+
+**Edge0's new 120B and 145B builds keep the 2026-10-17 ruling.** Edge0 published `Edge0-145B-NVFP4`, `Edge0-145B-q3k`
+and `Edge0-120B-NVFP4` on 2026-11-11, and the 145B NVFP4 build is the most-downloaded model created this week at 33,819.
+They are the same thing the 35B-A3B preview was ruled out on: the repositories hold `dense.bin`, `experts.bin`,
+`model.json`, `start.sh` and a `model-skeleton.gguf`, not weights a llama.cpp or MLX runtime loads whole, so what they
+occupy is not weights plus a cache that grows with the window. Out on the same ground, now for the whole family rather
+than one preview.
+[Edge0-145B-NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4).
+
+**The rest are unchanged.** **SenseNova-Loop-9B-Preview** still needs the judgement in the entry of 2026-10-31.
+**Nanbeige4.3 33B** has a v5.0.1 score and nothing else. **Inkling 2 Small** still has no weights. **Dory 1.0 4B** is
+gated. **GLiDE-9B**, **Qwen3.8-27B-DSpine-b16**, **MiMo-V2.6-Flash**, **Kolibri 1**, **Apodex 1.1 Mini**, **S5-nano**,
+**TwIL-8B**, **Air-26B-A4B**, **Hydrogen-1.0**, **Axion-1.0-35B**, **Kimi K3.1 Pro**, **ERNIE-5.5-Flash-Base**,
+**LongCat-2.5**, **KLM-1.6**, **RWKV7-G1l** and **PLaMo 3 Translate** carry their rulings. Searched: the queries this
+file lists, Hugging Face's newest text-generation feed, its trending feed, everything created since 2026-11-11 by
+downloads, Ai2's own author feed, and two November release roundups.
 
 ### 2026-11-13 · Raon-1 nano is priced here, and the cache its card claims is the geometry its config states
 
