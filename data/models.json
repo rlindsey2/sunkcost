@@ -4275,5 +4275,67 @@
       "https://openrouter.ai/google/gemma-4-31b-it"
     ],
     "TODO": "Capability ratings needed. Parameters are the 32,233,522,176 the repository's model.safetensors.index.json counts, which Hugging Face's own summary of bartowski's GGUF gives as that file's total too; Ai2's card and the file's general.size_label say only 32B. The 19.48 GB is bartowski's Q4_K_M file, 19,482,035,872 bytes."
+  },
+  {
+    "id": "olmo-3.1-32b-think-q4",
+    "display_name": "Olmo 3.1 32B Think",
+    "family": "Olmo",
+    "generation": "current",
+    "params_b": 32.23,
+    "active_params_b": 32.23,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 19.48,
+    "kv_cache_gb_per_8k": 1.342,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 48,
+      "sliding_window": 4096,
+      "note": "16 of the 64 layers grow with the context; the other 48 stop at a 4,096-token window, three local layers to every global one. Both kinds cache the same geometry, eight KV heads by 128 wide, so a token costs 4,096 bytes in whichever layer holds it."
+    },
+    "vision": null,
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. The reasoning model of Ai2's Olmo 3 family, and the same weights, the same geometry and the same memory as Olmo 3.1 32B Instruct: what differs is the training after the base model and what the model does with a question. It writes its working out between <think> tags before it answers, and Ai2's own recommended settings allow 32,768 tokens for the two together, so a hard question can cost tens of thousands of generated tokens before the reply starts. That is the trade on a machine that generates every token itself. Ai2 publishes the pretraining data, the post-training datasets, the training code and the intermediate checkpoints with the weights, all under Apache 2.0. It is dense and English-only. On Ai2's own evaluation table it is level with Qwen 3 32B at maths, 96.2 against 95.4 on MATH and 78.1 against 70.9 on AIME 2025, well ahead at following awkward instructions, 68.1 against 37.3 on IFBench, and behind on general knowledge and competition coding, 86.4 against 88.8 on MMLU, 57.5 against 67.3 on GPQA and 83.3 against 90.2 on LiveCodeBench v3. Those are the publisher's figures, and nobody has placed this model on the index the rest of this site is ranked by.",
+    "cloud_equivalent": {
+      "name": "Gemma 4 31B it",
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.34,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/google/gemma-4-31b-it",
+      "is_exact_match": false,
+      "checked": "2026-11-15",
+      "stand_in": true,
+      "stand_in_for": "gemma-4-31b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Olmo 3.1 32B Think by the token: no endpoint on OpenRouter's whole model list carries it, and Artificial Analysis records it as having no publicly available API. It has no intelligence score either, so it is priced as Gemma 4 31B it, the closest current model on this list that is dense the same way: 31.27B with every parameter active, against 32.23B. Qwen 3 32B is nearer in size at 32.76B, and is the model Ai2's own evaluation table sets this one against, but it has been superseded: this site does not price a model anybody would buy today against the rental for one that has been replaced. The comparison also flatters the rental on a reasoning model, because the thinking tokens are output tokens and an API charges for them."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 65536,
+    "max_context_note": "64k, which the config reaches by scaling the positions of a model pretrained at 8,192 tokens",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Artificial Analysis has a page for this model and no score on it: the index reads N/A, against \"No publicly available API\".",
+      "url": "https://artificialanalysis.ai/models/olmo-3-1-32b-think",
+      "checked": "2026-11-15",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/allenai/Olmo-3.1-32B-Think",
+      "https://huggingface.co/allenai/Olmo-3.1-32B-Think/raw/main/config.json",
+      "https://huggingface.co/bartowski/allenai_Olmo-3.1-32B-Think-GGUF",
+      "https://openrouter.ai/google/gemma-4-31b-it"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 32,233,522,176 the repository's model.safetensors.index.json counts under total_parameters; Ai2's card and the GGUF's general.size_label say only 32B. The 19.48 GB is bartowski's Q4_K_M file, 19,482,034,656 bytes, 4.84 bits a parameter. The sliding window survives the conversion: the file declares general.architecture olmo2 and carries olmo2.attention.sliding_window 4096 with a 64-entry pattern, 48 local layers to 16 global."
   }
 ]

@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-14
+Last checked: 2026-11-15
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,39 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-15 · Olmo 3.1 32B Think is a row, and the thinking is where the cost is
+
+**Olmo 3.1 32B Think is a row.** The sibling the entry of 2026-11-14 left for a separate run, and the same machine
+decision to the byte: **32,233,522,176 parameters** under `total_parameters` in the repository's
+`model.safetensors.index.json`, **19,482,034,656 bytes = 19.48 GB** at bartowski's `Q4_K_M`, 4.84 bits a parameter,
+**Apache 2.0**, dense, English only, **65,536** tokens reached by scaling the positions of a model pretrained at 8,192.
+The **cache** was read off the quantised file again rather than carried over from the Instruct row: the conversion
+renames the architecture to `olmo2` here too, and the file declares `olmo2.attention.sliding_window = 4096` with a
+64-entry `sliding_window_pattern`, 48 local layers to 16 global, so 1.342 GB at 8k stands on this file's own header
+rather than on its sibling's. Nobody rents it: no Olmo endpoint anywhere in OpenRouter's 467 models read today, and
+Artificial Analysis publishes a page whose index reads N/A against "No publicly available API", so no score either.
+Priced as Gemma 4 31B it, re-read today as $0.10 / $0.34 at KT, the cheapest active endpoint of 18. What the page
+says that the Instruct page does not is where a reasoning model's cost goes: Ai2's own settings allow 32,768 tokens
+for the thinking and the answer together, and on a machine you bought those are tokens you generate yourself.
+[the weights](https://huggingface.co/allenai/Olmo-3.1-32B-Think),
+[the config](https://huggingface.co/allenai/Olmo-3.1-32B-Think/raw/main/config.json),
+[bartowski's GGUF](https://huggingface.co/bartowski/allenai_Olmo-3.1-32B-Think-GGUF).
+
+**The v5.0.1 count moves by one, to 12 of the 54 scored rows.** Ling 3.1 flash has a v5.0.1 score now, 30 against the
+41 its row carries on v4.3, read off its own model page today; the 2026-11-08 count of 10 and the Qwen3.8 Flash Next
+found on 2026-11-12 are the other 11. Forty-two rows still have nothing on the new index, so the switch waits where
+the backlog leaves it.
+
+**Nothing new has weights.** Hugging Face's newest text-generation feed for 2026-11-15 is finetunes, MLX and GGUF
+conversions of models already here or already ruled out; the trending feed's newest entries are Edge0's 145B and 120B
+builds, which the entry of 2026-11-14 rules out for the whole family, and **KLM-1.6**, **LongCat-2.5** and
+**Qwen3.8-27B-DSpine-b16**, which carry their own rulings. Ai2's author feed has nothing after the two research
+builds of 2026-11-05. **SenseNova-Loop-9B-Preview**, **Nanbeige4.3 33B**, **Inkling 2 Small**, **Dory 1.0 4B**,
+**GLiDE-9B**, **MiMo-V2.6-Flash**, **Kolibri 1**, **Apodex 1.1 Mini**, **S5-nano**, **TwIL-8B**, **Air-26B-A4B**,
+**Hydrogen-1.0**, **Axion-1.0-35B**, **Kimi K3.1 Pro**, **ERNIE-5.5-Flash-Base** and **RWKV7-G1l** are unchanged.
+Searched: the queries this file lists, Hugging Face's newest, trending and most-downloaded text-generation feeds,
+everything created since 2026-11-13, Ai2's own author feed, and a November release roundup.
 
 ### 2026-11-14 · Olmo 3.1 32B Instruct is a row, and the sliding window is in the file this site prices
 

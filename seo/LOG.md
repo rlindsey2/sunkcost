@@ -40,11 +40,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Olmo 3.1 32B
-      Think** is the one to make, the reasoning sibling of the row added 2026-11-14 and the same geometry to the
-      layer, so the open fields are its own weights file, its ceiling and its score. **SenseNova-Loop-9B-Preview**
-      runs layers 4 to 28 twice over, so this site's bandwidth estimate would read about double the speed it
-      reaches, and it has no GGUF (2026-10-31). **Dory 1.0 4B** is gated.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **The queue is down
+      to two and both are blocked**: **SenseNova-Loop-9B-Preview** runs layers 4 to 28 twice over, so this site's
+      bandwidth estimate would read about double the speed it reaches, and it has no GGUF (2026-10-31), and
+      **Dory 1.0 4B** is gated. Until the watch finds a third, a run is better spent on a guard below.
+
+- [ ] **The two Olmo rows are one machine decision and neither page names the other.** Olmo 3.1 32B Instruct and
+      Olmo 3.1 32B Think are 19.48 GB each with the same geometry, and "Olmo 3 Instruct or Think" is what a reader
+      with 32 GB actually asks. `memoryNeighbourPairs()` cuts same-family pairs on purpose, because at one size a
+      family's rows are usually the quantisations and generations the other rules already cover. These two are
+      neither. On today's data a same-family, same-quantisation, within-a-tenth rule reaches ten pairs, and six of
+      them have a superseded row on one side or both, where the generation rule already does the work; the cut
+      has to leave those out, and the four left are these two, the two Spark 4Bs, Qwen3.6 against Qwen3.8 27B,
+      and Mistral Small 4 against Devstral 2 123B.
 
 - [ ] **A ceiling note that says one word past its figure escapes the guard built for it.** `ceilingNoteFault()`
       refuses a note that is nothing but a figure, so "256k tokens (1M)" is caught; "256k native" against a
@@ -117,6 +125,18 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 ## Runs
 
+### 2026-11-15 — Olmo 3.1 32B Think is priced here, and the thinking is output the machine has to generate
+The top backlog item's named candidate is a row. **Olmo 3.1 32B Think**, Ai2's reasoning sibling to yesterday's row and the same machine decision to the byte: the same
+32,233,522,176 parameters, 19.48 GB at bartowski's Q4_K_M (19,482,034,656 bytes, 4.84 bits a parameter), Apache 2.0, dense, English, 64k off an 8,192-token pretrain. The cache
+was read off this file's own header rather than carried across: the conversion renames the architecture to `olmo2` here too, and the file carries `olmo2.attention.sliding_window`
+4096 with a 64-entry pattern, 48 local layers to 16 global, so the 1.342 GB at 8k stands on the file this site prices. The page also says what its sibling's does not: Ai2's own
+settings allow 32,768 tokens for the thinking and the answer together, so one hard question is tens of thousands of tokens the machine generates and an API would bill as output.
+Nobody rents it, no Olmo endpoint in OpenRouter's 467 models today and no score on an Artificial Analysis page reading N/A against "No publicly available API", so Gemma 4 31B it
+stands in, re-read today as $0.10 / $0.34 at KT, cheapest of 18. Straight to main. Verified: 469 tests, typecheck and validate clean, the whole build with build:functions, 360
+pages against 358 with the model page and one head-to-head added, 239 redated and none dropped, both new pages read rendered; 12 mutations, 7 caught with the control passing, and
+four of the five misses are open items above, the ceiling moved without its note, `weights_gb`, `params_b` and the architecture note rewritten to contradict the layers, the fifth
+a licence nothing here can judge without re-reading the repository. Watch done: nothing new has weights, and Ling 3.1 flash's v5.0.1 score, 30 against its 41 on v4.3, takes that
+count to 12 of the 54. Oldest two entries archived. Next: the candidate queue is down to two and both blocked, so a guard rather than a row.
 ### 2026-11-14 — Olmo 3.1 32B Instruct is priced here, and three of its four layers stop at 4,096 tokens
 The top backlog item's named candidate is a row. **Olmo 3.1 32B Instruct**, Ai2's fully open 32B: 19.48 GB at bartowski's Q4_K_M, Apache 2.0, 64k of context reached by scaling the positions of a
 model pretrained at 8,192, and a sliding-window hybrid where only 16 of 64 layers grow with the window. The cache was read off the quantised file rather than the config, because bartowski's
@@ -255,29 +275,3 @@ this site does not price, and that card holds neither four-bit of this model, so
 assumes, one pass over the active weights a token where a diffusion step can settle more than one. Straight to main. Verified: 458 tests,
 typecheck and validate clean, the full build with build:functions, 337 pages every guard passing, 1 added and 227 redated with none dropped, the
 page read rendered twice, 13 mutations of the row all caught. Watch done: Ripple-65B-Preview is new, well sourced and next.
-
-### 2026-11-04 — Spark-X2.6 4B is re-priced at the four-bit three quantisers agree on, and every byte of the gap is accounted for
-The top backlog item said no community four-bit of the 4B existed; three do, and they agree. `Q4_K_M` is 2,600,225,568 bytes at mradermacher, and
-2,600,225,152 and 2,600,225,120 at ss-lab and prithivMLmods: within 450 bytes of each other and 1,216 of the 2.5's, which four quantisers publish at
-2,600,224,xxx. Every repository's Q8_0 and bf16 of either model agrees to a kilobyte, so the weights themselves were never in question. Reading the two
-GGUF headers accounts for the whole 0.94 GB and none of it is model: both say `general.file_type` 15, mradermacher's holds a tied `token_embd` at Q6_K
-(0.275 GB), XHToken's one at BF16 (0.671) plus a second `output.weight` at Q8_0 (0.357), its 36 `attn_output` projections at Q8_0 rather than Q4_K (0.401
-against 0.212) and its 36 `attn_gate` at BF16, which predicts 943,216,640 bytes against 943,215,744 observed. The row is 2.60 GB on the rule the 1.7B was
-priced on, and the 2.5's 2.60 is held rather than moved, so the item's "re-price both" is one row re-priced and one confirmed. 21 pages changed with none
-added or dropped, the five 16 GB machines and the twelve memory sizes among them, and the 4B's cheapest machine reads 30 tok/s where it read 24.
-`validate-data.ts` gained the guard the figure wanted: weights that are not a positive number, where a zero had made an infinite tok/s. Straight to main.
-Verified: 458 tests, typecheck and validate clean, the full build with build:functions, 336 pages every guard passing, both Spark pages read rendered,
-seven mutations of the row caught and an eighth not, which is the note-figure item above. Watch done, nothing new. Next: Clover-35B-A3B-Preview.
-
-### 2026-11-03 — Hy-Memory 30B-A3B is priced here, on 48 layers that cache the whole window and a four-bit two quantisers agree on
-The top candidate is a row, every field read today: 48 layers at 4 KV heads by 128 with no sliding window and no linear layer in `config.json`, 262,144
-tokens, 30,064,725,888 parameters off the HF API against the card's "~3B active", Apache 2.0 off the repository. Tencent's own Q4_K_M is 18,236,702,464
-bytes and rapatsky's 18,236,702,240, so the 18.24 GB is two quantisers' figure rather than one publisher's, which is the check the Spark-X2.6 rows still
-want. The cache is 0.805 GB per 8k, Qwen3 30B-A3B Instruct 2507's geometry to the layer: 3.2 GB at 32k against 25.8 at 256k, which moves the cheapest
-machine that holds it from $1,269 to $1,700. Nobody rents it on either of two reads of OpenRouter's 453 today, and Artificial Analysis lists only Hy3
-and Hy3-preview of Tencent's, so the score is null with a TODO and no pair rule reaches it, hence no head-to-head. It stands in at GLM-4.7-Flash, 31.22B
-with 3B active against 30.06B and about 3B, re-read today as Cloudflare's $0.0605 / $0.40; the Qwen row is nearer on every field but it is previous
-generation, which `tests/calc.test.ts` forbids a stand-in from borrowing. Straight to main. Verified: 458 tests, typecheck and validate clean, the full
-build with build:functions, 336 pages every guard passing, 1 added and 231 redated with none dropped, the new page read rendered, 8 mutations all caught.
-Watch done: nothing new with its own weights, and Artificial Analysis has moved to index v5.0, which the re-read item above now carries. Next:
-Clover-35B-A3B-Preview, which has its publisher's own four-bit at 23.00 GB now and one judgement left, on block diffusion.
