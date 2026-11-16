@@ -580,12 +580,69 @@ export function memoryNeighbourPairs(data: Dataset): [Model, Model][] {
 }
 
 /**
+ * Each model against the model of its own family nearest it in the memory it needs,
+ * stronger side first, where the two are within a tenth of each other, both are current
+ * and both are quantised the same way.
+ *
+ * The rule above turns its own family away, and for most of a family that is right: at
+ * one size a maker's rows are the quantisations and the generations the ladder and the
+ * generation rule already cut. These are the rows that are neither. Olmo 3.1 32B Instruct
+ * and Olmo 3.1 32B Think are the same weights to the byte and both current, and "Olmo 3
+ * Instruct or Think" is the question a reader with 32 GB actually types; so is the
+ * instruct build against the coder build, and so is a family's current model against the
+ * one before it where the maker has retired neither.
+ *
+ * Three conditions keep the pair a real choice rather than a restatement. Both sides are
+ * current, because where one is superseded the generation rule says that in its own
+ * words and says it better. Both carry the same quantisation label, because the same
+ * model at two precisions is one row's file size against another's and the model page
+ * already lists those. And the two are within `MODEL_MEMORY_GAP` of each other in what
+ * they ask of a machine, the same tenth and the same footprint the cross-family rule
+ * reads, so the page opens on a figure a reader can act on.
+ *
+ * One pair per model, its own nearest, for the reason the rule above gives: a band
+ * writes a grid of near-identical pages around a crowded size.
+ */
+export function familyMemoryPairs(data: Dataset): [Model, Model][] {
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const pool = pairableModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const current = (m: Model) => (m.generation ?? 'current') === 'current';
+  const out: [Model, Model][] = [];
+  const seen = new Set<string>();
+  for (const m of pool) {
+    if (!current(m)) continue;
+    const near = pool
+      .filter((o) => o.id !== m.id && o.family === m.family && current(o) && o.quantisation === m.quantisation)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+    if (!near) continue;
+    if (Math.abs(need(near) - need(m)) / Math.min(need(near), need(m)) > MODEL_MEMORY_GAP) continue;
+    // the same order as the rule above, and for the same reason: the pair is level on
+    // memory by construction, so what sorts it is the figure the page leads with
+    const score = (x: Model) => x.frontier_equivalent?.score ?? -1;
+    const [first, second] =
+      score(m) !== score(near)
+        ? score(m) > score(near) ? [m, near] : [near, m]
+        : need(m) !== need(near)
+          ? need(m) < need(near) ? [m, near] : [near, m]
+          : m.id < near.id ? [m, near] : [near, m];
+    const key = `${first.id}|${second.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push([first, second]);
+  }
+  return out;
+}
+
+/**
  * Every model pair that has a page, in the order the build writes them: each model
  * against the next one down the leaderboard, then each last-generation model against the
  * current one of its family nearest it in size, then each model against the one from
- * another family nearest it in the memory it needs. The ladder is cut first, so a pair
- * more than one rule reaches keeps the address it has always had, and a pair is written
- * once whichever way round the rules reach it.
+ * another family nearest it in the memory it needs, then each model against the one of
+ * its own family nearest it there. The ladder is cut first, so a pair more than one rule
+ * reaches keeps the address it has always had, and a pair is written once whichever way
+ * round the rules reach it.
  */
 export function modelPairs(data: Dataset): [Model, Model][] {
   const r = rankedModels(data);
@@ -599,6 +656,7 @@ export function modelPairs(data: Dataset): [Model, Model][] {
   for (let i = 0; i + 1 < r.length; i++) add(r[i], r[i + 1]);
   for (const [a, b] of modelGenerationPairs(data)) add(a, b);
   for (const [a, b] of memoryNeighbourPairs(data)) add(a, b);
+  for (const [a, b] of familyMemoryPairs(data)) add(a, b);
   return out;
 }
 

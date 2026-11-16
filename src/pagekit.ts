@@ -2311,6 +2311,67 @@ export function modelGenerationSection(old: Model, now: Model, data: Dataset): s
 ${window ? `<p>${window}</p>\n` : ''}`;
 }
 
+/**
+ * What is left to choose between two models of one family that need the same memory,
+ * for the pairs where the answer is nothing the arithmetic can see.
+ *
+ * Every other section of a model head-to-head leans on a figure that separates the two
+ * sides. The rule that cuts these pairs holds the family, the quantisation and the memory
+ * still, and on two of the four it reaches the weights are the same file size to the byte,
+ * nobody rents either model so both are priced against the same hosted one, and the same
+ * machine pays for itself in the same time on either. A reader owed twelve rows of one
+ * figure printed twice is owed the sentence that says so.
+ *
+ * So the section is written only where that is true, and every part of it is checked
+ * rather than assumed. Two models the same size can still pay a machine back at different
+ * speeds, one measured and the other worked out from bandwidth; where any of it differs
+ * the page says which figure it is in the sections it already has, and this one stays off.
+ */
+export function modelFamilySection(a: Model, b: Model, data: Dataset): string {
+  const st = defaultState(data);
+  const ctxK = Math.round(data.defaults.context.default_tokens / 1024);
+  const need = (m: Model) => {
+    const v = computeView({ ...st, model: m.id }, data);
+    return v.rows.find((r) => r.model.id === m.id)?.fit.needGb ?? null;
+  };
+  const [needA, needB] = [need(a), need(b)];
+  const shared = cheapestRunsBoth(a, b, runnersFor(a, data), runnersFor(b, data));
+  const ca = a.cloud_equivalent;
+  const cb = b.cloud_equivalent;
+  // the two models' own rows on that machine, the same views the like-for-like table
+  // below prints its pay-back from, so nothing here can disagree with that table
+  const [payA, payB] = shared
+    ? [shared.a.view.calc?.breakevenDays ?? null, shared.b.view.calc?.breakevenDays ?? null]
+    : [null, null];
+
+  const level =
+    needA != null &&
+    needB != null &&
+    fmtGb(needA) === fmtGb(needB) &&
+    ca.name === cb.name &&
+    ca.input_price_per_mtok === cb.input_price_per_mtok &&
+    ca.output_price_per_mtok === cb.output_price_per_mtok &&
+    (payA === null ? payB === null : payB !== null && fmtDuration(payA) === fmtDuration(payB)) &&
+    a.max_context_tokens === b.max_context_tokens &&
+    (a.frontier_equivalent?.score ?? null) === (b.frontier_equivalent?.score ?? null);
+  if (!level) return '';
+
+  const family = a.family ?? b.family ?? '';
+  const sameWeights =
+    a.weights_gb != null && b.weights_gb != null && fmtGb(a.weights_gb) === fmtGb(b.weights_gb);
+  const size = sameWeights
+    ? `they are the same size: ${fmtGb(a.weights_gb!)} of weights either way, and ${fmtGb(needA!)} at ${ctxK}k of context`
+    : `they ask a machine for the same ${fmtGb(needA!)} at ${ctxK}k of context, off weights of ${fmtGb(a.weights_gb)} and ${fmtGb(b.weights_gb)}`;
+  const price =
+    !ca.is_exact_match && !cb.is_exact_match
+      ? ` Nobody rents either of them by the token, so both are priced here against ${esc(ca.name)}: the API bill above is one figure printed twice.`
+      : ` Both are priced here against ${esc(ca.name)}, so the API bill above is one figure printed twice.`;
+
+  return `<h2>What is left to choose between them</h2>
+<p>${esc(a.display_name)} and ${esc(b.display_name)} are two ${esc(family)} models this site prices at ${esc(a.quantisation)}, neither of them superseded, and ${size}.${price} So nothing in what it costs to own or to rent separates them. <a href="/models/${esc(a.id)}/">${esc(a.display_name)}'s own page</a> and <a href="/models/${esc(b.id)}/">${esc(b.display_name)}'s</a> say what each one was trained for.</p>
+`;
+}
+
 /* ------------------------------ phone tables ------------------------------ */
 
 /**
@@ -2640,11 +2701,12 @@ export function machineMatchUpsLine(self: string, groups: MatchUpGroup[]): strin
 }
 
 /**
- * Which of the two rules put a model in a match-up, from the point of view of the
- * model being written about: a rung of the leaderboard above or below it, or the
- * model of its own family a generation away.
+ * Which of the rules put a model in a match-up, from the point of view of the
+ * model being written about: a rung of the leaderboard above or below it, the
+ * model of its own family a generation away, a model from another family that needs
+ * the same memory, or one of its own family that does.
  */
-export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current' | 'same-memory';
+export type ModelMatchUpSide = 'above' | 'below' | 'is-older' | 'is-current' | 'same-memory' | 'same-family';
 
 export interface ModelMatchUp {
   href: string;
@@ -2657,7 +2719,7 @@ export interface ModelMatchUp {
    * memory, so both sides say the same thing about each other.
    */
   side: ModelMatchUpSide;
-  /** the family both sides share, which only the generation pairs name */
+  /** the family both sides share, which the generation and same-family pairs name */
   family?: string;
 }
 
@@ -2672,7 +2734,7 @@ export interface ModelMatchUp {
  */
 export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
   if (!items.length) return '';
-  const order: ModelMatchUpSide[] = ['above', 'below', 'is-older', 'is-current'];
+  const order: ModelMatchUpSide[] = ['above', 'below', 'is-older', 'is-current', 'same-family'];
   const memory = items.filter((i) => i.side === 'same-memory');
   const sorted = items.filter((i) => i.side !== 'same-memory').sort((x, y) => order.indexOf(x.side) - order.indexOf(y.side));
   const hasAbove = sorted.some((i) => i.side === 'above');
@@ -2682,6 +2744,13 @@ export function modelMatchUpsLine(self: string, items: ModelMatchUp[]): string {
     // "on the leaderboard" is said once: with the rung above already named, the
     // rung below is the same list and the second mention only lengthens the line
     if (i.side === 'below') return `${link}${hasAbove ? ' below it' : ' below it on the leaderboard'}`;
+    if (i.side === 'same-family')
+      // the one reason that is about the family and the memory at once, so it says
+      // both: without the family the sentence reads as the rule above it, which is
+      // the cross-family pair, and without the memory it reads as the generation rule
+      return i.family
+        ? `${link}, the other ${esc(i.family)} model that needs much the same memory`
+        : `${link}, the model of its own family that needs much the same memory`;
     const which = i.side === 'is-older' ? 'current' : 'last-generation';
     // every generation pair is two models of one family, and the family is the
     // shortest way to say what the other model is; without one, the sentence says

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chipStepPairs, clampText, fitLines, flagshipMachines, graphicsCards, hardwareComparePath, hardwarePairs, hardwareVersusCard,
   generationPairs, headToHeadGroups, memoryTierNames, memoryTierPairs, sameSiliconPairs,
+  familyMemoryPairs,
   memoryNeighbourPairs, MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, modelComparePath, modelGenerationPairs, modelPairs, modelVersusCard,
   pairableModels,
   rankedModels,
@@ -31,6 +32,8 @@ const cards = [
 ];
 
 const text = (svg: string) => svg.replace(/<[^>]*>/g, ' ');
+
+const model = (id: string) => data.models.find((m) => m.id === id)!;
 
 describe('fitting text a renderer cannot measure', () => {
   it('breaks a hyphenated name rather than cutting it short', () => {
@@ -458,11 +461,14 @@ describe('the pairs the cards and the pages cut', () => {
     const ladder = new Set<string>();
     for (let i = 0; i + 1 < ranked.length; i++) ladder.add(key(ranked[i], ranked[i + 1]));
     // the ladder is cut first and a pair is written once, so the pages are the union of
-    // the three rules rather than the sum: one generation pair is also a rung of the
+    // the four rules rather than the sum: one generation pair is also a rung of the
     // ladder, and so are four memory neighbours
     const pairs = modelPairs(data);
     const mem = memoryNeighbourPairs(data);
-    expect(pairs.length).toBe(new Set([...ladder, ...gens.map(([a, b]) => key(a, b)), ...mem.map(([a, b]) => key(a, b))]).size);
+    const fam = familyMemoryPairs(data);
+    expect(pairs.length).toBe(
+      new Set([...ladder, ...gens.map(([a, b]) => key(a, b)), ...mem.map(([a, b]) => key(a, b)), ...fam.map(([a, b]) => key(a, b))]).size,
+    );
     expect(pairs.slice(0, ranked.length - 1).map(([a, b]) => key(a, b))).toEqual([...ladder]);
     for (const [a, b] of pairs) {
       expect(a.display_name).not.toBe(b.display_name);
@@ -673,6 +679,70 @@ describe('machines of different families at about the same price', () => {
   });
 });
 
+describe('two models of one family that need about the same memory', () => {
+  const pairs = familyMemoryPairs(data);
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const pool = pairableModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const current = (m: Model) => (m.generation ?? 'current') === 'current';
+  const nearest = (m: Model) =>
+    pool
+      .filter((o) => o.id !== m.id && o.family === m.family && current(o) && o.quantisation === m.quantisation)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+
+  it('cuts pairs at all', () => {
+    expect(pairs.length).toBeGreaterThan(0);
+  });
+
+  it('takes two models of one family at one quantisation, neither superseded, the stronger first', () => {
+    for (const [a, b] of pairs) {
+      expect(a.family).toBe(b.family);
+      expect(a.quantisation).toBe(b.quantisation);
+      expect(a.id).not.toBe(b.id);
+      expect(current(a)).toBe(true);
+      expect(current(b)).toBe(true);
+      const [sa, sb] = [a.frontier_equivalent?.score ?? -1, b.frontier_equivalent?.score ?? -1];
+      expect(sa).toBeGreaterThanOrEqual(sb);
+      // where the index cannot order them, the smaller of the two goes first
+      if (sa === sb) expect(need(a)).toBeLessThanOrEqual(need(b));
+    }
+  });
+
+  it('keeps every pair inside the same tenth the cross-family rule allows', () => {
+    for (const [a, b] of pairs) {
+      expect(Math.abs(need(a) - need(b)) / Math.min(need(a), need(b))).toBeLessThanOrEqual(MODEL_MEMORY_GAP);
+    }
+  });
+
+  it('pairs each model with its own nearest, and writes a pair once', () => {
+    const keys = pairs.map(([a, b]) => [a.id, b.id].sort().join('|'));
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const [a, b] of pairs) {
+      expect(nearest(a)?.id === b.id || nearest(b)?.id === a.id).toBe(true);
+    }
+  });
+
+  it('leaves a superseded side to the generation rule, which says it better', () => {
+    // the two Mistral 24Bs are the same family, the same quantisation and the same
+    // footprint to the decimal, and one of them is last generation, so this rule turns
+    // the pair away and modelGenerationPairs() keeps it
+    const key = (a: Model, b: Model) => [a.id, b.id].sort().join('|');
+    const mistral = key(model('mistral-small-3.2-24b-q4'), model('devstral-small-2-24b-q4'));
+    expect(pairs.map(([a, b]) => key(a, b))).not.toContain(mistral);
+    expect(modelGenerationPairs(data).map(([a, b]) => key(a, b))).toContain(mistral);
+  });
+
+  it('turns away a model whose nearest sibling is past the tenth', () => {
+    // Mistral Small 4 and Devstral 2 123B are both current Mistral rows at Q4_K_M and
+    // 1.1 GB apart in weights, and 16% apart once the cache at 32k is counted
+    const key = (a: Model, b: Model) => [a.id, b.id].sort().join('|');
+    expect(pairs.map(([a, b]) => key(a, b))).not.toContain(
+      key(model('mistral-small-4-119b-q4'), model('devstral-2-123b-q4')),
+    );
+  });
+});
+
 describe('models of different families that need about the same memory', () => {
   const pairs = memoryNeighbourPairs(data);
   const ctx = data.defaults.context.default_tokens;
@@ -748,11 +818,12 @@ describe('models of different families that need about the same memory', () => {
     const older = new Set<string>();
     for (let i = 0; i + 1 < rankedModels(data).length; i++) older.add(key(rankedModels(data)[i], rankedModels(data)[i + 1]));
     for (const [a, b] of modelGenerationPairs(data)) older.add(key(a, b));
-    // the rule is appended last, so nothing it adds sits before a pair another rule cut,
+    // the rule is cut third, so nothing it adds sits before a pair another rule cut,
     // and the pairs both it and an older rule reach are written once, at the older address
     const shared = [...mine].filter((k) => older.has(k));
+    const fam = new Set(familyMemoryPairs(data).map(([a, b]) => key(a, b)));
     expect(shared.length).toBeGreaterThan(0);
-    expect(all.length).toBe(older.size + mine.size - shared.length);
+    expect(all.length).toBe(new Set([...older, ...mine, ...fam]).size);
     expect(all.slice(0, older.size).every(([a, b]) => older.has(key(a, b)))).toBe(true);
   });
 });

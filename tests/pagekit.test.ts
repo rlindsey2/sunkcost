@@ -11,7 +11,7 @@ import {
   memoryLevels,
   memorySizePath,
   fmtUsd, FONT_PRELOAD, gbRange, hardwareLabel, hardwareProduct, indefiniteArticle, jsonLd, kvWorking,
-  leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
+  leaderboardBuildsLine, leaderboardRows, longestContext, machinesConsidered, machinesShorter, machineVerdict, median, missedMachines, modelFamilySection, modelGenerationSection, modelsInBand, modelVerdict, numberWord,
   costMachine, countOfSet, DAYS_PER_MONTH, fmtPerMtok, footerHtml, FOOTER_LINKS, graphicsCards, machineMatchUpsLine, modelMatchUpsLine,
   paybackSentence, swapSentence,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, nearestCompleteComputer, SPREAD_MONTHS,
@@ -26,7 +26,7 @@ import {
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
 import { fit, footprintGb, kvCacheGb } from '../src/fit';
-import { hardwarePairs, modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
+import { familyMemoryPairs, hardwarePairs, modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
@@ -3122,5 +3122,48 @@ describe('what a model that reads images costs beyond its weights', () => {
     for (const bad of ['undefined', 'NaN', 'null', '0 of']) expect(said.includes(bad)).toBe(false);
     // the count is the data's, not a number written into the sentence
     expect(visionFleetLine({ ...data, models: (models as Model[]).filter((m) => !m.vision) })).toBe(null);
+  });
+});
+
+describe('what is left to choose between two builds of one family', () => {
+  const words = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const model = (id: string) => data.models.find((m) => m.id === id)!;
+  const section = (a: string, b: string) => modelFamilySection(model(a), model(b), data);
+
+  it('says what the two share, in the figures the rest of the site prints', () => {
+    const olmo = words(section('olmo-3.1-32b-instruct-q4', 'olmo-3.1-32b-think-q4'));
+    expect(olmo).toContain('two Olmo models this site prices at Q4_K_M, neither of them superseded');
+    expect(olmo).toContain(
+      `neither of them superseded, and they are the same size: ${fmtGb(model('olmo-3.1-32b-think-q4').weights_gb)} of weights either way, and `,
+    );
+    expect(olmo).toMatch(/of weights either way, and [\d.]+ GB at 32k of context\./);
+    expect(olmo).toContain('Nobody rents either of them by the token, so both are priced here against Gemma 4 31B it');
+    expect(olmo).toContain('So nothing in what it costs to own or to rent separates them.');
+    expect(olmo).toContain('say what each one was trained for');
+  });
+
+  it('sends the reader to each model’s own page for the thing that does separate them', () => {
+    const olmo = section('olmo-3.1-32b-instruct-q4', 'olmo-3.1-32b-think-q4');
+    expect(olmo).toContain('href="/models/olmo-3.1-32b-instruct-q4/"');
+    expect(olmo).toContain('href="/models/olmo-3.1-32b-think-q4/"');
+  });
+
+  it('stays off a pair some figure on the page separates', () => {
+    // these two score 34 and 22, rent at different prices and pay a machine back at
+    // different speeds, so the page has a row that answers the reader and the section
+    // would be telling them to stop looking at it
+    expect(section('qwen3.8-27b-q4', 'qwen3.6-27b-q4')).toBe('');
+    expect(section('qwen3.6-35b-a3b-q4', 'qwen3-coder-30b-a3b-q4')).toBe('');
+  });
+
+  it('is written for every pair the rule cuts whose figures are level, and no others', () => {
+    const level = familyMemoryPairs(data).filter(([a, b]) => modelFamilySection(a, b, data) !== '');
+    expect(level.length).toBeGreaterThan(0);
+    for (const [a, b] of level) {
+      expect(a.family).toBe(b.family);
+      expect(a.cloud_equivalent.name).toBe(b.cloud_equivalent.name);
+      expect(a.max_context_tokens).toBe(b.max_context_tokens);
+      expect(a.frontier_equivalent?.score ?? null).toBe(b.frontier_equivalent?.score ?? null);
+    }
   });
 });

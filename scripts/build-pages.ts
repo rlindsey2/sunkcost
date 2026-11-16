@@ -14,7 +14,7 @@ import {
   footerHtml, gbRange,
   cardRankingLine, cardScopeNote, costMachine, fmtPerMtok, gpuCores, gpuPart, graphicsCards, hardwareLabel, hardwareProduct,
   ceilingNoteFault, headingSlug, holdHyphens, hostedSpeedLine, indefiniteArticle, indexBasisNote, JUMP_MIN_SECTIONS, kvWorking, leaderboardBuildsLine, leaderboardRows, longestContext, lowerFirst, machinesConsidered, machinesShorter,
-  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, maxContextNote, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
+  machineIndexLine, machineMatchUpsLine, machinesAtSize, machinesThatHold, machineVerdict, maxContextNote, median, memoryLevels, memorySizePath, missedMachines, meetAtShorterContext, modelFamilySection, modelGenerationSection, modelLabel, modelMatchUpsLine, modelSoftware, modelVerdict,
   monthlyCost, monthlyCrossing, monthlyOwned, MTOK, SPREAD_MONTHS, type MonthlyCost, paybackSentence,
   nearestCompleteComputer, NUMBER_WORDS, numberWord, otherQuantisations, pageShell, powerSourceLabel, powerWithSource, priceRivals,
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
@@ -25,6 +25,7 @@ import {
 } from '../src/pagekit';
 import {
   chipStepPairs, flagshipMachines, generationPairs, hardwareComparePath, hardwarePairs, headToHeadGroups, memoryTierNames,
+  familyMemoryPairs,
   MODEL_GENERATION_SIZE_RATIO, MODEL_MEMORY_GAP, memoryNeighbourPairs, memoryTierPairs, modelComparePath, modelGenerationPairs, modelPairs, pairableModels, rankedModels, sameSiliconPairs,
   versusCardPath,
   PRICE_NEIGHBOUR_GAP, priceNeighbourPairs, priceNeighbours,
@@ -451,6 +452,11 @@ function checkMatchUpSiblings() {
       .map(([x, y]) => modelComparePath(x, y))
       .filter((href) => !ladder.has(href)),
   );
+  const families = new Set(
+    familyMemoryPairs(data)
+      .map(([x, y]) => modelComparePath(x, y))
+      .filter((href) => !ladder.has(href) && !generations.has(href) && !memories.has(href)),
+  );
   for (const [a, b] of mPairs) {
     const path = modelComparePath(a, b);
     const reasons: string[] = [];
@@ -475,7 +481,9 @@ function checkMatchUpSiblings() {
         reasons.push(
           generations.has(href)
             ? `${esc(other.display_name)}</a>, the ${x.id === self.id ? 'current' : 'last-generation'} ${esc(self.family ?? '')} nearest it in size`
-            : `${esc(other.display_name)}</a>${x.id === self.id ? ' below it' : ' above it on the leaderboard'}`,
+            : families.has(href)
+              ? `${esc(other.display_name)}</a>, the other ${esc(self.family ?? '')} model that needs much the same memory`
+              : `${esc(other.display_name)}</a>${x.id === self.id ? ' below it' : ' above it on the leaderboard'}`,
         );
       }
       return { subject: self.display_name, want };
@@ -2817,6 +2825,15 @@ for (const [a, b] of memoryNeighbourPairs(data)) {
   if (!ladderPaths.has(href)) modelMemoryPairs.set(href, [a, b]);
 }
 
+// and the fourth rule, two models of one family that need the same memory. None of the
+// four pairs it cuts today is reached by another rule, and were one to be, the rule that
+// got there first keeps the address and the words, the same way round as the three above.
+const modelFamilyPairs = new Map<string, [Model, Model]>();
+for (const [a, b] of familyMemoryPairs(data)) {
+  const href = modelComparePath(a, b);
+  if (!ladderPaths.has(href) && !modelGenerations.has(href) && !modelMemoryPairs.has(href)) modelFamilyPairs.set(href, [a, b]);
+}
+
 type ModelMatchUp = { href: string; other: Model } & (
   | { kind: 'ladder'; side: 'above' | 'below' }
   // 'above' and 'below' name where the other model sits; 'is-older' and 'is-current'
@@ -2825,12 +2842,16 @@ type ModelMatchUp = { href: string; other: Model } & (
   // on a page together is a figure they share, so both sides say the same thing.
   | { kind: 'generation'; side: 'is-older' | 'is-current' }
   | { kind: 'memory'; side: 'same-memory' }
+  // two models of one family that need the same memory, which is symmetrical too, and
+  // says the family as well, because without it the clause reads as the rule above
+  | { kind: 'family'; side: 'same-family' }
 );
 const modelHeadToHeads = new Map<string, ModelMatchUp[]>();
 for (const [a, b] of modelPairs(data)) {
   const href = modelComparePath(a, b);
   const gen = modelGenerations.get(href);
   const mem = gen ? null : modelMemoryPairs.get(href);
+  const fam = gen || mem ? null : modelFamilyPairs.get(href);
   const sides: ModelMatchUp[] = gen
     ? [
         { href, other: gen[1], kind: 'generation', side: 'is-older' },
@@ -2841,10 +2862,15 @@ for (const [a, b] of modelPairs(data)) {
           { href, other: b, kind: 'memory', side: 'same-memory' },
           { href, other: a, kind: 'memory', side: 'same-memory' },
         ]
-      : [
-          { href, other: b, kind: 'ladder', side: 'below' },
-          { href, other: a, kind: 'ladder', side: 'above' },
-        ];
+      : fam
+        ? [
+            { href, other: b, kind: 'family', side: 'same-family' },
+            { href, other: a, kind: 'family', side: 'same-family' },
+          ]
+        : [
+            { href, other: b, kind: 'ladder', side: 'below' },
+            { href, other: a, kind: 'ladder', side: 'above' },
+          ];
   const selves = gen ? [gen[0], gen[1]] : [a, b];
   selves.forEach((self, i) => modelHeadToHeads.set(self.id, [...(modelHeadToHeads.get(self.id) ?? []), sides[i]]));
 }
@@ -4111,7 +4137,11 @@ function modelPage(m: Model): string {
   // memory. Neither of the lines above reaches them, because two models a year apart in
   // the same family and two rungs of one index are both about what a model is rather
   // than about what it takes to hold one.
-  const mem = versus.filter((v) => v.kind === 'memory');
+  // The fourth rule's pairs are the same sentence: it says the two models need much the
+  // same memory, which is what puts them on a page together whether or not the maker is
+  // the same. Which of the two rules reached them is on the comparison page itself, in
+  // the clause beside each link, where it changes what the reader is being told.
+  const mem = versus.filter((v) => v.kind === 'memory' || v.kind === 'family');
   const memLinks = mem.map((v) => versusLink(v)).join(', ');
   const memLine = !mem.length
     ? ''
@@ -6509,6 +6539,9 @@ function modelComparePage(a: Model, b: Model): string {
   // needs answering in words: on a generation pair the reader already runs one of the
   // two, so the page owes them what swapping it changes.
   const generation = modelGenerations.get(modelComparePath(a, b)) ?? null;
+  // and the fourth rule's own section, for the pairs where the figures are level and the
+  // page owes the reader a sentence saying which of them are and which one is not
+  const family = modelFamilyPairs.get(modelComparePath(a, b)) ?? null;
   const ra = runnersFor(a, data);
   const rb = runnersFor(b, data);
   const shared = cheapestRunsBoth(a, b, ra, rb);
@@ -6687,7 +6720,12 @@ ${row('API cost per month', apiCell(a, race.s.a.view), apiCell(b, race.s.b.view)
         // two to do it, so those pages say what is actually happening
         const turns = never('a') && never('b')
           ? `Neither pays for it at any of those levels, even with agents running most of the day.`
-          : never('a') || never('b')
+          : !winners.length
+            // two models the same size, priced against the same hosted model and running
+            // at the same speed print the same figure on every row, and "which of them
+            // pays for it sooner changes with the level of use" argued with the table
+            ? `Pay-back is the same figure on both at every level of use.`
+            : never('a') || never('b')
             ? `${esc(never('a') ? b.display_name : a.display_name)} pays for it sooner at every level of use: ${esc(never('a') ? a.display_name : b.display_name)} never pays for it at all.`
             : clean && runs.length === 1
               ? `${esc(runs[0].who)} pays for it sooner at every level of use, so which of them to run does not turn on how hard you work it.`
@@ -6762,8 +6800,31 @@ ${shownRunners
 </tbody>
 </table>`, { fig: 4, labels: { 3: 'Speed' } })}
 ${only.length > shownRunners.length ? `<p class="note">${only.length - shownRunners.length} more, on the <a href="/models/${esc(wider.id)}/">${esc(wider.display_name)} page</a>.</p>` : ''}`
-    : `<h2>Memory is not what separates them</h2>
-<p>${needLine}Every machine priced here that runs one runs the other, at ${ctxK}k of context. So the choice between them is what each is good at, how fast it runs and what the same work costs on an API, not what you have to buy to hold it.</p>`;
+    : (() => {
+        // What is left once memory is equal, and it has to be only the things that
+        // actually differ. On two builds of one family at the same size the speed and
+        // the API bill are the same figure twice, and a sentence sending the reader to
+        // compare them would send them to look at two identical columns. Both are read
+        // off the cells the like-for-like table prints rather than off the data behind
+        // them: two models at one price can still run up different monthly bills, where
+        // the machine cannot generate what the heavier of them was asked for, and two
+        // at the same tok/s read differently where one of the figures is measured.
+        const sameSpeed = race != null && speedWithBasis(race.s.rowA) === speedWithBasis(race.s.rowB);
+        const samePrice = race != null && apiCell(a, race.s.a.view) === apiCell(b, race.s.b.view);
+        const turnsOn = [
+          'what each is good at',
+          ...(sameSpeed ? [] : ['how fast it runs']),
+          ...(samePrice ? [] : ['what the same work costs on an API']),
+        ];
+        // and where the two print the same figure, it is said once: "needs 19.7 GB and
+        // the other needs 19.7 GB" reads as a mistake rather than as the point
+        const line =
+          needWider != null && needNarrower != null && fmtGb(needWider) === fmtGb(needNarrower)
+            ? `Both need ${fmtGb(needWider)} of memory at ${ctxK}k of context. `
+            : needLine;
+        return `<h2>Memory is not what separates them</h2>
+<p>${line}Every machine priced here that runs one runs the other, at ${ctxK}k of context. So the choice between them is ${andList(turnsOn)}, not what you have to buy to hold it.</p>`;
+      })();
 
   // What a search result has room for, and it was not being spent on an answer.
   // Every one of these descriptions ended in a list of this page's own columns —
@@ -6851,7 +6912,7 @@ ${row('Cheapest machine that runs it', ra[0] ? `<a href="/hardware/${esc(ra[0].h
 ${capRows ? `${capRows}\n` : ''}</tbody>
 </table>
 <p><a class="cta" href="${esc(ctaA.href)}">Run ${esc(ctaA.text)}</a> · <a href="${esc(ctaB.href)}">or ${esc(ctaB.text)}</a></p>
-${capRows ? `<p class="note">Ratings are coarse on purpose: they say what a model is usable for, not where it places to the decimal.</p>\n` : ''}${generation ? modelGenerationSection(generation[0], generation[1], data) : ''}${sideBySide}
+${capRows ? `<p class="note">Ratings are coarse on purpose: they say what a model is usable for, not where it places to the decimal.</p>\n` : ''}${generation ? modelGenerationSection(generation[0], generation[1], data) : ''}${family ? modelFamilySection(family[0], family[1], data) : ''}${sideBySide}
 ${usageSection}
 ${machinesSection}
 ${modelSiblingNote(a, b)}
@@ -6962,6 +7023,10 @@ const modelMatchUpKinds = (): MatchUpKind<Model>[] => {
     {
       pairs: memoryNeighbourPairs(data),
       clause: `Each model against the one from another family nearest it in the memory it needs, within ${Math.round(MODEL_MEMORY_GAP * 100)}%, which is where a reader with a machine already on the desk starts`,
+    },
+    {
+      pairs: familyMemoryPairs(data),
+      clause: 'Each model against the one of its own family nearest it in the memory it needs, where neither is superseded and both are quantised the same way, which is the choice between two builds a maker sells side by side',
     },
   ];
 };
@@ -9170,7 +9235,9 @@ function checkMemoryNeighbours() {
 
   // and the only pages that may say it: a model in one of these pairs, or a head-to-head
   // one of whose two sides is in one, which is where the sentence names the others
-  const inAPair = new Set(memoryNeighbourPairs(data).flatMap(([a, b]) => [a.id, b.id]));
+  const inAPair = new Set(
+    [...memoryNeighbourPairs(data), ...familyMemoryPairs(data)].flatMap(([a, b]) => [a.id, b.id]),
+  );
   const maySay = new Set<string>();
   for (const m of data.models) if (inAPair.has(m.id)) maySay.add(`/models/${m.id}/`);
   for (const [a, b] of modelPairs(data)) if (inAPair.has(a.id) || inAPair.has(b.id)) maySay.add(modelComparePath(a, b));
@@ -9183,6 +9250,159 @@ function checkMemoryNeighbours() {
     throw new Error(`${problems.length} memory-neighbour head-to-head${problems.length === 1 ? ' does' : 's do'} not hold to the rule that cut them`);
   }
   console.log(`  ${pages} head-to-heads between models of different families within ${Math.round(MODEL_MEMORY_GAP * 100)}% of each other in the memory they need at ${Math.round(ctx / 1024)}k`);
+}
+
+/**
+ * A sentence about two columns, held against the two columns.
+ *
+ * A model head-to-head is two columns of figures and a few sentences saying which of them
+ * separates the two models. Where the figures are level those sentences can be false
+ * without a single number on the page being wrong: the pay-back paragraph said "which of
+ * them pays for it sooner changes with the level of use" above a table printing the same
+ * figure on both at all five levels, and the memory section sent a reader to weigh a speed
+ * and an API bill that were also one figure twice. Both were written before this site
+ * priced two builds of one family, and neither reads as a mistake until the table under it
+ * is read.
+ *
+ * So each claim is checked against the cells it is about: the pay-back table row by row,
+ * and the speed and the API bill in the like-for-like table. It holds both ways, because
+ * the sentence that says the two are level is as wrong on a pair that is not.
+ */
+function checkTwoColumnClaims() {
+  const problems: string[] = [];
+  const flat = (html: string) => unesc(html.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+  const rows = (html: string) =>
+    [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) => ({
+      head: flat(m[1].replace(/<td[\s\S]*$/, '')),
+      cells: [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => flat(c[1])),
+    }));
+  const section = (html: string, id: string) => {
+    const i = html.indexOf(`id="${id}"`);
+    if (i < 0) return '';
+    const rest = html.slice(i);
+    const end = rest.indexOf('<h2', 1);
+    return end < 0 ? rest : rest.slice(0, end);
+  };
+  let paragraphs = 0;
+  for (const p of meta) {
+    if (!p.path.startsWith('/compare/')) continue;
+    const text = flat(p.html);
+    const pay = rows(section(p.html, 'how-much-use-it-takes-to-pay-for-the-machine')).filter((r) => r.cells.length === 2);
+    if (pay.length) {
+      paragraphs++;
+      const draw = pay.every((r) => r.cells[0] === r.cells[1]);
+      if (draw && text.includes('Which of them pays for it sooner changes with the level of use'))
+        problems.push(`${p.path} says which of them pays for the machine sooner changes with the level of use, and prints the same figure on both at every level`);
+      if (!draw && text.includes('Pay-back is the same figure on both at every level of use'))
+        problems.push(`${p.path} says pay-back is the same figure on both at every level of use and its table prints two figures on some row`);
+    }
+    const two = rows(p.html).filter((r) => r.cells.length === 2);
+    const differs = (head: RegExp) => {
+      const r = two.find((x) => head.test(x.head));
+      return r ? r.cells[0] !== r.cells[1] : null;
+    };
+    const choice = /So the choice between them is (.*?), not what you have to buy to hold it\./.exec(text);
+    if (!choice) continue;
+    paragraphs++;
+    for (const { phrase, head, what } of [
+      { phrase: 'how fast it runs', head: /^Speed at \d+k$/, what: 'the speed' },
+      { phrase: 'what the same work costs on an API', head: /^API cost per month$/, what: 'the API bill' },
+    ]) {
+      const moved = differs(head);
+      if (moved === null) continue;
+      if (choice[1].includes(phrase) && !moved)
+        problems.push(`${p.path} offers ${what} as what separates the two models and prints the same figure on both`);
+      if (!choice[1].includes(phrase) && moved)
+        problems.push(`${p.path} leaves ${what} out of what separates the two models and prints a different figure on each`);
+    }
+  }
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} sentence${problems.length === 1 ? '' : 's'} about two columns disagree with the columns`);
+  }
+  console.log(`  ${paragraphs} paragraphs on the head-to-heads say which figures separate two models, every one of them read back against those figures`);
+}
+
+/**
+ * The fourth rule, which is the third one turned inward: two models of one family that
+ * need the same memory. What it holds still is what has to be checked, because a figure
+ * moving in data/*.json is all it would take to make a page's whole reason untrue: the
+ * two sides share a family and a quantisation, neither is superseded, and the two are
+ * within the same tenth the cross-family rule allows.
+ *
+ * And the section these pages carry is held both ways. A pair where the memory, the API
+ * price, the pay-back, the ceiling and the index score are all level has to say so, since
+ * that is a page of one figure printed twice and the sentence is what the reader is owed.
+ * A pair where any of them differs may not say it, because the page would be telling a
+ * reader to stop looking at the row that answers them.
+ */
+function checkFamilyMemoryPairs() {
+  const problems: string[] = [];
+  const ctx = data.defaults.context.default_tokens;
+  const kvScale = kvScaleFor(data.defaults.kv_cache?.default, data.defaults);
+  const pool = pairableModels(data).filter((m) => footprintGb(m, ctx, kvScale) != null);
+  const need = (m: Model) => footprintGb(m, ctx, kvScale)!;
+  const current = (m: Model) => (m.generation ?? 'current') === 'current';
+  const nearest = (m: Model) =>
+    pool
+      .filter((o) => o.id !== m.id && o.family === m.family && current(o) && o.quantisation === m.quantisation)
+      .sort((x, y) => Math.abs(need(x) - need(m)) - Math.abs(need(y) - need(m)) || x.id.localeCompare(y.id))[0];
+
+  const SAYS = 'What is left to choose between them';
+  let pages = 0;
+  let level = 0;
+  for (const [a, b] of familyMemoryPairs(data)) {
+    pages++;
+    const path = modelComparePath(a, b);
+    const html = unesc(meta.find((p) => p.path === path)?.html ?? '');
+    if (!html) {
+      problems.push(`${path} is a same-family memory pair with no page`);
+      continue;
+    }
+    if (a.family !== b.family) problems.push(`${path} sets two families against each other and was cut as one family`);
+    if (a.quantisation !== b.quantisation) problems.push(`${path} sets ${a.quantisation} against ${b.quantisation}, and the rule holds the quantisation still`);
+    for (const m of [a, b]) if (!current(m)) problems.push(`${path} carries ${m.display_name}, which is superseded, where the generation rule says it better`);
+    const spread = Math.abs(need(a) - need(b)) / Math.min(need(a), need(b));
+    if (spread > MODEL_MEMORY_GAP)
+      problems.push(`${path} is ${Math.round(spread * 100)}% apart in what it needs at ${Math.round(ctx / 1024)}k, past the ${Math.round(MODEL_MEMORY_GAP * 100)}% this rule allows`);
+    if (nearest(a)?.id !== b.id && nearest(b)?.id !== a.id)
+      problems.push(`${path} is neither model's nearest in memory inside its own family`);
+    const [sa, sb] = [a.frontier_equivalent?.score ?? -1, b.frontier_equivalent?.score ?? -1];
+    if (sa < sb || (sa === sb && need(a) > need(b)))
+      problems.push(`${path} does not put the stronger model first, or the smaller where the two score the same`);
+    for (const m of [a, b])
+      if (!html.includes(fmtGb(need(m))))
+        problems.push(`${path} does not print what ${m.display_name} needs at ${Math.round(ctx / 1024)}k, which is the whole reason the two are on a page together`);
+    // and the section, against the figures rather than against the rule that wrote it
+    const shared = cheapestRunsBoth(a, b, runnersFor(a, data), runnersFor(b, data));
+    const pay = (r: Runner | undefined) => r?.view.calc?.breakevenDays ?? null;
+    const [pa, pb] = [pay(shared?.a), pay(shared?.b)];
+    const [ca, cb] = [a.cloud_equivalent, b.cloud_equivalent];
+    const same =
+      fmtGb(need(a)) === fmtGb(need(b)) &&
+      ca.name === cb.name &&
+      ca.input_price_per_mtok === cb.input_price_per_mtok &&
+      ca.output_price_per_mtok === cb.output_price_per_mtok &&
+      (pa === null ? pb === null : pb !== null && fmtDuration(pa) === fmtDuration(pb)) &&
+      a.max_context_tokens === b.max_context_tokens &&
+      sa === sb;
+    if (same) level++;
+    if (same && !html.includes(SAYS))
+      problems.push(`${path} prints the same figure in every row of its table and does not say so`);
+    if (!same && html.includes(SAYS))
+      problems.push(`${path} says nothing separates the two models and some figure on it does`);
+  }
+  // and no other page of the site may say it, whichever rule put the pair together
+  const mine = new Set(familyMemoryPairs(data).map(([a, b]) => modelComparePath(a, b)));
+  for (const p of meta)
+    if (p.html.includes(SAYS) && !mine.has(p.path))
+      problems.push(`${p.path} carries the section for two builds of one family and is not one of those pairs`);
+
+  if (problems.length) {
+    console.error([...new Set(problems)].slice(0, 5).map((x) => `  ${x}`).join('\n'));
+    throw new Error(`${problems.length} same-family head-to-head${problems.length === 1 ? ' does' : 's do'} not hold to the rule that cut them`);
+  }
+  console.log(`  ${pages} head-to-heads between two models of one family within ${Math.round(MODEL_MEMORY_GAP * 100)}% of each other in the memory they need at ${Math.round(ctx / 1024)}k, ${level} of them level on every figure the page prints and saying so`);
 }
 
 /**
@@ -10825,6 +11045,8 @@ checkGenerationPairs();
 checkChipStepPairs();
 checkPriceNeighbours();
 checkMemoryNeighbours();
+checkFamilyMemoryPairs();
+checkTwoColumnClaims();
 checkPayBackReads();
 checkStandInPower();
 checkModelContexts();

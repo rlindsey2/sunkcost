@@ -14,8 +14,8 @@
       "changed": "2026-10-31"
     },
     "/compare/": {
-      "hash": "0e755a1566bacac8",
-      "changed": "2026-11-15"
+      "hash": "ac0113ae36e6abae",
+      "changed": "2026-11-16"
     },
     "/compare/amd-radeon-ai-pro-r9700-32gb-vs-nvidia-geforce-rtx-3060-12gb/": {
       "hash": "e3141801beed3308",
@@ -30,16 +30,16 @@
       "changed": "2026-10-22"
     },
     "/compare/deepseek-r1-distill-llama-70b-q4-vs-llama-3-3-70b-q4/": {
-      "hash": "36514daa8bfb2b03",
-      "changed": "2026-10-29"
+      "hash": "7aa5e089bd855eba",
+      "changed": "2026-11-16"
     },
     "/compare/deepseek-r1-distill-qwen-32b-q4-vs-deepseek-r1-distill-llama-70b-q4/": {
       "hash": "4764ff63e7899619",
       "changed": "2026-10-29"
     },
     "/compare/deepseek-r1-distill-qwen-32b-q4-vs-qwen3-32b-q4/": {
-      "hash": "2470f5af19d1d205",
-      "changed": "2026-11-07"
+      "hash": "388f1e3335b83401",
+      "changed": "2026-11-16"
     },
     "/compare/deepseek-v4-flash-ud-q4-vs-inkling-small-ud-q4/": {
       "hash": "023d54cc73db89dc",
@@ -50,16 +50,16 @@
       "changed": "2026-10-29"
     },
     "/compare/deepseek-v4-flash-ud-q4-vs-qwen3-8-27b-q4/": {
-      "hash": "5fb05430373aa563",
-      "changed": "2026-11-10"
+      "hash": "5cd334003229a646",
+      "changed": "2026-11-16"
     },
     "/compare/devstral-2-123b-q4-vs-deepseek-r1-distill-qwen-32b-q4/": {
       "hash": "00cbe28a846c6cf2",
       "changed": "2026-10-29"
     },
     "/compare/devstral-small-2-24b-q4-vs-gemma-3-27b-q4/": {
-      "hash": "89d2dea0a768b7b5",
-      "changed": "2026-11-10"
+      "hash": "7dee05e2269fa6b2",
+      "changed": "2026-11-16"
     },
     "/compare/devstral-small-2-24b-q4-vs-llama-3-1-8b-q4/": {
       "hash": "5fae431616c0bafa",
@@ -107,7 +107,7 @@
     },
     "/compare/gemma-4-12b-q4-vs-qwen3-5-9b-q4/": {
       "hash": "6871915db1c57a14",
-      "changed": "2026-11-07"
+      "changed": "2026-11-16"
     },
     "/compare/gemma-4-26b-a4b-q4-vs-qwen3-5-122b-a10b-ud-q4/": {
       "hash": "37a35e346462ddc8",
@@ -134,8 +134,8 @@
       "changed": "2026-11-07"
     },
     "/compare/glm-4-7-flash-q4-vs-devstral-small-2-24b-q4/": {
-      "hash": "b3753038a50fdf5b",
-      "changed": "2026-10-29"
+      "hash": "b486ad371215aa9c",
+      "changed": "2026-11-16"
     },
     "/compare/glm-4-7-flash-q4-vs-gemma-4-12b-q4/": {
       "hash": "6330ed9d0ac11e66",
@@ -166,8 +166,8 @@
       "changed": "2026-10-29"
     },
     "/compare/granite-4-2-30b-q4-vs-flint-40b-a2-5b-ud-q4/": {
-      "hash": "952f2b42d9456aa0",
-      "changed": "2026-11-07"
+      "hash": "9e4448e949f5285b",
+      "changed": "2026-11-16"
     },
     "/compare/granite-4-2-30b-q4-vs-glm-4-7-flash-q4/": {
       "hash": "cca91f20d90ae9d0",
@@ -206,8 +206,8 @@
       "changed": "2026-11-13"
     },
     "/compare/lfm3-1-7b-q4-vs-spark-x2-6-1-7b-q4/": {
-      "hash": "b16b1a767e8cf6c1",
-      "changed": "2026-11-07"
+      "hash": "4f89c9a5b810941b",
+      "changed": "2026-11-16"
     },
     "/compare/ling-3-0-flash-q4-vs-minimax-m2-7-q4/": {
       "hash": "968a4ed5b10fc338",
@@ -230,8 +230,8 @@
       "changed": "2026-10-27"
     },
     "/compare/llama-3-1-8b-q4-vs-ministral-3-8b-q4/": {
-      "hash": "ec68f128a845688c",
-      "changed": "2026-10-07"
+      "hash": "ff78e7dd4f96c7f5",
+      "changed": "2026-11-16"
     },
     "/compare/llama-3-1-8b-q4-vs-qwen3-32b-q4/": {
       "hash": "9aea5e85ca2c0304",
@@ -498,40 +498,40 @@
       "changed": "2026-11-15"
     },
     "/compare/minicpm5-2b-q4-vs-qwen3-5-4b-q4/": {
-      "hash": "510e6bcf3f50c5c3",
-      "changed": "2026-11-07"
+      "hash": "5e45ec5ac4b7316c",
+      "changed": "2026-11-16"
     },
     "/compare/minimax-m2-7-q4-vs-qwen3-235b-a22b-2507-q4/": {
       "hash": "b1af92f60bac16d1",
       "changed": "2026-10-07"
     },
     "/compare/minimax-m2-7-q4-vs-qwen3-6-27b-q4/": {
-      "hash": "77019fc62002c9e7",
-      "changed": "2026-11-10"
+      "hash": "10414897f8454e09",
+      "changed": "2026-11-16"
     },
     "/compare/minimax-m3-1-flash-ud-q4-vs-glm-5-3-flash-ud-q4/": {
       "hash": "b4ddec941552d718",
       "changed": "2026-10-29"
     },
     "/compare/ministral-3-14b-q4-vs-qwen3-14b-q4/": {
-      "hash": "225811ccf54890b2",
-      "changed": "2026-11-07"
+      "hash": "3c6e4dfd93541e8f",
+      "changed": "2026-11-16"
     },
     "/compare/ministral-3-14b-q4-vs-qwen3-8b-q4/": {
       "hash": "1a2b343c7af58fc8",
       "changed": "2026-10-29"
     },
     "/compare/ministral-3-8b-q4-vs-gemma-3-12b-q4/": {
-      "hash": "aa895ac5b71a4f90",
-      "changed": "2026-10-07"
+      "hash": "0f586dc75ba5aadf",
+      "changed": "2026-11-16"
     },
     "/compare/mistral-small-3-2-24b-q4-vs-devstral-small-2-24b-q4/": {
-      "hash": "fe90d9e7d4c92324",
-      "changed": "2026-10-29"
+      "hash": "97f9abfb247b3c68",
+      "changed": "2026-11-16"
     },
     "/compare/mistral-small-3-2-24b-q4-vs-gemma-3-27b-q4/": {
-      "hash": "4ad4aa775a33c321",
-      "changed": "2026-11-10"
+      "hash": "f79b7736a7dd99b5",
+      "changed": "2026-11-16"
     },
     "/compare/mistral-small-3-2-24b-q4-vs-qwen3-14b-q4/": {
       "hash": "ce9ff5e9061e4ee1",
@@ -546,24 +546,24 @@
       "changed": "2026-11-07"
     },
     "/compare/muse-glimmer-30b-q4-vs-gemma-4-26b-a4b-q4/": {
-      "hash": "7a5a7a14b8256f5c",
-      "changed": "2026-11-10"
+      "hash": "e36c1e0aeef55ce7",
+      "changed": "2026-11-16"
     },
     "/compare/nemotron-3-5-bolt-74b-a9b-iq2-vs-kat-coder-v2-5-q4/": {
-      "hash": "4dc44a197783d9c1",
-      "changed": "2026-11-07"
+      "hash": "66da4817e5663cf8",
+      "changed": "2026-11-16"
     },
     "/compare/nemotron-3-5-bolt-74b-a9b-iq2-vs-ornith-1-5-35b-a3b-q4/": {
-      "hash": "2360c47bffa57bba",
-      "changed": "2026-11-15"
+      "hash": "71d8d3973b0857ad",
+      "changed": "2026-11-16"
     },
     "/compare/nemotron-3-5-bolt-74b-a9b-iq2-vs-qwen3-6-35b-a3b-q4/": {
-      "hash": "2a470ddfe97a3292",
-      "changed": "2026-11-07"
+      "hash": "98eeece7cab5f431",
+      "changed": "2026-11-16"
     },
     "/compare/nemotron-3-5-lightning-30b-q4-vs-flint-40b-a2-5b-ud-q4/": {
-      "hash": "7fd8d09175218a76",
-      "changed": "2026-11-07"
+      "hash": "404185abea79e908",
+      "changed": "2026-11-16"
     },
     "/compare/nemotron-3-5-lightning-30b-q4-vs-qwen3-235b-a22b-2507-q4/": {
       "hash": "61276c62371610eb",
@@ -649,13 +649,17 @@
       "hash": "e5d9beeaa1e496f4",
       "changed": "2026-11-15"
     },
+    "/compare/olmo-3-1-32b-instruct-q4-vs-olmo-3-1-32b-think-q4/": {
+      "hash": "4da730138553897d",
+      "changed": "2026-11-16"
+    },
     "/compare/ornith-1-5-35b-a3b-q4-vs-olmo-3-1-32b-instruct-q4/": {
-      "hash": "cbd07d59ff6454c8",
-      "changed": "2026-11-15"
+      "hash": "e1646432de0e6ca1",
+      "changed": "2026-11-16"
     },
     "/compare/ornith-1-5-35b-a3b-q4-vs-olmo-3-1-32b-think-q4/": {
-      "hash": "ca02ae2d3599129a",
-      "changed": "2026-11-15"
+      "hash": "6f06a277da48c931",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-14b-q4-vs-lfm2-5-24b-a2b-q4/": {
       "hash": "9ec95380823aea92",
@@ -674,84 +678,92 @@
       "changed": "2026-10-27"
     },
     "/compare/qwen3-30b-a3b-2507-q4-vs-laguna-xs-2-1-q4/": {
-      "hash": "5bab1eaa36b99d39",
-      "changed": "2026-11-07"
+      "hash": "cfced01c85f956b6",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-30b-a3b-2507-q4-vs-qwen3-coder-30b-a3b-q4/": {
-      "hash": "23c46e68b6e1aaef",
-      "changed": "2026-11-07"
+      "hash": "18032e442292d717",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-32b-q4-vs-mistral-small-3-2-24b-q4/": {
       "hash": "c6413a0bd61f136a",
       "changed": "2026-11-07"
     },
     "/compare/qwen3-32b-q4-vs-nanbeige4-3-33b-q4/": {
-      "hash": "1e2a1732f355f6a7",
-      "changed": "2026-11-07"
+      "hash": "e791a5dc0c3192e0",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-32b-q4-vs-qwen3-8-27b-q4/": {
-      "hash": "6d7dbcf2df1da38e",
-      "changed": "2026-11-10"
+      "hash": "bbdec085b8b9a843",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-5-122b-a10b-ud-q4-vs-gemma-4-31b-q4/": {
       "hash": "83e2b34d2a878320",
       "changed": "2026-11-07"
     },
     "/compare/qwen3-5-122b-a10b-ud-q4-vs-glm-4-5-air-q4/": {
-      "hash": "2cdad6fd718f3ff8",
-      "changed": "2026-10-27"
+      "hash": "b9d45abf38dc05e2",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-5-4b-q4-vs-gpt-oss-120b-mxfp4/": {
       "hash": "b89d475d871b02eb",
       "changed": "2026-11-07"
     },
     "/compare/qwen3-5-4b-q4-vs-spark-x2-5-4b-q4/": {
-      "hash": "49cb20b191f9f3f6",
-      "changed": "2026-11-07"
+      "hash": "0de2a7b479cf2164",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-5-4b-q4-vs-spark-x2-6-4b-q4/": {
-      "hash": "0ba23daa8e6708a8",
-      "changed": "2026-11-07"
+      "hash": "c9e43b7b5853b3bd",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-5-9b-q4-vs-nemotron-3-5-lightning-30b-q4/": {
       "hash": "b36da7713c355c6c",
       "changed": "2026-11-07"
     },
     "/compare/qwen3-5-9b-q4-vs-ornith-1-5-9b-q4/": {
-      "hash": "c1d77aa08c1f01b1",
-      "changed": "2026-11-07"
+      "hash": "8d2b26b541b083de",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-6-27b-q4-vs-arete-27b-q4/": {
-      "hash": "9ca89a420e0ba62b",
-      "changed": "2026-11-10"
+      "hash": "782c868569d54752",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-6-27b-q4-vs-nemotron-3-5-bolt-74b-a9b-iq2/": {
-      "hash": "6c4c5f21011ade85",
-      "changed": "2026-11-10"
+      "hash": "10fcb9c91daf35b0",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-6-35b-a3b-q4-vs-gemma-4-31b-q4/": {
-      "hash": "d9a46ab1bdf1d894",
-      "changed": "2026-11-07"
+      "hash": "2944bc34088cc2b7",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-6-35b-a3b-q4-vs-muse-glimmer-30b-q4/": {
-      "hash": "9122d39401c5e9db",
-      "changed": "2026-11-10"
+      "hash": "a67a1958114be840",
+      "changed": "2026-11-16"
+    },
+    "/compare/qwen3-6-35b-a3b-q4-vs-qwen3-coder-30b-a3b-q4/": {
+      "hash": "626f43e5b672c79a",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-8-27b-q4-vs-arete-27b-q4/": {
-      "hash": "e5d0291a4b38e272",
-      "changed": "2026-11-10"
+      "hash": "fd894a21fa8361b5",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-8-27b-q4-vs-beam-1-0-501b-a23b-ud-q4/": {
-      "hash": "f26692cdf805c356",
-      "changed": "2026-11-10"
+      "hash": "376862f0d73231dd",
+      "changed": "2026-11-16"
+    },
+    "/compare/qwen3-8-27b-q4-vs-qwen3-6-27b-q4/": {
+      "hash": "f80d2631489661b1",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-8-flash-next-q4-vs-deepseek-v4-flash-ud-q4/": {
       "hash": "59f9b1246fbe6887",
       "changed": "2026-10-29"
     },
     "/compare/qwen3-8b-q4-vs-gemma-3-12b-q4/": {
-      "hash": "abbb226ccfa431f9",
-      "changed": "2026-10-29"
+      "hash": "192ad7e0d5627ce4",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-8b-q4-vs-gemma-3-27b-q4/": {
       "hash": "92bd4a61ab24eab7",
@@ -762,12 +774,12 @@
       "changed": "2026-11-07"
     },
     "/compare/qwen3-coder-30b-a3b-q4-vs-laguna-xs-2-1-q4/": {
-      "hash": "182c29fe0987f4a3",
-      "changed": "2026-11-07"
+      "hash": "2e203f4be22bdadf",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-coder-30b-a3b-q4-vs-qwen3-coder-next-q4/": {
-      "hash": "7b56b74e1fc10a0b",
-      "changed": "2026-11-07"
+      "hash": "37ed6f2490a1ae8c",
+      "changed": "2026-11-16"
     },
     "/compare/qwen3-coder-next-q4-vs-deepseek-r1-distill-llama-70b-q4/": {
       "hash": "42b30c75ca76dc46",
@@ -776,6 +788,10 @@
     "/compare/qwen3-coder-next-q4-vs-gpt-oss-20b-mxfp4/": {
       "hash": "e80a62e4390329fe",
       "changed": "2026-10-29"
+    },
+    "/compare/spark-x2-5-4b-q4-vs-spark-x2-6-4b-q4/": {
+      "hash": "772a42089afb0f84",
+      "changed": "2026-11-16"
     },
     "/compare/strix-halo-corsair-ai-workstation-300-64gb-vs-strix-halo-corsair-ai-workstation-300-128gb/": {
       "hash": "fff8b68068aa2501",
@@ -1346,12 +1362,12 @@
       "changed": "2026-11-15"
     },
     "/models/olmo-3.1-32b-instruct-q4/": {
-      "hash": "bbb70d62e6a7d76c",
-      "changed": "2026-11-15"
+      "hash": "159dac55aebe1c68",
+      "changed": "2026-11-16"
     },
     "/models/olmo-3.1-32b-think-q4/": {
-      "hash": "a226dd14baf5df50",
-      "changed": "2026-11-15"
+      "hash": "dc9fd649127e9cee",
+      "changed": "2026-11-16"
     },
     "/models/ornith-1.5-122b-q4/": {
       "hash": "eca391d9cd8ffa34",
@@ -1390,8 +1406,8 @@
       "changed": "2026-11-13"
     },
     "/models/qwen3-coder-30b-a3b-q4/": {
-      "hash": "8833f050e026bd6b",
-      "changed": "2026-11-15"
+      "hash": "95ae99ba74955e8a",
+      "changed": "2026-11-16"
     },
     "/models/qwen3-coder-next-q4/": {
       "hash": "199859c179d9a419",
@@ -1410,16 +1426,16 @@
       "changed": "2026-11-13"
     },
     "/models/qwen3.6-27b-q4/": {
-      "hash": "952b297fe399b9c3",
-      "changed": "2026-11-15"
+      "hash": "fb9a37328780fc2e",
+      "changed": "2026-11-16"
     },
     "/models/qwen3.6-35b-a3b-q4/": {
-      "hash": "d7077fa15107286b",
-      "changed": "2026-11-15"
+      "hash": "f7cc6049a0075721",
+      "changed": "2026-11-16"
     },
     "/models/qwen3.8-27b-q4/": {
-      "hash": "a44d1e90d72f451c",
-      "changed": "2026-11-15"
+      "hash": "bf2a4065769445c0",
+      "changed": "2026-11-16"
     },
     "/models/qwen3.8-flash-next-q4/": {
       "hash": "37fea8334a54fc15",
@@ -1434,16 +1450,16 @@
       "changed": "2026-11-15"
     },
     "/models/spark-x2.5-4b-q4/": {
-      "hash": "e5d3a411c6efa5c2",
-      "changed": "2026-11-13"
+      "hash": "4ea101f2cc9f4b46",
+      "changed": "2026-11-16"
     },
     "/models/spark-x2.6-1.7b-q4/": {
       "hash": "610534b9615691df",
       "changed": "2026-11-13"
     },
     "/models/spark-x2.6-4b-q4/": {
-      "hash": "98f1056cf1a359de",
-      "changed": "2026-11-13"
+      "hash": "653261770658b6b5",
+      "changed": "2026-11-16"
     }
   }
 }

@@ -45,15 +45,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       bandwidth estimate would read about double the speed it reaches, and it has no GGUF (2026-10-31), and
       **Dory 1.0 4B** is gated. Until the watch finds a third, a run is better spent on a guard below.
 
-- [ ] **The two Olmo rows are one machine decision and neither page names the other.** Olmo 3.1 32B Instruct and
-      Olmo 3.1 32B Think are 19.48 GB each with the same geometry, and "Olmo 3 Instruct or Think" is what a reader
-      with 32 GB actually asks. `memoryNeighbourPairs()` cuts same-family pairs on purpose, because at one size a
-      family's rows are usually the quantisations and generations the other rules already cover. These two are
-      neither. On today's data a same-family, same-quantisation, within-a-tenth rule reaches ten pairs, and six of
-      them have a superseded row on one side or both, where the generation rule already does the work; the cut
-      has to leave those out, and the four left are these two, the two Spark 4Bs, Qwen3.6 against Qwen3.8 27B,
-      and Mistral Small 4 against Devstral 2 123B.
-
 - [ ] **A ceiling note that says one word past its figure escapes the guard built for it.** `ceilingNoteFault()`
       refuses a note that is nothing but a figure, so "256k tokens (1M)" is caught; "256k native" against a
       ceiling of 128k is not, because the bare-figure test reads the whole note and "native" sits past the
@@ -124,6 +115,21 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-16 — Two builds of one family at one size are a page, and on two of them nothing in the arithmetic separates them
+The backlog's Olmo item is done, and as a rule rather than a pair. `familyMemoryPairs()` is the fourth head-to-head rule: each model against the one of its own family
+nearest it in the memory it needs, within the same tenth the cross-family rule allows, where neither side is superseded and both carry one quantisation label. Four pages:
+Olmo 3.1 32B Instruct against Think, the two Spark 4Bs, Qwen3.8 27B against Qwen3.6 27B, and Qwen3.6 35B-A3B against Qwen3-Coder 30B-A3B. The item's count of ten was a read
+that has aged: the rule reaches seven today, three of them with a superseded side the generation rule says better, and Mistral Small 4 against Devstral 2 123B is 16% apart
+once the cache at 32k is counted. Two of the four were the page to get right: the same file size to the byte, the same hosted model standing in on price and the same machine
+paying for itself in the same time, which is twelve table rows of one figure printed twice. `modelFamilySection()` writes the sentence those two owe a reader and is written
+only where every figure is level. Two sentences that were false on such a pair are fixed: the pay-back paragraph named a winner where the table printed a draw at all five
+levels, and the memory section offered a speed and an API bill to weigh that were one figure twice. Reading those two off the printed cells rather than off the data
+behind them turned up five existing cross-family pages wrong the other way, each now naming what does differ. `checkFamilyMemoryPairs()` holds the rule and the section both
+ways; `checkTwoColumnClaims()` reads all 154 of those sentences back against the cells they are about. Straight to main. Verified: 479 tests with 10 added, typecheck and
+validate clean, the whole build with build:functions, 364 pages every guard passing, 4 added and none retired of 48 redated, all four read rendered; 15 mutations, 11 caught
+with the control passing, two inert on today's data and the last a repetition no guard can judge. Watch done: Whittle-Next-27B-A3B is a candidate, with a new quantisation
+label and a cache that is two kinds at once; Supra2.5-Pro and DFM-Mimir are out; the v5.0.1 count holds at 12 of 54. Next: the ceiling-note guard.
 
 ### 2026-11-15 — Olmo 3.1 32B Think is priced here, and the thinking is output the machine has to generate
 The top backlog item's named candidate is a row. **Olmo 3.1 32B Think**, Ai2's reasoning sibling to yesterday's row and the same machine decision to the byte: the same

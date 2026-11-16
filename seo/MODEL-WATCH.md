@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-15
+Last checked: 2026-11-16
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,50 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-16 · Whittle-Next-27B-A3B has a four-bit file today, and its cache is two kinds at once
+
+**Whittle-Next-27B-A3B is a candidate, and a new quantisation label with it.** whittleOrg published
+`Whittle-Next-27B-A3B-v4.4-NVFP4.gguf` today, **17,094,118,432 bytes = 17.09 GB**, which its card states as
+15.92 GiB at 4.96 bits a parameter, quantised from the v4.4 Q8_0 GGUF a third party publishes. The base is a
+distillation of Qwen3.6-35B-A3B with per-layer embeddings and an n-gram table, **27,568,288,896 parameters**
+under `safetensors.total`, **Apache 2.0** on both repositories. Its `config.json` is unusually complete:
+40 layers at a `full_attention_interval` of 4, so 10 full-attention layers to 30 `linear_attention`, 2 KV heads
+of 256 on the full ones, a DSA-style indexer beside them at 4 heads of 128 with 1 KV head, 180 experts routing
+8 a token, and `max_position_embeddings` 262,144.
+What is open is the cache, and it is the whole of the work: 30 of the 40 layers keep a recurrent state that does
+not grow with the window, the 10 that do are 2 heads of 256, and the indexer holds keys of its own, so the row
+needs the reading GLM-5.3-SLIM and Raon-1 nano each got before a figure can stand. Active parameters are the
+card's A3B label and no config field states them. Nobody rents it and Artificial Analysis has not placed it, so
+a stand-in and a null score. `NVFP4` would be this site's ninth quantisation label.
+[the weights](https://huggingface.co/whittleOrg/Whittle-Next-27B-A3B),
+[the config](https://huggingface.co/whittleOrg/Whittle-Next-27B-A3B/raw/main/bf16-v4.3/config.json),
+[the NVFP4 GGUF](https://huggingface.co/whittleOrg/Whittle-Next-27B-A3B-NVFP4-GGUF).
+
+**Two names out, both on their own ground.** **Supra2.5-Pro-Instruct** (SupraLabs, today) is 67,028,096
+parameters — the files are named `Supra2.5-65M` — against the 1.708B of the smallest row here, so no machine
+decision turns on it. **DFM-Mimir-v1.8** (Danish Foundation Models, 2026-11-09) is 1.79B and Apache 2.0, and
+`model_type` is `hrm_text`, a prefix-LM neither llama.cpp nor MLX loads; the repository publishes safetensors
+and no quantised build, so there is no four-bit file to price.
+[Supra2.5-Pro-Instruct](https://huggingface.co/SupraLabs/Supra2.5-Pro-Instruct),
+[DFM-Mimir-v1.8](https://huggingface.co/danish-foundation-models/DFM-Mimir-v1.8).
+
+**The v5.0.1 count holds at 12 of the 54.** Read off the leaderboard's own model data today: Gemma 4 31B, Qwen3.8
+27B, Mistral Small 4, Muse Glimmer, Inkling Small, Granite 4.2 8B, Nemotron 3.5 Lightning, GLM-5.3-Flash, MiniMax
+M3.1 Flash, Beam 1.0, Qwen3.8 Flash Next and Ling 3.1 flash carry one, and the other 42 read null. Both Olmo rows
+read null there too, as the entries below have them, and Nanbeige4.3 33B's 20.41 is the row this site leaves
+unscored, as the backlog has it. **Tencent Hy4** appears on that leaderboard at 34.56 and has no weights on
+Tencent's author feed, which is where the entries below leave it, past the 384 GB the roomiest machine here holds.
+
+**Nothing else new has weights.** Hugging Face's newest text-generation feed for today is finetunes and GGUF
+conversions of models already here or already ruled out; the trending feed's newest entries are Edge0's 145B and
+120B builds, **KLM-1.6**, **LongCat-2.5** and **Qwen3.8-27B-DSpine-b16**, all with rulings of their own, and
+**MiniMax-H3-Image-PE**, which is the prompt encoder of an image model and out on kind with the rest of H3.
+**SenseNova-Loop-9B-Preview**, **Nanbeige4.3 33B**, **Inkling 2 Small**, **Dory 1.0 4B**, **GLiDE-9B**,
+**MiMo-V2.6-Flash**, **Kolibri 1**, **Apodex 1.1 Mini**, **S5-nano**, **TwIL-8B**, **Air-26B-A4B**,
+**Hydrogen-1.0**, **Axion-1.0-35B**, **Kimi K3.1 Pro**, **ERNIE-5.5-Flash-Base** and **RWKV7-G1l** are unchanged.
+Searched: the queries this file lists, Hugging Face's newest, trending and most-downloaded text-generation feeds,
+the author feeds for Liquid, MiniMax, Tencent and the three new names above, and a November release roundup.
 
 ### 2026-11-15 · Olmo 3.1 32B Think is a row, and the thinking is where the cost is
 
