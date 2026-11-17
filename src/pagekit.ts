@@ -1156,23 +1156,61 @@ export function maxContextNote(m: Model): string | null {
 }
 
 /**
+ * The context figure a note opens with, read in tokens, or null where it opens
+ * with words. A note is written the way a model card writes its ceiling, so the
+ * figure at the head of one is "256k", "1M", "32k" or the token count itself,
+ * sometimes behind an "up to" or a tilde.
+ */
+function noteOpeningFigure(note: string): { tokens: number; after: string } | null {
+  const open = /^(?:up to|about|around|roughly|~)?\s*(\d[\d.,]*)\s*([kKmM])?(?:\s*tokens?)?/.exec(note);
+  if (!open) return null;
+  const count = Number(open[1].replace(/,/g, ''));
+  if (!Number.isFinite(count) || count <= 0) return null;
+  const unit = open[2]?.toLowerCase();
+  const tokens = unit === 'k' ? count * 1024 : unit === 'm' ? count * 1024 * 1024 : count;
+  return { tokens, after: note.slice(open[0].length) };
+}
+
+/**
  * Why a row's ceiling note cannot be printed as it stands, or null where it can.
  *
- * Two mistakes, neither visible to a rule that only asks whether the words on
- * the page came out of the data. A note that is nothing but a figure reads as
- * the ceiling it sits beside, so one that differs from it contradicts the
- * number in front of it: "256k tokens (1M)". And a ceiling whose note is gone
+ * Three mistakes, none of them visible to a rule that only asks whether the
+ * words on the page came out of the data. A note that is nothing but a figure
+ * reads as the ceiling it sits beside, so one that differs from it contradicts
+ * the number in front of it: "256k tokens (1M)". A ceiling whose note is gone
  * prints bare, which is the right page for a plain ceiling and the wrong one
  * for the sixteen that need a word, so the note is required on every row and a
  * plain ceiling states its own figure, the way forty of them do.
+ *
+ * And the figure a note opens with is read against the ceiling in front of it
+ * however the note goes on, which is the half the bare-figure test missed:
+ * "128k tokens (256k native)" says the model reaches twice what the page just
+ * said it does, and a corrected ceiling with its note left behind prints
+ * exactly that. So the opening figure has to be the ceiling again, which is the
+ * restatement the line above strips, or smaller than it and called the native
+ * window in so many words, the way the four Qwen3 rows say 32k natively under a
+ * config that counts 40,960 positions. Larger than the ceiling it cannot be.
+ * What this does not reach is a ceiling raised with a native figure left under
+ * it: "512k tokens (256k native)" is the shape those four rows truthfully have,
+ * and nothing on the page can tell a stale one from a real one.
  */
 export function ceilingNoteFault(m: Model): string | null {
   if (m.max_context_tokens == null) return null;
   const note = m.max_context_note?.trim();
   if (!note) return 'a ceiling needs a note; a row with nothing to add states its own figure, which prints as the figure alone';
+  const ceiling = ctxLabel(m.max_context_tokens);
   const rest = maxContextNote(m);
   if (rest != null && /^(?:up to |about |around |~)?[\d.,]+\s*[kKmM]?\s*(?:tokens)?$/.test(rest)) {
-    return `the note adds "${rest}" to a ceiling of ${ctxLabel(m.max_context_tokens)} tokens, and a bare figure beside the ceiling can only be read as the ceiling`;
+    return `the note adds "${rest}" to a ceiling of ${ceiling} tokens, and a bare figure beside the ceiling can only be read as the ceiling`;
+  }
+  const open = noteOpeningFigure(note);
+  if (open && ctxLabel(open.tokens) !== ceiling) {
+    if (open.tokens > m.max_context_tokens) {
+      return `the note opens on ${ctxLabel(open.tokens)}, past the ceiling of ${ceiling} tokens printed in front of it, so the line says the model reaches two different lengths`;
+    }
+    if (!/^\s+nativ(?:e|ely)\b/i.test(open.after)) {
+      return `the note opens on ${ctxLabel(open.tokens)} against a ceiling of ${ceiling} tokens without calling it the native window, so the shorter figure reads as the ceiling restated and contradicts it`;
+    }
   }
   return null;
 }

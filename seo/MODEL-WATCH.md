@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-16
+Last checked: 2026-11-17
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,56 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-17 · Maxwell-V1-Flash has a four-bit file and no runtime that loads it
+
+**Maxwell-V1-Flash is a candidate held by its runtime, not by its figures.** It is the top trending
+text model on Hugging Face today, published 2026-10-13 by the Maxwell team: **36,810,559,422 parameters**
+under `safetensors.total`, the card's own label being 35B total and 3B active a token excluding embeddings,
+**Apache 2.0**, pre-trained on ~26T multilingual tokens, and a tokenizer built for Thai, Lao, Myanmar, Khmer
+and Shan as much as for CJK. The cache is ordinary for once: the card says the block-sparse attention bounds
+what each KV group attends to while "the full-history KV cache stays available", and the config gives 45 layers,
+4 KV heads of 128, so a token costs what a 4-head GQA costs. `max_position_embeddings` is 524,288 against the
+card's 256K, which is the Qwen-shaped split a ceiling note has to say.
+**What stops it is that nothing a reader has runs it.** AtomicChat published the first GGUF today, 20.79 GB at
+`AD-Q4_K-IQ4_XS` (20,785,117,536 bytes) up to 38.40 GB at Q8_0, and its own card says it needs their
+`maxwell-moe-port.patch` on llama.cpp `d3c3e242c`: "Stock llama.cpp, LM Studio and Ollama do not load these
+files yet." This site prices a machine against what it can run, so a file that waits on an unmerged port is not
+a row yet. Re-check whether llama.cpp has merged Maxwell support; when it has, the row is mostly written, and
+the AD labels, which quantise the routed experts alone against an importance matrix, would be a new
+quantisation label with a sentence of its own.
+[the weights](https://huggingface.co/maxwell-model/Maxwell-V1-Flash),
+[the config](https://huggingface.co/maxwell-model/Maxwell-V1-Flash/raw/main/config.json),
+[the GGUF](https://huggingface.co/AtomicChat/Maxwell-V1-Flash-GGUF).
+
+**SenseNova-Loop-9B has GGUF and MLX builds now, and the reason it is out has not changed.** Four MLX builds
+and two GGUF conversions appeared today, so the "no GGUF (2026-10-31)" half of its ruling is spent. The other
+half stands: it runs layers 4 to 28 twice over, so this site's bandwidth estimate would read about double the
+speed it reaches, and that is what a row needs settling before it can be priced.
+[a GGUF](https://huggingface.co/drofn/SenseNova-Loop-9B-8GB-GGUF).
+
+**Three out on their own ground.** **Lara-4-Mini-Base** (Translated, 2026-11-11) is 7,281,684,672 parameters,
+Apache 2.0 over Qwen and DeepSeek licences, and a base model with no instruct build and no quantised file; its
+`lara_mini` gated-delta-net hybrid is custom code. **BotPsy-0.8B** (qvac, 2026-11-10) is 852,985,920 parameters,
+half the 1.708B of the smallest row here, so no machine decision turns on it, the same ground Supra2.5-Pro was
+out on. **WVY-Blender-5m** (Starpower, 2026-11-12) is a 5M-parameter Blender scene writer with a `model.py` and
+no weights format a runtime here loads.
+
+**The v5.0.1 count reads 14 of the 54 today, and two of them are new to this file.** Read by matching the site's
+scored rows against the leaderboard's own model data, taking the highest-scoring reasoning setting of each:
+gpt-oss-120b at 3.82 and Gemma 4 E4B at 4.78 carry one and were not among the 12 the entry of 2026-11-16 listed.
+The other 12 are as that entry has them. Forty rows still read null, so the switch waits where the backlog
+leaves it.
+
+**Nothing else new has weights.** Hugging Face's newest text-generation feed for today is finetunes, MLX and GGUF
+conversions of models already here or already ruled out, among them two Qwen3.8 27B draft models and a
+Qwen3.5 122B-A10B W4A16 build. The trending feed's other new names are Edge0's 145B and 120B builds, **KLM-1.6**,
+**LongCat-2.5** and **Qwen3.8-27B-DSpine-b16**, all with rulings of their own. **Whittle-Next-27B-A3B**,
+**Nanbeige4.3 33B**, **Inkling 2 Small**, **Dory 1.0 4B**, **GLiDE-9B**, **MiMo-V2.6-Flash**, **Kolibri 1**,
+**Apodex 1.1 Mini**, **S5-nano**, **TwIL-8B**, **Air-26B-A4B**, **Hydrogen-1.0**, **Axion-1.0-35B**,
+**Kimi K3.1 Pro**, **ERNIE-5.5-Flash-Base** and **RWKV7-G1l** are unchanged. Searched: the queries this file
+lists, Hugging Face's newest, trending and most-downloaded text-generation feeds, the author feeds behind the
+four new names, the Artificial Analysis leaderboard's model data, and a November release roundup.
 
 ### 2026-11-16 · Whittle-Next-27B-A3B has a four-bit file today, and its cache is two kinds at once
 

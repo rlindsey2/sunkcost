@@ -1473,6 +1473,43 @@ describe('what memory buys once two machines hold the same models', () => {
     for (const m of data.models) expect([m.id, ceilingNoteFault(m)]).toEqual([m.id, null]);
   });
 
+  it('refuses a ceiling note whose opening figure is past the ceiling, however the note goes on', () => {
+    // One word past the figure walked through the bare-figure test above: it reads the
+    // whole note, so "256k native" against a ceiling of 128k was a note with something
+    // to add rather than the ceiling contradicted. That is what a corrected ceiling with
+    // its note left behind prints, and 72 of the 74 rows carry a note that opens on a figure.
+    const fault = (tokens: number | null, note: string | null) =>
+      ceilingNoteFault({ ...data.models[0], max_context_tokens: tokens, max_context_note: note });
+    expect(fault(131072, '256k native')).toMatch(/past the ceiling/);
+    expect(fault(131072, '256k natively; up to 1M with YaRN')).toMatch(/past the ceiling/);
+    expect(fault(65536, '128k, which the config reaches by scaling the positions')).toMatch(/past the ceiling/);
+    expect(fault(262144, '1M claimed; nobody has the memory for that locally')).toMatch(/past the ceiling/);
+    expect(fault(262144, '512k input')).toMatch(/past the ceiling/);
+    // and below the ceiling it has to say it is the native window, since that is the only
+    // reading on which a shorter figure beside a longer one is not the ceiling restated wrong
+    expect(fault(262144, '128k; up to 1M with YaRN')).toMatch(/native window/);
+    expect(fault(262144, '128k claimed')).toMatch(/native window/);
+    expect(fault(40960, '32k natively; 128k with YaRN')).toBeNull();
+    expect(fault(1048576, '512k native')).toBeNull();
+    // the ceiling restated is the restatement the printed note strips, whatever follows it
+    expect(fault(131072, '128k input')).toBeNull();
+    expect(fault(10485760, '10M claimed; nobody has the memory for that locally')).toBeNull();
+    expect(fault(202752, '198k')).toBeNull();
+    // a note that never opened on a figure is prose and is left alone
+    expect(fault(131072, 'the prompt and the generated response share it')).toBeNull();
+    // every row whose note opens on a figure is held to its ceiling: move one and the
+    // note left behind says so. Raising a ceiling over a native figure is the one shape
+    // this cannot judge, because it is the shape the Qwen3 rows truthfully have.
+    let held = 0;
+    for (const m of data.models) {
+      if (m.max_context_tokens == null) continue;
+      if (!/^\s*(?:up to|about|around|roughly|~)?\s*\d/.test(m.max_context_note ?? '')) continue;
+      held++;
+      expect([m.id, ceilingNoteFault({ ...m, max_context_tokens: m.max_context_tokens / 2 })]).not.toEqual([m.id, null]);
+    }
+    expect(held).toBeGreaterThan(60);
+  });
+
   it('opens the calculator on the configuration the length was measured at', () => {
     // Machine pages and model pages both print the longest context a machine holds
     // a model at and make that figure the way in. The link is only honest if the calculator reads

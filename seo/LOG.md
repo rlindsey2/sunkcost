@@ -45,13 +45,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       bandwidth estimate would read about double the speed it reaches, and it has no GGUF (2026-10-31), and
       **Dory 1.0 4B** is gated. Until the watch finds a third, a run is better spent on a guard below.
 
-- [ ] **A ceiling note that says one word past its figure escapes the guard built for it.** `ceilingNoteFault()`
-      refuses a note that is nothing but a figure, so "256k tokens (1M)" is caught; "256k native" against a
-      ceiling of 128k is not, because the bare-figure test reads the whole note and "native" sits past the
-      figure. 22 rows carry a note of that shape, so a corrected ceiling with its note left behind would print
-      the contradiction on any of them. The fix is to read the figure a note opens with, whatever follows it,
-      and refuse one that disagrees with the ceiling beside it. Caught by mutation on 2026-11-13.
-
 - [ ] **Nine of the 25 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
       Gemma 4 builds whose own GGUF repositories publish none this site cites. Each needs the repository its
@@ -115,6 +108,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-17 — A ceiling note is read against the figure in front of it, whatever word follows
+The backlog's ceiling-note item is done. `ceilingNoteFault()` now reads the figure a note opens with, whatever comes after it, and holds it against the ceiling printed
+beside it: past the ceiling it is refused outright, since "128k tokens (256k native)" says the model reaches two lengths at once; below it, it has to call itself the
+native window in so many words, which is the only reading on which a shorter figure beside a longer one is not the ceiling restated wrong. That keeps the four Qwen3 rows,
+which say 32k natively under a config counting 40,960 positions, and refuses the shape a corrected ceiling leaves behind. The item's count of 22 was low: 72 of the 74
+rows carry a note that opens on a figure, and the test moves every one of their ceilings to prove the note left behind says so. The shape it cannot judge is a ceiling
+raised over a native figure, which is what those four rows truthfully have, and the function says so. Straight to main, and no visitor-facing text changed: the guard
+refuses data rather than writing words, and every page's ceiling cell renders byte for byte as before.
+Verified: 480 tests with 1 added, typecheck and validate clean, the whole build with build:functions, 364 pages every guard passing and none redated; four mutations,
+all four caught with the control passing — raon-1-nano's ceiling halved and Olmo 3.1 Instruct's doubled with their notes left, and the guard's own two branches
+dropped in turn. Watch done: Maxwell-V1-Flash is the top trending model and has a 20.79 GB four-bit file that only a patched llama.cpp loads, so not a row yet;
+Lara-4-Mini-Base, BotPsy-0.8B and WVY-Blender-5m are out; SenseNova-Loop has GGUF now and still runs its middle layers twice; v5.0.1 reads 14 of 54.
+Next: the `n_layers` item, the other guard a mutation walked through.
 
 ### 2026-11-16 — Two builds of one family at one size are a page, and on two of them nothing in the arithmetic separates them
 The backlog's Olmo item is done, and as a rule rather than a pair. `familyMemoryPairs()` is the fourth head-to-head rule: each model against the one of its own family
