@@ -1,0 +1,45 @@
+name: Checks
+
+# The deploy workflow tests main after a push, which is too late to stop anything.
+# These are the same checks one commit earlier, on the pull request, plus the two
+# the deploy does not run: the type check and the sitemap-date ledger.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # validate data, render share cards, generate the static pages with every guard
+      # the build runs over them, bundle the app, write the share pages and functions
+      - run: npm run build
+        env:
+          # "on" routes share pages through functions/ so a link's own usage gets its own card
+          DYNAMIC_CARDS: ${{ vars.DYNAMIC_CARDS }}
+      - name: The sitemap date ledger matches the pages this build wrote
+        # seo/page-dates.json is the one file the build writes that is committed, and a
+        # page publishes a lastmod only while it still hashes to what is recorded there.
+        # A page changed without its ledger entry deploys and crawls fine, so the diff
+        # the build leaves behind is the only sign of it.
+        run: |
+          if ! git diff --quiet; then
+            echo "The build rewrote a committed file. Run npm run build and commit what it changes."
+            git diff --stat
+            git diff
+            exit 1
+          fi
