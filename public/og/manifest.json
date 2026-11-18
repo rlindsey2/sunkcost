@@ -1145,6 +1145,7 @@
   "mac-studio-m3-ultra-512|raon-1-nano-q4": "/og/mac-studio-m3-ultra-512--raon-1-nano-q4.png",
   "mac-studio-m3-ultra-512|olmo-3.1-32b-instruct-q4": "/og/mac-studio-m3-ultra-512--olmo-3.1-32b-instruct-q4.png",
   "mac-studio-m3-ultra-512|olmo-3.1-32b-think-q4": "/og/mac-studio-m3-ultra-512--olmo-3.1-32b-think-q4.png",
+  "mac-studio-m3-ultra-512|sage-s2.1-flash-q4": "/og/mac-studio-m3-ultra-512--sage-s2.1-flash-q4.png",
   "nvidia-dgx-spark-128|llama-3.1-8b-q4": "/og/nvidia-dgx-spark-128--llama-3.1-8b-q4.png",
   "nvidia-dgx-spark-128|llama-3.1-8b-q8": "/og/nvidia-dgx-spark-128--llama-3.1-8b-q8.png",
   "nvidia-dgx-spark-128|qwen3-8b-q4": "/og/nvidia-dgx-spark-128--qwen3-8b-q4.png",

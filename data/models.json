@@ -3177,12 +3177,13 @@
     "capability_note": "Not yet rated: released after our last ratings pass. Ties Qwen3.8 Flash for the strongest open model, but needs a 256 GB machine.",
     "cloud_equivalent": {
       "name": "GLM-5.3-Flash",
-      "input_price_per_mtok": 0.0513,
-      "output_price_per_mtok": 0.0701,
+      "input_price_per_mtok": 0.0399,
+      "output_price_per_mtok": 0.0784,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/z-ai/glm-5.3-flash",
       "is_exact_match": true,
-      "checked": "2026-10-29"
+      "checked": "2026-11-18",
+      "note": "Relace, the cheapest of 42 active endpoints on both prices, re-read 2026-11-18. The endpoint behind the previous figure of $0.0513 and $0.0701 is no longer the cheapest on either."
     },
     "license": "MIT",
     "max_context_tokens": 1048576,
@@ -4337,5 +4338,77 @@
       "https://openrouter.ai/google/gemma-4-31b-it"
     ],
     "TODO": "Capability ratings needed. Parameters are the 32,233,522,176 the repository's model.safetensors.index.json counts under total_parameters; Ai2's card and the GGUF's general.size_label say only 32B. The 19.48 GB is bartowski's Q4_K_M file, 19,482,034,656 bytes, 4.84 bits a parameter. The sliding window survives the conversion: the file declares general.architecture olmo2 and carries olmo2.attention.sliding_window 4096 with a 64-entry pattern, 48 local layers to 16 global."
+  },
+  {
+    "id": "sage-s2.1-flash-q4",
+    "display_name": "Sage S2.1 Flash",
+    "family": "Sage",
+    "generation": "current",
+    "params_b": 321.32,
+    "active_params_b": 18.0,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 193.81,
+    "kv_cache_gb_per_8k": 0.139,
+    "architecture": {
+      "n_layers": 45,
+      "n_kv_heads": 64,
+      "head_dim": null,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 0,
+      "full_attention_layers": 11,
+      "bytes_per_token_full": 1538,
+      "note": "34 of 45 layers use linear attention with a fixed state; the other 11 use latent attention with no RoPE part (1,024 B) plus a sparse-attention indexer (514 B). The config states the same 45 layers, the same 512-wide latent and the same 128-wide indexer as GLM-5.3-Flash, field for field. Note this is the figure for vLLM or SGLang: the reference Transformers code expands the latent before caching and uses far more."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 0.65,
+      "projector_bytes": 652829216,
+      "projector_file": "Sage-S2.1-Flash.mmproj-Q8_0.gguf",
+      "projector_source_url": "https://huggingface.co/mradermacher/Sage-S2.1-Flash-GGUF",
+      "source_url": "https://huggingface.co/internlm/Sage-S2.1-Flash",
+      "checked": "2026-11-18"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. A scientific model from Shanghai Artificial Intelligence Laboratory, built for work that runs several rounds of analysis and checking. It reads images and video, and projectors published beside it feed it molecular graphs, crystal structures and protein sequences, none of which is in the file sizes here. Its config.json matches GLM-5.3-Flash's field for field, down to the 45 layers, the 288 experts with eight of them running a token and the 24-layer vision tower, so the memory arithmetic on this page is that model's. The speeds here are worked out from memory bandwidth, the way every estimate on this site is.",
+    "cloud_equivalent": {
+      "name": "GLM-5.3-Flash",
+      "input_price_per_mtok": 0.0399,
+      "output_price_per_mtok": 0.0784,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/z-ai/glm-5.3-flash",
+      "is_exact_match": false,
+      "checked": "2026-11-18",
+      "stand_in": true,
+      "stand_in_for": "glm-5.3-flash-ud-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Sage S2.1 Flash by the token: it is on none of OpenRouter's 478 models today. It carries GLM-5.3-Flash's architecture field for field and the same 321,323,031,390 parameters to the digit, so it is priced as that: $0.0399 and $0.0784 per million tokens at Relace, the cheapest of 42 active endpoints on both prices."
+    },
+    "license": "MIT",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-18",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/internlm/Sage-S2.1-Flash",
+      "https://huggingface.co/internlm/Sage-S2.1-Flash/raw/main/config.json",
+      "https://huggingface.co/mradermacher/Sage-S2.1-Flash-GGUF",
+      "https://huggingface.co/zai-org/GLM-5.3-Flash/raw/main/config.json",
+      "https://openrouter.ai/z-ai/glm-5.3-flash"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 321,323,031,390 the repository's safetensors index reports; weights are mradermacher's static Q4_K_M, 193,813,823,936 bytes across five parts, read 2026-11-18."
   }
 ]

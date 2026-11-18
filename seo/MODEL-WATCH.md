@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-17
+Last checked: 2026-11-18
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,48 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-18 · Sage S2.1 Flash is a row, and its config is GLM-5.3-Flash's field for field
+
+**`sage-s2.1-flash-q4` is in `data/models.json`.** Shanghai Artificial Intelligence Laboratory published
+[Sage-S2.1-Flash](https://huggingface.co/internlm/Sage-S2.1-Flash) on 2026-11-15 under `internlm`, **MIT** by the
+README's own licence section, and the safetensors index reports **321,323,031,390 parameters** across 120 shards, which is
+GLM-5.3-Flash's own total to the digit.
+Its `config.json`, read today, is
+[GLM-5.3-Flash's](https://huggingface.co/zai-org/GLM-5.3-Flash/raw/main/config.json) field for field on every
+number the memory arithmetic reads: 45 layers, 34 of them linear attention and 11 `deepseek_sparse_attention`,
+`kv_lora_rank` 512, `qk_rope_head_dim` 0, `index_head_dim` 128, 288 routed experts with 8 running a token, the
+same 154,880-token vocabulary, `max_position_embeddings` 1,048,576 and the same 24-layer `glm5_next_vision`
+tower. So the cache is that row's to the layer, 0.139 GB per 8k, and the 18B active a token carries over with
+it. Weights are mradermacher's static Q4_K_M,
+[**193,813,823,936 bytes**](https://huggingface.co/mradermacher/Sage-S2.1-Flash-GGUF) across five parts, 4.83
+bits a parameter, with an `mmproj-Q8_0` of 652,829,216 bytes as the projector. Nobody rents it: it is on none of
+OpenRouter's 478 models today, and Artificial Analysis 404s on both slug forms with an independent write-up of
+2026-11-16 finding no entry either, so the score is null with a TODO and the price is GLM-5.3-Flash's as a
+stand-in, re-read today at $0.0399 and $0.0784 per million at Relace, cheapest of 42 active endpoints on both. **At 193.81 GB only the two 512 GB Mac Studios hold it**, which is
+what its page says.
+
+**Tencent Hy4-flash is the next candidate and the runtime is what holds it.**
+[tencent/Hy4-flash](https://huggingface.co/tencent/Hy4-flash) landed 2026-11-17, 220B by the trending list's
+label, and Tencent's own compression team published
+[AngelSlim/Hy4-flash-GGUF](https://huggingface.co/AngelSlim/Hy4-flash-GGUF) a day earlier: Q4_K_M at
+168,347,133,632 bytes over two shards, IQ2_AH at 134.996 GB, and an `mmproj` of 1,044,397,440 bytes. Two things
+stop it today. The repository ships `patch/hy4-flash-mac-minimal.patch` and `patch/hy4-flash-spark.patch`, so
+like Maxwell-V1-Flash it waits on a runtime a reader has. And its attention is a compressed indexer with
+`compressed_indexer_compress_ratio` 4 and `engram` layers carrying ten-million-entry vocabulary heads, which is
+not a geometry this site's cache formula can state honestly yet. Read the config properly before writing a row.
+
+**Out today.** [higurashi-ai/Haru-4B](https://huggingface.co/higurashi-ai/Haru-4B), the top trending text model
+at 5,270,000,897 parameters and Apache 2.0, is a full-duplex **speech-to-speech** model: a 24 kHz codec and a
+diffusion head around a Qwen3.5 text core, priced by audio rather than by tokens. Not this site's subject, the
+same ruling as Fugu. `nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB` is the 4 GB build of a family already priced
+here and was already noted on 2026-10-25. SenseNova-Loop-9B has dropped its preview label and still runs its
+middle layers twice, so the bandwidth estimate would read about double the speed it reaches.
+
+**Intelligence Index v5.0.1 was not advanced today.** The leaderboard page this environment fetches no longer
+names the index version in its own text and its FAQ counts 53 open-weights models of 120 without naming them,
+so the count stands where 2026-11-17 left it, 14 of 54 rows, and `superseded_by.scored_here` is unchanged. Sage
+joins unscored, so the scored count does not move.
 
 ### 2026-11-17 · Maxwell-V1-Flash has a four-bit file and no runtime that loads it
 

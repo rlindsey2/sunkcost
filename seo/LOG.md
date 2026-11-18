@@ -40,10 +40,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **The queue is down
-      to two and both are blocked**: **SenseNova-Loop-9B-Preview** runs layers 4 to 28 twice over, so this site's
-      bandwidth estimate would read about double the speed it reaches, and it has no GGUF (2026-10-31), and
-      **Dory 1.0 4B** is gated. Until the watch finds a third, a run is better spent on a guard below.
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Every candidate in
+      the queue is blocked today.** **Whittle-Next-27B-A3B** (2026-11-16) is the one to re-read first: its figures
+      are there and its cache is two kinds at once. **Maxwell-V1-Flash** and **Tencent Hy4-flash** both ship a
+      four-bit file that needs an unmerged llama.cpp patch, and Hy4-flash's compressed indexer is not a geometry
+      this site can state yet. **SenseNova-Loop-9B** runs its middle layers twice, so the bandwidth estimate would
+      read about double the speed it reaches, and **Dory 1.0 4B** is gated. While that holds, a run is better spent
+      on a guard below.
 
 - [ ] **Nine of the 25 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -108,6 +111,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-18 — Sage S2.1 Flash is priced, and its config is GLM-5.3-Flash's field for field
+`sage-s2.1-flash-q4` is in `data/models.json`: Shanghai AI Laboratory's 321B scientific multimodal model, MIT, 1M context, weights 193.81 GB as
+mradermacher's static Q4_K_M over five parts (193,813,823,936 bytes, 4.83 bits a parameter) with a 0.65 GB `mmproj-Q8_0` projector beside them,
+every figure read today off the repository, the GGUF listing or `config.json`. The cache needed no new research: Sage's config is GLM-5.3-Flash's
+on every field the arithmetic reads, 45 layers with 11 sparse-attention, `kv_lora_rank` 512, `index_head_dim` 128, 288 experts with 8 running a
+token and the same vision tower, so 0.139 GB per 8k and 18B active carry over and the page says so in words. Nobody rents it, on OpenRouter's 478
+models and two 404s at Artificial Analysis, so the score is null with a TODO and the price is GLM-5.3-Flash's as a stand-in; that row's own price
+was re-read in the same edit, $0.0399 and $0.0784 at Relace, cheapest of 42 active endpoints on both, against a 2026-10-29 pair whose endpoint is
+cheapest on neither now. At 193.81 GB nothing still sold holds it, and the page opens on that. Straight to main. Verified: 480 tests, typecheck and
+validate clean, the whole build with build:functions, 366 pages every guard passing, 2 added (the page and the Tencent Hy3 head-to-head the memory
+rule cut, 192.90 GB against 194.37) and none dropped, both read rendered; five mutations of the row all caught, control passing. Watch done:
+Hy4-flash and Maxwell-V1-Flash wait on an unmerged llama.cpp patch, Haru-4B is speech and out, v5.0.1 not advanced. Next: the `n_layers` item.
 
 ### 2026-11-17 — A ceiling note is read against the figure in front of it, whatever word follows
 The backlog's ceiling-note item is done. `ceilingNoteFault()` now reads the figure a note opens with, whatever comes after it, and holds it against the ceiling printed
@@ -260,31 +276,3 @@ start on one machine; it now names both. Straight to main. Verified: 459 tests, 
 passing, 16 added and 4 retired against the ledger with a 301 each, two of the new pages read rendered, 4 mutations run and 4 caught, one of them by the guard it prompted.
 Watch done: nothing addable. Nanbeige4.3 33B has a score now and it is on v5.0, so it goes in with that item; TwIL-8B is a new candidate on a licence read; Drex Max v1 is
 out on kind. Next: the v5.0 re-read, which is now two rows' worth of reason as well as 68.
-
-### 2026-11-06 — Ripple 65B Preview is priced here, and a dense 65B holds a million tokens because 64 of its 80 layers stop at 1,024
-The top backlog item wanted the best-sourced candidate as a row, and every field was read today: 80 layers at 8 KV heads by 128, `layer_types` four `sliding_attention` at a
-1,024-token window to one `full_attention` for 64 windowed to 16 growing; `safetensors.total` 64,782,689,360, dense by the card; Apache 2.0 off the repository. The four-bit is
-two quantisers' figure, 38,798,820,576 bytes at AtomicChat and 38,798,813,312 at mrfakename, their Q8_0 totals the same 7,264 apart, so the gap is metadata rather than weights:
-38.80 GB, 4.79 bits a parameter. That window ratio is the page's point, 0.805 GB per 8k against Llama 3.3 70B's 2.684 at the same heads, so the whole 1M window costs 68.99 GB
-and Ricursive's claim that it fits an NVIDIA DGX Spark holds at every window, 107.79 against 119.5 usable. The ceiling is the card's 1Mi rather than the config's 2M, which
-long-context training used and GMI Cloud does not serve. Somebody rents it now, which yesterday's watch could not say: $0.20 / $0.60, one endpoint, so exact match rather than
-stand-in. Artificial Analysis 404s, so the score is null with a TODO and no pair rule reaches it, and 250 tok/s on 2xB200 at batch 8 is no throughput row. The build stopped on
-`checkCardPrices()` and was right to: this row splits the Framework Desktop 64GB and RTX 5090 fit counts, which turned the same-money description into one naming the 5090
-beside its $1,999, so that branch now gives the counts a shape pricing nothing, on all three pairs with a card. `validate-data.ts` gained the guard the row's note wanted: where
-both layer groups are counted the cache ignores `n_layers`, so 80 could read 60 and still agree. Straight to main. Verified: 458 tests, typecheck and validate clean, the full
-build with build:functions, 338 pages every guard passing, 1 added and 203 redated with none dropped, the page read rendered twice, 14 mutations run and 13 caught, the 14th
-stripped by the renderer. Oldest two entries archived. Watch done: Arete-27B is a Qwen3.8-27B finetune with no GGUF yet, Kimi-K3.1-Pro out on size at 2.78T. Next: Reka Edge 2603.
-
-### 2026-11-05 — Clover 35B-A3B Preview is priced here, and the speed block diffusion is quick at is not the speed this site estimates
-The top backlog item wanted the best-sourced candidate as a row, and every field was read today: 40 layers with `layer_types` alternating three
-linear-attention to one full-attention for 10 full-attention layers, 2 KV heads by 256 and 131,072 tokens off `config.json`; 34,661,350,848
-parameters off the HF API against the card's "approximately 3B active"; Apache 2.0 and the Qwen3.6-35B-A3B base off the repository; and
-22,998,009,248 bytes of DiffuSpace's own Q4_K_M, which its GGUF card states as both 21.42 GiB and 23.00 GB. That geometry is the Qwen3.6 35B-A3B
-row's to the layer, so the cache is 0.168 GB per 8k and the price is that row's as a finetune, the way KAT-Coder's is: $0.05 / $0.70 at Darkbloom,
-cheapest of 11 active endpoints on both prices, re-read today. Nobody rents Clover on either of two reads of OpenRouter's 454 and Artificial
-Analysis 404s on it, so the score is null with a TODO and no pair rule reaches it. The judgement left was block diffusion, and the page answers it
-rather than the estimate doing so: the launch blog's 680 tok/s on a GB300, 515 on an H200 and 101.8 at INT4 on a 16 GB RTX 5070 Ti are machines
-this site does not price, and that card holds neither four-bit of this model, so the page keeps the bandwidth estimate and says in words what it
-assumes, one pass over the active weights a token where a diffusion step can settle more than one. Straight to main. Verified: 458 tests,
-typecheck and validate clean, the full build with build:functions, 337 pages every guard passing, 1 added and 227 redated with none dropped, the
-page read rendered twice, 13 mutations of the row all caught. Watch done: Ripple-65B-Preview is new, well sourced and next.
