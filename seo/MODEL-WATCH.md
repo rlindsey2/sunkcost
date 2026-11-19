@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-18
+Last checked: 2026-11-19
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,37 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-19 · Two new names on the trending feed, and neither has a file a reader can run
+
+**Nothing is addable today.** The trending text feed's new entries are two, and both are out for a
+reason this file has ruled on before.
+
+**Marin-Mochi-535B-A23B** ([open-athena](https://huggingface.co/open-athena/Marin-Mochi-535B-A23B)),
+**535,477,106,688 parameters** with about 22.76B non-embedding active a token, **OpenMDW 1.1**, and a
+262k window on the final checkpoint. Two things rule it out, and the first is the one that matters: it
+is a **base model**, for completions rather than instructions, which is not what this site's pages are
+about. And the repository publishes **BF16 weights only** — no GGUF, no quantised build anywhere that
+cites it — so there is no file whose size could be read, and the BF16 download is near a terabyte
+against the 384 GB the roomiest machine here addresses. If an instruct build arrives with a four-bit
+file, the size is worth re-reading: at Beam 1.0's 4.9 bits a parameter a 535B model lands near 320 GB,
+which the two 512 GB Mac Studios would hold.
+
+**Olala-v1.0-mini-7A1B** ([OVHaiLLM](https://huggingface.co/OVHaiLLM/Olala-v1.0-mini-7A1B-GGUF)),
+published today, 6.8B total and about 1B active, **Apache 2.0**, 32k context, with GGUFs from 6.0 GB at
+Q5_K_M to 13.6 GB at BF16. It is the Maxwell-V1-Flash ruling again: the card says the files need
+**OVHcloud's own llama.cpp fork**, and that stock llama.cpp, Ollama and LM Studio cannot load them. This
+site prices a machine against what it can run, so a file that waits on an unmerged fork is not a row.
+There is also no four-bit build to price: Q5_K_M is the smallest published.
+
+**Maxwell-V1-Flash is still the top trending model and its port is still unmerged.** A search for the
+llama.cpp pull request turns up nothing, so the 2026-11-17 ruling holds. Tencent Hy4-flash and the
+rest of the queue are unchanged. Edge0's 145B NVFP4 and q3k builds are still on the feed and keep the
+2026-10-17 ruling; Apex-35B-V1.0, WVY-Blender-5m, the Nemotron 3.5 Bolt 4 GB build and the uncensored
+DeepSeek V4-Pro and Qwen3.8 conversions are all already ruled out or already priced.
+
+**Intelligence Index v5.0.1 was not advanced today.** Nothing was fetched that moves the count, so it
+stands where 2026-11-17 and 2026-11-18 left it, 14 of 54 rows.
 
 ### 2026-11-18 · Sage S2.1 Flash is a row, and its config is GLM-5.3-Flash's field for field
 

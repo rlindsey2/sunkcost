@@ -3220,6 +3220,10 @@
       "kv_lora_rank": 512,
       "qk_rope_head_dim": 64,
       "kv_bytes_per_token_total": 95232,
+      "kv_layer_groups": [
+        { "layers": 21, "bytes_per_token": 1408 },
+        { "layers": 57, "bytes_per_token": 1152 }
+      ],
       "note": "Latent attention with a sparse-attention indexer beside it. All 78 blocks cache one 512-wide compressed vector plus 64 RoPE dimensions, 1,152 bytes a token; 21 of them compute their own index keys and cache 256 bytes more, and the other 57 share the keys of one that does. That comes to 93 KiB a token, the figure the publisher's own llama.cpp run reports."
     },
     "vision": null,
@@ -3280,6 +3284,11 @@
       "n_kv_heads": 1,
       "head_dim": 512,
       "kv_bytes_per_token_total": 6880,
+      "kv_layer_groups": [
+        { "layers": 21, "bytes_per_token": null, "bytes_per_token_TODO": "The layers that keep one entry per four tokens. The inference code states the ratio each group compresses by and the 6,880 bytes a token the whole model comes to, not what a layer in this group costs on its own." },
+        { "layers": 20, "bytes_per_token": null, "bytes_per_token_TODO": "The layers that keep one entry per 128 tokens; the source states the ratio and not the bytes a token." },
+        { "layers": 2, "bytes_per_token": null, "bytes_per_token_TODO": "The two fixed 128-entry window layers, whose cache stops growing and so costs less a token the longer the context; the source states the window and not a per-token figure." }
+      ],
       "note": "Every layer compresses its cache by a different ratio: 21 layers keep one entry per four tokens, 20 keep one per 128, and two are a fixed 128-entry window. Summed, that is about 6.9 KB a token for the whole model — roughly a thirteenth of what the head counts imply. Read from the repo's own inference code."
     },
     "vision": null,

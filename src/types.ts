@@ -68,6 +68,15 @@ export interface CloudEquivalent {
   stand_in_basis?: 'finetune' | 'nearest_score' | 'nearest_size' | 'base_model';
 }
 
+/** A set of layers that cache alike, in a model whose layers do not all cache the same. */
+export interface KvLayerGroup {
+  /** how many of the model's layers are in this group */
+  layers: number;
+  /** bytes a token each layer in the group holds; null where no source states it */
+  bytes_per_token: number | null;
+  bytes_per_token_TODO?: string;
+}
+
 export interface ModelArchitecture {
   n_layers: number | null;
   n_kv_heads: number | null;
@@ -88,6 +97,13 @@ export interface ModelArchitecture {
    * can each carry their own width.
    */
   kv_bytes_per_token_total?: number | null;
+  /**
+   * The geometry `kv_bytes_per_token_total` was summed over: one group per set of
+   * layers that cache alike. The counts account for every one of `n_layers`, which is
+   * what holds the layer count on a row whose cache is a single whole-model figure,
+   * and where a source states each group's width they multiply out to the total.
+   */
+  kv_layer_groups?: KvLayerGroup[] | null;
   bytes_per_token_full?: number | null;
   bytes_per_token_sliding?: number | null;
   /** layers whose KV cache grows with the full context; defaults to n_layers */

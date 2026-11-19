@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { kvCacheGbPer8kFromArchitecture } from '../src/fit';
-import { ceilingNoteFault } from '../src/pagekit';
+import { ceilingNoteFault, kvTotalGeometryFault } from '../src/pagekit';
 import { CAPABILITY_KEYS, type Hardware, type Model, type Throughput, type Defaults } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -70,6 +70,12 @@ for (const m of models) {
       errors.push(`${m.id}: ${counted} layers are counted as caching (${arch.full_attention_layers ?? 0} full, ${arch.sliding_window_layers ?? 0} windowed) and the model has ${arch.n_layers}`);
     }
   }
+  // A row whose layers do not all cache the same states one figure for the whole model,
+  // and kvCacheGb reads that figure alone: every other architecture field on such a row
+  // moves nothing, so GLM-5.3-SLIM's 78 layers could read 45 and only the note printed
+  // beside the cache on its model page would still say 78. Caught by mutation 2026-11-11.
+  const geometry = kvTotalGeometryFault(m);
+  if (geometry) errors.push(`${m.id}: ${geometry}`);
   const derived = kvCacheGbPer8kFromArchitecture(m);
   if (derived == null) warnings.push(`${m.id}: no architecture; KV cache falls back to kv_cache_gb_per_8k`);
   else if (m.kv_cache_gb_per_8k == null || Math.abs(derived - m.kv_cache_gb_per_8k) / derived > 0.02) {

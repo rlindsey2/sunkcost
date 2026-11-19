@@ -7,6 +7,7 @@ import {
   machinesAtSize,
   maxContextNote,
   ceilingNoteFault,
+  kvTotalGeometryFault,
   machinesThatHold,
   memoryLevels,
   memorySizePath,
@@ -1508,6 +1509,64 @@ describe('what memory buys once two machines hold the same models', () => {
       expect([m.id, ceilingNoteFault({ ...m, max_context_tokens: m.max_context_tokens / 2 })]).not.toEqual([m.id, null]);
     }
     expect(held).toBeGreaterThan(60);
+  });
+
+  it('holds a whole-model cache figure against the layers it is summed over', () => {
+    // Two rows state their cache as one figure because their layers do not cache alike,
+    // and kvCacheGb reads that figure alone: every other architecture field on such a row
+    // moves nothing, so the layer count could drift while the note printed beside the
+    // cache on the model page went on stating the old geometry.
+    const rows = data.models.filter((m) => m.architecture?.kv_bytes_per_token_total != null);
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    for (const m of rows) {
+      expect([m.id, kvTotalGeometryFault(m)]).toEqual([m.id, null]);
+      const a = m.architecture!;
+      // the layer count is load-bearing now: move it and the groups no longer fill it
+      for (const layers of [a.n_layers! - 1, a.n_layers! + 1, Math.round(a.n_layers! / 2)]) {
+        expect([m.id, layers, kvTotalGeometryFault({ ...m, architecture: { ...a, n_layers: layers } })])
+          .not.toEqual([m.id, layers, null]);
+      }
+      // so is the total, against the note that says what the whole model costs a token
+      expect(kvTotalGeometryFault({ ...m, architecture: { ...a, kv_bytes_per_token_total: a.kv_bytes_per_token_total! * 2 } })).toMatch(/reads back|come to/);
+      // and the groups themselves, where a source states each width
+      const groups = a.kv_layer_groups!;
+      if (groups.every((g) => g.bytes_per_token != null)) {
+        const wider = groups.map((g, i) => (i === 0 ? { ...g, bytes_per_token: g.bytes_per_token! + 16 } : g));
+        expect(kvTotalGeometryFault({ ...m, architecture: { ...a, kv_layer_groups: wider } })).toMatch(/come to/);
+      }
+      // a group that moves a layer into another group keeps the count and fails the sum
+      // or, where a width is unstated, is the one shape this cannot judge
+      const shifted = groups.length > 1 ? [{ ...groups[0], layers: groups[0].layers + 1 }, { ...groups[1], layers: groups[1].layers - 1 }, ...groups.slice(2)] : groups;
+      const fault = kvTotalGeometryFault({ ...m, architecture: { ...a, kv_layer_groups: shifted } });
+      expect([m.id, fault === null]).toEqual([m.id, groups.some((g) => g.bytes_per_token == null)]);
+    }
+    // every other row on the site has no whole-model figure and nothing to hold
+    for (const m of data.models) expect([m.id, kvTotalGeometryFault(m)]).toEqual([m.id, null]);
+  });
+
+  it('refuses a whole-model cache figure with no working, and working with no figure', () => {
+    const arch = (patch: Record<string, unknown>) => {
+      const base = data.models.find((m) => m.architecture?.kv_bytes_per_token_total != null)!;
+      return kvTotalGeometryFault({ ...base, architecture: { ...base.architecture!, ...patch } });
+    };
+    expect(arch({ kv_layer_groups: null })).toMatch(/no working behind it/);
+    expect(arch({ kv_layer_groups: [] })).toMatch(/no working behind it/);
+    expect(arch({ kv_bytes_per_token_total: null })).toMatch(/no kv_bytes_per_token_total/);
+    expect(arch({ kv_bytes_per_token_total: 0 })).toMatch(/not a width/);
+    expect(arch({ n_layers: null })).toMatch(/needs a layer count/);
+    expect(arch({ note: null })).toMatch(/needs the note/);
+    expect(arch({ kv_layer_groups: [{ layers: 2.5, bytes_per_token: 1152 }] })).toMatch(/not a count of layers/);
+    expect(arch({ kv_layer_groups: [{ layers: 78, bytes_per_token: null }] })).toMatch(/nothing saying why/);
+    expect(arch({ kv_layer_groups: [{ layers: 78, bytes_per_token: -1 }] })).toMatch(/not a width/);
+    // a note whose own per-token figure is larger than the whole model's is refused outright,
+    // since no group of layers can cost more a token than every layer together does
+    expect(arch({ note: 'Latent attention. Every block caches 200 KiB a token.' })).toMatch(/more than the/);
+    // a per-layer figure smaller than the total is the shape both notes have and is left alone
+    expect(arch({ note: 'Every block caches 1,152 bytes a token, 93 KiB a token over the model.' })).toBeNull();
+    expect(arch({ note: 'The whole model caches 95,232 bytes per token.' })).toBeNull();
+    expect(arch({ note: 'Latent attention, read off the publisher own llama.cpp run.' })).toMatch(/reads back/);
+    // a row with neither a whole-model figure nor groups is the ordinary case
+    expect(arch({ kv_bytes_per_token_total: null, kv_layer_groups: null })).toBeNull();
   });
 
   it('opens the calculator on the configuration the length was measured at', () => {

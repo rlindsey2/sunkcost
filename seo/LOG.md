@@ -72,12 +72,6 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       `basis` string, "Artificial Analysis Intelligence Index v4.3: N", with no read date and no word that the index
       has moved. `src/render.ts` is a PR, not a push.
 
-- [ ] `n_layers` is decoration on a row that carries `kv_bytes_per_token_total`. The cache comes straight off the
-      total, so setting GLM-5.3-SLIM's 78 layers to 45 moves no figure and fails no guard, while the note printed
-      beside it on the page says "all 78 blocks". Two rows carry the field, both with a note that states the
-      geometry the number is summed from. The fix is to hold the total against that geometry. Caught by mutation
-      on 2026-11-11.
-
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
       reads it to 32k with its own decay. Nine of the 16 land within 5% of the source's own 32k
@@ -111,6 +105,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-19 — A cache figure for the whole model is held against the layers it is summed over
+The backlog's `n_layers` item is done. Two rows state their cache as one figure for the whole model, because their layers do not cache alike, and `kvCacheGb()` reads
+that figure and nothing else: GLM-5.3-SLIM's 78 layers could read 45 and no figure on this site would move, while the note printed beside the cache on its model page
+still said all 78 blocks cache. `architecture.kv_layer_groups` now carries the geometry the figure was summed over, one group per set of layers that cache alike, and
+`kvTotalGeometryFault()` holds three things: the counts have to account for every layer the row claims and no more; the widths have to multiply out to the total
+exactly where a source states them; and the note's own whole-model figure has to read back as the total at the rounding it is written at. GLM-5.3-SLIM is 21 layers
+at 1,408 bytes a token and 57 at 1,152, which comes to its 95,232 to the byte. DeepSeek V4-Flash is 21, 20 and 2 layers summing to its 43; its source states the
+ratio each group compresses by and the 6,880 bytes a token the model comes to, not what a layer in one group costs, so those three widths are null with a TODO each.
+Straight to main; nothing outside the guard reads the new field, so no page's text changed. Verified: 482 tests with 2 added, typecheck and validate clean, the whole
+build with build:functions, 366 pages every guard passing and none added or dropped; 6 mutations, 5 caught with the control clean, the sixth moving a layer between
+two DeepSeek groups whose widths no source states, which is the one shape this cannot judge and why those widths are null. Watch done: Marin-Mochi-535B-A23B is a
+base model with BF16 only, Olala-v1.0-mini needs OVHcloud's own llama.cpp fork, Maxwell's port is still unmerged, v5.0.1 holds at 14 of 54. Next: the note-figure guard.
 
 ### 2026-11-18 — Sage S2.1 Flash is priced, and its config is GLM-5.3-Flash's field for field
 `sage-s2.1-flash-q4` is in `data/models.json`: Shanghai AI Laboratory's 321B scientific multimodal model, MIT, 1M context, weights 193.81 GB as

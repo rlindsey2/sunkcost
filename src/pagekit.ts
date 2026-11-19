@@ -1171,6 +1171,111 @@ function noteOpeningFigure(note: string): { tokens: number; after: string } | nu
   return { tokens, after: note.slice(open[0].length) };
 }
 
+/** Bytes a token the units a note writes a cache figure in, biggest first so "KiB" beats "B". */
+const PER_TOKEN_UNITS: Array<[string, number]> = [
+  ['GiB', 1024 ** 3],
+  ['GB', 1e9],
+  ['MiB', 1024 ** 2],
+  ['MB', 1e6],
+  ['KiB', 1024],
+  ['KB', 1000],
+  ['bytes', 1],
+  ['byte', 1],
+];
+
+/**
+ * Every "N bytes a token" figure a note states, in bytes, with the rounding it was
+ * written at: "93 KiB a token" is 95,232 bytes written to no decimal place, so it can
+ * only be read back against a total that rounds to 93 KiB again. A note states both
+ * the whole model's figure and, often, one layer's, so this reads all of them and
+ * leaves the judging to the caller.
+ */
+function perTokenFigures(note: string): Array<{ value: number; base: number; places: number; written: string }> {
+  const units = PER_TOKEN_UNITS.map(([u]) => u).join('|');
+  const re = new RegExp(String.raw`(\d[\d,]*(?:\.\d+)?)\s*(${units})\s+(?:a|per)\s+token`, 'gi');
+  const out: Array<{ value: number; base: number; places: number; written: string }> = [];
+  for (const hit of note.matchAll(re)) {
+    const value = Number(hit[1].replace(/,/g, ''));
+    const unit = PER_TOKEN_UNITS.find(([u]) => u.toLowerCase() === hit[2].toLowerCase());
+    if (!Number.isFinite(value) || value <= 0 || !unit) continue;
+    out.push({ value, base: unit[1], places: hit[1].split('.')[1]?.length ?? 0, written: hit[0] });
+  }
+  return out;
+}
+
+/** Does a figure as written round off this many bytes: is "6.9 KB" 6,880 bytes to one place? */
+const figureReadsBack = (f: { value: number; base: number; places: number }, bytes: number) =>
+  Number((bytes / f.base).toFixed(f.places)) === f.value;
+
+/** The fewest bytes a figure as written could have been rounded from: "6.9 KB" is 6,850 up. */
+const figureFloor = (f: { value: number; base: number; places: number }) => (f.value - 0.5 * 10 ** -f.places) * f.base;
+
+/**
+ * Why a whole-model cache figure cannot be trusted as it stands, or null where it can.
+ *
+ * Two rows state their cache as one figure for the whole model, because their layers do
+ * not cache alike: every GLM-5.3-SLIM block holds a compressed latent and a fifth of them
+ * hold index keys as well, and DeepSeek V4-Flash compresses its cache by a different ratio
+ * in three groups of layers. `kvCacheGb()` reads that one figure and nothing else, which
+ * leaves the rest of the architecture as decoration: set GLM-5.3-SLIM's 78 layers to 45 and
+ * no figure on this site moves, while the note printed beside the cache on its model page
+ * goes on saying all 78 blocks cache. A layer count nothing reads is a layer count that can
+ * drift, and it is prose on a page either way.
+ *
+ * So the figure is held against the geometry it was summed over. The groups have to account
+ * for every layer the row claims, no more and no fewer, and where a source states each
+ * group's width they have to multiply out to the total exactly. The note is held to the same
+ * figure: both rows state what the whole model costs a token in so many words, so that
+ * figure is read back, and a figure larger than the total is refused outright, since no
+ * group of layers can cost more a token than the whole model does.
+ */
+export function kvTotalGeometryFault(m: Model): string | null {
+  const a = m.architecture;
+  if (!a) return null;
+  const total = a.kv_bytes_per_token_total;
+  const groups = a.kv_layer_groups ?? null;
+  if (total == null) {
+    if (!groups?.length) return null;
+    return 'cache groups are the working behind a whole-model cache figure, and this row states no kv_bytes_per_token_total for them to come to';
+  }
+  if (typeof total !== 'number' || total <= 0) return `a whole-model cache of ${total} bytes a token is not a width`;
+  if (!groups?.length) {
+    return `the cache is one figure of ${total} bytes a token with no working behind it; kv_layer_groups states the layers it is summed over`;
+  }
+  if (a.n_layers == null) return 'a whole-model cache figure needs a layer count to hold its groups against';
+
+  let counted = 0;
+  let summed = 0;
+  let allKnown = true;
+  for (const g of groups) {
+    if (!Number.isInteger(g.layers) || g.layers <= 0) return `a cache group of ${g.layers} layers is not a count of layers`;
+    counted += g.layers;
+    if (g.bytes_per_token == null) {
+      if (!g.bytes_per_token_TODO) return `the ${g.layers}-layer cache group states no width and nothing saying why, which a null needs`;
+      allKnown = false;
+      continue;
+    }
+    if (typeof g.bytes_per_token !== 'number' || g.bytes_per_token <= 0) return `a cache group holding ${g.bytes_per_token} bytes a token is not a width`;
+    summed += g.layers * g.bytes_per_token;
+  }
+  if (counted !== a.n_layers) {
+    return `the cache groups account for ${counted} layers and the row has ${a.n_layers}, so ${total} bytes a token is summed over a model this is not`;
+  }
+  if (allKnown && summed !== total) {
+    return `the cache groups come to ${summed} bytes a token and the row states ${total}`;
+  }
+
+  const note = a.note?.trim();
+  if (!note) return `a cache of ${total} bytes a token needs the note that says what it is summed over, which is what the model page prints beside it`;
+  const figures = perTokenFigures(note);
+  const over = figures.find((f) => figureFloor(f) > total);
+  if (over) return `the note states "${over.written}", more than the ${total} bytes a token the whole model caches`;
+  if (!figures.some((f) => figureReadsBack(f, total))) {
+    return `the note states no figure that reads back as ${total} bytes a token, so the figure the site uses and the words printed beside it are held apart`;
+  }
+  return null;
+}
+
 /**
  * Why a row's ceiling note cannot be printed as it stands, or null where it can.
  *
