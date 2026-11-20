@@ -48,7 +48,7 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       read about double the speed it reaches, and **Dory 1.0 4B** is gated. While that holds, a run is better spent
       on a guard below.
 
-- [ ] **Nine of the 25 models that read images have no projector figure**, so their pages say a projector loads
+- [ ] **Nine of the 27 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
       Gemma 4 builds whose own GGUF repositories publish none this site cites. Each needs the repository its
       `weights_gb` actually came from pinned down first, which is the same thing the `weights_bytes` item below
@@ -63,7 +63,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       not the other 44 (read 2026-11-08, count in `frontier_basis.superseded_by`; Qwen3.8 Flash Next has one now too,
       found 2026-11-12, so the figure the leaderboard prints is a read that has aged rather than a count that is
       wrong), so switching would null 44 and take the ladder, the "smartest first" sort and the generation pair
-      rule with it. Re-check the count each watch; when
+      rule with it. **The open endpoint the count was read off is retired** (read 2026-11-20): `/api/v2/data/*`
+      answers 410 and ended 2026-11-04, the replacement `/api/v2/language/models/free` answers 401 without a key, and the
+      leaderboard page renders only 61 models. The reading left is model by model off each scored row's own
+      `frontier_equivalent.url`, 54 fetches, which is a run of its own rather than a line in the watch. When
       most of the 54 are covered, move every scored row, `frontier_reference` (v5.0.1 scores Opus 5.5, Sonnet 5.5 and
       Haiku 5.5, not the Opus 5, Sonnet 5 and Haiku 4.5 the bands are set from), the band rule and
       `frontier_scale_max` in one edit. Nanbeige4.3 33B stays unscored until then, on 20.11 and nothing on v4.3.
@@ -82,8 +85,11 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] A price ending in one decimal reads unfinished where money is expected: "and $0.5 per million output" on
       the MiniMax M3.1 Flash page, "$0.7" on LFM2.5 24B-A2B, "$1" on Beam, across 43 distinct price pairs and
-      every head-to-head row that prints one. The site writes a price as the data states it, with no padding to
-      two places. The fix is in `src/format.ts`, which the calculator reads too, so it is a PR, not a push.
+      every head-to-head row that prints one, 44 pairs since 2026-11-20. The site writes a price as the data states
+      it, with no padding to two places. The fix is in `src/format.ts`, which the calculator reads too, so it is a PR, not
+      a push. One more line in the same file belongs in the same PR: `sourceKind()` tells two links to one repository
+      apart only where the path matches a known marker, so a row citing a repository's README or its KNOWN_ISSUES.md
+      beside the repository itself prints the same name twice in its Sources line, which is why this row cites neither.
 
 - [ ] A figure in prose that nothing reads back: each `architecture.note` is printed whole in the KV cache row
       of its model page, and eight of them state what a window costs in cache: 145 GB at 1M on MiniMax M3.1
@@ -105,6 +111,17 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-20 — A ternary build of Qwen3.8 27B puts a 27B model on a 16 GB machine
+`ternary-bonsai-2-27b-q2` is in `data/models.json`, and it came from today's watch rather than the queue: PrismML's ternary conversion of Qwen3.8 27B,
+Apache 2.0, 7.63 GB of weights against the 16.46 the four-bit build takes, which is the whole point of the row. The card says the architecture is
+unchanged, so the cache is the Qwen3.8 27B row's own geometry and needed no new research; the figures are the Q2_0 file's 7,626,008,928 bytes and a
+0.63 GB projector, both read off the repository today. Only that file loads in stock llama.cpp, from build b11556, and the page says so; the two
+smaller ones beside it need PrismML's fork. OpenRouter rents the build itself at one endpoint, $0.075 and $0.50, so the price is exact rather than a
+stand-in, and Artificial Analysis has not placed it, two 404s, so the score is null and the note carries the publisher's own benchmark pair instead.
+Straight to main. Verified: 482 tests, typecheck and validate clean, the whole build with build:functions, 369 pages every guard passing, 3 added (the
+model page and two head-to-heads) and none retired, all three read rendered; 9 mutations of the row, 9 caught, control clean. Watch done: four new
+names out, and the endpoint the v5.0.1 count used to be read off is retired, which the backlog item now says. Next: the note-figure guard.
 
 ### 2026-11-19 — A cache figure for the whole model is held against the layers it is summed over
 The backlog's `n_layers` item is done. Two rows state their cache as one figure for the whole model, because their layers do not cache alike, and `kvCacheGb()` reads
@@ -269,17 +286,3 @@ basis name must end in its own version, and the newer index needs a date, a URL 
 holds the pages. Straight to main. Verified: 462 tests, typecheck and validate clean, the full build with build:functions, 350 pages every guard
 passing, none added or dropped, 55 redated, the leaderboard and three model pages read rendered, 13 mutations run and 13 caught. Watch done: nothing
 addable, and TwIL-8B is out on licence, its `LICENSE.md` being webAI's own non-commercial 1.0. Next: Reka Edge 2603 on the vision judgement.
-
-### 2026-11-07 — The memory head-to-head reads every model with a footprint, so the fifteen the index has not placed have a page each
-The backlog item wanted those fifteen off the no-pair list, and nothing about the models was the reason: all three pair rules were cut from `rankedModels()`, which keeps
-only scored rows. Two of them need a score — the ladder is the index in order and the generation rule breaks a tie on it — and the memory rule needs none, because it reads
-a footprint and a family name. It is now cut from a new `pairableModels()`, the ranked rows then the unplaced by id, so nothing displaces a rung of the ladder. 16 pages
-added, 14 of the 15 paired; Ripple 65B Preview stays out because its nearest is 19.4% away, past the tenth the rule allows. 4 pages came down where a scored model's nearest
-neighbour is now an unplaced one, each with a 301 to the model page of the side it named first: Nemotron 3.5 Bolt's two Qwen3 30B-A3B pairs, Granite 4.2 30B vs Nemotron 3.5
-Lightning, Ling 3.0 flash vs Mistral Small 4. The change exposed two holes and both are shut. The match-up list printed the two scores with a non-null assertion, so an
-unplaced side would have read "null"; it now says "not placed", and a new `checkNoMissingValues()` reads every page's words, title and description for a bare null, undefined
-or NaN, because that mistake belongs to no one page type. And the lede on a pair where neither side is placed named neither model, which no other sentence does when both
-start on one machine; it now names both. Straight to main. Verified: 459 tests, typecheck and validate clean, the full build with build:functions, 350 pages every guard
-passing, 16 added and 4 retired against the ledger with a 301 each, two of the new pages read rendered, 4 mutations run and 4 caught, one of them by the guard it prompted.
-Watch done: nothing addable. Nanbeige4.3 33B has a score now and it is on v5.0, so it goes in with that item; TwIL-8B is a new candidate on a licence read; Drex Max v1 is
-out on kind. Next: the v5.0 re-read, which is now two rows' worth of reason as well as 68.

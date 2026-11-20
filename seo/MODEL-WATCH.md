@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-19
+Last checked: 2026-11-20
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,45 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-20 · A ternary build of Qwen3.8 27B is a row, and the way this file counted the new index is gone
+
+**`ternary-bonsai-2-27b-q2` is in `data/models.json`.** PrismML's
+[Ternary-Bonsai-2-27B-gguf](https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf) is Qwen3.8 27B with its
+weights converted to ternary values, **Apache 2.0**, and its card says the architecture is unchanged, so the cache
+arithmetic is the one the Qwen3.8 27B row already carries: 64 layers, 16 of them full attention, 0.537 GB per 8k.
+The repository publishes three low-bit files and **only `Q2_0` loads in a runtime a reader already has**:
+`Ternary-Bonsai-2-27B-Q2_0.gguf`, **7,626,008,928 bytes**, read today off the file listing, which stock llama.cpp
+runs from build b11556 by the repository's own KNOWN_ISSUES.md. The two smaller ones, down to 5.95 GB, need
+PrismML's fork, which is the Maxwell and Olala ruling, so they are not what the row is priced at. A
+`mmproj-Q8_0` of 629,246,976 bytes feeds it pictures. **OpenRouter rents the build itself**, one active endpoint
+at Darkbloom, $0.075 and $0.50 per million, so the price is an exact match rather than a stand-in, though the
+endpoint's own label says it serves four bits and not ternary. Artificial Analysis has not placed it: both
+`/models/ternary-bonsai-2-27b` and `/models/bonsai-2-27b` answer 404, so the score is null with a TODO, and the
+capability note carries the publisher's own figures instead, 84.78 against 86.32 for the full-precision model
+over fourteen thinking-mode tests. **What it changes is what a small machine runs**: 7.63 GB of weights against
+16.46 at four bits puts a 27B model on a 16 GB Mac mini, and on a 12 GB card at 32k.
+
+**Four new names out, each on ground this file has already taken.**
+[Aion-1.0-Instruct-2.3B](https://huggingface.co/microsoft/Aion-1.0-Instruct-2.3B) (Microsoft, 2026-11-18) is
+2,288,831,488 parameters and MIT, which clears the floor, but `model_type` is `aion_instruct` behind
+`configuration_aion_instruct.py` and the repository publishes safetensors only, so there is no quantised file
+whose size could be read and nothing here loads it; **worth re-reading if a GGUF appears**, since the size and
+the licence are fine. [Jais-3-32B-NVFP4A16](https://huggingface.co/puretensor/Jais-3-32B-NVFP4A16) (today) is a
+third party's NVFP4 build on `k2_horizon` custom code, the Edge0 ruling of 2026-10-17, and
+`inceptionai/Jais-3-32B` behind it answers 401. [Aurora2-400M-A20M](https://huggingface.co/AuroraAI-Research/Aurora2-400M-A20M)
+and [Quark-150M-128K-Zero](https://huggingface.co/empero-ai/Quark-150M-128K-Zero) are both an order of magnitude
+under the 1.708B of the smallest row here, the BotPsy ground. [clover-2](https://huggingface.co/kitaniai/clover-2)
+publishes seven LoRA adapters and no base weights. Maxwell-V1-Flash is still top of the trending feed and its
+port is still unmerged.
+
+**The v5.0.1 count could not be read today, and the endpoint earlier runs read it off is retired.**
+`/api/v2/data/*` answers **410 Gone** with a note that the legacy data endpoints ended on 2026-11-04, and the
+replacement, `/api/v2/language/models/free`, answers **401 API key is required**. The leaderboard page itself
+renders only 61 model names, 7 of this site's 54 scored rows among them, which is the size of that page and not
+a count of coverage, so nothing here moves the figure: it stands at **14 of 54** where 2026-11-19 left it. The
+only reading left without a key is model by model off each row's own `frontier_equivalent.url`, 54 fetches, and
+that is what the backlog item now needs.
 
 ### 2026-11-19 · Two new names on the trending feed, and neither has a file a reader can run
 

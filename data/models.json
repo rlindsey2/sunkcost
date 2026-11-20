@@ -4419,5 +4419,70 @@
       "https://openrouter.ai/z-ai/glm-5.3-flash"
     ],
     "TODO": "Capability ratings needed. Parameters are the 321,323,031,390 the repository's safetensors index reports; weights are mradermacher's static Q4_K_M, 193,813,823,936 bytes across five parts, read 2026-11-18."
+  },
+  {
+    "id": "ternary-bonsai-2-27b-q2",
+    "display_name": "Ternary Bonsai 2 27B",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 27.78,
+    "active_params_b": 27.78,
+    "quantisation": "Q2_0",
+    "weights_gb": 7.63,
+    "kv_cache_gb_per_8k": 0.537,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 0,
+      "note": "Hybrid: 48 linear-attention layers; only 16 full-attention layers hold a growing KV cache. The ternary conversion left the architecture alone, so this is Qwen3.8 27B's own geometry."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 0.63,
+      "projector_bytes": 629246976,
+      "projector_file": "Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf",
+      "projector_source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "checked": "2026-11-20"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. This is Qwen3.8 27B with its weights converted to ternary, three values a weight in place of the sixteen levels a four-bit file holds, which brings the weights to a little under half what the four-bit build of the same model asks of a machine and leaves the architecture, the context window and the key-value cache as they were. PrismML's own runs average 84.78 against 86.32 for the full-precision model across fourteen tests in thinking mode, and 66.19 against 71.36 on the vision set, so the loss falls harder on pictures than on text; nobody else has published a measurement, and nobody has placed this build on the index the rest of this site is ranked by. Stock llama.cpp loads this file from build b11556 onwards, and an older build loads it without complaint and produces nonsense. The two smaller files in the same repository need PrismML's own fork of llama.cpp rather than the build you already have.",
+    "cloud_equivalent": {
+      "name": "Ternary Bonsai 2 27B",
+      "input_price_per_mtok": 0.075,
+      "output_price_per_mtok": 0.5,
+      "source": "OpenRouter, the only active endpoint: Darkbloom",
+      "source_url": "https://openrouter.ai/prism-ml/ternary-bonsai-2-27b",
+      "is_exact_match": true,
+      "checked": "2026-11-20",
+      "note": "The one endpoint serves it at four bits by OpenRouter's own label, not at the ternary weights you would download, so renting it and running it here are not quite the same build."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-20",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+      "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json",
+      "https://openrouter.ai/prism-ml/ternary-bonsai-2-27b"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 27,781,427,952 Qwen3.8-27B's safetensors index reports, the checkpoint these weights are converted from; weights are Ternary-Bonsai-2-27B-Q2_0.gguf, 7,626,008,928 bytes, the only one of the repository's three low-bit files stock llama.cpp loads, read 2026-11-20. The build number the file needs is in the repository's own KNOWN_ISSUES.md, read the same day, which also says the other two need PrismML's fork."
   }
 ]
