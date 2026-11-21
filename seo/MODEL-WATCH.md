@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-20
+Last checked: 2026-11-21
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,40 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-21 · Mellum2.1 Thinking was never blocked on a figure, only on two judgements that are now the agent's
+
+**`mellum2.1-12b-a2.5b-q4` is in `data/models.json`.** It sat on this list from 2026-10-13 as "short of the fields
+its own entry lists", and both of those fields were the price stand-in and the index score — the two judgements
+Ryan handed over on 2026-10-20. Nothing about the model had changed; the entry had. Every figure was re-read today
+off JetBrains's own repositories: [Mellum2.1-12B-A2.5B-Thinking](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking)
+is **Apache 2.0** on both repositories, `safetensors.total` is **12,149,923,072**, the card gives **2.5B active**
+of 64 experts with 8 running a token, and `config.json` reads 28 layers, `num_key_value_heads` 4 by `head_dim` 128,
+`layer_types` three `sliding_attention` to one `full_attention` through all 28 so **7 layers grow and 21 stop at the
+1,024-token window**, and `max_position_embeddings` **131072**. No `num_global_key_value_heads`, so both kinds cache
+2,048 bytes a token and the site's formula gives **0.161 GB per 8k**: 8.6 GB to hold at 32k, 9.99 GB at the ceiling.
+The four-bit file is JetBrains's own GGUF rather than a third-party conversion,
+`Mellum2.1-12B-A2.5B-Thinking-Q4_K_M.gguf` at **8,071,295,264 bytes**, 5.31 bits a parameter, and the repository's
+README says it loads in stock llama.cpp, Ollama and LM Studio with no patch. Only the MTP combined files need a
+build as new as b11747, and the 1.8 GB head is a separate file this row does not count.
+[the GGUF repository](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF).
+
+**Nobody rents it and nobody scores it.** OpenRouter answered **476 models** today and holds no Mellum and nothing
+from JetBrains, so the price is a stand-in: **Qwen3.5 9B**, the model JetBrains's own evaluation table sets Mellum
+against and the nearest in size anybody rents, 9.65B against 12.15B. Ministral 3 14B is nearer on total parameters
+and is dense, so its rental pays for every parameter on every token where this one reads 2.5B of 12.15B. Artificial
+Analysis has no page for it — four URL spellings all 404 — so the score is null.
+
+**Nothing else new is addable.** Hugging Face's newest text-generation feed is finetunes, LoRAs and GGUF
+conversions of models already here. The trending feed's two names with no ruling yet are
+[microsoft/Aion-1.0-Instruct-2.3B](https://huggingface.co/microsoft/Aion-1.0-Instruct-2.3B) (2026-11-18, MIT,
+2,288,831,488 parameters), whose `model_type` is `aion_instruct` with its own `modeling_aion_instruct.py` and no
+quantised build, so there is no four-bit file to price and no runtime a reader has; and
+[ccore/CCORE-Web-Coder-4B](https://huggingface.co/ccore/CCORE-Web-Coder-4B) (2026-11-20, Apache 2.0), a preview
+finetune of Qwen3.5-4B-Base publishing **Q8_0 only**, 381 downloads. **SenseNova-Loop-9B now has an official GGUF**
+and its 2026-10-31 ruling stands: it runs its middle layers twice, so a bandwidth estimate would read about double
+the speed it reaches. Maxwell-V1-Flash and Tencent Hy4-flash still need an unmerged llama.cpp patch. Searched: the
+queries this file lists, Hugging Face's newest and trending text-generation feeds, and a November release roundup.
 
 ### 2026-11-20 · A ternary build of Qwen3.8 27B is a row, and the way this file counted the new index is gone
 

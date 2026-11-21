@@ -1789,11 +1789,11 @@
     "cloud_equivalent": {
       "name": "Qwen3.5 9B",
       "input_price_per_mtok": 0.08,
-      "output_price_per_mtok": 0.13,
+      "output_price_per_mtok": 0.12,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
       "is_exact_match": false,
-      "checked": "2026-10-29",
+      "checked": "2026-11-21",
       "stand_in": true,
       "stand_in_for": "qwen3.5-9b-q4",
       "stand_in_basis": "finetune",
@@ -2177,11 +2177,11 @@
     "cloud_equivalent": {
       "name": "Qwen3.5 9B",
       "input_price_per_mtok": 0.08,
-      "output_price_per_mtok": 0.13,
+      "output_price_per_mtok": 0.12,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
       "is_exact_match": false,
-      "checked": "2026-10-29",
+      "checked": "2026-11-21",
       "stand_in": true,
       "stand_in_for": "qwen3.5-9b-q4",
       "stand_in_basis": "nearest_score",
@@ -2380,11 +2380,12 @@
     "cloud_equivalent": {
       "name": "Qwen3.5 9B",
       "input_price_per_mtok": 0.08,
-      "output_price_per_mtok": 0.13,
+      "output_price_per_mtok": 0.12,
       "source": "OpenRouter, cheapest active endpoint",
       "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
       "is_exact_match": true,
-      "checked": "2026-10-29"
+      "checked": "2026-11-21",
+      "note": "DeepInfra, the cheapest of 8 active endpoints on both prices, re-read 2026-11-21. The endpoint behind the previous output price of $0.13 is cheapest on neither now."
     },
     "license": "Apache 2.0",
     "max_context_tokens": 262144,
@@ -3221,8 +3222,14 @@
       "qk_rope_head_dim": 64,
       "kv_bytes_per_token_total": 95232,
       "kv_layer_groups": [
-        { "layers": 21, "bytes_per_token": 1408 },
-        { "layers": 57, "bytes_per_token": 1152 }
+        {
+          "layers": 21,
+          "bytes_per_token": 1408
+        },
+        {
+          "layers": 57,
+          "bytes_per_token": 1152
+        }
       ],
       "note": "Latent attention with a sparse-attention indexer beside it. All 78 blocks cache one 512-wide compressed vector plus 64 RoPE dimensions, 1,152 bytes a token; 21 of them compute their own index keys and cache 256 bytes more, and the other 57 share the keys of one that does. That comes to 93 KiB a token, the figure the publisher's own llama.cpp run reports."
     },
@@ -3285,9 +3292,21 @@
       "head_dim": 512,
       "kv_bytes_per_token_total": 6880,
       "kv_layer_groups": [
-        { "layers": 21, "bytes_per_token": null, "bytes_per_token_TODO": "The layers that keep one entry per four tokens. The inference code states the ratio each group compresses by and the 6,880 bytes a token the whole model comes to, not what a layer in this group costs on its own." },
-        { "layers": 20, "bytes_per_token": null, "bytes_per_token_TODO": "The layers that keep one entry per 128 tokens; the source states the ratio and not the bytes a token." },
-        { "layers": 2, "bytes_per_token": null, "bytes_per_token_TODO": "The two fixed 128-entry window layers, whose cache stops growing and so costs less a token the longer the context; the source states the window and not a per-token figure." }
+        {
+          "layers": 21,
+          "bytes_per_token": null,
+          "bytes_per_token_TODO": "The layers that keep one entry per four tokens. The inference code states the ratio each group compresses by and the 6,880 bytes a token the whole model comes to, not what a layer in this group costs on its own."
+        },
+        {
+          "layers": 20,
+          "bytes_per_token": null,
+          "bytes_per_token_TODO": "The layers that keep one entry per 128 tokens; the source states the ratio and not the bytes a token."
+        },
+        {
+          "layers": 2,
+          "bytes_per_token": null,
+          "bytes_per_token_TODO": "The two fixed 128-entry window layers, whose cache stops growing and so costs less a token the longer the context; the source states the window and not a per-token figure."
+        }
       ],
       "note": "Every layer compresses its cache by a different ratio: 21 layers keep one entry per four tokens, 20 keep one per 128, and two are a fixed 128-entry window. Summed, that is about 6.9 KB a token for the whole model — roughly a thirteenth of what the head counts imply. Read from the repo's own inference code."
     },
@@ -4484,5 +4503,67 @@
       "https://openrouter.ai/prism-ml/ternary-bonsai-2-27b"
     ],
     "TODO": "Capability ratings needed. Parameters are the 27,781,427,952 Qwen3.8-27B's safetensors index reports, the checkpoint these weights are converted from; weights are Ternary-Bonsai-2-27B-Q2_0.gguf, 7,626,008,928 bytes, the only one of the repository's three low-bit files stock llama.cpp loads, read 2026-11-20. The build number the file needs is in the repository's own KNOWN_ISSUES.md, read the same day, which also says the other two need PrismML's fork."
+  },
+  {
+    "id": "mellum2.1-12b-a2.5b-q4",
+    "display_name": "Mellum2.1 12B-A2.5B Thinking",
+    "family": "Mellum",
+    "generation": "current",
+    "params_b": 12.15,
+    "active_params_b": 2.5,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 8.07,
+    "kv_cache_gb_per_8k": 0.161,
+    "architecture": {
+      "n_layers": 28,
+      "n_kv_heads": 4,
+      "head_dim": 128,
+      "full_attention_layers": 7,
+      "sliding_window_layers": 21,
+      "sliding_window": 1024,
+      "note": "Seven of the 28 layers grow with the context; the other 21 stop at a 1,024-token window, three windowed layers to every growing one. Both kinds cache the same geometry, four KV heads by 128 wide, so a token costs 2,048 bytes in whichever layer holds it."
+    },
+    "vision": null,
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. JetBrains built this one for coding agents, and it asks less of a machine than anything else here aimed at that work: 12.15B parameters in the file, 2.5B of them read for each token, so the memory holds a 12B model and the speed is closer to a 2.5B one. The four-bit file loads in stock llama.cpp, Ollama and LM Studio with no patch. It writes its working out between <think> tags before it answers, and JetBrains's own example calls allow 81,920 tokens for the thinking and the reply together, which is output the machine generates itself and an API would bill for. On JetBrains's own table, every model run in thinking mode through the same harness, it leads Qwen3.5 9B on the standalone coding tests, 82.0 against 75.4 on LiveCodeBench v6, and trails it on all three agentic ones, 47.0 against 50.0 on SWE-bench Verified and 28.0 against 38.0 on SWE-bench Pro; on general knowledge it is well behind, 64.6 against 77.8 on GPQA Diamond. Those are the publisher's figures, self-reported, and nobody has placed this model on the index the rest of this site is ranked by. It is English-only and reads no images. The repository ships the model's multi-token prediction head as a separate 1.8 GB file for speculative decoding in llama.cpp, and the publisher's own benchmark gave 1.05x the decoding speed at full precision and no gain at all on a four-bit model with a quantised head, so it is not memory this page counts.",
+    "cloud_equivalent": {
+      "name": "Qwen3.5 9B",
+      "input_price_per_mtok": 0.08,
+      "output_price_per_mtok": 0.12,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/qwen/qwen3.5-9b",
+      "is_exact_match": false,
+      "checked": "2026-11-21",
+      "stand_in": true,
+      "stand_in_for": "qwen3.5-9b-q4",
+      "stand_in_basis": "nearest_size",
+      "note": "Nobody rents Mellum2.1 Thinking by the token: no endpoint on OpenRouter's whole list of 476 models carries it, and Artificial Analysis has no page for it, so there is no intelligence score to place it by either. It is priced as Qwen3.5 9B, the model JetBrains's own evaluation table sets it against and the nearest in size that anybody rents: 9.65B of parameters against 12.15B. Ministral 3 14B is nearer on total size at 13.95B, but it is dense, so its rental pays for every parameter on every token where this model reads 2.5B of the 12.15B. The comparison flatters the rental either way, because the thinking is output tokens and an API charges for them."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-21",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking",
+      "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json",
+      "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF",
+      "https://openrouter.ai/qwen/qwen3.5-9b"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 12,149,923,072 the repository's safetensors index reports, which the card rounds to 12B total and 2.5B active; weights are Mellum2.1-12B-A2.5B-Thinking-Q4_K_M.gguf, 8,071,295,264 bytes, 5.31 bits a parameter, read 2026-11-21 off JetBrains's own GGUF repository, which publishes MXFP4_MOE at 7,029,537,056 bytes beside it."
   }
 ]

@@ -40,8 +40,12 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 ## Backlog (ordered by expected traffic impact)
 
 - [ ] **Add the watch's waiting candidates as rows, best-sourced first.** One model per run, with its model
-      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Every candidate in
-      the queue is blocked today.** **Whittle-Next-27B-A3B** (2026-11-16) is the one to re-read first: its figures
+      page and sitemap entry; seo/MODEL-WATCH.md has the figures and the open field for each. **Read the older watch
+      entries too.** Mellum2.1 Thinking sat there from 2026-10-13 as short of the fields its entry listed, and both
+      were the stand-in price and the index score, which stopped being blockers on 2026-10-20; it went in on
+      2026-11-21 with no new research. Kolibri 1, Reka Edge 2603, Apodex 1.1 Mini, MiMo-V2.6-Flash and
+      Index-Translate-35B-A3B are entries from those same weeks and want the same read: an entry whose only gap is
+      a judgement is addable now. **Of the recent queue, every candidate is blocked today.** **Whittle-Next-27B-A3B** (2026-11-16) is the one to re-read first: its figures
       are there and its cache is two kinds at once. **Maxwell-V1-Flash** and **Tencent Hy4-flash** both ship a
       four-bit file that needs an unmerged llama.cpp patch, and Hy4-flash's compressed indexer is not a geometry
       this site can state yet. **SenseNova-Loop-9B** runs its middle layers twice, so the bandwidth estimate would
@@ -100,6 +104,13 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       2026-10-27 run moved both Ling 3.0 rows' cache by a factor of 14 and their notes happened not to quote
       one, and mutation on 2026-11-13 moved both of Raon-1 nano's figures with nothing noticing. The guard is
       small: read a GB or a bytes-a-token figure out of a note and check it against the fields beside it.
+      Mutation on 2026-11-21 walked through it again: the new Mellum row's note says a token costs 2,048 bytes, and
+      doubling that to 4,096 left validate and all 371 pages passing. Two more misses from that run belong with it.
+      `full_attention_layers` plus `sliding_window_layers` is refused above `n_layers` and not below, so raising
+      this row's 28 layers to 32 against 7 and 21 passed; a row with linear or recurrent layers truthfully counts
+      short, which is why it is one-sided, and the guard wants the shape that has none. And nothing holds
+      `active_params_b`: setting this row's 2.5 to its full 12.15 moves every speed figure on its page and no check
+      notices, because the only thing that could contradict it is the card it was read off.
 
 - [ ] **A weights figure says 2.60 GB and nothing says which file it came from.** `weights_gb` is one rounded
       number a row, the repository behind it is somewhere in `sources` among the card, the config and the GGUF,
@@ -111,6 +122,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-21 — Mellum2.1 Thinking is priced here, and it was blocked on nothing but a rule that had already gone
+`mellum2.1-12b-a2.5b-q4` is in `data/models.json`: JetBrains's 12B coding mixture of experts, Apache 2.0, 2.5B active a token, 8.07 GB at the publisher's
+own Q4_K_M (8,071,295,264 bytes, 5.31 bits a parameter) and 0.161 GB of cache per 8k off 28 layers where 7 grow and 21 stop at a 1,024-token window. Every
+figure was re-read today off JetBrains's two repositories. It had sat in seo/MODEL-WATCH.md since 2026-10-13 as short of the fields its entry listed, and
+both of those were the stand-in price and the index score: the two judgements Ryan handed over a week later, so the entry was stale rather than the model,
+and the top backlog item now says to read the older watch entries for the same shape. Nobody rents it, no Mellum on OpenRouter's 476 models, and Artificial
+Analysis has no page, so the price stands in on Qwen3.5 9B, the model JetBrains's own table compares it against; that row's price was re-read in the same
+edit, $0.08 and $0.12 at DeepInfra, cheapest of 8 on both, and the reprice carried to the two rows that borrow from it. Straight to main. Verified: 482
+tests, typecheck and validate clean, the whole build with build:functions, 371 pages every guard passing, 2 added (the model page and the Gemma 4 12B
+head-to-head the memory rule cut) and none dropped, both read rendered; 19 mutations of the row, 13 caught and the control clean, the 6 misses now backlog
+lines above. Watch done: Aion-1.0 has no quantised build, CCORE-Web-Coder is Q8 only, SenseNova-Loop's GGUF does not change its ruling. Two oldest entries
+archived. Next: the note-figure guard, now with two more misses beside it.
 
 ### 2026-11-20 — A ternary build of Qwen3.8 27B puts a 27B model on a 16 GB machine
 `ternary-bonsai-2-27b-q2` is in `data/models.json`, and it came from today's watch rather than the queue: PrismML's ternary conversion of Qwen3.8 27B,
@@ -256,33 +280,3 @@ Straight to main. Verified: 467 tests, typecheck and validate clean, the full bu
 against the ledger, 250 redated, the model page and one new head-to-head read rendered, 12 mutations run and 10 caught; the misses are `vision` set to null, which
 no guard here can see without fetching a repository, and a ceiling note deleted, which is now on the `checkContextCeilings()` item. Watch done: GLM-5.3-SLIM's
 card closes two of its three fields, and Kimi K3.1 Pro, ERNIE-5.5-Flash-Base, PLaMo 3 Translate and Inkling 2 Small are closed. Next: GLM-5.3-SLIM's DSA cache.
-
-### 2026-11-09 — Twenty-four of the models priced here read images, and every page called the language weights the whole download
-The backlog's vision judgement turned out to have been made already and never written down: a survey of all 69 rows against their own repository cards
-on the Hugging Face API found **24 carrying an `image-text-to-text` tag**, Gemma 3 and Gemma 4 among them, each priced at its language weights with the
-vision projector a second file nothing on the site mentioned. Five rows said so by hand in prose, and one of those five was wrong — Muse Glimmer 30B's
-architecture note read "~1.4 GB" against the 3,847,367,584-byte projector bartowski publishes, 3.85 GB, which stood because no check could see a figure
-inside a sentence. So `vision` is a field now, set on every row, an object or an explicit null, so a new row cannot read as text-only by omission. Where
-a repository the row already cites publishes a projector the field carries its bytes, its rounded GB and the file's own name: 15 rows, read today, and
-the model page names and links the file. The other 9 say a projector loads beside the weights and invent no size for it. The five hand-written sentences
-are gone, and `validate-data.ts` now refuses a projector size written into any note. Guards: the GB must be the bytes rounded, a projector may not equal
-or exceed the weights it loads beside, both URLs must be sources the row already cites, a figure may not sit beside a TODO, and `checkVisionNotes()`
-holds every page's words both ways. Reka Edge 2603 is ruled out in the same pass, on licence: BSL 1.1 forbids hosting it as an API, so no rental price
-for it can exist, and this site pays a machine back against one. Straight to main. Verified: 467 tests, typecheck and validate clean, the full build with
-build:functions, 350 pages every guard passing, none added or dropped, 25 redated and no page whose words did not move, four read rendered, 20
-mutations run and 20 caught, the last only once the guard it exposed stopped reading the Sources line as proof of its own link. Watch done:
-GLM-5.3-SLIM is new and next. Next: the projector figures for the nine, with the `weights_bytes` item.
-
-### 2026-11-08 — The index these 54 scores are on has been replaced, not revised, so every page that prints one dates it and says so
-The backlog wanted the v4.3 scores re-read on v5.0, and that re-read cannot be done: Artificial Analysis is on Intelligence Index v5.0.1 and its own
-model data carries a v5.0.1 score for 10 of the 54 scored rows here and `null` for the other 44, checked on the leaderboard and again on five model
-pages. Switching would null 44 scores and take the ladder, the "smartest first" sort and the generation pair rule with it, so the item above keeps the
-count and the scores stay on v4.3, the one scale covering all 54. What a visitor could not see is that the link beside a score no longer leads to that
-number: Gemma 4 31B reads 15 here and 4.38 there, Qwen3.8 Flash Next 40 here and nothing there. So `frontier_basis` now states its own `version` and
-the index that replaced it, and each of the 54 model pages prints the date its own score was read and names v5.0.1 under it. The leaderboard says the
-same and prints the span its rows were read over, 2026-09-11 to 2026-10-27, where it printed one date for all 54 and four were never read that day.
-`validate-data.ts` holds what a page cannot: no row may carry a score from a version the basis does not name, a scored row needs its read date, the
-basis name must end in its own version, and the newer index needs a date, a URL and a count of these rows short of all of them. `checkIndexBasis()`
-holds the pages. Straight to main. Verified: 462 tests, typecheck and validate clean, the full build with build:functions, 350 pages every guard
-passing, none added or dropped, 55 redated, the leaderboard and three model pages read rendered, 13 mutations run and 13 caught. Watch done: nothing
-addable, and TwIL-8B is out on licence, its `LICENSE.md` being webAI's own non-commercial 1.0. Next: Reka Edge 2603 on the vision judgement.
