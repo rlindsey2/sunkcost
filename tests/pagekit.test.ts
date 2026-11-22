@@ -7,6 +7,8 @@ import {
   machinesAtSize,
   maxContextNote,
   ceilingNoteFault,
+  cachedLayerFault,
+  cachedLayerSlots,
   kvTotalGeometryFault,
   machinesThatHold,
   memoryLevels,
@@ -1542,6 +1544,41 @@ describe('what memory buys once two machines hold the same models', () => {
     }
     // every other row on the site has no whole-model figure and nothing to hold
     for (const m of data.models) expect([m.id, kvTotalGeometryFault(m)]).toEqual([m.id, null]);
+  });
+
+  it('holds the layers a row counts as caching against the slots they cache in', () => {
+    // every row's two counts fit inside the slots its layers cache in, and on all but the
+    // looped one those slots are the layers themselves
+    for (const m of data.models) {
+      expect([m.id, cachedLayerFault(m)]).toEqual([m.id, null]);
+      const a = m.architecture;
+      if (!a?.n_layers) continue;
+      expect(cachedLayerSlots(a)).toBe(a.n_layers + (a.loop_layers ?? 0) * ((a.loop_passes ?? 1) - 1));
+      if (a.full_attention_layers == null && a.sliding_window_layers == null) continue;
+      const counted = (a.full_attention_layers ?? 0) + (a.sliding_window_layers ?? 0);
+      // one more growing layer than the model caches in is refused on every row
+      expect([m.id, cachedLayerFault({ ...m, architecture: { ...a, full_attention_layers: cachedLayerSlots(a)! - (a.sliding_window_layers ?? 0) + 1 } })])
+        .not.toEqual([m.id, null]);
+      expect(counted).toBeLessThanOrEqual(cachedLayerSlots(a)!);
+    }
+    // the looped row is the reason the ceiling is not the layer count: drop its loop and the
+    // counts it truthfully carries overrun the 24 layers they are summed over
+    const looped = data.models.filter((m) => m.architecture?.loop_layers != null);
+    expect(looped.length).toBeGreaterThanOrEqual(1);
+    for (const m of looped) {
+      const a = m.architecture!;
+      expect(cachedLayerSlots(a)).toBeGreaterThan(a.n_layers!);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_layers: null, loop_passes: null } })).toMatch(/counted as caching/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_passes: null } })).toMatch(/one of the two/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_layers: null } })).toMatch(/one of the two/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_passes: 1 } })).toMatch(/not a loop/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_passes: 2.5 } })).toMatch(/not a loop/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_layers: a.n_layers! + 1 } })).toMatch(/not a count of layers within/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_layers: 0 } })).toMatch(/not a count of layers within/);
+      expect(cachedLayerFault({ ...m, architecture: { ...a, n_layers: null } })).toMatch(/needs the layer count/);
+      // and a shorter loop is a smaller ceiling, which its own counts then overrun
+      expect(cachedLayerFault({ ...m, architecture: { ...a, loop_layers: 1 } })).toMatch(/slots a token/);
+    }
   });
 
   it('refuses a whole-model cache figure with no working, and working with no figure', () => {

@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { kvCacheGbPer8kFromArchitecture } from '../src/fit';
-import { ceilingNoteFault, kvTotalGeometryFault } from '../src/pagekit';
+import { cachedLayerFault, ceilingNoteFault, kvTotalGeometryFault } from '../src/pagekit';
 import { CAPABILITY_KEYS, type Hardware, type Model, type Throughput, type Defaults } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -61,15 +61,10 @@ for (const m of models) {
   // never from n_layers, so n_layers can drift without the figure moving: Ripple 65B's
   // 80 could read 60 against 16 growing and 64 windowed and still agree to the
   // gigabyte. The layer count is what the model pages say in prose beside the cache,
-  // so the two counts have to fit inside it. They need not fill it — 13 of LFM3
-  // 1.7B's 24 layers are convolutions that cache nothing and are in neither group.
-  const arch = m.architecture;
-  if (arch?.n_layers != null && (arch.full_attention_layers != null || arch.sliding_window_layers != null)) {
-    const counted = (arch.full_attention_layers ?? 0) + (arch.sliding_window_layers ?? 0);
-    if (counted > arch.n_layers) {
-      errors.push(`${m.id}: ${counted} layers are counted as caching (${arch.full_attention_layers ?? 0} full, ${arch.sliding_window_layers ?? 0} windowed) and the model has ${arch.n_layers}`);
-    }
-  }
+  // so the two counts have to fit inside the slots those layers cache in, which on a
+  // looped model is more than the layers themselves. See cachedLayerFault().
+  const layers = cachedLayerFault(m);
+  if (layers) errors.push(`${m.id}: ${layers}`);
   // A row whose layers do not all cache the same states one figure for the whole model,
   // and kvCacheGb reads that figure alone: every other architecture field on such a row
   // moves nothing, so GLM-5.3-SLIM's 78 layers could read 45 and only the note printed

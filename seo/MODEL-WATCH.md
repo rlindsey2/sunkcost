@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-21
+Last checked: 2026-11-22
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,48 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-22 · Inkling 2 Mini is a row, and the loop that ruled SenseNova out is a figure its own card states
+
+**`inkling-2-mini-iq4` is in `data/models.json`.** [Inkling 2 Mini](https://huggingface.co/thinkingmachines/Inkling-2-Mini)
+is Thinking Machines' smaller open multimodal model, released 2026-11-20, **Apache 2.0**, 4,751 likes and top of the
+trending feed. It is a **looped** mixture of experts, which is the shape that ruled SenseNova-Loop-9B out on 2026-10-31:
+the middle 12 of its 24 layers run three times with the same weights. The difference is that **the card states what the
+loop costs** — "each extra pass through the looped layers adds about 1.0B effective active parameters. Since the model
+runs with three passes, there are 5.4B effective active parameters per token" — against 3.4B active in a single pass and
+26.4B total. So the bandwidth estimate reads 5.4B of 26.39B and is not the doubled figure a nominal active count would
+give, and no judgement was invented to get there.
+
+**Every figure was read today.** `safetensors.total` is **26,388,646,440**. The file priced is
+[ggml-org's](https://huggingface.co/ggml-org/Inkling-2-Mini-GGUF) own `Inkling-2-Mini-IQ4_NL.gguf`,
+**17,627,940,768 bytes**, 5.34 bits a parameter, published by llama.cpp's own organisation with
+`llama serve -hf` instructions and the smallest projector beside it at 345,910,944 bytes; its README states the loop,
+the 48 layer evaluations and that **each pass keeps its own KV cache**. The cache geometry is the GGUF's own metadata,
+read off the file: `block_count` 24, `loop.start` 6, `loop.end` 18, `loop.count` 3, `head_count_kv` 8 on every layer,
+key and value length 128 for the global and the windowed layers alike, `sliding_window` 1024, and
+`sliding_window_pattern` false on layers 5, 11, 17 and 23. That is **eight growing slots and 40 windowed ones over 48
+evaluations**, 4,096 bytes a token each, **0.436 GB per 8k**. `architecture.loop_layers` and `loop_passes` are new
+fields so the caching counts are held against the slots rather than the layers.
+
+**Nobody needs a patch and somebody rents it.** llama.cpp added the architecture in
+[#32694](https://github.com/ggml-org/llama.cpp/pull/32694), and [#32704](https://github.com/ggml-org/llama.cpp/pull/32704),
+which fixes the NVFP4 expert scales on the second and third passes, is **merged**; its author measured ggml-org's
+IQ4_NL at the same perplexity before and after, so that file was never affected. Unsloth's own UD builds need Unsloth's
+llama.cpp or a mainline build newer than that fix, which is why they are not what the row is priced at.
+[OpenRouter](https://openrouter.ai/thinkingmachines/inkling-2-mini) has two active endpoints, cheapest PrimeIntellect at
+**$0.075 and $0.30**, so the price is exact. **Artificial Analysis scores it 20 on v5.0.1**, not on the v4.3 this site
+ranks on, so the score is null and the basis says which version placed it where.
+
+**Inkling 2 Small's "no weights" ruling has aged.** Its [repository](https://huggingface.co/thinkingmachines/Inkling-2-Small)
+has had safetensors since 2026-11-04 and `unsloth/Inkling-2-Small-GGUF` since 2026-11-05. Its `UD-Q4_K_XL` is nine
+shards summing to **354.15 GB**, inside the 384 GB the roomiest machine here holds, and `UD-IQ2_XXS` is 190.58 GB, so it
+is a real candidate rather than a closed one — but its `model_type` is `inkling2` and not `inkling2_loop`, so its own
+geometry wants reading before a row. **Nothing else new is addable.** `inclusionAI/LingSante-3.1-flash` (2026-11-19,
+MIT) is 572,120,680,768 parameters in FP8 with no quantised build. `nvidia/Qwen3.5-4B-Qwen3.8-27B-Draft` is a drafter for
+speculative decoding, not a model to run. `Nemotron-3-Nano-Omni-30B-A3B` turned up in a roundup and is an April
+any-to-any speech model, the Haru-4B ground. `jstarks/Nanbeige4.3-33B-Weight-Space-Programming` is LoRA adapters.
+Searched: the queries this file lists, Hugging Face's newest and trending text-generation feeds, the Thinking Machines
+author feed, two November release roundups and the llama.cpp pull requests behind the runtime support.
 
 ### 2026-11-21 · Mellum2.1 Thinking was never blocked on a figure, only on two judgements that are now the agent's
 

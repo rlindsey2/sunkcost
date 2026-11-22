@@ -77,7 +77,16 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
 
 - [ ] The calculator's own score line has none of what the generated pages gained on 2026-11-08: it prints each row's
       `basis` string, "Artificial Analysis Intelligence Index v4.3: N", with no read date and no word that the index
-      has moved. `src/render.ts` is a PR, not a push.
+      has moved. One more line in the same file belongs in the same PR: the memory-fit line writes the cache formula
+      "over `n_layers` layers", which on Inkling 2 Mini is 24 where the cache is summed over 48 layer evaluations;
+      `cachedLayerSlots()` is the figure it wants. `src/render.ts` is a PR, not a push.
+
+- [ ] **A model page says a row is unplaced where the index has placed it on a later version.** `indexBasisNote()`
+      prints `frontier_equivalent.basis` only where there is a score, so a model page falls back to "It has not been
+      placed on the intelligence index yet" and only the calculator prints the row's own basis. Two rows are in that
+      shape: Inkling 2 Mini, whose basis says Artificial Analysis scores it 20 on v5.0.1, and Nanbeige4.3 33B, whose
+      basis still reads "Not listed on the Artificial Analysis index." against the 20.11 v5.0.1 gives it. Both halves
+      are a push: the basis on a null-score row printed on the page, and that one string corrected.
 
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
@@ -110,7 +119,11 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       this row's 28 layers to 32 against 7 and 21 passed; a row with linear or recurrent layers truthfully counts
       short, which is why it is one-sided, and the guard wants the shape that has none. And nothing holds
       `active_params_b`: setting this row's 2.5 to its full 12.15 moves every speed figure on its page and no check
-      notices, because the only thing that could contradict it is the card it was read off.
+      notices, because the only thing that could contradict it is the card it was read off. Mutation on 2026-11-22
+      added two of the same shape: Inkling 2 Mini's `loop_layers` and `loop_passes` only widen the ceiling the caching
+      counts are held against, so 12 layers at 3 passes reading 13 or 4 passes leaves validate and all 372 pages clean
+      while the note printed beside the cache goes on saying twelve layers three times over 48 slots. Both figures are
+      in that note, which is what a note-figure guard would read.
 
 - [ ] **A weights figure says 2.60 GB and nothing says which file it came from.** `weights_gb` is one rounded
       number a row, the repository behind it is somewhere in `sources` among the card, the config and the GGUF,
@@ -122,6 +135,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-22 — Inkling 2 Mini is priced here, and the loop that ruled SenseNova out is a figure its own card states
+`inkling-2-mini-iq4` is in `data/models.json`: Thinking Machines' 26.39B open multimodal mixture of experts, Apache 2.0, 1M of context, top of the trending feed.
+It is a looped model, the shape that ruled SenseNova-Loop-9B out on 2026-10-31, and what makes it addable is that its own card prices the loop: the middle 12 of
+its 24 layers run three times, and the publisher counts 3.4B parameters active in one pass against **5.4B effective a token**, so the speed estimate reads 5.4B of
+26.39B rather than the doubled figure a nominal active count gives. Weights are ggml-org's own `IQ4_NL`, 17,627,940,768 bytes, 5.34 bits a parameter, published by
+llama.cpp's own organisation and loading with no patch; the cache is the GGUF's own metadata, **eight growing slots and 40 windowed over 48 layer evaluations**,
+0.436 GB per 8k, because every pass keeps its own. `loop_layers` and `loop_passes` are new fields, and `cachedLayerFault()` holds the two caching counts against
+the slots those layers cache in rather than against the layer count. OpenRouter rents it at $0.075 and $0.30, exact; Artificial Analysis scores it 20 on v5.0.1 and
+not on v4.3, so the score is null and the basis says which. Straight to main. Verified: 483 tests with 1 added, typecheck and validate clean, the whole build with
+build:functions, 372 pages every guard passing, 3 added and 2 retired with a 301 each, the model page and a head-to-head read rendered; 16 mutations, 11 caught and
+the control clean, the misses `weights_gb`, `active_params_b`, `vision` null and the two loop fields, which only widen a ceiling. Watch done: Inkling 2 Small's "no
+weights" ruling has aged, its four-bit 354.15 GB of shards inside the 384 GB here. Next: the note-figure guard, now with the loop fields beside it.
 
 ### 2026-11-21 — Mellum2.1 Thinking is priced here, and it was blocked on nothing but a rule that had already gone
 `mellum2.1-12b-a2.5b-q4` is in `data/models.json`: JetBrains's 12B coding mixture of experts, Apache 2.0, 2.5B active a token, 8.07 GB at the publisher's
@@ -253,30 +279,3 @@ tests with one added, typecheck and validate clean, the full build with build:fu
 moved redated and no others, all four read rendered, 12 mutations run and 9 caught with 1 control; the misses are a note's wording, which no guard can judge, and a note
 edited down to a legal restatement, which cannot be told from a correction. Watch done: RWKV7-G1l is out on kind, a base model by both its own cards, which closes the
 top backlog item and the fixed-state convention with it. Next: Raon-1 nano as a row.
-
-### 2026-11-11 — GLM-5.3-SLIM is priced here, and the DSA cache it waited on is published on its own card
-The top backlog item wanted the best-sourced candidate as a row, and GLM-5.3-SLIM's one open field turned out to be published rather than open. GLM-5.3 attends
-through a DSA indexer no row here described, so the cache was read instead of assumed: `config.json` gives 78 layers each caching a 576-wide latent, 1,152 bytes
-a token, and `indexer_types` lists 21 "full" against 57 "shared", so only 21 hold index keys of their own. Scantist's card states what llama.cpp reports for this
-exact build, 93 KiB a token at MLA 87.75 plus indexer 5.25, which is 78 x 1,152 and 21 x 256 to the byte, so the row carries `kv_bytes_per_token_total` 95,232.
-With it: 179.86 GB off the six shards, 563B after pruning, the GLM-5.3 License passed through, 1M of context, and active parameters, which neither card states,
-off Artificial Analysis's 40B of 753B for GLM-5.3, the pruning cutting the experts a layer holds and not the eight it routes a token to. Nobody rents a pruned
-build, and the model it is cut from is not a row here, which the stand-in rule could not say: it borrowed only from a row, so the only price the schema allowed
-was GLM-5.3-Flash's $0.0701 output against GLM-5.3's $1.40, a twentyfold understatement. A stand-in now names either a row, whose price it must still match, or
-a hosted model this site prices no row for, which carries its own listing and read date, and exactly one of the two. Straight to main. Verified: 468 tests with
-one added, typecheck and validate clean, the full build with build:functions, 354 pages every guard passing, 2 added and none retired of 195 redated, the model
-page and the new head-to-head read rendered, 12 mutations run and 10 caught, both misses now backlog items. Watch done: four names, closed. Next: RWKV7-G1l.
-
-### 2026-11-10 — Arete-27B is priced here, and its parameter count is the one figure its card does not state
-The watch unblocked the backlog's own next-best candidate: bartowski published an Arete-27B GGUF on 2026-11-06, which was the one thing the row waited on, and
-every other field could be read today. So **Arete-27B is a row**, Nous Research's supervised fine-tune of Qwen3.8-27B: 17.20 GB at bartowski's Q4_K_M, a 0.93 GB
-vision projector beside it, and the cache geometry read off Arete's own config rather than assumed from the base, 16 of 64 layers holding a growing cache at 4 KV
-heads of 256. Its parameter count is the interesting one. The card says "27B" and nothing more, so the row carries **27.36B**, the repository's own safetensors
-index at bf16 halved, against the base's 27.78B: the 0.42B between them is the multi-token-prediction head Nous disabled in training and did not ship, and the
-row's TODO says where the figure came from so the next run can re-check it in one request. Nobody rents it, so Qwen3.8 27B stands in on price, and Artificial
-Analysis has not placed it, so the page says so rather than guessing a class. Two head-to-heads came down with a 301 each: Arete needs 19.35 GB at 32k, which
-puts it between the three 27B models that were each other's nearest neighbour across families, so Qwen3.6 27B and Qwen3.8 27B both have a nearer one now.
-Straight to main. Verified: 467 tests, typecheck and validate clean, the full build with build:functions, 352 pages every guard passing, 4 added and 2 retired
-against the ledger, 250 redated, the model page and one new head-to-head read rendered, 12 mutations run and 10 caught; the misses are `vision` set to null, which
-no guard here can see without fetching a repository, and a ceiling note deleted, which is now on the `checkContextCeilings()` item. Watch done: GLM-5.3-SLIM's
-card closes two of its three fields, and Kimi K3.1 Pro, ERNIE-5.5-Flash-Base, PLaMo 3 Translate and Inkling 2 Small are closed. Next: GLM-5.3-SLIM's DSA cache.

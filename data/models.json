@@ -4565,5 +4565,73 @@
       "https://openrouter.ai/qwen/qwen3.5-9b"
     ],
     "TODO": "Capability ratings needed. Parameters are the 12,149,923,072 the repository's safetensors index reports, which the card rounds to 12B total and 2.5B active; weights are Mellum2.1-12B-A2.5B-Thinking-Q4_K_M.gguf, 8,071,295,264 bytes, 5.31 bits a parameter, read 2026-11-21 off JetBrains's own GGUF repository, which publishes MXFP4_MOE at 7,029,537,056 bytes beside it."
+  },
+  {
+    "id": "inkling-2-mini-iq4",
+    "display_name": "Inkling 2 Mini",
+    "family": "Inkling",
+    "generation": "current",
+    "params_b": 26.39,
+    "active_params_b": 5.4,
+    "quantisation": "IQ4_NL",
+    "weights_gb": 17.63,
+    "kv_cache_gb_per_8k": 0.436,
+    "architecture": {
+      "n_layers": 24,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "loop_layers": 12,
+      "loop_passes": 3,
+      "full_attention_layers": 8,
+      "sliding_window_layers": 40,
+      "sliding_window": 1024,
+      "note": "The middle 12 of the 24 layers run three times with the same weights, and every pass keeps its own cache, so a token is held in 48 slots rather than 24: eight that grow with the context and 40 that stop at a 1,024-token window. Each slot holds the same geometry, eight key-value heads by 128 wide, so a token costs 4,096 bytes wherever it is held."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 0.35,
+      "projector_bytes": 345910944,
+      "projector_file": "mmproj-Inkling-2-Mini-Q8_0.gguf",
+      "projector_source_url": "https://huggingface.co/ggml-org/Inkling-2-Mini-GGUF",
+      "source_url": "https://huggingface.co/thinkingmachines/Inkling-2-Mini",
+      "checked": "2026-11-22"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. This is the smaller of Thinking Machines' two open multimodal models, and it is built to be run on one machine: 26.39B parameters in the file, eight of 128 experts for each token, and pictures as well as text. What makes it unusual is the loop. The middle 12 of its 24 layers run three times with the same weights, so a token passes through 48 layer evaluations, and the publisher counts 3.4B parameters active in a single pass against 5.4B effective per token once the extra passes are added. The speed on this page is worked out from the 5.4B, because that is what the memory has to be read for, and the cache is bigger for the same reason: every pass keeps its own, so the window costs the memory of 48 layers and not 24. On Thinking Machines' own table, run through the same harness as the models it is set against, it reaches 48.2% on DeepSWE v1.1 against Qwen3.8 27B's 42.2% and 77.9% on the hard half of SWEBench Pro v2 against 73.8%, which are the publisher's figures and self-reported. The file priced here is the one llama.cpp's own organisation publishes: four-bit experts in the first 20 layers and everything else at eight bits, and on its publisher's own test it picks the same next token as the full-precision weights 95.5% of the time. Unsloth publishes lighter builds of the same model, down to 7.76 GB, which need either Unsloth's own llama.cpp or a mainline build new enough to carry the loop fix its repository says they wait on, which llama.cpp has since merged.",
+    "cloud_equivalent": {
+      "name": "Inkling 2 Mini",
+      "input_price_per_mtok": 0.075,
+      "output_price_per_mtok": 0.3,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/thinkingmachines/inkling-2-mini",
+      "is_exact_match": true,
+      "checked": "2026-11-22"
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 1048576,
+    "max_context_note": "1M, stated on the model card and in the GGUF this row is priced at",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Artificial Analysis scores it 20 on Intelligence Index v5.0.1, a later version of the index than the v4.3 the bands here are set from, so it is not placed in them.",
+      "url": "https://artificialanalysis.ai/models/inkling-2-mini",
+      "checked": "2026-11-22",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/thinkingmachines/Inkling-2-Mini",
+      "https://huggingface.co/thinkingmachines/Inkling-2-Mini/raw/main/config.json",
+      "https://huggingface.co/ggml-org/Inkling-2-Mini-GGUF",
+      "https://openrouter.ai/thinkingmachines/inkling-2-mini"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 26,388,646,440 the repository's safetensors index reports, which the card rounds to 26.4B total, 3.4B active in one pass and 5.4B effective a token over three; weights are Inkling-2-Mini-IQ4_NL.gguf, 17,627,940,768 bytes, 5.34 bits a parameter, read 2026-11-22 off ggml-org's GGUF repository, which publishes Q8_0 at 27,820,099,264 bytes and BF16 at 52,226,509,504 beside it. The layer geometry is the GGUF's own metadata, read the same day: block_count 24, loop.start 6, loop.end 18, loop.count 3, head_count_kv 8 on every layer, key_length and value_length 128 for both the global and the windowed layers, sliding_window 1024, and sliding_window_pattern false on layers 5, 11, 17 and 23, which is where the eight growing slots and the 40 windowed ones come from."
   }
 ]

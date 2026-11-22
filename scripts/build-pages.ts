@@ -7810,6 +7810,11 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   // Qwen3.8 27B both have a nearer one now.
   ['/compare/qwen3-6-27b-q4-vs-gemma-3-27b-q4/', '/models/qwen3.6-27b-q4/'],
   ['/compare/qwen3-8-27b-q4-vs-muse-glimmer-30b-q4/', '/models/qwen3.8-27b-q4/'],
+  // 2026-11-22: Inkling 2 Mini needs 18.87 GB at 32k, which falls between the two Qwen
+  // 27Bs and the 19.35 GB Arete-27B they were each paired with, so both of them have a
+  // nearer neighbour across families now.
+  ['/compare/qwen3-6-27b-q4-vs-arete-27b-q4/', '/models/qwen3.6-27b-q4/'],
+  ['/compare/qwen3-8-27b-q4-vs-arete-27b-q4/', '/models/qwen3.8-27b-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;

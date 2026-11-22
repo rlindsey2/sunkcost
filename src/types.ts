@@ -106,6 +106,16 @@ export interface ModelArchitecture {
   kv_layer_groups?: KvLayerGroup[] | null;
   bytes_per_token_full?: number | null;
   bytes_per_token_sliding?: number | null;
+  /**
+   * A looped model runs some of its layers more than once a token with the same
+   * weights, and each pass keeps its own cache, so a token is held in more slots
+   * than the model has layers: Inkling 2 Mini's middle 12 of 24 run three times,
+   * which is 48 slots. The two counts below are held against that rather than
+   * against n_layers. Both fields are set together, and null on every model that
+   * runs each layer once.
+   */
+  loop_layers?: number | null;
+  loop_passes?: number | null;
   /** layers whose KV cache grows with the full context; defaults to n_layers */
   full_attention_layers?: number | null;
   /** layers with a fixed attention window (Gemma 3, gpt-oss, Llama 4 chunked) */

@@ -23,7 +23,7 @@ export {
 } from './format';
 import { fit as memoryFit, kvScaleFor } from './fit';
 import { defaultState, serializeState, type State } from './state';
-import type { Dataset, Hardware, Model } from './types';
+import type { Dataset, Hardware, Model, ModelArchitecture } from './types';
 
 export const CAP_SHORT: Record<string, string> = {
   summarisation: 'Summarising',
@@ -1274,6 +1274,59 @@ export function kvTotalGeometryFault(m: Model): string | null {
     return `the note states no figure that reads back as ${total} bytes a token, so the figure the site uses and the words printed beside it are held apart`;
   }
   return null;
+}
+
+/**
+ * How many layer slots a token is cached in, or null where the row states no
+ * layer count. On nearly every model that is the layer count itself: each layer
+ * runs once a token and holds one key and one value for it.
+ */
+export function cachedLayerSlots(a: ModelArchitecture): number | null {
+  if (a.n_layers == null) return null;
+  return a.n_layers + (a.loop_layers ?? 0) * ((a.loop_passes ?? 1) - 1);
+}
+
+/**
+ * Why the layers a row counts as caching cannot be held against its own layer
+ * count, or null where they can.
+ *
+ * The two counts have to fit inside the layers the row claims, and they need not
+ * fill them: 13 of LFM3 1.7B's 24 layers are convolutions that cache nothing and
+ * are in neither count. A looped model breaks that reading, because it runs some
+ * of its layers again with the same weights and llama.cpp gives every pass its
+ * own cache. Inkling 2 Mini runs its middle 12 of 24 layers three times, so a
+ * token is held in 48 slots from 24 layers of weights, and 8 growing against 40
+ * windowed is the truth about it rather than a count that overruns its model.
+ * The loop is two fields set together, and the slots they come to are what the
+ * counts are then held against — which keeps the check on every other row, where
+ * a loop of one pass is no loop and the ceiling is the layer count as before.
+ */
+export function cachedLayerFault(m: Model): string | null {
+  const a = m.architecture;
+  if (!a) return null;
+  const looped = a.loop_layers ?? null;
+  const passes = a.loop_passes ?? null;
+  if ((looped == null) !== (passes == null)) {
+    return 'a loop is the layers that run again and the number of passes together, and this row states one of the two';
+  }
+  if (looped != null && passes != null) {
+    if (a.n_layers == null) return 'a looped row needs the layer count the loop runs inside';
+    if (!Number.isInteger(looped) || looped <= 0 || looped > a.n_layers) {
+      return `${looped} looped layers is not a count of layers within the ${a.n_layers} this row has`;
+    }
+    if (!Number.isInteger(passes) || passes < 2) {
+      return `${passes} passes through the looped layers is not a loop; one pass is every other row here`;
+    }
+  }
+  if (a.n_layers == null) return null;
+  if (a.full_attention_layers == null && a.sliding_window_layers == null) return null;
+  const counted = (a.full_attention_layers ?? 0) + (a.sliding_window_layers ?? 0);
+  const slots = cachedLayerSlots(a)!;
+  if (counted <= slots) return null;
+  const held = looped == null
+    ? `the model has ${a.n_layers}`
+    : `its ${a.n_layers} layers are ${slots} slots a token, ${looped} of them run ${passes} times`;
+  return `${counted} layers are counted as caching (${a.full_attention_layers ?? 0} full, ${a.sliding_window_layers ?? 0} windowed) and ${held}`;
 }
 
 /**
