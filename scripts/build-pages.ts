@@ -20,7 +20,7 @@ import {
   pricePerUsableGb, priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, tokenCost, tokenCosts, type ModelCost, type TokenCost,
   runnersFor, runsOnNote, runsOnlyOn, runsOnlyThere, sameSilicon, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, slug,
   SECTIONS, sourceLinks, sourceName, speedFrom, speedWithBasis, splitCapabilityNote, splitHardwareNote, noteSentences, stack,
-  scoredModels, scoresReadLine, strongestShared, supersededIndexLine, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, verdictLine, visionFleetLine, visionSpec, widestHeadroom, withModified, type Runner,
+  scoredModels, scoresReadLine, strongestShared, supersededIndexLine, swapSentence, tierLabel, tierName, tierScale, titleHardwareLabel, TITLE_MAX, titleOf, unplacedIndexNote, verdictLine, visionFleetLine, visionSpec, widestHeadroom, withModified, type Runner,
   type MissedMachine, type SharedMachine, type ShorterFit, type ShorterMachine,
 } from '../src/pagekit';
 import {
@@ -4175,7 +4175,7 @@ ${cheapest
 <h2>${qualityHeading(m)}</h2>
 <p>${fe?.score != null
       ? `On the ${fe.url ? `<a href="${esc(fe.url)}" rel="noopener">${esc(data.defaults.frontier_basis?.name ?? 'intelligence index')}</a>` : esc(data.defaults.frontier_basis?.name ?? 'intelligence index')} it scores <b>${fe.score}</b>${fe.score_note ? ` (${esc(fe.score_note)})` : ''}, which puts it in the <b>${esc(tierName(m, data))}</b> band. ${esc(data.defaults.frontier_tiers[fe.tier ?? 0].plain)}`
-      : 'It has not been placed on the intelligence index yet.'}
+      : esc(unplacedIndexNote(m))}
  <a href="/leaderboard/">See the whole table</a>.</p>${indexBasisNote(m, data) ? `\n<p class="note">${indexBasisNote(m, data)}</p>` : ''}
 ${caps ? `<ul class="caps">${caps}</ul>
 ` : ''}${versusLine}

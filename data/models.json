@@ -3861,9 +3861,9 @@
       "score": null,
       "score_note": null,
       "estimated": null,
-      "basis": "Not listed on the Artificial Analysis index.",
-      "url": null,
-      "checked": "2026-10-30",
+      "basis": "Artificial Analysis scores it 20 on Intelligence Index v5.0.1, a later version of the index than the v4.3 the bands here are set from, so it is not placed in them.",
+      "url": "https://artificialanalysis.ai/models/nanbeige4-3-33b",
+      "checked": "2026-11-23",
       "index_version": "v4.3"
     },
     "sources": [
@@ -4633,5 +4633,68 @@
       "https://openrouter.ai/thinkingmachines/inkling-2-mini"
     ],
     "TODO": "Capability ratings needed. Parameters are the 26,388,646,440 the repository's safetensors index reports, which the card rounds to 26.4B total, 3.4B active in one pass and 5.4B effective a token over three; weights are Inkling-2-Mini-IQ4_NL.gguf, 17,627,940,768 bytes, 5.34 bits a parameter, read 2026-11-22 off ggml-org's GGUF repository, which publishes Q8_0 at 27,820,099,264 bytes and BF16 at 52,226,509,504 beside it. The layer geometry is the GGUF's own metadata, read the same day: block_count 24, loop.start 6, loop.end 18, loop.count 3, head_count_kv 8 on every layer, key_length and value_length 128 for both the global and the windowed layers, sliding_window 1024, and sliding_window_pattern false on layers 5, 11, 17 and 23, which is where the eight growing slots and the 40 windowed ones come from."
+  },
+  {
+    "id": "mistral-medium-3.5-128b-q4",
+    "display_name": "Mistral Medium 3.5 128B",
+    "family": "Mistral",
+    "generation": "current",
+    "params_b": 127.7,
+    "active_params_b": 127.7,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 74.9,
+    "kv_cache_gb_per_8k": 2.953,
+    "architecture": {
+      "n_layers": 88,
+      "n_kv_heads": 8,
+      "head_dim": 128,
+      "note": "Every one of the 88 layers caches the whole context, eight key-value heads by 128 wide, so a token costs 4,096 bytes in each of them and 360,448 bytes across the model. There is no sliding window: neither the config nor the file priced here states one, so nothing caps what a layer holds."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 5.36,
+      "projector_bytes": 5356846528,
+      "projector_file": "mmproj-F16.gguf",
+      "projector_source_url": "https://huggingface.co/unsloth/Mistral-Medium-3.5-128B-GGUF",
+      "source_url": "https://huggingface.co/mistralai/Mistral-Medium-3.5-128B",
+      "checked": "2026-11-23"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. This is Mistral's flagship model with downloadable weights, and what decides the hardware is that it is dense. Every parameter is read for every token, so the speed here is a machine's memory bandwidth divided by the whole 75 GB of weights, where a mixture of experts the same size on disk reads a fraction of it and runs several times faster. It wants a fast machine rather than only a roomy one. Mistral says it replaces Mistral Medium 3.1 and Magistral in Le Chat and Devstral 2 in its coding agent, and on its own self-reported figures it reaches 77.6% on SWE-Bench Verified. Artificial Analysis scores it 5 on its v5.0.1 index. The licence is a modified MIT: free to use, change and redistribute, except that the rights do not apply in a month when your company's global consolidated revenue for the month before passed $20 million. The file priced here is Unsloth's Q4_K_M, uploaded the day after Mistral corrected a YaRN term in its own config that had been costing long-context answers. That correction moved one scaling term and left the layer count, the key-value head count and the head width the cache figures here are read from unchanged.",
+    "cloud_equivalent": {
+      "name": "Mistral Medium 3.5",
+      "input_price_per_mtok": 1.5,
+      "output_price_per_mtok": 7.5,
+      "source": "OpenRouter, cheapest active endpoint",
+      "source_url": "https://openrouter.ai/mistralai/mistral-medium-3-5",
+      "is_exact_match": true,
+      "checked": "2026-11-23"
+    },
+    "license": "Modified MIT (see repo)",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k, reached by YaRN scaling from a 4,096-token base, which the file priced here carries",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Artificial Analysis scores it 5 on Intelligence Index v5.0.1, a later version of the index than the v4.3 the bands here are set from, so it is not placed in them.",
+      "url": "https://artificialanalysis.ai/models/mistral-medium-3-5",
+      "checked": "2026-11-23",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/mistralai/Mistral-Medium-3.5-128B",
+      "https://huggingface.co/mistralai/Mistral-Medium-3.5-128B/raw/main/config.json",
+      "https://huggingface.co/unsloth/Mistral-Medium-3.5-128B-GGUF",
+      "https://openrouter.ai/mistralai/mistral-medium-3-5"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 127,704,210,176 the repository's safetensors index reports, which the card rounds to a dense 128B and which counts the vision encoder the GGUF priced here leaves in a second file; weights are the three Q4_K_M shards Unsloth publishes, 74,897,139,136 bytes together, 4.69 bits a parameter, read 2026-11-23, with UD-Q4_K_XL at 75,686,323,648 bytes and Q8_0 at 132,854,425,088 beside them. The layer geometry is the first shard's own GGUF metadata, read the same day: block_count 88, head_count_kv 8, key_length and value_length 128, context_length 262144 off a 4,096-token base at a YaRN factor of 64, and no sliding window; Mistral's own config.json agrees on all of them."
   }
 ]

@@ -21,7 +21,7 @@ import {
   modelSoftware, otherQuantisations, pageGraph, pageShell, powerSourceLabel, powerWithSource, priceRivals, pricePerUsableGb,
   priceWithScope, priceWithScopeText, publishedPriceLine, rowFor, runnersFor, tokenCost, tokenCosts,
   runsOnNote, runsOnlyOn, runsOnlyThere, sharedHeadroom, shortHardwareLabel, shownTps, SIZE_BANDS, speedFrom, speedWithBasis, stack,
-  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, indexBasisNote, scoredModels, scoresReadLine, strongestShared, supersededIndexLine, tierLabel, tierName, titleHardwareLabel, verdictLine, visionFleetLine, visionSpec, widestHeadroom, withModified, type LdNode,
+  sourceLinks, sourceName, holdHyphens, hostedSpeedLine, splitCapabilityNote, splitHardwareNote, noteSentences, endStop, indexBasisNote, scoredModels, scoresReadLine, strongestShared, supersededIndexLine, tierLabel, tierName, titleHardwareLabel, unplacedIndexNote, verdictLine, visionFleetLine, visionSpec, widestHeadroom, withModified, type LdNode,
 } from '../src/pagekit';
 import { fingerprint, mainOf } from '../src/page-dates';
 import {
@@ -2650,6 +2650,31 @@ describe('the calculator’s assumptions panel, which prints the same fields the
     expect(indexBasisNote(unscored, data)).toBe('');
   });
 
+  it('says why a row has no score in the row’s own words, and never that it is unplaced where the index has placed it', () => {
+    const unscored = data.models.filter((m) => m.frontier_equivalent?.score == null);
+    expect(unscored.length).toBeGreaterThan(0);
+    for (const m of unscored) {
+      const said = unplacedIndexNote(m);
+      // one finished sentence on every row, and the row's own basis wherever it has one
+      expect([m.id, said.endsWith('.')]).toEqual([m.id, true]);
+      expect([m.id, said[0]]).toEqual([m.id, said[0].toUpperCase()]);
+      const basis = m.frontier_equivalent?.basis?.trim();
+      if (basis) expect([m.id, said]).toEqual([m.id, basis]);
+      // a row the index scores on a later version of itself cannot read as unscored:
+      // Artificial Analysis places Inkling 2 Mini, Nanbeige4.3 33B and Mistral Medium 3.5
+      // on v5.0.1, and the page said the opposite until the basis was printed
+      if (basis && /scores it [\d.]+ on/.test(basis)) {
+        expect([m.id, said]).toEqual([m.id, expect.stringContaining('v5.0.1')]);
+        expect([m.id, said.includes('not been placed')]).toEqual([m.id, false]);
+      }
+    }
+    // a row with nothing to say falls back to the sentence that covers every one of them
+    const bare = { ...unscored[0], frontier_equivalent: { ...unscored[0].frontier_equivalent!, basis: undefined } };
+    expect(unplacedIndexNote(bare)).toBe('It has not been placed on the intelligence index yet.');
+    // and a scored row says nothing here; its score and tier are the sentence
+    expect(unplacedIndexNote(scoredModels(data)[0])).toBe('');
+  });
+
   it('names the index that replaced the one the scores are on, at every count it could cover', () => {
     const total = scoredModels(data).length;
     const sup = data.defaults.frontier_basis!.superseded_by!;
@@ -3252,7 +3277,10 @@ describe('what a model that reads images costs beyond its weights', () => {
     expect(said).toContain(numberWord(vision.length));
     expect(said.endsWith('.')).toBe(true);
     expect(said[0]).toBe(said[0].toUpperCase());
-    for (const bad of ['undefined', 'NaN', 'null', '0 of']) expect(said.includes(bad)).toBe(false);
+    for (const bad of ['undefined', 'NaN', 'null']) expect(said.includes(bad)).toBe(false);
+    // no half of the sentence counts to nothing. The digits are read on a word
+    // boundary, because the twentieth priced projector made "20 of" read as "0 of".
+    expect(said).not.toMatch(/\b0 of\b/);
     // the count is the data's, not a number written into the sentence
     expect(visionFleetLine({ ...data, models: (models as Model[]).filter((m) => !m.vision) })).toBe(null);
   });

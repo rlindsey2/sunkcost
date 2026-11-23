@@ -771,6 +771,25 @@ export function supersededIndexLine(data: Dataset): string {
   ].join(' ');
 }
 
+/**
+ * The sentence a model page prints where the index has no score for the row.
+ *
+ * "It has not been placed on the intelligence index yet" is true of most of
+ * them and the opposite of the truth on the ones the index has placed on a
+ * later version of itself: Artificial Analysis scores Inkling 2 Mini 20,
+ * Nanbeige4.3 33B 20 and Mistral Medium 3.5 5 on v5.0.1, none of which can sit
+ * in bands set from v4.3. Each of those rows says so in its own
+ * `frontier_equivalent.basis`, and only the calculator was printing it, so the
+ * page contradicted its own data. The basis is the sentence where a row has
+ * one, and the fallback covers a row that has none.
+ */
+export function unplacedIndexNote(m: Model): string {
+  const fe = m.frontier_equivalent;
+  if (fe?.score != null) return '';
+  const basis = fe?.basis?.trim();
+  return basis || 'It has not been placed on the intelligence index yet.';
+}
+
 /** The same, under the one sentence on a model page that prints that model's score. */
 export function indexBasisNote(m: Model, data: Dataset): string {
   const fe = m.frontier_equivalent;

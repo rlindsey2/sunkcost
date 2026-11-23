@@ -49,8 +49,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       are there and its cache is two kinds at once. **Maxwell-V1-Flash** and **Tencent Hy4-flash** both ship a
       four-bit file that needs an unmerged llama.cpp patch, and Hy4-flash's compressed indexer is not a geometry
       this site can state yet. **SenseNova-Loop-9B** runs its middle layers twice, so the bandwidth estimate would
-      read about double the speed it reaches, and **Dory 1.0 4B** is gated. While that holds, a run is better spent
-      on a guard below.
+      read about double the speed it reaches, and **Dory 1.0 4B** is gated. **The queue is not the only place a
+      row comes from**: Mistral Medium 3.5 128B went in on 2026-11-23 having been addable for seven months, because
+      this watch looks for what came out yesterday. Models this site should price and never looked at are worth a
+      pass of their own, family by family against `data/models.json`, before a run falls back to a guard below.
 
 - [ ] **Nine of the 27 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -81,12 +83,11 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       "over `n_layers` layers", which on Inkling 2 Mini is 24 where the cache is summed over 48 layer evaluations;
       `cachedLayerSlots()` is the figure it wants. `src/render.ts` is a PR, not a push.
 
-- [ ] **A model page says a row is unplaced where the index has placed it on a later version.** `indexBasisNote()`
-      prints `frontier_equivalent.basis` only where there is a score, so a model page falls back to "It has not been
-      placed on the intelligence index yet" and only the calculator prints the row's own basis. Two rows are in that
-      shape: Inkling 2 Mini, whose basis says Artificial Analysis scores it 20 on v5.0.1, and Nanbeige4.3 33B, whose
-      basis still reads "Not listed on the Artificial Analysis index." against the 20.11 v5.0.1 gives it. Both halves
-      are a push: the basis on a null-score row printed on the page, and that one string corrected.
+- [ ] **A head-to-head still says a row is unplaced where the index has placed it on a later version.** The model
+      page prints the row's own basis since 2026-11-23, so Inkling 2 Mini, Nanbeige4.3 33B and Mistral Medium 3.5 all
+      say on their own pages that Artificial Analysis scores them on v5.0.1. The head-to-heads do not: the lede reads
+      "has not been placed on it" and the table cell "not placed", over 109 pages. The sentence cannot carry the whole
+      basis without bloating every one of them, so the fix is a shorter form of it, in `build-pages.ts`.
 
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
@@ -97,8 +98,8 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row quoted at the window the source ran it at for each of the 16, so a data edit, now the agent's.
 
 - [ ] A price ending in one decimal reads unfinished where money is expected: "and $0.5 per million output" on
-      the MiniMax M3.1 Flash page, "$0.7" on LFM2.5 24B-A2B, "$1" on Beam, across 43 distinct price pairs and
-      every head-to-head row that prints one, 44 pairs since 2026-11-20. The site writes a price as the data states
+      the MiniMax M3.1 Flash page, "$0.7" on LFM2.5 24B-A2B, "$1" on Beam, across 33 of the 79 rows and
+      every head-to-head row that prints one, on 22 distinct pairs, counted 2026-11-23. The site writes a price as the data states
       it, with no padding to two places. The fix is in `src/format.ts`, which the calculator reads too, so it is a PR, not
       a push. One more line in the same file belongs in the same PR: `sourceKind()` tells two links to one repository
       apart only where the path matches a known marker, so a row citing a repository's README or its KNOWN_ISSUES.md
@@ -135,6 +136,20 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-23 — Mistral Medium 3.5 128B is priced here, and it had been addable for seven months
+`mistral-medium-3.5-128b-q4` is in `data/models.json`: Mistral's flagship with downloadable weights, dense 128B, 256k of context, text and images, under a Modified
+MIT licence whose only restriction is a $20M monthly revenue cap. Not a new model: published 2026-04-28, beside four Mistral rows already here including the Devstral 2
+it replaces in Mistral's own coding agent, and this watch had never looked for it. The top backlog item now says to make a pass for that shape. Read today: `safetensors.total` 127,704,210,176, Unsloth's `Q4_K_M` at 74,897,139,136 bytes over three shards, 4.69 bits a parameter, off the quantiser the sibling
+Mistral Small 4 row uses, and a 5,356,846,528-byte projector. The cache is the first shard's own GGUF metadata, 88 layers all caching the whole context, eight
+key-value heads by 128, no sliding window, **2.953 GB per 8k**, so 256k costs 94.5 GB of cache against 74.90 of weights. The card's warning about a bad config is
+real and misses these figures: the fix moved the YaRN term `mscale_all_dim` and nothing the cache reads, and these files went up the day after it. $1.50 and $7.50
+at Mistral on OpenRouter, exact, the dearest rental here. Artificial Analysis scores it 5 on v5.0.1 and not v4.3, so the score is null and the basis says which, and
+printing that basis was the precondition: `unplacedIndexNote()` puts a null-score row's own basis on its model page, which used to say "It has not been placed on
+the intelligence index yet" against data saying the opposite, and Nanbeige4.3 33B's is corrected to the 20 v5.0.1 gives it. Straight to main. Verified: 484 tests, 1 added and 1
+widened (the twentieth priced projector made "20 of" read as "0 of"), typecheck, validate and the whole build with build:functions clean, 375 pages every guard
+passing, 3 added and none retired, six read rendered; 9 mutations, 7 caught, the misses `weights_gb` and `active_params_b`, both on the backlog.
+Watch done: Kolibri 1.1 and sarvam-105b are new names, FP8 only on architectures nothing runs. Next: the note-figure guard.
 
 ### 2026-11-22 — Inkling 2 Mini is priced here, and the loop that ruled SenseNova out is a figure its own card states
 `inkling-2-mini-iq4` is in `data/models.json`: Thinking Machines' 26.39B open multimodal mixture of experts, Apache 2.0, 1M of context, top of the trending feed.
