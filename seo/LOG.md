@@ -53,6 +53,9 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row comes from**: Mistral Medium 3.5 128B went in on 2026-11-23 having been addable for seven months, because
       this watch looks for what came out yesterday. Models this site should price and never looked at are worth a
       pass of their own, family by family against `data/models.json`, before a run falls back to a guard below.
+      **LingSante-3.1-air-VL is the candidate named next**, and its figures were read on 2026-11-24: MIT, 124,848,460,496
+      parameters, the same `bailingmoe3` conversion Ling 3.2 air uses, bartowski's `Q4_K_M` at 78,661,520,576 bytes over two
+      shards and an `mmproj-…-f16.gguf` of 874,635,328. All it still wants is its own config's layer geometry for the cache.
 
 - [ ] **Nine of the 27 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -65,7 +68,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       `checkSourceLinks()` reads the shape of a URL and never asks whether it resolves, so every one of the 295
       source links on this site could rot the same way without a page saying so.
 
-- [ ] **The move to Intelligence Index v5.0.1 waits on Artificial Analysis.** It scores 10 of the 54 rows here and
+- [ ] **The version the index has moved to wants re-reading before anything else here.** A model page read 2026-11-24
+      states **v5.0.2**, where `frontier_basis.superseded_by` says v5.0.1, and that name is printed under the score on every
+      page of a scored row, so the switch starts with the leaderboard's own current version.
+      **The move to Intelligence Index v5.0.1 waits on Artificial Analysis.** It scores 10 of the 54 rows here and
       not the other 44 (read 2026-11-08, count in `frontier_basis.superseded_by`; Qwen3.8 Flash Next has one now too,
       found 2026-11-12, so the figure the leaderboard prints is a read that has aged rather than a count that is
       wrong), so switching would null 44 and take the ladder, the "smartest first" sort and the generation pair
@@ -87,7 +93,8 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       page prints the row's own basis since 2026-11-23, so Inkling 2 Mini, Nanbeige4.3 33B and Mistral Medium 3.5 all
       say on their own pages that Artificial Analysis scores them on v5.0.1. The head-to-heads do not: the lede reads
       "has not been placed on it" and the table cell "not placed", over 109 pages. The sentence cannot carry the whole
-      basis without bloating every one of them, so the fix is a shorter form of it, in `build-pages.ts`.
+      basis without bloating every one of them, so the fix is a shorter form of it, in `build-pages.ts`. Counted 2026-11-24:
+      27 head-to-heads print that lede and 9 of them name a row the index has placed on a later version, 4 of the 9 Ling 3.2 air's.
 
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
@@ -136,6 +143,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-24 — Ling 3.2 air is priced here, and its cache is Ling 3.0 flash's field for field
+`ling-3.2-air-q4` is in `data/models.json`: inclusionAI's hybrid-linear mixture of experts, MIT, 124B total and 5.5B active, 256k of context, text, images and video. It
+needed no new cache arithmetic: its geometry is Ling 3.0 flash's exactly, 42 layers in groups of six, 35 linear-attention to 7 gated latent, `kv_lora_rank` 512 and
+`qk_rope_head_dim` 64, so a token costs 1,152 bytes in each caching layer and 8,064 across the model, 0.066 GB per 8k. The page's point: 80.39 GB of weights, bartowski's
+three `Q4_K_M` shards (80,394,184,320 bytes, 5.03 bits a parameter) off stock llama.cpp b12600, against 2.1 GB of cache at the full 256k window, so the long window costs
+nothing in machine where on most models this size it costs more than the download; the projector is 874,635,264 bytes. Nobody rents it, no endpoint among OpenRouter's 469
+models, so the price stands in on Ling 3.0 Flash VL at $0.06 and $0.18, the model the card says it shares its architecture with. Artificial Analysis scores it 23 on
+**v5.0.2**, not the v5.0.1 of three weeks ago, so the score is null and the basis says which; the test that held that sentence widened off the literal. Straight to main.
+Verified: 484 tests with 1 widened, typecheck, validate and the whole build with build:functions clean, 378 pages every guard passing, 5 added and 2 retired with a 301 each
+(GLM-4.5-Air's two Mistral neighbours, displaced at 80.65 GB), the model page and the family head-to-head read rendered; 18 mutations, 10 caught and the control clean, six
+of the 7 misses backlog lines already (`n_layers` raised, `params_b`, `active_params_b`, two note figures, `vision` nulled) and the last a stand-in's own price, which
+nothing here holds. Watch done; LingSante-3.1-air-VL's figures recorded. Two oldest entries archived. Next: the note-figure guard.
 
 ### 2026-11-23 — Mistral Medium 3.5 128B is priced here, and it had been addable for seven months
 `mistral-medium-3.5-128b-q4` is in `data/models.json`: Mistral's flagship with downloadable weights, dense 128B, 256k of context, text and images, under a Modified
@@ -267,30 +287,3 @@ Verified: 469 tests, typecheck and validate clean, the whole build passing every
 12 mutations of the new row, 7 caught and 1 control; all 5 misses are open backlog items, two of them `weights_gb` and `params_b`, which the `weights_bytes` item would hold against each other,
 and two the ceiling-note item, which a stale "128k" note beside a 64k ceiling walks straight through. Watch done: nothing new to price, and Edge0's new 120B and 145B builds keep the family's
 2026-10-17 ruling on what they are. Next: Olmo 3.1 32B Think.
-
-### 2026-11-13 — Raon-1 nano is priced here, and 18 of its 24 layers cache nothing, so a token costs 6,912 bytes
-The top backlog item's named candidate is a row. **Raon-1 nano**, KRAFTON's instruct model for Korean and English: 2.08 GB at the publisher's own Q4_K_M, Apache 2.0, 256k of
-context, and a hybrid where only the 6 latent-attention layers of 24 keep a cache at all. The parameter count the watch left open closed on KRAFTON's second card rather than on a
-judgement: the weights card's 3.1B total including a 1.5B per-layer embedding table and the GGUF card's 3.2B including a 1.6B one agree once the 55M multi-token-prediction module
-the plain Q4_K_M does not carry is taken out, so the row reads 3.1B total and 1.5B active, the treatment Gemma 4 E4B already has. The cache was read rather than assumed, and the
-two forms are an order of magnitude apart: the repository's own PyTorch code caches each layer's keys and values materialised per head, 120 KiB a token, while the latent form the
-config states is the 512-wide vector plus the 64 key channels the heads share, 1,152 bytes a layer and 6,912 across the six, the 7 KiB a token both cards claim. Nobody rents it —
-KRAFTON's own playground and API publish no per-token price and OpenRouter has no endpoint — so Granite 4.2 8B stands in. Straight to main. Verified: 469 tests, typecheck and
-validate clean, every stage of the build with its cards drawn in a run of their own, 356 pages every guard passing, 2 added and none retired against a ledger of 254 redated, the
-model page and the new head-to-head read rendered, 16 mutations run and 12 caught with 1 control, the weights one only because halving it took a page down. Of the four misses two
-are the note item above, one is the new ceiling item, and one is active parameters set to the total, which the row's TODO records. Watch done: GLiDE-9B is out on kind. Next: Olmo
-3.1 32B Instruct as a row.
-
-### 2026-11-12 — A ceiling and the words beside it are one line, and nothing held the two together
-The backlog's two ceiling items were one rewrite, so they are done together. Four notes read as finished copy now rather than as library fields: Inkling Small's
-"model_max_length; the config states no max_position_embeddings" says the figure is a maximum length rather than a limit on token positions, the two DeepSeek distills'
-"in config; the card does not state one for the distills" names the config and DeepSeek's card, and a fourth the new guard found, Qwen3.6 35B-A3B's "256k tokens (up to
-1M)", says with YaRN, which is how its card reaches 1,010,000 and what its three sibling rows already said. The guard is `ceilingNoteFault()` in
-pagekit, read by `validate-data.ts` and by `checkContextCeilings()`, and it shuts both holes mutation found. A note that is nothing but a figure is refused, because
-beside the ceiling it can only be read as the ceiling: that is the "256k tokens (1M)" case, and it also catches a ceiling corrected while its note was left behind. And
-a ceiling may not be left noteless, so a note cannot vanish into a page printing the figure alone; the 53 rows with nothing to add state their own figure, as before. The
-page is held both ways: each of the 18 printed notes is the data's words exactly, and a row whose data says more may not print bare. Straight to main. Verified: 469
-tests with one added, typecheck and validate clean, the full build with build:functions, 354 pages every guard passing, none added or retired, the 4 pages whose words
-moved redated and no others, all four read rendered, 12 mutations run and 9 caught with 1 control; the misses are a note's wording, which no guard can judge, and a note
-edited down to a legal restatement, which cannot be told from a correction. Watch done: RWKV7-G1l is out on kind, a base model by both its own cards, which closes the
-top backlog item and the fixed-state convention with it. Next: Raon-1 nano as a row.

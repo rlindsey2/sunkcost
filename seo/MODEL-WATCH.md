@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-23
+Last checked: 2026-11-24
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,41 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-24 · Ling 3.2 air is a row, and its sibling behind it needs no new research
+
+**`ling-3.2-air-q4` is in `data/models.json`.** [Ling 3.2 air](https://huggingface.co/inclusionAI/Ling-3.2-air)
+(2026-11-23, MIT) is inclusionAI's hybrid-linear mixture of experts: the card's own table says **total 124B,
+activated 5.5B**, 512 routed experts with 8 running a token, and **35 KDA layers to 7 gated MLA (5:1)** over 42
+layers. That is Ling 3.0 flash's geometry field for field, so the cache needed no new arithmetic: `kv_lora_rank`
+512 and `qk_rope_head_dim` 64 in [config.json](https://huggingface.co/inclusionAI/Ling-3.2-air/raw/main/config.json)
+make a token cost 1,152 bytes in each of the 7 layers that cache it and 8,064 across the model, **0.066 GB per 8k**,
+so the full 256k window costs 2.1 GB against 80 GB of weights. `layer_group_size` 6 over 42 layers is the 5:1 the
+card states. Weights are [bartowski's](https://huggingface.co/bartowski/Ling-3.2-air-GGUF) `Q4_K_M`, three shards
+summing to **80,394,184,320 bytes**, 5.03 bits a parameter against the checkpoint's own 127,920,654,544 total,
+built with stock llama.cpp **b12600** and needing no patch; `IQ4_XS` is 71,106,946,560 and `Q8_0` 135,633,375,776.
+The projector is `mmproj-Ling-3.2-air-f16.gguf`, **874,635,264 bytes**. inclusionAI publishes the release in FP8,
+so the four-bit build is a requant, as Ling 3.1 flash's is. Nobody rents it: no endpoint among OpenRouter's 469
+models, so the price stands in on [Ling 3.0 Flash VL](https://openrouter.ai/inclusionai/ling-3.0-flash-vl), the
+model the card says it shares its architecture with, $0.06 and $0.18 at DeepInfra, the one active endpoint.
+**Artificial Analysis scores it 23**, and the index version on its page now reads
+[v5.0.2](https://artificialanalysis.ai/models/ling-3-2-air), not the v5.0.1 of three weeks ago, so the row's score
+is null and the basis says which version placed it where.
+
+**The next candidate wants no research at all.** [LingSante-3.1-air-VL](https://huggingface.co/inclusionAI/LingSante-3.1-air-VL)
+(2026-11-19, MIT, 124,848,460,496 parameters) declares the same `BailingMoeV3VLForConditionalGeneration` and
+converts to the same `bailingmoe3`, and [bartowski's](https://huggingface.co/bartowski/LingSante-3.1-air-VL-GGUF)
+`Q4_K_M` is two shards of **78,661,520,576 bytes** with an `mmproj-…-f16.gguf` of 874,635,328. Its layer geometry
+still wants reading off its own config before the cache can be stated. Its stablemate
+[LingSante-3.1-flash](https://huggingface.co/inclusionAI/LingSante-3.1-flash) is 572B and FP8 only, no GGUF.
+
+**Three more names, all blocked.** [ERNIE-5.5-Flash-Preview](https://huggingface.co/baidu/ERNIE-5.5-Flash-Preview)
+(2026-11-23, Apache 2.0, 299,559,241,286 parameters) declares `Ernie5_5_MoeForCausalLM`, which nothing runs, and the
+only GGUF named for it has no downloads. [MemT-1.0-Pro](https://huggingface.co/MemTensor/MemT-1.0-Pro) (2026-11-20)
+is a 564B Nemotron-3-Ultra derivative under a licence of its own, BF16 only. And
+[DaisyRose-27B](https://huggingface.co/RadixArk/DaisyRose-27B) (2026-11-18, Apache 2.0) has GGUFs and plenty of
+downloads, but it is a finetune of Qwen3.8 27B at the same 27.78B and the same geometry, so it would print the row
+this site already has under a second name and move no hardware decision.
 
 ### 2026-11-23 · Mistral Medium 3.5 128B is a row, and it was never a new model, only one this watch never looked for
 

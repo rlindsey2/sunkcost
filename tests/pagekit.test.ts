@@ -2662,9 +2662,13 @@ describe('the calculator’s assumptions panel, which prints the same fields the
       if (basis) expect([m.id, said]).toEqual([m.id, basis]);
       // a row the index scores on a later version of itself cannot read as unscored:
       // Artificial Analysis places Inkling 2 Mini, Nanbeige4.3 33B and Mistral Medium 3.5
-      // on v5.0.1, and the page said the opposite until the basis was printed
+      // on v5.0.1 and Ling 3.2 air on v5.0.2, and the page said the opposite until the
+      // basis was printed. The version keeps moving, so what is held is that the sentence
+      // names the version that placed the row and that it is not the one the bands are on.
       if (basis && /scores it [\d.]+ on/.test(basis)) {
-        expect([m.id, said]).toEqual([m.id, expect.stringContaining('v5.0.1')]);
+        const placed = said.match(/on Intelligence Index (v[\d.]+)/)?.[1];
+        expect([m.id, placed]).toEqual([m.id, expect.stringMatching(/^v\d+(?:\.\d+)*$/)]);
+        expect([m.id, placed]).not.toEqual([m.id, data.defaults.frontier_basis!.version]);
         expect([m.id, said.includes('not been placed')]).toEqual([m.id, false]);
       }
     }

@@ -7815,6 +7815,11 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   // nearer neighbour across families now.
   ['/compare/qwen3-6-27b-q4-vs-arete-27b-q4/', '/models/qwen3.6-27b-q4/'],
   ['/compare/qwen3-8-27b-q4-vs-arete-27b-q4/', '/models/qwen3.8-27b-q4/'],
+  // 2026-11-24: Ling 3.2 air needs 80.65 GB at 32k, 1.9% above GLM-4.5-Air's 79.16, so
+  // GLM-4.5-Air's nearest neighbour across families is no longer the two Mistral rows at
+  // 86.71 it had been paired with.
+  ['/compare/glm-4-5-air-q4-vs-devstral-2-123b-q4/', '/models/glm-4.5-air-q4/'],
+  ['/compare/glm-4-5-air-q4-vs-mistral-medium-3-5-128b-q4/', '/models/glm-4.5-air-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;
