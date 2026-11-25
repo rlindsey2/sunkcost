@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-24
+Last checked: 2026-11-25
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,59 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-25 · LingSante-3.1-air-VL is a row, and two successors to rows here came out yesterday
+
+**`lingsante-3.1-air-vl-q4` is in `data/models.json`.** [LingSante-3.1-air-VL](https://huggingface.co/inclusionAI/LingSante-3.1-air-VL)
+(2026-11-19, MIT, 124,848,460,496 parameters in bfloat16) is Ant Group's healthcare team's multimodal
+mixture of experts, built on Ling-3.0-flash-VL: the card states **124B total and 5.5B active a token**, text and
+images, and a **256K-token context window**. The last was the open field, and the answer is in the card's own
+SGLang command: it reaches 256k by passing `--context-length 262144` with
+`{"rope_scaling":{"rope_type":"yarn","factor":2.0,...,"original_max_position_embeddings":131072}}` and
+`SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1`. The native window is **131,072**, which is
+[config.json](https://huggingface.co/inclusionAI/LingSante-3.1-air-VL/raw/main/config.json)'s
+`max_position_embeddings` and the GGUF's own `context_length`, and that is the row's ceiling because the file
+carries no YaRN. The cache geometry was read off the first Q4_K_M shard's GGUF metadata rather than inferred:
+`block_count` 42 with `attention.head_count_kv` **1 on layers 5, 11, 17, 23, 29, 35 and 41 and 0 on the other
+35**, `attention.kv_lora_rank` 512, `rope.dimension_count` 64, `key_length` 576. So 7 layers cache at 1,152
+bytes a token and 35 keep a fixed linear-attention state, **8,064 bytes a token, 0.066 GB per 8k**, Ling 3.2
+air's figure exactly. Weights are [bartowski's](https://huggingface.co/bartowski/LingSante-3.1-air-VL-GGUF)
+`Q4_K_M`, two shards summing to **78,661,520,576 bytes**, 5.04 bits a parameter, built with stock llama.cpp
+**b12600**; `IQ4_XS` is 69,374,282,944, `Q8_0` 132,365,277,344 and the `bf16` conversion 248,944,047,584, which
+matches the quantiser's own 248.94GB. The projector is `mmproj-LingSante-3.1-air-VL-f16.gguf`, **874,635,328
+bytes**. Nobody rents it: no endpoint among OpenRouter's 470 models, and
+[Ling 3.0 Flash Sante](https://openrouter.ai/inclusionai/ling-3.0-flash-sante) is listed there with no provider
+serving it, so the price stands in on [Ling 3.0 Flash VL](https://openrouter.ai/inclusionai/ling-3.0-flash-vl),
+$0.06 and $0.18 at DeepInfra, the one active endpoint — a `base_model` stand-in, the strongest basis here, since
+the card says this model is built on it. **Artificial Analysis has not placed it**, two 404s.
+
+**Two successors to rows on this site came out yesterday, and both are near-addable.**
+[Ternary Bonsai 2.5 27B](https://huggingface.co/prism-ml/Ternary-Bonsai-2.5-27B-GGUF) (2026-11-24, Apache 2.0,
+304 likes) is the agentic release of the line the `ternary-bonsai-2-27b-q2` row prices, same Qwen3.8-27B base and
+the same ternary format, and its README says the **`Q2_0` files run on upstream llama.cpp** while `PTQ1_0` is
+still under upstream review. `Ternary-Bonsai-2.5-27B-Q2_0.gguf` is **7,673,194,848 bytes** against the Bonsai 2
+row's 7,626,008,928, with `PQ2_0` at 7,253,354,848, `PTQ1_0` at 5,993,834,848, an `-mtp` variant of each carrying
+a draft head, and the same `mmproj-Q8_0` at 629,246,976. Two things want settling before the row: whether stock
+llama.cpp loads `PQ2_0` as well, which the README does not say either way, and that adding it makes the Bonsai 2
+row `legacy` with a 301. A run of its own, and the better one of the two.
+[Raon-1-mini](https://huggingface.co/KRAFTON/Raon-1-mini) (2026-11-24, Apache 2.0, **28,783,231,202**
+parameters) is KRAFTON's bigger sibling to the `raon-1-nano` row here, and KRAFTON publishes
+[its own GGUFs](https://huggingface.co/KRAFTON/Raon-1-mini-gguf): `Q4_K_M` **19,686,485,760 bytes**, `IQ4_XS`
+16,210,359,040, `Q8_0` 30,693,607,680. Its
+[config.json](https://huggingface.co/KRAFTON/Raon-1-mini/raw/main/config.json) gives the cache without a GGUF
+read: 25 layers, `kv_lora_rank` 512 and `qk_rope_head_dim` 64 with `rda_config.mla_layers` **[4, 8, 12, 16, 20,
+24, 25]** against 18 `rda_layers`, so 7 caching layers at 1,152 bytes and 8,064 a token, the same arithmetic as
+the row added today, and `max_position_embeddings` 262144. Open: the active-parameter count and the licence's own
+wording off the card, and the price, since the hosted Raon the nano row stands in on wants re-reading.
+
+**Nothing else new is addable.** The trending feed is Inkling 2 Mini and its derivatives — an uncensored GGUF, a
+Strata build, an abliterated one — plus `harness-hub/Qwen3.8-27B-pi-adapted`, `nari-labs/Qwen3.8-27B-NariQ-GGUF`
+and `RadixArk/DaisyRose-27B`, all re-pricings of rows this site already has under a second name.
+[LingSante-3.1-flash](https://huggingface.co/inclusionAI/LingSante-3.1-flash) is still 572B and FP8 only.
+ERNIE-5.5-Flash-Preview, MemT-1.0-Pro, Kolibri 1.1, Hy4-flash, SenseNova-Loop-9B and Maxwell-V1-Flash all hold
+their earlier rulings. Searched: the queries this file lists, Hugging Face's newest and trending feeds and the
+newest image-text-to-text feed, OpenRouter's full model list for a LingSante endpoint, two Artificial Analysis
+slugs for the model added today, and a November release roundup.
 
 ### 2026-11-24 · Ling 3.2 air is a row, and its sibling behind it needs no new research
 

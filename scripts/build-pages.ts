@@ -7820,6 +7820,10 @@ const RETIRED_PAGES: [from: string, to: string][] = [
   // 86.71 it had been paired with.
   ['/compare/glm-4-5-air-q4-vs-devstral-2-123b-q4/', '/models/glm-4.5-air-q4/'],
   ['/compare/glm-4-5-air-q4-vs-mistral-medium-3-5-128b-q4/', '/models/glm-4.5-air-q4/'],
+  // 2026-11-25: LingSante-3.1-air-VL needs 78.92 GB at 32k, between Ling 3.0 flash's
+  // 78.06 and Ling 3.2 air's 80.65, so it is the nearest model of their own family to
+  // each of them and the page that paired the two of them directly has come down.
+  ['/compare/ling-3-0-flash-q4-vs-ling-3-2-air-q4/', '/models/ling-3.0-flash-q4/'],
 ];
 const redirectLines = ([from, to]: [string, string]) => `${from.replace(/\/$/, '')} ${to} 301\n${from} ${to} 301`;
 const redirectsTxt = `${[...PARENT_REDIRECTS, ...RETIRED_PAGES].map(redirectLines).join('\n')}\n`;

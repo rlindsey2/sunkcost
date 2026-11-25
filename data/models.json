@@ -4767,5 +4767,75 @@
       "https://openrouter.ai/inclusionai/ling-3.0-flash-vl"
     ],
     "TODO": "Capability ratings needed. Parameters are the 124B total and 5.5B active the card's own table states; the checkpoint's safetensors index totals 127,920,654,544, which counts the vision tower the GGUF priced here leaves in a second file and a multi-token-prediction layer. Weights are the three Q4_K_M shards bartowski publishes, 80,394,184,320 bytes together, 5.03 bits a parameter against that total, read 2026-11-24, with IQ4_XS at 71,106,946,560 bytes and Q8_0 at 135,633,375,776 beside them, all built with llama.cpp b12600. The cache geometry is inclusionAI's own config.json, read the same day: 42 layers in groups of six with one gated latent-attention layer each, kv_lora_rank 512, qk_rope_head_dim 64, 32 attention heads by 128, and max_position_embeddings 262144."
+  },
+  {
+    "id": "lingsante-3.1-air-vl-q4",
+    "display_name": "LingSante-3.1-air-VL",
+    "family": "Ling",
+    "generation": "current",
+    "params_b": 124.0,
+    "active_params_b": 5.5,
+    "quantisation": "Q4_K_M",
+    "weights_gb": 78.66,
+    "kv_cache_gb_per_8k": 0.066,
+    "architecture": {
+      "n_layers": 42,
+      "n_kv_heads": 32,
+      "head_dim": 128,
+      "kv_lora_rank": 512,
+      "qk_rope_head_dim": 64,
+      "full_attention_layers": 7,
+      "note": "Only every sixth layer caches the conversation. 35 of the 42 layers are linear attention and keep a state of a fixed size, which does not grow with the context. The other 7 are gated latent attention: each caches one 512-number compressed vector plus a 64-number rotary key per token, 1,152 bytes a layer at 16 bits, so 8,064 bytes a token for the whole model."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 0.87,
+      "projector_bytes": 874635328,
+      "projector_file": "mmproj-LingSante-3.1-air-VL-f16.gguf",
+      "projector_source_url": "https://huggingface.co/bartowski/LingSante-3.1-air-VL-GGUF",
+      "source_url": "https://huggingface.co/inclusionAI/LingSante-3.1-air-VL",
+      "checked": "2026-11-25"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. This one is built for a job rather than for everything. Ant Group's healthcare team took Ling 3.0 flash VL and trained it on medical work: drafting imaging reports, reading photographs of skin conditions and meals, pulling evidence out of papers and guidelines, and driving the appointment and pharmacy screens a patient would use. inclusionAI says general multimodal ability survived the training, document and chart reading among it, and its card is plain that this is a research model and not a medical device, whose answers must not stand in for professional advice, diagnosis or treatment. On the machine it is the cheap shape: 5.5B active out of 124B, and only seven of its 42 layers cache the context, so 79 GB of weights carry 1.1 GB of cache at the full window and the long conversation costs nothing in memory. It reads text and images. inclusionAI publishes the weights in bfloat16, so the four-bit build priced here is quantised from the full-precision release rather than from an already-quantised one. Artificial Analysis has not placed it.",
+    "cloud_equivalent": {
+      "name": "Ling 3.0 Flash VL",
+      "input_price_per_mtok": 0.06,
+      "output_price_per_mtok": 0.18,
+      "source": "OpenRouter, the one active endpoint: DeepInfra",
+      "source_url": "https://openrouter.ai/inclusionai/ling-3.0-flash-vl",
+      "is_exact_match": false,
+      "checked": "2026-11-25",
+      "stand_in": true,
+      "stand_in_hosted": "Ling 3.0 Flash VL",
+      "stand_in_basis": "base_model",
+      "note": "Nobody rents LingSante-3.1-air-VL: no endpoint for it among OpenRouter's 470 models today, and the Ling 3.0 Flash Sante listed there has no provider serving it. Priced as Ling 3.0 Flash VL, the model inclusionAI says this one is built on, at the same 124B total and the same 5.5B active a token."
+    },
+    "license": "MIT",
+    "max_context_tokens": 131072,
+    "max_context_note": "128k natively; the card says 256k, which inclusionAI's own launch command reaches by overriding the config with YaRN at a factor of two",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-25",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/inclusionAI/LingSante-3.1-air-VL",
+      "https://huggingface.co/inclusionAI/LingSante-3.1-air-VL/raw/main/config.json",
+      "https://huggingface.co/bartowski/LingSante-3.1-air-VL-GGUF",
+      "https://openrouter.ai/inclusionai/ling-3.0-flash-vl"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 124B total and 5.5B active the card states; the checkpoint's safetensors index totals 124,848,460,496, all but 164,960 of them in bfloat16. Weights are the two Q4_K_M shards bartowski publishes, 78,661,520,576 bytes together, 5.04 bits a parameter against that total, read 2026-11-25, with IQ4_XS at 69,374,282,944 bytes and Q8_0 at 132,365,277,344 beside them, all built with stock llama.cpp b12600. The cache geometry is the first Q4_K_M shard's own GGUF metadata, read the same day: block_count 42, attention.head_count_kv 1 on layers 5, 11, 17, 23, 29, 35 and 41 and 0 on the other 35, kv_lora_rank 512, rope.dimension_count 64, key_length 576, and context_length 131072, which inclusionAI's own config.json agrees with at max_position_embeddings."
   }
 ]

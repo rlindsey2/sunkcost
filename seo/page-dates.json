@@ -6,24 +6,24 @@
       "changed": "2026-09-27"
     },
     "/best-gpu/": {
-      "hash": "9876a3e6a4677338",
-      "changed": "2026-11-24"
+      "hash": "fdb8a6cd9e656e0c",
+      "changed": "2026-11-25"
     },
     "/best/": {
       "hash": "1ea5b2ba698a5c25",
       "changed": "2026-11-18"
     },
     "/compare/": {
-      "hash": "d389b696b4460739",
-      "changed": "2026-11-24"
+      "hash": "b4f3bf2964793e72",
+      "changed": "2026-11-25"
     },
     "/compare/amd-radeon-ai-pro-r9700-32gb-vs-nvidia-geforce-rtx-3060-12gb/": {
-      "hash": "57259705ee150060",
-      "changed": "2026-11-24"
+      "hash": "e8d429129e4a6574",
+      "changed": "2026-11-25"
     },
     "/compare/amd-radeon-ai-pro-r9700-32gb-vs-nvidia-geforce-rtx-4080-16gb/": {
-      "hash": "2e3a78310234d115",
-      "changed": "2026-11-24"
+      "hash": "89fdf0de016c3dfa",
+      "changed": "2026-11-25"
     },
     "/compare/beam-1-0-501b-a23b-ud-q4-vs-inkling-small-ud-q4/": {
       "hash": "eeccd6a9ee5b138d",
@@ -58,8 +58,8 @@
       "changed": "2026-11-24"
     },
     "/compare/devstral-2-123b-q4-vs-ling-3-2-air-q4/": {
-      "hash": "6d2626d1cf8340bc",
-      "changed": "2026-11-24"
+      "hash": "18b6d9332381756b",
+      "changed": "2026-11-25"
     },
     "/compare/devstral-2-123b-q4-vs-mistral-medium-3-5-128b-q4/": {
       "hash": "130145e88999ad3e",
@@ -74,28 +74,28 @@
       "changed": "2026-10-29"
     },
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "744651a6b1dc609d",
-      "changed": "2026-11-24"
+      "hash": "dbc33ac05b2f84e1",
+      "changed": "2026-11-25"
     },
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-macbook-air-m5-15-inch-16gb/": {
-      "hash": "d30af125620ddda5",
-      "changed": "2026-11-24"
+      "hash": "fd0e92c2e88b0a17",
+      "changed": "2026-11-25"
     },
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "f1348088bef24f46",
-      "changed": "2026-11-24"
+      "hash": "d892624a804757cf",
+      "changed": "2026-11-25"
     },
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "5d0845a963d924a9",
-      "changed": "2026-11-24"
+      "hash": "2c3e7c704c03919d",
+      "changed": "2026-11-25"
     },
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-strix-halo-corsair-ai-workstation-300-128gb/": {
-      "hash": "3d702c430493e210",
-      "changed": "2026-11-24"
+      "hash": "a557c29f976b2b1e",
+      "changed": "2026-11-25"
     },
     "/compare/dgx-spark-gb10-grace-blackwell-128gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "fc0fae7ef2dc4614",
-      "changed": "2026-11-24"
+      "hash": "8d3f305ef0723bdd",
+      "changed": "2026-11-25"
     },
     "/compare/gemma-3-12b-q4-vs-gemma-4-12b-q4/": {
       "hash": "9dbb7fd3d020befc",
@@ -126,8 +126,8 @@
       "changed": "2026-11-21"
     },
     "/compare/gemma-4-26b-a4b-q4-vs-qwen3-5-122b-a10b-ud-q4/": {
-      "hash": "37a35e346462ddc8",
-      "changed": "2026-10-27"
+      "hash": "e4584db51f19232d",
+      "changed": "2026-11-25"
     },
     "/compare/gemma-4-31b-q4-vs-clover-35b-a3b-q4/": {
       "hash": "ffd31a18067af122",
@@ -142,8 +142,8 @@
       "changed": "2026-11-24"
     },
     "/compare/glm-4-5-air-q4-vs-ling-3-2-air-q4/": {
-      "hash": "0a4eb59bbf50fcaf",
-      "changed": "2026-11-24"
+      "hash": "d7a4530f8f104acb",
+      "changed": "2026-11-25"
     },
     "/compare/glm-4-5-air-q4-vs-mistral-small-4-119b-q4/": {
       "hash": "c7d974dcac06ad52",
@@ -202,8 +202,8 @@
       "changed": "2026-11-18"
     },
     "/compare/hunyuan-hy3-q4-vs-ling-3-0-flash-q4/": {
-      "hash": "2d056133ab97c493",
-      "changed": "2026-11-24"
+      "hash": "ce8460335f8275f9",
+      "changed": "2026-11-25"
     },
     "/compare/hunyuan-hy3-q4-vs-sage-s2-1-flash-q4/": {
       "hash": "3532b33f1f27b57f",
@@ -229,21 +229,21 @@
       "hash": "4f89c9a5b810941b",
       "changed": "2026-11-16"
     },
-    "/compare/ling-3-0-flash-q4-vs-ling-3-2-air-q4/": {
-      "hash": "962c221af721d123",
-      "changed": "2026-11-24"
+    "/compare/ling-3-0-flash-q4-vs-lingsante-3-1-air-vl-q4/": {
+      "hash": "1d51d7a4efaeadbc",
+      "changed": "2026-11-25"
     },
     "/compare/ling-3-0-flash-q4-vs-minimax-m2-7-q4/": {
-      "hash": "dadb9ebf88fe8d97",
-      "changed": "2026-11-24"
+      "hash": "791ad2d8406de966",
+      "changed": "2026-11-25"
     },
     "/compare/ling-3-0-flash-q4-vs-ornith-1-5-122b-q4/": {
-      "hash": "391e31bfa48f8236",
-      "changed": "2026-11-24"
+      "hash": "314afa275a107de7",
+      "changed": "2026-11-25"
     },
     "/compare/ling-3-0-flash-q4-vs-qwen3-5-122b-a10b-ud-q4/": {
-      "hash": "b48c2013ee7fe79b",
-      "changed": "2026-11-24"
+      "hash": "8469eef16d8a7707",
+      "changed": "2026-11-25"
     },
     "/compare/ling-3-0-tiny-q4-vs-granite-4-2-8b-q4/": {
       "hash": "9b989fd882992772",
@@ -254,8 +254,12 @@
       "changed": "2026-10-27"
     },
     "/compare/ling-3-2-air-q4-vs-mistral-medium-3-5-128b-q4/": {
-      "hash": "688b8046d3ea92d8",
-      "changed": "2026-11-24"
+      "hash": "dc50a47e48c797ee",
+      "changed": "2026-11-25"
+    },
+    "/compare/lingsante-3-1-air-vl-q4-vs-ling-3-2-air-q4/": {
+      "hash": "a9cd6544e57de09d",
+      "changed": "2026-11-25"
     },
     "/compare/llama-3-1-8b-q4-vs-ministral-3-8b-q4/": {
       "hash": "f3201efa4b8cf2eb",
@@ -274,256 +278,256 @@
       "changed": "2026-10-19"
     },
     "/compare/mac-mini-m4-16gb-vs-mac-mini-m6-16gb/": {
-      "hash": "f98fb15e814fc264",
-      "changed": "2026-11-24"
+      "hash": "a6fdfb88ea6e588f",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m4-24gb-vs-mac-mini-m6-24gb/": {
-      "hash": "9a0910c4f13fed79",
-      "changed": "2026-11-24"
+      "hash": "2ec19edaa2f358ee",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m4-32gb-vs-mac-mini-m6-32gb/": {
-      "hash": "c91f22052972f4df",
-      "changed": "2026-11-24"
+      "hash": "230367c6f6328c40",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m4-pro-24gb-vs-mac-mini-m5-pro-24gb/": {
-      "hash": "5b0d6deca0bdcdf5",
-      "changed": "2026-11-24"
+      "hash": "213939e1ac2f0691",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m4-pro-48gb-vs-mac-mini-m5-pro-48gb/": {
-      "hash": "279954452ec48053",
-      "changed": "2026-11-24"
+      "hash": "6f48d7b75c625c6d",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m4-pro-64gb-vs-mac-mini-m5-pro-64gb/": {
-      "hash": "e777c1b6df8669c6",
-      "changed": "2026-11-24"
+      "hash": "7f668a3b68e0604b",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "f0f7fbbfa9c9d0a8",
-      "changed": "2026-11-24"
+      "hash": "d5430a8c15b80485",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-dgx-spark-gb10-grace-blackwell-128gb/": {
-      "hash": "0b3237e48574bfc9",
-      "changed": "2026-11-24"
+      "hash": "e0e559a73a3ef73b",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-mac-mini-m5-pro-48gb/": {
-      "hash": "f0bdfd924e085321",
-      "changed": "2026-11-24"
+      "hash": "91890d64f36c32fa",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-mac-mini-m5-pro-64gb/": {
-      "hash": "a2c64424f6c9968d",
-      "changed": "2026-11-24"
+      "hash": "a72b09909005468e",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "a2906e633de8f1e3",
-      "changed": "2026-11-24"
+      "hash": "7ea7cac646c8e983",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-macbook-air-m5-15-inch-16gb/": {
-      "hash": "327bb9cafd1fa2c5",
-      "changed": "2026-11-24"
+      "hash": "c8315c568429c205",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "fac55c25dc92a3ea",
-      "changed": "2026-11-24"
+      "hash": "bc979ec22b1b9abf",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "35073589f30e3322",
-      "changed": "2026-11-24"
+      "hash": "ba69796198943140",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-strix-halo-corsair-ai-workstation-300-64gb/": {
-      "hash": "eff6c170039e355f",
-      "changed": "2026-11-24"
+      "hash": "ef789bd683a79fc6",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-24gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "c98bd1101ee98230",
-      "changed": "2026-11-24"
+      "hash": "2d57d536bd7b8cd3",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-48gb-vs-mac-mini-m5-pro-64gb/": {
-      "hash": "aadcac7853d141f6",
-      "changed": "2026-11-24"
+      "hash": "bdf53e592f05ce0a",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m5-pro-48gb-vs-macbook-pro-m5-14-inch-32gb/": {
-      "hash": "2f3f3d4997495b01",
-      "changed": "2026-11-24"
+      "hash": "49ad53a26b482145",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m6-16gb-vs-mac-mini-m6-24gb/": {
-      "hash": "f4caf2235d804c28",
-      "changed": "2026-11-24"
+      "hash": "99a4166cacd675a1",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m6-16gb-vs-mac-mini-m6-32gb/": {
-      "hash": "d89c586ed291f182",
-      "changed": "2026-11-24"
+      "hash": "a7a2024075b1a787",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m6-24gb-vs-mac-mini-m6-32gb/": {
-      "hash": "4e41b5e4be37f4a9",
-      "changed": "2026-11-24"
+      "hash": "216ad402e0a54e0d",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m6-32gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "249e4d40d9696df4",
-      "changed": "2026-11-24"
+      "hash": "565d16e1daeb10c4",
+      "changed": "2026-11-25"
     },
     "/compare/mac-mini-m6-32gb-vs-macbook-air-m5-13-inch-16gb/": {
-      "hash": "740b3ef4567a5a02",
-      "changed": "2026-11-24"
+      "hash": "f87295a392ad00c0",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m3-ultra-256gb-vs-mac-studio-m5-ultra-256gb/": {
-      "hash": "6f04a99ba168fb82",
-      "changed": "2026-11-24"
+      "hash": "5bc4f50d8101dd12",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m3-ultra-96gb-vs-mac-studio-m5-ultra-96gb/": {
-      "hash": "4f1e02e16bbe4b62",
-      "changed": "2026-11-24"
+      "hash": "92be249fed038a1c",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m4-max-128gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "0e56039d4f6df059",
-      "changed": "2026-11-24"
+      "hash": "cd78a5e5319a0bb9",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m4-max-36gb-vs-mac-studio-m5-max-36gb/": {
-      "hash": "3a0f6fbbcf894a8d",
-      "changed": "2026-11-24"
+      "hash": "06fbcf6f6617098c",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m4-max-48gb-vs-mac-studio-m5-max-48gb/": {
-      "hash": "5d425c8e041d2e30",
-      "changed": "2026-11-24"
+      "hash": "025c915cb2be1154",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m4-max-64gb-vs-mac-studio-m5-max-64gb/": {
-      "hash": "fd6fcf613c03f5ed",
-      "changed": "2026-11-24"
+      "hash": "2b368c2de28cb68d",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-128gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "9da0515b10fa4629",
-      "changed": "2026-11-24"
+      "hash": "fca1be71431da547",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-128gb-vs-dgx-spark-gb10-grace-blackwell-128gb/": {
-      "hash": "8e2f63934c752a5f",
-      "changed": "2026-11-24"
+      "hash": "aa24f5f6f930f2d4",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-128gb-vs-macbook-air-m5-15-inch-16gb/": {
-      "hash": "fdd78f8a171ab528",
-      "changed": "2026-11-24"
+      "hash": "7a31c564fb76a6bd",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "51c9fc7e57b14391",
-      "changed": "2026-11-24"
+      "hash": "ded2fe1de466714d",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-128gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "c108f317c6e69ba7",
-      "changed": "2026-11-24"
+      "hash": "a62ae3a5dfc779df",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-128gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "fc7af7818a2527e8",
-      "changed": "2026-11-24"
+      "hash": "66bf38b722920ac5",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-36gb-vs-mac-mini-m5-pro-64gb/": {
-      "hash": "981e9c332c986dba",
-      "changed": "2026-11-24"
+      "hash": "0e0b2a7554428cbe",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-36gb-vs-mac-studio-m5-max-48gb/": {
-      "hash": "8eb8a7fb64894582",
-      "changed": "2026-11-24"
+      "hash": "2f03381e77b040cc",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-48gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "bba60cbf3efb91a5",
-      "changed": "2026-11-24"
+      "hash": "36cec135fe926b7f",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-48gb-vs-mac-studio-m5-max-64gb/": {
-      "hash": "1fb7b10000ea2441",
-      "changed": "2026-11-24"
+      "hash": "1d50856551814a95",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-64gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "11bb71a0cd44c5ae",
-      "changed": "2026-11-24"
+      "hash": "1ef355a0638c479c",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-max-64gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "163d809f43f987ac",
-      "changed": "2026-11-24"
+      "hash": "b617ca333422c31a",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-ultra-96gb-vs-mac-studio-m5-ultra-256gb/": {
-      "hash": "6e2fc1ae76e077e7",
-      "changed": "2026-11-24"
+      "hash": "ad75cd11689b4a72",
+      "changed": "2026-11-25"
     },
     "/compare/mac-studio-m5-ultra-96gb-vs-strix-halo-hp-z2-mini-g1a-128gb/": {
-      "hash": "b0e2b95496d7020e",
-      "changed": "2026-11-24"
+      "hash": "fa1ebe71ea3e9fe3",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-air-m5-13-inch-16gb-vs-macbook-air-m5-15-inch-16gb/": {
-      "hash": "cbcd636203bdea71",
-      "changed": "2026-11-24"
+      "hash": "64ab906c359450a1",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-air-m5-15-inch-16gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "7764c5f7e2b427b7",
-      "changed": "2026-11-24"
+      "hash": "446dd8abe20bbf8a",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-air-m5-15-inch-16gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "281f52e324e89ed9",
-      "changed": "2026-11-24"
+      "hash": "bbb1dca3ed9c87e3",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-air-m5-15-inch-16gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "c16fecc16d226c73",
-      "changed": "2026-11-24"
+      "hash": "1d8aa1a6a763a5b5",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-14-inch-16gb-vs-macbook-pro-m5-14-inch-32gb/": {
-      "hash": "f74cd782ecf80bea",
-      "changed": "2026-11-24"
+      "hash": "3e522e615063cd70",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-14-inch-32gb-vs-mac-studio-m5-max-36gb/": {
-      "hash": "f88acc911472ea78",
-      "changed": "2026-11-24"
+      "hash": "71ddd04744c1d2f7",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-mac-studio-m5-max-128gb/": {
-      "hash": "834465ced9004321",
-      "changed": "2026-11-24"
+      "hash": "029f405356984e01",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-macbook-pro-m5-max-16-inch-128gb/": {
-      "hash": "8537660221237ace",
-      "changed": "2026-11-24"
+      "hash": "11c656d9fa922da9",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-48gb-vs-macbook-pro-m5-max-16-inch-64gb/": {
-      "hash": "3f536716ed365c92",
-      "changed": "2026-11-24"
+      "hash": "99d6c6366be33a4a",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-64gb-vs-mac-studio-m5-ultra-96gb/": {
-      "hash": "ded9ae1d286e2e31",
-      "changed": "2026-11-24"
+      "hash": "1a0dfa78e7de948d",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-max-16-inch-64gb-vs-macbook-pro-m5-max-16-inch-128gb/": {
-      "hash": "eb257fd7ad3ae87b",
-      "changed": "2026-11-24"
+      "hash": "330f16f3cbd4c9d7",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-mac-studio-m5-max-48gb/": {
-      "hash": "f2d60b7d93613912",
-      "changed": "2026-11-24"
+      "hash": "b852a5b1d5ed6568",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-macbook-pro-m5-pro-16-inch-48gb/": {
-      "hash": "f1c0270c2fa71c38",
-      "changed": "2026-11-24"
+      "hash": "b7bec4f6a8be877d",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-24gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "b447d1bfc71a6c72",
-      "changed": "2026-11-24"
+      "hash": "71ab69bc32d9f9ec",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-48gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "49c63070cd88b567",
-      "changed": "2026-11-24"
+      "hash": "4125881b58fddda4",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-48gb-vs-strix-halo-gmktec-evo-x3-128gb/": {
-      "hash": "280a7055b8601031",
-      "changed": "2026-11-24"
+      "hash": "bf648f1284b3dc80",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-48gb-vs-strix-halo-minisforum-ms-s1-max-128gb/": {
-      "hash": "686c3caf047193cd",
-      "changed": "2026-11-24"
+      "hash": "8deeb3e58ea38595",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-64gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "8cca63a8590e70d3",
-      "changed": "2026-11-24"
+      "hash": "783f492dc3e82904",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-64gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "76f35b0c3e62fc58",
-      "changed": "2026-11-24"
+      "hash": "6f700c98534c6481",
+      "changed": "2026-11-25"
     },
     "/compare/macbook-pro-m5-pro-16-inch-64gb-vs-strix-halo-beelink-gtr9-pro-128gb/": {
-      "hash": "a1099bb9bc9484b6",
-      "changed": "2026-11-24"
+      "hash": "daf76f6dc2c24a15",
+      "changed": "2026-11-25"
     },
     "/compare/minicpm5-2b-q4-vs-qwen3-5-4b-q4/": {
       "hash": "5e45ec5ac4b7316c",
@@ -602,84 +606,84 @@
       "changed": "2026-11-07"
     },
     "/compare/nvidia-geforce-rtx-3090-24gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "9611df8530f96773",
-      "changed": "2026-11-24"
+      "hash": "4e08348f0dd72954",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-3090-24gb-vs-nvidia-geforce-rtx-3060-12gb/": {
-      "hash": "527ca8509c80a24c",
-      "changed": "2026-11-24"
+      "hash": "ad6fcddd110ae146",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-3090-24gb-vs-nvidia-geforce-rtx-4080-16gb/": {
-      "hash": "ebb37d536c57fa50",
-      "changed": "2026-11-24"
+      "hash": "9a85defd3ce9b045",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-4080-16gb-vs-nvidia-geforce-rtx-3060-12gb/": {
-      "hash": "c51af0cd69385bc6",
-      "changed": "2026-11-24"
+      "hash": "28289e2f4c4e4244",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-4090-24gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "451ac83333075d26",
-      "changed": "2026-11-24"
+      "hash": "5ec57c53934a8247",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-4090-24gb-vs-nvidia-geforce-rtx-3060-12gb/": {
-      "hash": "b8233776c7d3f16e",
-      "changed": "2026-11-24"
+      "hash": "1500c4a45aadb363",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-4090-24gb-vs-nvidia-geforce-rtx-3090-24gb/": {
-      "hash": "363ca77041166cfb",
-      "changed": "2026-11-24"
+      "hash": "5e40285955f8835b",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-4090-24gb-vs-nvidia-geforce-rtx-4080-16gb/": {
-      "hash": "adcec97b8595c5a1",
-      "changed": "2026-11-24"
+      "hash": "417d6a480bc81735",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-5090-32gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "79d7579595925b64",
-      "changed": "2026-11-24"
+      "hash": "622db4f0bdd665c4",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-5090-32gb-vs-macbook-pro-m5-14-inch-16gb/": {
-      "hash": "abb4e75582248f43",
-      "changed": "2026-11-24"
+      "hash": "69cb19394b71c3d2",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-5090-32gb-vs-nvidia-geforce-rtx-3060-12gb/": {
-      "hash": "a936654b5fd755d0",
-      "changed": "2026-11-24"
+      "hash": "a9a3939aef7019c0",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-5090-32gb-vs-nvidia-geforce-rtx-3090-24gb/": {
-      "hash": "820e2ebd010cf20c",
-      "changed": "2026-11-24"
+      "hash": "38d09d3744a410b2",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-5090-32gb-vs-nvidia-geforce-rtx-4080-16gb/": {
-      "hash": "8b9eedcbffb1d36e",
-      "changed": "2026-11-24"
+      "hash": "a6be37f9098737ab",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-geforce-rtx-5090-32gb-vs-nvidia-geforce-rtx-4090-24gb/": {
-      "hash": "5bdab0badda9f6a8",
-      "changed": "2026-11-24"
+      "hash": "fff1cdb15361047e",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-rtx-pro-6000-blackwell-96gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "49eb721f2a59f59e",
-      "changed": "2026-11-24"
+      "hash": "22b549456af19fd1",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-rtx-pro-6000-blackwell-96gb-vs-nvidia-geforce-rtx-3060-12gb/": {
-      "hash": "bb315dfc86db1ffe",
-      "changed": "2026-11-24"
+      "hash": "cdc7e4459928387a",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-rtx-pro-6000-blackwell-96gb-vs-nvidia-geforce-rtx-3090-24gb/": {
-      "hash": "60004589be9d4acc",
-      "changed": "2026-11-24"
+      "hash": "8f6035cb24a92e63",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-rtx-pro-6000-blackwell-96gb-vs-nvidia-geforce-rtx-4080-16gb/": {
-      "hash": "eeaaa1d2811b4880",
-      "changed": "2026-11-24"
+      "hash": "e31efbb293e14266",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-rtx-pro-6000-blackwell-96gb-vs-nvidia-geforce-rtx-4090-24gb/": {
-      "hash": "ff912347f56fcfc8",
-      "changed": "2026-11-24"
+      "hash": "92dc7b31ceb27a43",
+      "changed": "2026-11-25"
     },
     "/compare/nvidia-rtx-pro-6000-blackwell-96gb-vs-nvidia-geforce-rtx-5090-32gb/": {
-      "hash": "620f1badedd591cb",
-      "changed": "2026-11-24"
+      "hash": "96f29199c88ebc08",
+      "changed": "2026-11-25"
     },
     "/compare/olmo-3-1-32b-instruct-q4-vs-olmo-3-1-32b-think-q4/": {
       "hash": "4da730138553897d",
@@ -730,12 +734,16 @@
       "changed": "2026-11-22"
     },
     "/compare/qwen3-5-122b-a10b-ud-q4-vs-gemma-4-31b-q4/": {
-      "hash": "83e2b34d2a878320",
-      "changed": "2026-11-07"
+      "hash": "387631aa016e246a",
+      "changed": "2026-11-25"
     },
     "/compare/qwen3-5-122b-a10b-ud-q4-vs-glm-4-5-air-q4/": {
-      "hash": "478ac1d4242dcc5d",
-      "changed": "2026-11-24"
+      "hash": "b3670c32f420b275",
+      "changed": "2026-11-25"
+    },
+    "/compare/qwen3-5-122b-a10b-ud-q4-vs-lingsante-3-1-air-vl-q4/": {
+      "hash": "76a9f69001516987",
+      "changed": "2026-11-25"
     },
     "/compare/qwen3-5-4b-q4-vs-gpt-oss-120b-mxfp4/": {
       "hash": "b89d475d871b02eb",
@@ -826,376 +834,376 @@
       "changed": "2026-11-16"
     },
     "/compare/strix-halo-corsair-ai-workstation-300-64gb-vs-strix-halo-corsair-ai-workstation-300-128gb/": {
-      "hash": "509232d5bf05cc19",
-      "changed": "2026-11-24"
+      "hash": "13530b6769a63397",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-mac-studio-m5-max-64gb/": {
-      "hash": "d8873fc20f0121d3",
-      "changed": "2026-11-24"
+      "hash": "dffcd2e0aa2bc0b0",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-strix-halo-beelink-gtr9-pro-128gb/": {
-      "hash": "6f83d4d4489e1185",
-      "changed": "2026-11-24"
+      "hash": "0303ecba90bf892e",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-strix-halo-corsair-ai-workstation-300-128gb/": {
-      "hash": "90d5bdde686bdc3e",
-      "changed": "2026-11-24"
+      "hash": "edd9a739454ce172",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "6bfd10d69b2bd59b",
-      "changed": "2026-11-24"
+      "hash": "370a708c02134022",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-strix-halo-gmktec-evo-x3-128gb/": {
-      "hash": "301dabcaa1f9b997",
-      "changed": "2026-11-24"
+      "hash": "2e38291cad2744f1",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-strix-halo-hp-z2-mini-g1a-128gb/": {
-      "hash": "4496752098890538",
-      "changed": "2026-11-24"
+      "hash": "7d1e74cc95fc952a",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-128gb-vs-strix-halo-minisforum-ms-s1-max-128gb/": {
-      "hash": "fafb70a9dbfc2b5a",
-      "changed": "2026-11-24"
+      "hash": "077ad7eda108b2be",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-32gb-vs-mac-mini-m6-32gb/": {
-      "hash": "2eafcb14c11b7a7c",
-      "changed": "2026-11-24"
+      "hash": "90b9fd8e902c2465",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-32gb-vs-strix-halo-framework-desktop-64gb/": {
-      "hash": "54f916c544cc4589",
-      "changed": "2026-11-24"
+      "hash": "d6b2cb15e7551b2d",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-64gb-vs-nvidia-geforce-rtx-5090-32gb/": {
-      "hash": "a57376079e59340f",
-      "changed": "2026-11-24"
+      "hash": "64c46bae70aaf66a",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-64gb-vs-strix-halo-framework-desktop-128gb/": {
-      "hash": "4f1100bb71ad825e",
-      "changed": "2026-11-24"
+      "hash": "3a4e7b6055e84fc7",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-framework-desktop-64gb-vs-strix-halo-gmktec-evo-x2-64gb/": {
-      "hash": "1e56dd717fe3cc64",
-      "changed": "2026-11-24"
+      "hash": "3f889c8586cf3171",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-gmktec-evo-x2-128gb-vs-amd-radeon-ai-pro-r9700-32gb/": {
-      "hash": "0ecf5d3c127c9acb",
-      "changed": "2026-11-24"
+      "hash": "12090b77c800f240",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-gmktec-evo-x2-128gb-vs-macbook-air-m5-15-inch-16gb/": {
-      "hash": "735d8a0f58ab16ee",
-      "changed": "2026-11-24"
+      "hash": "a8fb09398a5e2c9c",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-gmktec-evo-x2-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "d4dc4a1abcadd35a",
-      "changed": "2026-11-24"
+      "hash": "16005e624c055d27",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-gmktec-evo-x2-128gb-vs-nvidia-rtx-pro-6000-blackwell-96gb/": {
-      "hash": "042f5825a160640f",
-      "changed": "2026-11-24"
+      "hash": "d22a589ca299cb3d",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-gmktec-evo-x2-64gb-vs-mac-mini-m5-pro-48gb/": {
-      "hash": "dc5081dff7c523c9",
-      "changed": "2026-11-24"
+      "hash": "e7078a31c8c068a3",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-gmktec-evo-x2-64gb-vs-strix-halo-gmktec-evo-x2-128gb/": {
-      "hash": "e1ee49ef2f5d5797",
-      "changed": "2026-11-24"
+      "hash": "ecb8603a24ecd20b",
+      "changed": "2026-11-25"
     },
     "/compare/strix-halo-minisforum-ms-s1-max-128gb-vs-macbook-pro-m5-pro-16-inch-64gb/": {
-      "hash": "20a8ec8e616a2cdf",
-      "changed": "2026-11-24"
+      "hash": "37ee466b39c89d70",
+      "changed": "2026-11-25"
     },
     "/cost-per-month/": {
       "hash": "6082306e05b908b6",
       "changed": "2026-10-29"
     },
     "/hardware/": {
-      "hash": "b1668965f58e6642",
-      "changed": "2026-11-24"
+      "hash": "ff478ccd67bcf12c",
+      "changed": "2026-11-25"
     },
     "/hardware/beelink-gtr9-pro-128/": {
-      "hash": "bf49fb8c271fd661",
-      "changed": "2026-11-24"
+      "hash": "2b9c96a738039e4e",
+      "changed": "2026-11-25"
     },
     "/hardware/corsair-ai-workstation-300-128/": {
-      "hash": "6dd30a4265f3bf94",
-      "changed": "2026-11-24"
+      "hash": "d719ec1530c47fc9",
+      "changed": "2026-11-25"
     },
     "/hardware/corsair-ai-workstation-300-64/": {
-      "hash": "21da14a76828e756",
-      "changed": "2026-11-24"
+      "hash": "63ed11bef128578f",
+      "changed": "2026-11-25"
     },
     "/hardware/framework-desktop-385-32/": {
-      "hash": "4718cc6d0b30859d",
-      "changed": "2026-11-24"
+      "hash": "c57338d86f32c0bb",
+      "changed": "2026-11-25"
     },
     "/hardware/framework-desktop-395-128/": {
-      "hash": "5fe4e730a3369c2c",
-      "changed": "2026-11-24"
+      "hash": "413007774326c15a",
+      "changed": "2026-11-25"
     },
     "/hardware/framework-desktop-395-64/": {
-      "hash": "91938ae80681b7b4",
-      "changed": "2026-11-24"
+      "hash": "9513e46e15cb1e45",
+      "changed": "2026-11-25"
     },
     "/hardware/framework-desktop-495-192/": {
-      "hash": "a38dd08f278bf240",
-      "changed": "2026-11-24"
+      "hash": "b0db4130ee42e1f9",
+      "changed": "2026-11-25"
     },
     "/hardware/geforce-rtx-3060-12/": {
-      "hash": "1d09c1910992ed4b",
-      "changed": "2026-11-24"
+      "hash": "a462ea4132d4e8bd",
+      "changed": "2026-11-25"
     },
     "/hardware/geforce-rtx-3090-24/": {
-      "hash": "c7ea12e9a1af980d",
-      "changed": "2026-11-24"
+      "hash": "68735e37157036ba",
+      "changed": "2026-11-25"
     },
     "/hardware/geforce-rtx-4080-16/": {
-      "hash": "d9700bbeb9b188f3",
-      "changed": "2026-11-24"
+      "hash": "93988b0e803aaf0d",
+      "changed": "2026-11-25"
     },
     "/hardware/geforce-rtx-4090-24/": {
-      "hash": "95e14df4a5d66afe",
-      "changed": "2026-11-24"
+      "hash": "d25d48dbe12beafb",
+      "changed": "2026-11-25"
     },
     "/hardware/geforce-rtx-5090-32/": {
-      "hash": "5a989e62a1f082f5",
-      "changed": "2026-11-24"
+      "hash": "41777e09cc66603c",
+      "changed": "2026-11-25"
     },
     "/hardware/gmktec-evo-x2-128/": {
-      "hash": "30ca4714553fda53",
-      "changed": "2026-11-24"
+      "hash": "8c06dd7859b7b1ce",
+      "changed": "2026-11-25"
     },
     "/hardware/gmktec-evo-x2-64/": {
-      "hash": "1d5c93234dcd6e45",
-      "changed": "2026-11-24"
+      "hash": "56f99105dd545aca",
+      "changed": "2026-11-25"
     },
     "/hardware/gmktec-evo-x3-128/": {
-      "hash": "ca7c3722d516836f",
-      "changed": "2026-11-24"
+      "hash": "7ba94f6bc4909f88",
+      "changed": "2026-11-25"
     },
     "/hardware/hp-z2-mini-g1a-128/": {
-      "hash": "b0550063dbb8241e",
-      "changed": "2026-11-24"
+      "hash": "abd2f5736f1104eb",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m4-16/": {
-      "hash": "025d8f361747d225",
-      "changed": "2026-11-24"
+      "hash": "cfea8afcfda6ae09",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m4-24/": {
-      "hash": "46ef720e603d4880",
-      "changed": "2026-11-24"
+      "hash": "7308ef9fca47fcc0",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m4-32/": {
-      "hash": "f5588d93149c3319",
-      "changed": "2026-11-24"
+      "hash": "4cde02e49cc2b757",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m4-pro-24/": {
-      "hash": "0cf361a5cbb84573",
-      "changed": "2026-11-24"
+      "hash": "ed685ff8f50be5a2",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m4-pro-48/": {
-      "hash": "435fd96d6218c06e",
-      "changed": "2026-11-24"
+      "hash": "84176e930109a6d4",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m4-pro-64/": {
-      "hash": "bdb34103c3f3eeae",
-      "changed": "2026-11-24"
+      "hash": "d8cd0e367256a9fe",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m5-pro-24/": {
-      "hash": "d3c4c7f841742101",
-      "changed": "2026-11-24"
+      "hash": "2cbb30df988f2c15",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m5-pro-48/": {
-      "hash": "29ecde2cfe20eabb",
-      "changed": "2026-11-24"
+      "hash": "91b5e053438d294e",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m5-pro-64/": {
-      "hash": "922736ba2f66d9dc",
-      "changed": "2026-11-24"
+      "hash": "5de20dd273b2a17f",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m6-16/": {
-      "hash": "273e0e9808cd21c7",
-      "changed": "2026-11-24"
+      "hash": "04388bca8253e45d",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m6-24/": {
-      "hash": "a4f5dc4dc638e7b7",
-      "changed": "2026-11-24"
+      "hash": "b7e0c7853835e9c0",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-mini-m6-32/": {
-      "hash": "dfe7f65b560b0bc7",
-      "changed": "2026-11-24"
+      "hash": "bef594de4b17fa8d",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m3-ultra-256/": {
-      "hash": "7b00f51be3350a7a",
-      "changed": "2026-11-24"
+      "hash": "00bd9cd463e6eb06",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m3-ultra-512/": {
-      "hash": "320c5d244ca8c349",
-      "changed": "2026-11-24"
+      "hash": "fdb5ea74c78e4ebe",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m3-ultra-96/": {
-      "hash": "dc61e83fc24c04ee",
-      "changed": "2026-11-24"
+      "hash": "ad875eff1412581b",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m4-max-128/": {
-      "hash": "4119ee420d131f92",
-      "changed": "2026-11-24"
+      "hash": "cac5a71c4ae743ba",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m4-max-36/": {
-      "hash": "317265c7947660b9",
-      "changed": "2026-11-24"
+      "hash": "6b8556a46c30eb7d",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m4-max-48/": {
-      "hash": "8c5d45b2a0eca668",
-      "changed": "2026-11-24"
+      "hash": "32398588d32e4a55",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m4-max-64/": {
-      "hash": "9b1c9502d6388c54",
-      "changed": "2026-11-24"
+      "hash": "6603089db3eb7ac1",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-max-128/": {
-      "hash": "20e7378ba96a3a1d",
-      "changed": "2026-11-24"
+      "hash": "57e7679ad2d73ca0",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-max-36/": {
-      "hash": "c49648a990fb28a0",
-      "changed": "2026-11-24"
+      "hash": "2386d66384da62e0",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-max-48/": {
-      "hash": "c0e648b41db4d6e0",
-      "changed": "2026-11-24"
+      "hash": "d03e9c33648044df",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-max-64/": {
-      "hash": "92b643ea2edc5e8d",
-      "changed": "2026-11-24"
+      "hash": "283f554242316971",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-ultra-256/": {
-      "hash": "a26bd319488c0365",
-      "changed": "2026-11-24"
+      "hash": "1947477491d00dfc",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-ultra-512/": {
-      "hash": "07e7562c020ebf0c",
-      "changed": "2026-11-24"
+      "hash": "9d5e24cb6212c7bb",
+      "changed": "2026-11-25"
     },
     "/hardware/mac-studio-m5-ultra-96/": {
-      "hash": "74e523a23a29a06b",
-      "changed": "2026-11-24"
+      "hash": "05bf08b8537b64e7",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-air-m5-15-16/": {
-      "hash": "b4bd2e01bf5de40d",
-      "changed": "2026-11-24"
+      "hash": "8a64c6a51b6f3834",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-air-m5-16/": {
-      "hash": "06cb40a1395ece4a",
-      "changed": "2026-11-24"
+      "hash": "3240a3d1242404e1",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-14-m5-16/": {
-      "hash": "60b640f396392659",
-      "changed": "2026-11-24"
+      "hash": "023196254236ee94",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-14-m5-32/": {
-      "hash": "4c468ddd3f6f2b5f",
-      "changed": "2026-11-24"
+      "hash": "5640de538fa9204d",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-16-m5-max-128/": {
-      "hash": "af2936d2669b056f",
-      "changed": "2026-11-24"
+      "hash": "13f46c9132e75752",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-16-m5-max-48/": {
-      "hash": "301bbd2f5d55b4cb",
-      "changed": "2026-11-24"
+      "hash": "d5bafefcb12ee7f8",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-16-m5-max-64/": {
-      "hash": "cac8b2f10695020f",
-      "changed": "2026-11-24"
+      "hash": "7ba63760df2c5657",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-16-m5-pro-24/": {
-      "hash": "30f0ae9a1a40778a",
-      "changed": "2026-11-24"
+      "hash": "48978d530c67200f",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-16-m5-pro-48/": {
-      "hash": "2ef5c71c13f0e250",
-      "changed": "2026-11-24"
+      "hash": "c3cac06006a0a220",
+      "changed": "2026-11-25"
     },
     "/hardware/macbook-pro-16-m5-pro-64/": {
-      "hash": "a1892ae107dccf8b",
-      "changed": "2026-11-24"
+      "hash": "64cee0251b273508",
+      "changed": "2026-11-25"
     },
     "/hardware/minisforum-ms-s1-max-128/": {
-      "hash": "3e7e472dcd145f0d",
-      "changed": "2026-11-24"
+      "hash": "a67cdd3636c863d0",
+      "changed": "2026-11-25"
     },
     "/hardware/nvidia-dgx-spark-128/": {
-      "hash": "00005673b469d2f8",
-      "changed": "2026-11-24"
+      "hash": "ea8eaca4843f4510",
+      "changed": "2026-11-25"
     },
     "/hardware/radeon-ai-pro-r9700-32/": {
-      "hash": "4be533d535132f64",
-      "changed": "2026-11-24"
+      "hash": "cefee86968612546",
+      "changed": "2026-11-25"
     },
     "/hardware/rtx-pro-6000-blackwell-96/": {
-      "hash": "14076fc88f00985c",
-      "changed": "2026-11-24"
+      "hash": "638634e7bfb4d500",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/": {
-      "hash": "b2e0676d6170781c",
-      "changed": "2026-11-24"
+      "hash": "a6545da7c3f204b3",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/128gb/": {
-      "hash": "1cdf63c1a6eaa72c",
-      "changed": "2026-11-24"
+      "hash": "8634a66b50636654",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/12gb/": {
-      "hash": "986a1f3e865bb5d4",
-      "changed": "2026-11-24"
+      "hash": "295a597fec09b491",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/16gb/": {
-      "hash": "c2b85632b7008eb2",
-      "changed": "2026-11-24"
+      "hash": "fe546201d6beeef2",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/192gb/": {
-      "hash": "e9e15a3668923165",
-      "changed": "2026-11-24"
+      "hash": "2d77cf3735aca962",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/24gb/": {
-      "hash": "0484ec59c0f67a6a",
-      "changed": "2026-11-24"
+      "hash": "6c0ba96a60a791ad",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/256gb/": {
-      "hash": "4ab6bf6ff560305d",
-      "changed": "2026-11-24"
+      "hash": "6d1cad637dc931fb",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/32gb/": {
-      "hash": "2473126b4178a85c",
-      "changed": "2026-11-24"
+      "hash": "125e3c4ce7da8565",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/36gb/": {
-      "hash": "9fda14cab7e3487d",
-      "changed": "2026-11-24"
+      "hash": "5f718537e6a071d9",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/48gb/": {
-      "hash": "28ae883f0c56c42b",
-      "changed": "2026-11-24"
+      "hash": "76e789317f264b4c",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/512gb/": {
-      "hash": "213e59928abab6cd",
-      "changed": "2026-11-24"
+      "hash": "af52ce3a80b31ca1",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/64gb/": {
-      "hash": "5c0b156e5c5cf81c",
-      "changed": "2026-11-24"
+      "hash": "b606414af46338e5",
+      "changed": "2026-11-25"
     },
     "/how-much-memory/96gb/": {
-      "hash": "21a546c63a004a67",
-      "changed": "2026-11-24"
+      "hash": "3e3acfa02393ae87",
+      "changed": "2026-11-25"
     },
     "/leaderboard/": {
-      "hash": "f05637d75e09d0b5",
-      "changed": "2026-11-24"
+      "hash": "630875b17dbff2c5",
+      "changed": "2026-11-25"
     },
     "/local-llm-vs-api-cost/": {
-      "hash": "7ead86023dde5081",
-      "changed": "2026-11-24"
+      "hash": "49f69807fc74fdaf",
+      "changed": "2026-11-25"
     },
     "/models/arete-27b-q4/": {
       "hash": "f39542e2d6d009cd",
@@ -1210,20 +1218,20 @@
       "changed": "2026-11-23"
     },
     "/models/deepseek-r1-distill-llama-70b-q4/": {
-      "hash": "1ad3b252638b22f3",
-      "changed": "2026-11-24"
+      "hash": "16268216ecce052b",
+      "changed": "2026-11-25"
     },
     "/models/deepseek-r1-distill-qwen-32b-q4/": {
       "hash": "dcc46cbcfa41668b",
       "changed": "2026-11-22"
     },
     "/models/deepseek-v4-flash-ud-q4/": {
-      "hash": "6c1451235ce120f1",
-      "changed": "2026-11-24"
+      "hash": "a45779b99bd7cc0b",
+      "changed": "2026-11-25"
     },
     "/models/devstral-2-123b-q4/": {
-      "hash": "6bbc5b8bd16a6f59",
-      "changed": "2026-11-24"
+      "hash": "b925a852bbbe3e4a",
+      "changed": "2026-11-25"
     },
     "/models/devstral-small-2-24b-q4/": {
       "hash": "b336a4f6f681a75e",
@@ -1258,24 +1266,24 @@
       "changed": "2026-11-21"
     },
     "/models/glm-4.5-air-q4/": {
-      "hash": "1edc07433e9175a0",
-      "changed": "2026-11-24"
+      "hash": "a50ac78a72932dac",
+      "changed": "2026-11-25"
     },
     "/models/glm-4.7-flash-q4/": {
       "hash": "740de5ac2428a7f2",
       "changed": "2026-11-22"
     },
     "/models/glm-5.3-flash-ud-q4/": {
-      "hash": "c23d11ef6130783a",
-      "changed": "2026-11-24"
+      "hash": "1f28c7101411e7fe",
+      "changed": "2026-11-25"
     },
     "/models/glm-5.3-slim-ud-iq2-m/": {
-      "hash": "b9575b832fab9677",
-      "changed": "2026-11-24"
+      "hash": "d4ba777c0347cbde",
+      "changed": "2026-11-25"
     },
     "/models/gpt-oss-120b-mxfp4/": {
-      "hash": "21988def6b217c4e",
-      "changed": "2026-11-24"
+      "hash": "ebdd072a111c66b6",
+      "changed": "2026-11-25"
     },
     "/models/gpt-oss-20b-mxfp4/": {
       "hash": "614afdf2e0363275",
@@ -1302,8 +1310,8 @@
       "changed": "2026-11-23"
     },
     "/models/inkling-small-ud-q4/": {
-      "hash": "fcf896f495071a3e",
-      "changed": "2026-11-24"
+      "hash": "810ffb79a15feab8",
+      "changed": "2026-11-25"
     },
     "/models/kat-coder-v2.5-q4/": {
       "hash": "a5a04a3ba842adcd",
@@ -1326,8 +1334,8 @@
       "changed": "2026-11-23"
     },
     "/models/ling-3.0-flash-q4/": {
-      "hash": "5c913a933aeccc71",
-      "changed": "2026-11-24"
+      "hash": "2bc7a12bedc0109d",
+      "changed": "2026-11-25"
     },
     "/models/ling-3.0-tiny-q4/": {
       "hash": "fb0658ce0b32de99",
@@ -1338,8 +1346,12 @@
       "changed": "2026-11-08"
     },
     "/models/ling-3.2-air-q4/": {
-      "hash": "3b2123afa029464c",
-      "changed": "2026-11-24"
+      "hash": "b30d70fe22874715",
+      "changed": "2026-11-25"
+    },
+    "/models/lingsante-3.1-air-vl-q4/": {
+      "hash": "4866cb242ddd66e3",
+      "changed": "2026-11-25"
     },
     "/models/llama-3.1-8b-q4/": {
       "hash": "16ef77c8244d05fe",
@@ -1350,12 +1362,12 @@
       "changed": "2026-11-22"
     },
     "/models/llama-3.3-70b-q4/": {
-      "hash": "5f2ec4cbc7064a28",
-      "changed": "2026-11-24"
+      "hash": "085409af7d77b64e",
+      "changed": "2026-11-25"
     },
     "/models/llama-4-scout-q4/": {
-      "hash": "16ae0b34c6615c69",
-      "changed": "2026-11-24"
+      "hash": "012c558a35372b27",
+      "changed": "2026-11-25"
     },
     "/models/mellum2.1-12b-a2.5b-q4/": {
       "hash": "07a377f978f6fbda",
@@ -1366,8 +1378,8 @@
       "changed": "2026-11-21"
     },
     "/models/minimax-m2.7-q4/": {
-      "hash": "fdb3a2c93d54f725",
-      "changed": "2026-11-24"
+      "hash": "3cb96f3a785411b5",
+      "changed": "2026-11-25"
     },
     "/models/minimax-m3.1-flash-ud-q4/": {
       "hash": "8c5712e69b94bc4d",
@@ -1382,16 +1394,16 @@
       "changed": "2026-11-21"
     },
     "/models/mistral-medium-3.5-128b-q4/": {
-      "hash": "aeffd0d4e4930bae",
-      "changed": "2026-11-24"
+      "hash": "31cc44980e36539f",
+      "changed": "2026-11-25"
     },
     "/models/mistral-small-3.2-24b-q4/": {
       "hash": "223d1152164e3fdb",
       "changed": "2026-11-22"
     },
     "/models/mistral-small-4-119b-q4/": {
-      "hash": "7aa6d5564f7fe197",
-      "changed": "2026-11-24"
+      "hash": "8b60f7250eb7435b",
+      "changed": "2026-11-25"
     },
     "/models/muse-glimmer-30b-q4/": {
       "hash": "e26182cddb8b38b9",
@@ -1418,8 +1430,8 @@
       "changed": "2026-11-23"
     },
     "/models/ornith-1.5-122b-q4/": {
-      "hash": "6665dad079ab88a4",
-      "changed": "2026-11-24"
+      "hash": "2961d55df342c266",
+      "changed": "2026-11-25"
     },
     "/models/ornith-1.5-35b-a3b-q4/": {
       "hash": "af5ce018ea0bf09a",
@@ -1434,8 +1446,8 @@
       "changed": "2026-11-22"
     },
     "/models/qwen3-235b-a22b-2507-q4/": {
-      "hash": "962b935607ec0f94",
-      "changed": "2026-11-24"
+      "hash": "835599bf0c3c61bf",
+      "changed": "2026-11-25"
     },
     "/models/qwen3-30b-a3b-2507-q4/": {
       "hash": "962f2b963ce35b80",
@@ -1458,12 +1470,12 @@
       "changed": "2026-11-22"
     },
     "/models/qwen3-coder-next-q4/": {
-      "hash": "cca2b77486cfec81",
-      "changed": "2026-11-24"
+      "hash": "2264ef7940763c7d",
+      "changed": "2026-11-25"
     },
     "/models/qwen3.5-122b-a10b-ud-q4/": {
-      "hash": "4dabedf5599c102d",
-      "changed": "2026-11-24"
+      "hash": "56e768c02db066fc",
+      "changed": "2026-11-25"
     },
     "/models/qwen3.5-4b-q4/": {
       "hash": "b5f2eee13de655c6",
@@ -1486,8 +1498,8 @@
       "changed": "2026-11-22"
     },
     "/models/qwen3.8-flash-next-q4/": {
-      "hash": "5f12b84e4aaec3fc",
-      "changed": "2026-11-24"
+      "hash": "e09e7d08cd851ea6",
+      "changed": "2026-11-25"
     },
     "/models/raon-1-nano-q4/": {
       "hash": "bb7b900518c68685",

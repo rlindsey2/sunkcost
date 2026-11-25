@@ -53,9 +53,10 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row comes from**: Mistral Medium 3.5 128B went in on 2026-11-23 having been addable for seven months, because
       this watch looks for what came out yesterday. Models this site should price and never looked at are worth a
       pass of their own, family by family against `data/models.json`, before a run falls back to a guard below.
-      **LingSante-3.1-air-VL is the candidate named next**, and its figures were read on 2026-11-24: MIT, 124,848,460,496
-      parameters, the same `bailingmoe3` conversion Ling 3.2 air uses, bartowski's `Q4_K_M` at 78,661,520,576 bytes over two
-      shards and an `mmproj-…-f16.gguf` of 874,635,328. All it still wants is its own config's layer geometry for the cache.
+      **Ternary Bonsai 2.5 27B is the candidate named next**, with Raon-1-mini behind it; both came out 2026-11-24 and
+      both are read up in the watch entry of 2026-11-25 with their file sizes and their geometry. Bonsai 2.5 is the bigger
+      of the two, because it supersedes a row here: adding it makes `ternary-bonsai-2-27b-q2` `legacy` and wants a 301, and
+      the one open question is whether stock llama.cpp loads its `PQ2_0` as well as the `Q2_0` the README names.
 
 - [ ] **Nine of the 27 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -93,8 +94,9 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       page prints the row's own basis since 2026-11-23, so Inkling 2 Mini, Nanbeige4.3 33B and Mistral Medium 3.5 all
       say on their own pages that Artificial Analysis scores them on v5.0.1. The head-to-heads do not: the lede reads
       "has not been placed on it" and the table cell "not placed", over 109 pages. The sentence cannot carry the whole
-      basis without bloating every one of them, so the fix is a shorter form of it, in `build-pages.ts`. Counted 2026-11-24:
-      27 head-to-heads print that lede and 9 of them name a row the index has placed on a later version, 4 of the 9 Ling 3.2 air's.
+      basis without bloating every one of them, so the fix is a shorter form of it, in `build-pages.ts`. Counted 2026-11-25
+      off the built pages: 28 print that lede and 8 of them name a row the index has placed on a later version, 5 of the 8
+      Ling 3.2 air's, whose new family neighbour added one more.
 
 - [ ] Sixteen measurements carry the source's own figure at 32k in their `notes` and nothing reads it.
       Each row in `data/throughput.json` is quoted at one window, usually empty or 4k, and this site
@@ -143,6 +145,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-25 — LingSante-3.1-air-VL is priced here, and the 256k on its card is a flag the file does not carry
+`lingsante-3.1-air-vl-q4` is in `data/models.json`: Ant Group's healthcare team's multimodal mixture of experts, built on Ling 3.0 flash VL, MIT, 124B total and 5.5B active, text
+and images. The watch left one field open, its layer geometry, and it was read off the first `Q4_K_M` shard's own GGUF metadata rather than inferred: `head_count_kv` is 1 on layers
+5, 11, 17, 23, 29, 35 and 41 and 0 on the other 35, `kv_lora_rank` 512 and `rope.dimension_count` 64, so 7 layers cache 1,152 bytes a token and 8,064 across the model, 0.066 GB per
+8k, Ling 3.2 air's figure to the byte. The page's point is the window: the card says 256k, and its own launch command reaches that by overriding the config with YaRN at a factor of
+two over the 131,072 `config.json` and the GGUF both count, so the ceiling is 128k and the note says why. 79 GB of weights (78,661,520,576 bytes over two shards, 5.04 bits a
+parameter, stock llama.cpp b12600) carry 1.1 GB of cache at that full window. Nobody rents it among OpenRouter's 470, so the price stands in on Ling 3.0 Flash VL at $0.06 and
+$0.18; two 404s at Artificial Analysis, so the score is null. Straight to main. Verified: 484 tests, typecheck and validate clean, the whole build with build:functions, 381 pages
+every guard passing, 4 added and 1 retired with a 301 (Ling 3.0 flash against Ling 3.2 air, which this row now sits between at 78.92 GB), the model page and the family head-to-head
+read rendered; 16 mutations, 8 caught and the control clean. All 8 misses are open items or named in earlier entries, among them the ceiling guard's blind spot of 2026-11-17,
+reachable here because this is the first row whose note truthfully calls its figure the native window. Watch done; Ternary Bonsai 2.5 27B and Raon-1-mini are both read up and
+near-addable. Next: the note-figure guard.
 
 ### 2026-11-24 — Ling 3.2 air is priced here, and its cache is Ling 3.0 flash's field for field
 `ling-3.2-air-q4` is in `data/models.json`: inclusionAI's hybrid-linear mixture of experts, MIT, 124B total and 5.5B active, 256k of context, text, images and video. It
@@ -262,28 +277,3 @@ ways; `checkTwoColumnClaims()` reads all 154 of those sentences back against the
 validate clean, the whole build with build:functions, 364 pages every guard passing, 4 added and none retired of 48 redated, all four read rendered; 15 mutations, 11 caught
 with the control passing, two inert on today's data and the last a repetition no guard can judge. Watch done: Whittle-Next-27B-A3B is a candidate, with a new quantisation
 label and a cache that is two kinds at once; Supra2.5-Pro and DFM-Mimir are out; the v5.0.1 count holds at 12 of 54. Next: the ceiling-note guard.
-
-### 2026-11-15 — Olmo 3.1 32B Think is priced here, and the thinking is output the machine has to generate
-The top backlog item's named candidate is a row. **Olmo 3.1 32B Think**, Ai2's reasoning sibling to yesterday's row and the same machine decision to the byte: the same
-32,233,522,176 parameters, 19.48 GB at bartowski's Q4_K_M (19,482,034,656 bytes, 4.84 bits a parameter), Apache 2.0, dense, English, 64k off an 8,192-token pretrain. The cache
-was read off this file's own header rather than carried across: the conversion renames the architecture to `olmo2` here too, and the file carries `olmo2.attention.sliding_window`
-4096 with a 64-entry pattern, 48 local layers to 16 global, so the 1.342 GB at 8k stands on the file this site prices. The page also says what its sibling's does not: Ai2's own
-settings allow 32,768 tokens for the thinking and the answer together, so one hard question is tens of thousands of tokens the machine generates and an API would bill as output.
-Nobody rents it, no Olmo endpoint in OpenRouter's 467 models today and no score on an Artificial Analysis page reading N/A against "No publicly available API", so Gemma 4 31B it
-stands in, re-read today as $0.10 / $0.34 at KT, cheapest of 18. Straight to main. Verified: 469 tests, typecheck and validate clean, the whole build with build:functions, 360
-pages against 358 with the model page and one head-to-head added, 239 redated and none dropped, both new pages read rendered; 12 mutations, 7 caught with the control passing, and
-four of the five misses are open items above, the ceiling moved without its note, `weights_gb`, `params_b` and the architecture note rewritten to contradict the layers, the fifth
-a licence nothing here can judge without re-reading the repository. Watch done: nothing new has weights, and Ling 3.1 flash's v5.0.1 score, 30 against its 41 on v4.3, takes that
-count to 12 of the 54. Oldest two entries archived. Next: the candidate queue is down to two and both blocked, so a guard rather than a row.
-### 2026-11-14 — Olmo 3.1 32B Instruct is priced here, and three of its four layers stop at 4,096 tokens
-The top backlog item's named candidate is a row. **Olmo 3.1 32B Instruct**, Ai2's fully open 32B: 19.48 GB at bartowski's Q4_K_M, Apache 2.0, 64k of context reached by scaling the positions of a
-model pretrained at 8,192, and a sliding-window hybrid where only 16 of 64 layers grow with the window. The cache was read off the quantised file rather than the config, because bartowski's
-conversion renames the architecture to `olmo2`: had the window not survived that rename the figure would have been 2.147 GB instead of 1.342, so the GGUF header was parsed to see
-`olmo2.attention.sliding_window = 4096` and its 64-boolean pattern in the file this site actually prices. Parameters are the 32,233,522,176 the safetensors index counts, the total Hugging Face reads
-out of that GGUF too, against a card and a size label that say only 32B. Nobody rents it: no OpenRouter endpoint on a read of the whole list, and Artificial Analysis publishes a page whose index reads N/A against "No
-publicly available API", so Gemma 4 31B it stands in, the nearest current dense row anybody hosts; Qwen3 32B is nearer in size and is what Ai2's own table compares against, but it is
-superseded and a stand-in may not borrow from a superseded row. The row is `current`, not `legacy`: Ai2 has published nothing newer, and `legacy` prints as "superseded". Straight to main.
-Verified: 469 tests, typecheck and validate clean, the whole build passing every guard, 358 pages against 356 with the model page and one head-to-head added and 237 redated, both read rendered.
-12 mutations of the new row, 7 caught and 1 control; all 5 misses are open backlog items, two of them `weights_gb` and `params_b`, which the `weights_bytes` item would hold against each other,
-and two the ceiling-note item, which a stale "128k" note beside a 64k ceiling walks straight through. Watch done: nothing new to price, and Edge0's new 120B and 145B builds keep the family's
-2026-10-17 ruling on what they are. Next: Olmo 3.1 32B Think.
