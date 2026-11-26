@@ -10,7 +10,7 @@
 import { calculate, DAYS_PER_MONTH } from './calc';
 export { DAYS_PER_MONTH };
 import { computeView, hardwareLabel, modelLabel, type ModelRow, type View } from './compute';
-import { footprintGb, kvCacheGb } from './fit';
+import { footprintGb, kvCacheGb, KV_BYTES_PER_VALUE } from './fit';
 import { fmtDuration, fmtGb, fmtHours, fmtNum, fmtTokens, fmtUsd, esc } from './format';
 // Four helpers that turn the data's own words into a reader's: they live in
 // format.ts because the calculator's assumptions panel prints the same fields
@@ -1203,21 +1203,35 @@ const PER_TOKEN_UNITS: Array<[string, number]> = [
 ];
 
 /**
- * Every "N bytes a token" figure a note states, in bytes, with the rounding it was
- * written at: "93 KiB a token" is 95,232 bytes written to no decimal place, so it can
- * only be read back against a total that rounds to 93 KiB again. A note states both
- * the whole model's figure and, often, one layer's, so this reads all of them and
- * leaves the judging to the caller.
+ * Every cache width a note states, in bytes, with the rounding it was written at:
+ * "93 KiB a token" is 95,232 bytes written to no decimal place, so it can only be read
+ * back against a figure that rounds to 93 KiB again. A note states what a token costs in
+ * one layer and, often, what it costs across the model, and it writes either of them
+ * three ways — "1,152 bytes a layer", "a token costs 4,096 bytes", "360,448 bytes across
+ * the model" — so this reads all of them and leaves the judging to the caller.
  */
 function perTokenFigures(note: string): Array<{ value: number; base: number; places: number; written: string }> {
   const units = PER_TOKEN_UNITS.map(([u]) => u).join('|');
-  const re = new RegExp(String.raw`(\d[\d,]*(?:\.\d+)?)\s*(${units})\s+(?:a|per)\s+token`, 'gi');
+  const num = String.raw`(\d[\d,]*(?:\.\d+)?)`;
+  const about = String.raw`(?:about\s+|roughly\s+|around\s+|~)?`;
+  const re = new RegExp(
+    [
+      String.raw`${num}\s*(${units})\s+(?:a|per|each)\s+(?:token|layer)`,
+      String.raw`${num}\s*(${units})\s+across\s+the\s+(?:whole\s+)?model`,
+      String.raw`(?:a|per|each)\s+(?:token|layer)\s+(?:costs|holds|takes|is)\s+${about}${num}\s*(${units})`,
+    ].join('|'),
+    'gi',
+  );
   const out: Array<{ value: number; base: number; places: number; written: string }> = [];
   for (const hit of note.matchAll(re)) {
-    const value = Number(hit[1].replace(/,/g, ''));
-    const unit = PER_TOKEN_UNITS.find(([u]) => u.toLowerCase() === hit[2].toLowerCase());
+    // one alternative matches at a time, so the figure is whichever pair of groups is set
+    const pairs: Array<[string | undefined, string | undefined]> = [[hit[1], hit[2]], [hit[3], hit[4]], [hit[5], hit[6]]];
+    const [written, unitName] = pairs.find(([n]) => n != null) ?? [];
+    if (written == null || unitName == null) continue;
+    const value = Number(written.replace(/,/g, ''));
+    const unit = PER_TOKEN_UNITS.find(([u]) => u.toLowerCase() === unitName.toLowerCase());
     if (!Number.isFinite(value) || value <= 0 || !unit) continue;
-    out.push({ value, base: unit[1], places: hit[1].split('.')[1]?.length ?? 0, written: hit[0] });
+    out.push({ value, base: unit[1], places: written.split('.')[1]?.length ?? 0, written: hit[0] });
   }
   return out;
 }
@@ -1388,6 +1402,104 @@ export function ceilingNoteFault(m: Model): string | null {
     if (!/^\s+nativ(?:e|ely)\b/i.test(open.after)) {
       return `the note opens on ${ctxLabel(open.tokens)} against a ceiling of ${ceiling} tokens without calling it the native window, so the shorter figure reads as the ceiling restated and contradicts it`;
     }
+  }
+  return null;
+}
+
+/**
+ * The widths a note may truthfully call the cost of a cached token, in bytes.
+ *
+ * There are only ever a few: what one layer that grows with the context holds, what a
+ * windowed layer holds where the two differ, what the layers that grow hold between
+ * them, and, on a row whose layers do not cache alike, the one whole-model figure it
+ * states. A note writes one or two of those and nothing else, so a figure in prose that
+ * is none of them is a figure that has come loose from the arithmetic beside it.
+ */
+function cacheWidths(a: ModelArchitecture): number[] {
+  const bytes = a.kv_bytes_per_value ?? KV_BYTES_PER_VALUE;
+  let full = a.bytes_per_token_full ?? null;
+  if (full == null) {
+    if (a.kv_lora_rank != null) full = (a.kv_lora_rank + (a.qk_rope_head_dim ?? 0)) * bytes;
+    else if (a.n_kv_heads != null && a.head_dim != null) full = 2 * a.n_kv_heads * a.head_dim * bytes;
+  }
+  const out: number[] = [];
+  if (a.kv_bytes_per_token_total != null) out.push(a.kv_bytes_per_token_total);
+  if (full != null) {
+    out.push(full);
+    if (a.bytes_per_token_sliding != null) out.push(a.bytes_per_token_sliding);
+    const growing = a.full_attention_layers ?? (a.n_layers == null ? null : a.n_layers - (a.sliding_window_layers ?? 0));
+    if (growing != null && growing > 0) out.push(growing * full);
+  }
+  return out.filter((v) => v > 0);
+}
+
+/**
+ * Why the figures a row's architecture note states cannot be printed as they stand, or
+ * null where they can.
+ *
+ * Each `architecture.note` is printed whole in the KV cache row of its model page, so
+ * the arithmetic a reader checks the site's figures against is prose, and prose was the
+ * one thing here nothing read back. Sixteen notes say what a token costs; eight say what
+ * a window costs in gigabytes; three say what the weights come to. All of them agreed
+ * with the data on the day they were written, and none of them was held there, so a note
+ * could outlive a correction to the architecture it describes: the 2026-10-27 run moved
+ * both Ling 3.0 rows' cache by a factor of fourteen and only happened not to have quoted
+ * it in words, and mutation walked through this twice — Raon-1 nano's two figures moved
+ * on 2026-11-13, and the Mellum row's 2,048 bytes doubled to 4,096 on 2026-11-21, with
+ * validate and every page passing both times.
+ *
+ * So each figure is read back against the field it is about. A cache at a window goes
+ * against `kvCacheGb()` at that window, a weights figure against `weights_gb`, and a
+ * width against the few widths the geometry actually has. Each is held at the rounding
+ * it was written at and no finer: "about 39 GB" beside 38.745 is that figure to the
+ * nought, and a note is wrong here only when the words a reader sees no longer round to
+ * the number the site prints beside them.
+ */
+export function noteFigureFault(m: Model): string | null {
+  const a = m.architecture;
+  const note = a?.note?.trim();
+  if (!a || !note) return null;
+
+  const num = String.raw`(\d[\d,]*(?:\.\d+)?)`;
+  const about = String.raw`(?:about\s+|roughly\s+|around\s+|~)?`;
+
+  // "the whole 256k window costs about 6.4 GB", "the full 1M window is 15.1 GB of cache"
+  const windows = new RegExp(String.raw`(?:whole|full)\s+${num}\s*([kKmM])\s+window\s+(?:costs|is|takes|needs)\s+${about}${num}\s*(GB|GiB)`, 'gi');
+  for (const hit of note.matchAll(windows)) {
+    const count = Number(hit[1].replace(/,/g, ''));
+    const tokens = count * (hit[2].toLowerCase() === 'k' ? 1024 : 1024 * 1024);
+    const places = hit[3].split('.')[1]?.length ?? 0;
+    const written = Number(hit[3].replace(/,/g, ''));
+    const base = hit[4].toLowerCase() === 'gib' ? 1024 ** 3 : 1e9;
+    if (m.max_context_tokens != null && tokens > m.max_context_tokens) {
+      return `the note prices a ${ctxLabel(tokens)} window and the model's ceiling is ${ctxLabel(m.max_context_tokens)}`;
+    }
+    const actual = kvCacheGb(m, tokens);
+    if (actual == null) return `the note states what a ${ctxLabel(tokens)} window costs and the architecture cannot work the cache out`;
+    if (Number(((actual * 1e9) / base).toFixed(places)) !== written) {
+      return `the note says "${hit[0]}" and the cache at ${ctxLabel(tokens)} is ${actual.toFixed(2)} GB`;
+    }
+  }
+
+  // "against 2.08 GB of weights"
+  const weights = new RegExp(String.raw`${num}\s*(GB|GiB)\s+of\s+weights`, 'gi');
+  for (const hit of note.matchAll(weights)) {
+    if (m.weights_gb == null) return `the note states ${hit[0]} and the row has no weights figure`;
+    const places = hit[1].split('.')[1]?.length ?? 0;
+    const written = Number(hit[1].replace(/,/g, ''));
+    const base = hit[2].toLowerCase() === 'gib' ? 1024 ** 3 : 1e9;
+    if (Number(((m.weights_gb * 1e9) / base).toFixed(places)) !== written) {
+      return `the note says "${hit[0]}" and the row's weights are ${m.weights_gb.toFixed(2)} GB`;
+    }
+  }
+
+  // "1,152 bytes a layer", "a token costs 4,096 bytes", "360,448 bytes across the model"
+  const widths = cacheWidths(a);
+  if (!widths.length) return null;
+  for (const f of perTokenFigures(note)) {
+    if (widths.some((w) => figureReadsBack(f, w))) continue;
+    const had = widths.map((w) => fmtNum(w, 0)).join(' or ');
+    return `the note states "${f.written}", which is none of the widths the geometry has (${had} bytes)`;
   }
   return null;
 }

@@ -114,26 +114,16 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       apart only where the path matches a known marker, so a row citing a repository's README or its KNOWN_ISSUES.md
       beside the repository itself prints the same name twice in its Sources line, which is why this row cites neither.
 
-- [ ] A figure in prose that nothing reads back: each `architecture.note` is printed whole in the KV cache row
-      of its model page, and eight of them state what a window costs in cache: 145 GB at 1M on MiniMax M3.1
-      Flash, 38.74 on Beam, 15.05 on Spark-X2.6 1.7B, and at 256k 7.55 on Flint, 6.44 on Ornith 1.5 122B, 3.22
-      on LFM3 1.7B, 2.15 on Nemotron 3.5 Bolt and 1.8 on Raon-1 nano. Eight more state what a token costs,
-      Raon-1 nano's 6,912 bytes among them. All of them agree with `kvCacheGb()` to the rounding today, and
-      not one is held there, so a note can outlive a correction to the architecture it describes: the
-      2026-10-27 run moved both Ling 3.0 rows' cache by a factor of 14 and their notes happened not to quote
-      one, and mutation on 2026-11-13 moved both of Raon-1 nano's figures with nothing noticing. The guard is
-      small: read a GB or a bytes-a-token figure out of a note and check it against the fields beside it.
-      Mutation on 2026-11-21 walked through it again: the new Mellum row's note says a token costs 2,048 bytes, and
-      doubling that to 4,096 left validate and all 371 pages passing. Two more misses from that run belong with it.
-      `full_attention_layers` plus `sliding_window_layers` is refused above `n_layers` and not below, so raising
-      this row's 28 layers to 32 against 7 and 21 passed; a row with linear or recurrent layers truthfully counts
-      short, which is why it is one-sided, and the guard wants the shape that has none. And nothing holds
-      `active_params_b`: setting this row's 2.5 to its full 12.15 moves every speed figure on its page and no check
-      notices, because the only thing that could contradict it is the card it was read off. Mutation on 2026-11-22
-      added two of the same shape: Inkling 2 Mini's `loop_layers` and `loop_passes` only widen the ceiling the caching
-      counts are held against, so 12 layers at 3 passes reading 13 or 4 passes leaves validate and all 372 pages clean
-      while the note printed beside the cache goes on saying twelve layers three times over 48 slots. Both figures are
-      in that note, which is what a note-figure guard would read.
+- [ ] **Three figures mutation walked through that the note-figure guard does not reach.** It reads cache widths
+      and gigabytes; a count of layers written in words is still prose. `full_attention_layers` plus
+      `sliding_window_layers` is refused above `n_layers` and not below, so raising Mellum's 28 layers to 32
+      against 7 and 21 passed; a row with linear or recurrent layers truthfully counts short, which is why it is
+      one-sided, and the guard wants the shape that has none. Nothing holds `active_params_b`: setting Mellum's
+      2.5 to its full 12.15 moves every speed figure on its page and no check notices, because the only thing
+      that could contradict it is the card it was read off. And Inkling 2 Mini's `loop_layers` and `loop_passes`
+      only widen the ceiling the caching counts are held against, so 12 layers at 3 passes reading 13 or 4 leaves
+      validate and every page clean while its note goes on saying twelve layers three times over 48 slots. That
+      note's two layer counts are the shape a prose-count guard would read, on 72 rows that state one.
 
 - [ ] **A weights figure says 2.60 GB and nothing says which file it came from.** `weights_gb` is one rounded
       number a row, the repository behind it is somewhere in `sources` among the card, the config and the GGUF,
@@ -145,6 +135,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-26 — The arithmetic a reader checks these figures against is prose, and now it is read back
+The backlog's note-figure item is done. Each `architecture.note` is printed whole in the KV cache row of its model page, so the working a reader checks this
+site against was the one thing here nothing held: 16 notes say what a token costs, 8 what a window costs in gigabytes, 3 what the weights come to, all right
+on the day they were written and none read back. `noteFigureFault()` holds each against the field it is about — a window against `kvCacheGb()` at that
+window, a weights figure against `weights_gb`, a width against the few the geometry has: a growing layer's, a windowed layer's, the sum across the growing
+layers, or the one whole-model figure a row states. Each at the rounding it was written at, so "about 39 GB" beside 38.745 passes and 42 does not. The reader
+is widened with it, since a width is written three ways and only "1,152 bytes a layer" was matched. Straight to main; no visitor-facing text changed, since
+the guard refuses data rather than writing words. Verified: 485 tests with 1 added, typecheck and validate clean, the whole build with build:functions, 381
+pages every guard passing and none added or dropped, Raon-1 nano's cache row read rendered; 22 mutations, 22 caught, control clean — mutation's own two
+misses among them (Raon-1 nano's widths of 2026-11-13, Mellum's 2,048 bytes doubled of 2026-11-21) and a geometry moved under a note with its cache field
+moved along, the shape that keeps the existing check quiet. Watch done, nothing addable: DeepSeek V4.1-Flash succeeds a row here, GGUFs up since September,
+365.71 GB at two bits inside the 384 GB machine by 18, blocked on a compression ratio a layer group. Next: Ternary Bonsai 2.5 27B.
 
 ### 2026-11-25 — LingSante-3.1-air-VL is priced here, and the 256k on its card is a flag the file does not carry
 `lingsante-3.1-air-vl-q4` is in `data/models.json`: Ant Group's healthcare team's multimodal mixture of experts, built on Ling 3.0 flash VL, MIT, 124B total and 5.5B active, text

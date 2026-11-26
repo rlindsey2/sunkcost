@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-25
+Last checked: 2026-11-26
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,39 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-26 · Nothing new is addable, and the biggest name this watch never looked for is DeepSeek V4.1-Flash
+
+**Nothing came out since yesterday that this site can price.** The trending feed is Inkling 2 Mini and its
+derivatives, Ternary Bonsai 2.5, Ling 3.2 air, Raon-1-mini and Kolibri 1.1, all queued or ruled on already;
+[Sulphur-3](https://huggingface.co/SulphurAI/Sulphur-3) (5 days, MiniMax H3 Community licence) is video
+generation; LTX-2.5, `nvidia/Nemotron-Labs-Image-30B-A3B`, `apple/DepthPro2` and `llamaindex/OCRia-nano-1` are
+not text generation. **Kimi K3.1 Pro's weights did ship**, 2026-11-04 under a Kimi licence of its own, and at the
+2.8T the coverage reports it is past 384 GB at any quantisation, so it is out on memory the way Kimi K3 was.
+
+**The name worth recording is a successor to a row here that this watch never looked for.**
+[DeepSeek-V4.1-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash) (MIT, multimodal, 1M of context)
+stands behind the `deepseek-v4-flash-ud-q4` row, and its GGUFs have been up since September: antirez's
+[repository](https://huggingface.co/antirez/deepseek-v4.1-flash-gguf) was created 2026-09-11 and last touched
+2026-10-19, with 680k downloads. Read off the API today, its `Q2` and its `IQ2_XXS-Q2_K-imatrix` are both
+**365,713,686,528 bytes**, which clears the 384 GB of the Mac Studio M3 Ultra, 512GB by about 18 GB and nothing
+else here; the `MXFP4-experts` build is 501,602,535,360 and fits nothing. A 970,555,552-byte vision file sits
+beside them. The card states **552B backbone parameters** against a `safetensors.total` of 763B, and **8B active
+in prefill against 16B in decode**, which is the first row here whose active count would differ by phase.
+
+**What blocks it is the cache, and the block is specific.**
+[config.json](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/raw/main/config.json) gives 40 layers at
+`head_dim` 512 and `num_key_value_heads` 1 with `qk_rope_head_dim` 64, `sliding_window` 128, an indexer of 32
+heads by 128, `candidate_source_layer_id` 20 for the encoder-to-decoder split, and `compress_rope_theta` beside
+the main `rope_theta` — Compressed Sparse Attention again, with the cache itself held in FP4. So a token's cost is
+not a head count times a width: it is a compression ratio per group of layers, which is exactly the read that
+produced the V4-Flash row's three `kv_layer_groups` off that model's own inference code. The same read on this
+model, plus the two-bit label and the prefill-against-decode active count, is a run of its own. Ternary Bonsai
+2.5 27B stays the named candidate ahead of it.
+
+Searched: the queries this file lists, Hugging Face's newest text-generation, trending and newest
+image-text-to-text feeds, the quantised derivatives of DeepSeek V4.1-Flash by downloads, a November release
+roundup, and the Kimi K3.1 Pro coverage.
 
 ### 2026-11-25 · LingSante-3.1-air-VL is a row, and two successors to rows here came out yesterday
 

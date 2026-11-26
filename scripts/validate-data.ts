@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { kvCacheGbPer8kFromArchitecture } from '../src/fit';
-import { cachedLayerFault, ceilingNoteFault, kvTotalGeometryFault } from '../src/pagekit';
+import { cachedLayerFault, ceilingNoteFault, kvTotalGeometryFault, noteFigureFault } from '../src/pagekit';
 import { CAPABILITY_KEYS, type Hardware, type Model, type Throughput, type Defaults } from '../src/types';
 
 const read = (f: string) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8'));
@@ -169,6 +169,13 @@ for (const m of models) {
   // or go missing altogether, and the page would print either without complaint.
   const ceiling = ceilingNoteFault(m);
   if (ceiling) errors.push(`${m.id}: ${ceiling}`);
+  // Each architecture.note is printed whole in the KV cache row of its model page, so the
+  // arithmetic a reader checks these figures against is prose. Sixteen notes state what a
+  // token costs, eight what a window costs and three what the weights come to, and not one
+  // of them was read back: a note could outlive a correction to the architecture it
+  // describes. Caught by mutation 2026-11-13 and again 2026-11-21. See noteFigureFault().
+  const figures = noteFigureFault(m);
+  if (figures) errors.push(`${m.id}: ${figures}`);
   const fe = m.frontier_equivalent;
   if (!fe) warnings.push(`${m.id}: no frontier_equivalent`);
   else if (fe.score != null) {

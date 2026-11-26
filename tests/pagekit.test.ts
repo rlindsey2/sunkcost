@@ -10,6 +10,7 @@ import {
   cachedLayerFault,
   cachedLayerSlots,
   kvTotalGeometryFault,
+  noteFigureFault,
   machinesThatHold,
   memoryLevels,
   memorySizePath,
@@ -28,12 +29,12 @@ import {
   indexVersion, powerSourceLabel as fmtPowerSourceLabel, sourceLinks as fmtSourceLinks,
   sourceName as fmtSourceName, splitHardwareNote as fmtSplitHardwareNote,
 } from '../src/format';
-import { fit, footprintGb, kvCacheGb } from '../src/fit';
+import { fit, footprintGb, kvCacheGb, kvCacheGbPer8kFromArchitecture } from '../src/fit';
 import { familyMemoryPairs, hardwarePairs, modelGenerationPairs, modelPairs, sameSiliconPairs } from '../src/versus-card';
 import { bestUsageLevels } from '../src/best';
 import { defaultState, parseState } from '../src/state';
 import { sharePath } from '../src/share';
-import type { Dataset, Hardware, Model } from '../src/types';
+import type { Dataset, Hardware, Model, ModelArchitecture } from '../src/types';
 import hardware from '../data/hardware.json';
 import models from '../data/models.json';
 import throughput from '../data/throughput.json';
@@ -1544,6 +1545,85 @@ describe('what memory buys once two machines hold the same models', () => {
     }
     // every other row on the site has no whole-model figure and nothing to hold
     for (const m of data.models) expect([m.id, kvTotalGeometryFault(m)]).toEqual([m.id, null]);
+  });
+
+  it('reads the figures in an architecture note back against the fields beside them', () => {
+    // Each note is printed whole in the KV cache row of its model page, so the arithmetic
+    // a reader checks this site's figures against is prose, and prose was the one thing
+    // here nothing read back. Mutation walked through it twice: Raon-1 nano's two widths
+    // moved on 2026-11-13, and the Mellum row's 2,048 bytes doubled to 4,096 on
+    // 2026-11-21, with validate and every page passing both times.
+    const row = data.models.find((m) => m.id === 'mellum2.1-12b-a2.5b-q4')!;
+    const note = (text: string | null) => noteFigureFault({ ...row, architecture: { ...row.architecture!, note: text } });
+    // four KV heads by 128 wide over 28 layers, seven of which grow
+    expect(note('a token costs 2,048 bytes in whichever layer holds it')).toBeNull();
+    expect(note('2,048 bytes a token')).toBeNull();
+    expect(note('2,048 bytes a layer, so 14,336 bytes across the model')).toBeNull();
+    expect(note('a token costs 4,096 bytes')).toMatch(/none of the widths/);
+    expect(note('2,048 bytes a token, so 28,672 bytes across the model')).toMatch(/none of the widths/);
+    expect(note('2 KiB a token')).toBeNull();
+    expect(note('3 KiB a token')).toMatch(/none of the widths/);
+    // prose with no figure in it is prose, and so is a figure that is not a cache width
+    expect(note('Dense, and the context cost is the highest on this list per token.')).toBeNull();
+    expect(note('Three windowed layers to every growing one.')).toBeNull();
+    expect(note(null)).toBeNull();
+    // the window and weights shapes, on the row that states both
+    const raon = data.models.find((m) => m.id === 'raon-1-nano-q4')!;
+    const rnote = (text: string) => noteFigureFault({ ...raon, architecture: { ...raon.architecture!, note: text } });
+    expect(rnote('The whole 256k window is 1.8 GB of cache against 2.08 GB of weights.')).toBeNull();
+    expect(rnote('The whole 256k window is 1.9 GB of cache against 2.08 GB of weights.')).toMatch(/the cache at 256k/);
+    expect(rnote('The whole 256k window is 1.8 GB of cache against 2.8 GB of weights.')).toMatch(/weights are 2\.08/);
+    expect(rnote('The whole 256k window costs about 2 GB.')).toBeNull();
+    expect(rnote('The whole 1M window costs about 7.2 GB.')).toMatch(/ceiling is 256k/);
+
+    // and every row on the site passes its own rule
+    for (const m of data.models) expect([m.id, noteFigureFault(m)]).toEqual([m.id, null]);
+
+    // Move the geometry under a note and the words left behind say so. One mutation
+    // reaches both kinds of figure: every width the arithmetic has doubles, whichever
+    // field the row states it in, so a cache at a window doubles with them. The cache
+    // field moves too, which is what keeps the kv_cache_gb_per_8k check quiet and left
+    // this to prose.
+    const doubleWidths = (a: ModelArchitecture): ModelArchitecture =>
+      a.kv_bytes_per_token_total != null
+        ? {
+            ...a,
+            kv_bytes_per_token_total: a.kv_bytes_per_token_total * 2,
+            kv_layer_groups: a.kv_layer_groups?.map((g) => ({ ...g, bytes_per_token: g.bytes_per_token == null ? null : g.bytes_per_token * 2 })),
+          }
+        : a.bytes_per_token_full != null
+          ? {
+              ...a,
+              bytes_per_token_full: a.bytes_per_token_full * 2,
+              ...(a.bytes_per_token_sliding != null ? { bytes_per_token_sliding: a.bytes_per_token_sliding * 2 } : {}),
+            }
+          : { ...a, kv_bytes_per_value: (a.kv_bytes_per_value ?? 2) * 2 };
+    // the three shapes this reads, as the regexes in the guard read them
+    const statesAFigure = (note: string) =>
+      /\d[\d,.]*\s*(?:bytes?|[KMG]i?B)\s+(?:a|per|each)\s+(?:token|layer)/i.test(note)
+      || /(?:a|per|each)\s+(?:token|layer)\s+(?:costs|holds|takes|is)\s+(?:about |roughly |around |~)?\d/i.test(note)
+      || /\d[\d,.]*\s*(?:bytes?|[KMG]i?B)\s+across\s+the\s+(?:whole\s+)?model/i.test(note)
+      || /(?:whole|full)\s+[\d.]+\s*[kKmM]\s+window/i.test(note);
+    let held = 0;
+    for (const m of data.models) {
+      const a = m.architecture;
+      if (!a?.note || !statesAFigure(a.note)) continue;
+      held++;
+      const moved = { ...m, architecture: doubleWidths(a) };
+      const after = { ...moved, kv_cache_gb_per_8k: kvCacheGbPer8kFromArchitecture(moved) };
+      expect([m.id, kvCacheGbPer8kFromArchitecture(after)]).not.toEqual([m.id, m.kv_cache_gb_per_8k]);
+      expect([m.id, noteFigureFault(after)]).not.toEqual([m.id, null]);
+    }
+    expect(held).toBeGreaterThanOrEqual(20);
+
+    // a weights figure is held the same way
+    let weighed = 0;
+    for (const m of data.models) {
+      if (!/\d[\d.,]*\s*(?:GB|GiB)\s+of\s+weights/i.test(m.architecture?.note ?? '')) continue;
+      weighed++;
+      expect([m.id, noteFigureFault({ ...m, weights_gb: m.weights_gb! * 2 })]).not.toEqual([m.id, null]);
+    }
+    expect(weighed).toBeGreaterThanOrEqual(3);
   });
 
   it('holds the layers a row counts as caching against the slots they cache in', () => {
