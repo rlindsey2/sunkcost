@@ -65,7 +65,13 @@ export interface CloudEquivalent {
    */
   stand_in_for?: string;
   stand_in_hosted?: string;
-  stand_in_basis?: 'finetune' | 'nearest_score' | 'nearest_size' | 'base_model';
+  /**
+   * Which kind of hosted model the price was borrowed from. `predecessor` is the
+   * previous release of this same model, which is the nearest match of all where the
+   * publisher rents it: the two rows then carry one price, so a head-to-head between
+   * them does not turn a bookkeeping difference into a verdict.
+   */
+  stand_in_basis?: 'finetune' | 'nearest_score' | 'nearest_size' | 'base_model' | 'predecessor';
 }
 
 /** A set of layers that cache alike, in a model whose layers do not all cache the same. */

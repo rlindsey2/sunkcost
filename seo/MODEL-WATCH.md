@@ -1,6 +1,6 @@
 # Model watch
 
-Last checked: 2026-11-26
+Last checked: 2026-11-27
 
 New open models come out faster than this site notices them. This file is the daily check for
 that: what was searched, what turned up, and what each candidate still needs before it can be a
@@ -79,6 +79,57 @@ bandwidth and says so. A measured row from a real benchmark is better, and `data
 but its absence is not what blocks a model from being added.
 
 ## Candidates
+
+### 2026-11-27 · Ternary Bonsai 2.5 27B is a row, and GigaChat 4's compact model is the next candidate
+
+**`ternary-bonsai-2.5-27b-q2` is in `data/models.json`.**
+[Ternary Bonsai 2.5 27B](https://huggingface.co/prism-ml/Ternary-Bonsai-2.5-27B-GGUF) (2026-11-24, Apache 2.0, 621 likes,
+382,546 downloads) is the agentic release of the line the Bonsai 2 row prices, same Qwen3.8-27B base and the same ternary
+format at 1.76 bits a weight. **The open question is settled and the answer is no**: the README says `PTQ1_0` and `PQ2_0`
+need the ternary kernels in PrismML's [fork](https://github.com/PrismML-Eng/llama.cpp) and that "stock llama.cpp rejects
+them as unknown types", so the row prices `Ternary-Bonsai-2.5-27B-Q2_0.gguf`, **7,673,194,848 bytes**, 2.28 bits against
+the 26,895,998,464 parameters the file holds, which stock llama.cpp loads from release
+[b11556](https://github.com/ggml-org/llama.cpp/releases/tag/b11556) onward and older builds load silently and run as
+nonsense. `PQ2_0` is 7,253,354,848 and `PTQ1_0` 5,993,834,848, each with an `-mtp` variant carrying a draft head, and the
+`mmproj-Q8_0` projector is 629,246,976. **The cache geometry is the file's own GGUF metadata rather than the base model's
+config**: `block_count` 64, `attention.head_count_kv` 4, `key_length` and `value_length` 256, `full_attention_interval` 4
+and `context_length` 262144, so 16 of 64 layers cache 4,096 bytes a token and 65,536 across the model, 0.537 GB per 8k,
+the Bonsai 2 row's figure to the byte. **Parameters are 27.36B**, the card's own 24.35B backbone plus 2.54B of embedding
+and LM head plus a 0.47B vision tower; the base checkpoint's index reports 27.78B and the 0.42B of difference is the
+multi-token-prediction head these files do not ship, which is the same reading the Arete-27B row already carries, so both
+Bonsai rows now state 27.36B. Nobody rents it among OpenRouter's 477 models, so the price is the release before it.
+
+**[GigaChat4-37B-A4B](https://huggingface.co/ai-sage/GigaChat4-37B-A4B) is the candidate to read next.** Sber's compact
+GigaChat 4 (2026-11-20), licence `other` and its own LICENSE.txt, **37B total and 4B active a token** by the card, a
+mixture of experts selecting 8 of 192 routed experts beside one shared, DeepSeek Sparse Attention with Gated DeltaNet,
+and a **1,048,576-token** window the card says was extended 32k to 128k to 1M. The publisher ships its own GGUFs at
+[GigaChat4-37B-A4B-GGUF](https://huggingface.co/ai-sage/GigaChat4-37B-A4B-GGUF): `Q4_K_M` **23,253,070,016 bytes**, `Q6_K`
+31,483,633,856, `Q8_0` 40,737,835,200, and the file's own metadata reads architecture `gigachat4`, `context_length`
+1048576 and 38,257,903,040 parameters.
+[config.json](https://huggingface.co/ai-sage/GigaChat4-37B-A4B/raw/main/config.json) gives 32 layers with
+`full_attention_layers` [3, 7, 11, 15, 19, 23, 27, 31], `kv_lora_rank` 512 and `qk_rope_head_dim` 64 against 24
+`GigaChat4GatedDeltaNet` layers, which on the latent-attention arithmetic this site already uses is 8 layers at 1,152
+bytes, 9,216 a token and 0.075 GB per 8k. **Three fields are open.** `index_n_heads` 64 by `index_head_dim` 128 with
+`index_topk` 2048 is the sparse-attention indexer that blocked DeepSeek V4.1-Flash and Hy4-flash, and whether it holds
+keys of its own decides the cache figure; nobody rents GigaChat 4 among OpenRouter's 477, so the price is a stand-in to
+choose; and the licence is its own text and wants reading before the row states a name for it.
+
+**[GigaChat4-708B-A41B](https://huggingface.co/ai-sage/GigaChat4-708B-A41B) is out on memory.** Its own
+[GGUFs](https://huggingface.co/ai-sage/GigaChat4-708B-A41B-GGUF) are `Q4_K_M` **429,444,154,336 bytes**, `Q6_K`
+583,206,651,424 and `Q8_0` 755,156,217,536, so the smallest of them clears the 384 GB the roomiest machine here addresses
+by 45 GB and nothing runs it at any window.
+
+**Nothing else new is addable.** [Hy-MT3-30B-A3B](https://huggingface.co/tencent/Hy-MT3-30B-A3B) (2026-11-17, Apache 2.0)
+is Tencent's translation model, no GGUF in its own repository and only third-party FP8 conversions of the 7B and 1.8B
+beside it. [Tess-4.5-26B-A3B](https://huggingface.co/migtissera/Tess-4.5-26B-A3B) went up today with its own GGUF, a
+finetune on Inkling 2 Mini's looped architecture hours old. The rest of the trending feed is Inkling 2 Mini derivatives
+(ISTA-DASLab's GSQ-RCO build, an abliterated one, a Fast one), Bonsai 2.5 re-uploads, and names already ruled on:
+ERNIE-5.5-Flash-Preview, MemT-1.0-Pro, Kolibri 1.1, Hy4-flash, SenseNova-Loop-9B, LingSante-3.1-flash, Kimi K3.1 Pro and
+DeepSeek V4.1-Flash all hold their earlier rulings. **Raon-1-mini stays queued**, read up in full on 2026-11-25.
+
+Searched: the queries this file lists, Hugging Face's newest text-generation, trending and newest image-text-to-text
+feeds, every GigaChat4 repository by name, OpenRouter's whole 477-model list for a PrismML, GigaChat, Tess or Hy-MT3
+endpoint, three Artificial Analysis slugs for the model added today, and the Q2_0 file's own GGUF header.
 
 ### 2026-11-26 · Nothing new is addable, and the biggest name this watch never looked for is DeepSeek V4.1-Flash
 

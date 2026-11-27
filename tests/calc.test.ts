@@ -420,6 +420,29 @@ describe('a model nobody rents', () => {
     expect(['surfaces', 'never']).toContain(v.verdict.kind);
   });
 
+  it('can borrow from the release before it, where the publisher rents that one and nobody rents this', () => {
+    const m = data.models.find((x) => x.id === 'ternary-bonsai-2.5-27b-q2')!;
+    expect(m.cloud_equivalent.stand_in_basis).toBe('predecessor');
+    expect(m.cloud_equivalent.stand_in_for).toBe('ternary-bonsai-2-27b-q2');
+    expect(m.cloud_equivalent.note).toMatch(/Nobody rents/);
+  });
+
+  // A price borrowed from the release before carries the claim that the two are one
+  // model a version apart, which is why both rows print the same figure. The family
+  // name does not hold it on its own: this site files a model under the family it was
+  // built from, so the base model is in the same one. The names have to agree too.
+  it('names the same model a version back wherever it borrows from a predecessor', () => {
+    const borrowers = data.models.filter((m) => m.cloud_equivalent.stand_in_basis === 'predecessor');
+    expect(borrowers.length).toBeGreaterThan(0);
+    const firstWord = (s: string) => s.split(/\s+/)[0].toLowerCase();
+    for (const m of borrowers) {
+      const src = data.models.find((x) => x.id === m.cloud_equivalent.stand_in_for);
+      expect(src, m.id).toBeDefined();
+      expect(src!.family, m.id).toBe(m.family);
+      expect(firstWord(src!.display_name), m.id).toBe(firstWord(m.display_name));
+    }
+  });
+
   it('leaves no model without a price, and never borrows from a borrower', () => {
     for (const m of data.models) {
       const ce = m.cloud_equivalent;

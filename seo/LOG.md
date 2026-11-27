@@ -53,10 +53,18 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       row comes from**: Mistral Medium 3.5 128B went in on 2026-11-23 having been addable for seven months, because
       this watch looks for what came out yesterday. Models this site should price and never looked at are worth a
       pass of their own, family by family against `data/models.json`, before a run falls back to a guard below.
-      **Ternary Bonsai 2.5 27B is the candidate named next**, with Raon-1-mini behind it; both came out 2026-11-24 and
-      both are read up in the watch entry of 2026-11-25 with their file sizes and their geometry. Bonsai 2.5 is the bigger
-      of the two, because it supersedes a row here: adding it makes `ternary-bonsai-2-27b-q2` `legacy` and wants a 301, and
-      the one open question is whether stock llama.cpp loads its `PQ2_0` as well as the `Q2_0` the README names.
+      **GigaChat4-37B-A4B is the candidate named next**, with Raon-1-mini behind it: Sber's 37B-and-4B-active mixture of
+      experts, read up in the watch entry of 2026-11-27 with its own publisher's GGUF sizes and its config, and the open
+      field is the one that blocked DeepSeek V4.1-Flash — whether its sparse-attention indexer holds keys of its own, which
+      decides the cache figure. Raon-1-mini is read up on 2026-11-25 and wants an active-parameter count and a price.
+
+- [ ] **Bonsai 2 should be `legacy` and the flag alone will not do it.** Ternary Bonsai 2.5 27B supersedes it, and
+      setting `generation: legacy` fails the build: 56 machine pages name every superseded model they hold and send a
+      reader to its "still worth running?" section, and `betterInLessMemory()` writes none on a row the index has not
+      scored. The scored answer would not be true here either, since 2.5 asks 0.04 GB more at 32k rather than less, so
+      that section wants a second form for a pair the index has placed neither side of. The stand-in moves with it:
+      `calc.test.ts` refuses a price borrowed from a legacy row, so 2.5 would go back to the base model's and the
+      head-to-head between the two would print two different API bills for one pair of near-identical builds again.
 
 - [ ] **Nine of the 27 models that read images have no projector figure**, so their pages say a projector loads
       beside the weights without saying what it costs: the six Qwen rows, GLM-5.3-Flash, KAT-Coder V2.5 and the two
@@ -135,6 +143,19 @@ seo/archive/ and is not required reading; it grew to 10,000 lines, which is why 
       to 6.89 and 8.29. 67 rows to fill, so several runs; the field and the guard are one change.
 
 ## Runs
+
+### 2026-11-27 — Ternary Bonsai 2.5 27B is priced here, and it rents at the price of the release before it
+`ternary-bonsai-2.5-27b-q2` is in `data/models.json`: PrismML's agentic release of the ternary Qwen3.8-27B line, Apache 2.0, 27.36B at 1.76 bits a weight, packed for this row
+into llama.cpp's own two-bit type. The watch's open question is settled and the answer is no: the README says stock llama.cpp rejects `PQ2_0` and `PTQ1_0` as unknown types, so
+the row prices `Q2_0`, 7,673,194,848 bytes, 2.28 bits against the 26,895,998,464 parameters the file holds, which stock loads from release b11556 and older builds load silently
+and run as nonsense. The cache geometry is the file's own GGUF metadata rather than the base model's config: 64 blocks, a full-attention layer every fourth one, four key-value
+heads 256 wide, so 16 layers at 4,096 bytes a token and 0.537 GB per 8k, the Bonsai 2 row's figure to the byte. Nobody rents it among OpenRouter's 477, so the price is the
+release before it at $0.075 and $0.50, on a new `predecessor` stand-in basis: the two rows then print one price, and the head-to-head between them says pay-back is the same
+either way rather than reading the gap between two hosted models as a verdict on these two. Both Bonsai rows move to the 27.36B their cards state, 0.42B under the base
+checkpoint's index, which is the multi-token-prediction head neither build ships and the same reading the Arete-27B row already carries. Straight to main. Verified: 487 tests
+with 2 added, typecheck and validate clean with the new basis refused both ways by hand, the whole build including build:functions, 384 pages with every guard passing, 3 added
+and none retired, the model page and both head-to-heads read rendered. Watch done: GigaChat4-37B-A4B is the candidate named next, GigaChat4-708B is out at 429.44 GB.
+Next: Bonsai 2 to `legacy`, which needs more than the flag — the backlog item above says what.
 
 ### 2026-11-26 — The arithmetic a reader checks these figures against is prose, and now it is read back
 The backlog's note-figure item is done. Each `architecture.note` is printed whole in the KV cache row of its model page, so the working a reader checks this
@@ -251,32 +272,3 @@ cheapest on neither now. At 193.81 GB nothing still sold holds it, and the page 
 validate clean, the whole build with build:functions, 366 pages every guard passing, 2 added (the page and the Tencent Hy3 head-to-head the memory
 rule cut, 192.90 GB against 194.37) and none dropped, both read rendered; five mutations of the row all caught, control passing. Watch done:
 Hy4-flash and Maxwell-V1-Flash wait on an unmerged llama.cpp patch, Haru-4B is speech and out, v5.0.1 not advanced. Next: the `n_layers` item.
-
-### 2026-11-17 — A ceiling note is read against the figure in front of it, whatever word follows
-The backlog's ceiling-note item is done. `ceilingNoteFault()` now reads the figure a note opens with, whatever comes after it, and holds it against the ceiling printed
-beside it: past the ceiling it is refused outright, since "128k tokens (256k native)" says the model reaches two lengths at once; below it, it has to call itself the
-native window in so many words, which is the only reading on which a shorter figure beside a longer one is not the ceiling restated wrong. That keeps the four Qwen3 rows,
-which say 32k natively under a config counting 40,960 positions, and refuses the shape a corrected ceiling leaves behind. The item's count of 22 was low: 72 of the 74
-rows carry a note that opens on a figure, and the test moves every one of their ceilings to prove the note left behind says so. The shape it cannot judge is a ceiling
-raised over a native figure, which is what those four rows truthfully have, and the function says so. Straight to main, and no visitor-facing text changed: the guard
-refuses data rather than writing words, and every page's ceiling cell renders byte for byte as before.
-Verified: 480 tests with 1 added, typecheck and validate clean, the whole build with build:functions, 364 pages every guard passing and none redated; four mutations,
-all four caught with the control passing — raon-1-nano's ceiling halved and Olmo 3.1 Instruct's doubled with their notes left, and the guard's own two branches
-dropped in turn. Watch done: Maxwell-V1-Flash is the top trending model and has a 20.79 GB four-bit file that only a patched llama.cpp loads, so not a row yet;
-Lara-4-Mini-Base, BotPsy-0.8B and WVY-Blender-5m are out; SenseNova-Loop has GGUF now and still runs its middle layers twice; v5.0.1 reads 14 of 54.
-Next: the `n_layers` item, the other guard a mutation walked through.
-
-### 2026-11-16 — Two builds of one family at one size are a page, and on two of them nothing in the arithmetic separates them
-The backlog's Olmo item is done, and as a rule rather than a pair. `familyMemoryPairs()` is the fourth head-to-head rule: each model against the one of its own family
-nearest it in the memory it needs, within the same tenth the cross-family rule allows, where neither side is superseded and both carry one quantisation label. Four pages:
-Olmo 3.1 32B Instruct against Think, the two Spark 4Bs, Qwen3.8 27B against Qwen3.6 27B, and Qwen3.6 35B-A3B against Qwen3-Coder 30B-A3B. The item's count of ten was a read
-that has aged: the rule reaches seven today, three of them with a superseded side the generation rule says better, and Mistral Small 4 against Devstral 2 123B is 16% apart
-once the cache at 32k is counted. Two of the four were the page to get right: the same file size to the byte, the same hosted model standing in on price and the same machine
-paying for itself in the same time, which is twelve table rows of one figure printed twice. `modelFamilySection()` writes the sentence those two owe a reader and is written
-only where every figure is level. Two sentences that were false on such a pair are fixed: the pay-back paragraph named a winner where the table printed a draw at all five
-levels, and the memory section offered a speed and an API bill to weigh that were one figure twice. Reading those two off the printed cells rather than off the data
-behind them turned up five existing cross-family pages wrong the other way, each now naming what does differ. `checkFamilyMemoryPairs()` holds the rule and the section both
-ways; `checkTwoColumnClaims()` reads all 154 of those sentences back against the cells they are about. Straight to main. Verified: 479 tests with 10 added, typecheck and
-validate clean, the whole build with build:functions, 364 pages every guard passing, 4 added and none retired of 48 redated, all four read rendered; 15 mutations, 11 caught
-with the control passing, two inert on today's data and the last a repetition no guard can judge. Watch done: Whittle-Next-27B-A3B is a candidate, with a new quantisation
-label and a cache that is two kinds at once; Supra2.5-Pro and DFM-Mimir are out; the v5.0.1 count holds at 12 of 54. Next: the ceiling-note guard.

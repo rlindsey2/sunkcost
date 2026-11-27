@@ -107,6 +107,20 @@ for (const m of models) {
         if (!ce.source_url || !ce.checked) errors.push(`${m.id}: a stand-in on ${ce.stand_in_hosted}, which no row here prices, needs the listing the price came from and the date it was read`);
       }
       if (!ce.stand_in_basis || !ce.note) errors.push(`${m.id}: stand-in needs a basis and a note saying nobody rents it`);
+      // `predecessor` is the strongest of the four bases: it says the price is the release
+      // before this one, the same model a version back, so the two rows print one price and
+      // a head-to-head between them does not read a bookkeeping difference as a verdict. A
+      // family name alone does not hold that claim, because this site groups a model under
+      // the family it was built from and the base model sits in the same one. So the two
+      // names have to begin with the same word, which the base model's does not.
+      if (ce.stand_in_basis === 'predecessor') {
+        const target = models.find((x) => x.id === ce.stand_in_for);
+        const word = (s: string) => s.split(/\s+/)[0].toLowerCase();
+        if (target && (target.family !== m.family || word(target.display_name) !== word(m.display_name))) {
+          errors.push(`${m.id}: priced as the release before it, and ${target.display_name} is not that model a version back`);
+        }
+      }
+
     }
     if (typeof ce.is_exact_match !== 'boolean') errors.push(`${m.id}: is_exact_match must be boolean`);
   }

@@ -4444,8 +4444,8 @@
     "display_name": "Ternary Bonsai 2 27B",
     "family": "Qwen",
     "generation": "current",
-    "params_b": 27.78,
-    "active_params_b": 27.78,
+    "params_b": 27.36,
+    "active_params_b": 27.36,
     "quantisation": "Q2_0",
     "weights_gb": 7.63,
     "kv_cache_gb_per_8k": 0.537,
@@ -4473,7 +4473,7 @@
       "complex_reasoning": "unknown",
       "agentic": "unknown"
     },
-    "capability_note": "Not yet rated: released after our last ratings pass. This is Qwen3.8 27B with its weights converted to ternary, three values a weight in place of the sixteen levels a four-bit file holds, which brings the weights to a little under half what the four-bit build of the same model asks of a machine and leaves the architecture, the context window and the key-value cache as they were. PrismML's own runs average 84.78 against 86.32 for the full-precision model across fourteen tests in thinking mode, and 66.19 against 71.36 on the vision set, so the loss falls harder on pictures than on text; nobody else has published a measurement, and nobody has placed this build on the index the rest of this site is ranked by. Stock llama.cpp loads this file from build b11556 onwards, and an older build loads it without complaint and produces nonsense. The two smaller files in the same repository need PrismML's own fork of llama.cpp rather than the build you already have.",
+    "capability_note": "Not yet rated: released after our last ratings pass. This is Qwen3.8 27B with its weights converted to ternary, three values a weight in place of the sixteen levels a four-bit file holds, which brings the weights to a little under half what the four-bit build of the same model asks of a machine and leaves the architecture, the context window and the key-value cache as they were. PrismML's own runs average 84.78 against 86.32 for the full-precision model across fourteen tests in thinking mode, and 66.19 against 71.36 on the vision set, so the loss falls harder on pictures than on text; nobody else has published a measurement, and nobody has placed this build on the index the rest of this site is ranked by. Stock llama.cpp loads this file from build b11556 onwards, and an older build loads it without complaint and produces nonsense. The two smaller files in the same repository need PrismML's own fork of llama.cpp rather than the build you already have. PrismML has since released Ternary Bonsai 2.5 27B, the same ternary format at the same size, which scores higher on its publisher's own tool-calling and coding tests.",
     "cloud_equivalent": {
       "name": "Ternary Bonsai 2 27B",
       "input_price_per_mtok": 0.075,
@@ -4502,7 +4502,7 @@
       "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json",
       "https://openrouter.ai/prism-ml/ternary-bonsai-2-27b"
     ],
-    "TODO": "Capability ratings needed. Parameters are the 27,781,427,952 Qwen3.8-27B's safetensors index reports, the checkpoint these weights are converted from; weights are Ternary-Bonsai-2-27B-Q2_0.gguf, 7,626,008,928 bytes, the only one of the repository's three low-bit files stock llama.cpp loads, read 2026-11-20. The build number the file needs is in the repository's own KNOWN_ISSUES.md, read the same day, which also says the other two need PrismML's fork."
+    "TODO": "Capability ratings needed. Parameters are the 27.36B the card states, 24.35B of language backbone plus 2.54B of embedding and LM head plus a 0.46B vision tower; the base checkpoint's safetensors index reports 27,781,427,952, and the 0.42B of difference is the multi-token-prediction head this build does not carry, read off the card's own breakdown and corrected 2026-11-27. Weights are Ternary-Bonsai-2-27B-Q2_0.gguf, 7,626,008,928 bytes, the only one of the repository's three low-bit files stock llama.cpp loads, read 2026-11-20. The build number the file needs is in the repository's own KNOWN_ISSUES.md, read the same day, which also says the other two need PrismML's fork."
   },
   {
     "id": "mellum2.1-12b-a2.5b-q4",
@@ -4837,5 +4837,73 @@
       "https://openrouter.ai/inclusionai/ling-3.0-flash-vl"
     ],
     "TODO": "Capability ratings needed. Parameters are the 124B total and 5.5B active the card states; the checkpoint's safetensors index totals 124,848,460,496, all but 164,960 of them in bfloat16. Weights are the two Q4_K_M shards bartowski publishes, 78,661,520,576 bytes together, 5.04 bits a parameter against that total, read 2026-11-25, with IQ4_XS at 69,374,282,944 bytes and Q8_0 at 132,365,277,344 beside them, all built with stock llama.cpp b12600. The cache geometry is the first Q4_K_M shard's own GGUF metadata, read the same day: block_count 42, attention.head_count_kv 1 on layers 5, 11, 17, 23, 29, 35 and 41 and 0 on the other 35, kv_lora_rank 512, rope.dimension_count 64, key_length 576, and context_length 131072, which inclusionAI's own config.json agrees with at max_position_embeddings."
+  },
+  {
+    "id": "ternary-bonsai-2.5-27b-q2",
+    "display_name": "Ternary Bonsai 2.5 27B",
+    "family": "Qwen",
+    "generation": "current",
+    "params_b": 27.36,
+    "active_params_b": 27.36,
+    "quantisation": "Q2_0",
+    "weights_gb": 7.67,
+    "kv_cache_gb_per_8k": 0.537,
+    "architecture": {
+      "n_layers": 64,
+      "n_kv_heads": 4,
+      "head_dim": 256,
+      "full_attention_layers": 16,
+      "sliding_window_layers": 0,
+      "note": "Hybrid: 48 linear-attention layers; only 16 full-attention layers hold a growing KV cache, 4,096 bytes a layer and 65,536 bytes across the model. The ternary conversion left the architecture alone, and these are the Q2_0 file's own figures: 64 blocks, a full-attention layer every fourth one, four key-value heads and a head width of 256."
+    },
+    "vision": {
+      "reads_images": true,
+      "projector_gb": 0.63,
+      "projector_bytes": 629246976,
+      "projector_file": "Ternary-Bonsai-2.5-27B-mmproj-Q8_0.gguf",
+      "projector_source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2.5-27B-GGUF",
+      "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2.5-27B-GGUF",
+      "checked": "2026-11-27"
+    },
+    "capabilities": {
+      "summarisation": "unknown",
+      "translation": "unknown",
+      "everyday_coding": "unknown",
+      "complex_reasoning": "unknown",
+      "agentic": "unknown"
+    },
+    "capability_note": "Not yet rated: released after our last ratings pass. This is the agentic release of the Ternary Bonsai line, Qwen3.8 27B with its weights converted to ternary, three values a weight in place of the sixteen levels a four-bit file holds, which brings the weights to a little under half what the four-bit build of the same model asks of a machine and leaves the architecture, the context window and the key-value cache as they were. PrismML's own runs put it level with the full-precision model on tool calling, 77.2 against 77.7 averaged over five benchmarks, and at 54.2 against 60.5 over three agentic coding benchmarks, where Bonsai 2 managed 37.9. Over sixteen general tests in five categories it averages 82.1 against 84.3, and the vision set is 83.66 against 86.07, so the loss now falls harder on pictures than on text. Those are the publisher's own measurements, nobody else has published one, and nobody has placed this build on the index the rest of this site is ranked by. Stock llama.cpp loads this file from build b11556 onwards, and an older build loads it without complaint and produces nonsense. The two smaller files in the same repository need PrismML's own fork of llama.cpp rather than the build you already have.",
+    "cloud_equivalent": {
+      "name": "Ternary Bonsai 2 27B",
+      "input_price_per_mtok": 0.075,
+      "output_price_per_mtok": 0.5,
+      "source": "OpenRouter, the only active endpoint: Darkbloom",
+      "source_url": "https://openrouter.ai/prism-ml/ternary-bonsai-2-27b",
+      "is_exact_match": false,
+      "checked": "2026-11-27",
+      "stand_in": true,
+      "stand_in_for": "ternary-bonsai-2-27b-q2",
+      "stand_in_basis": "predecessor",
+      "note": "Nobody rents this release by the token, on a read of all 477 models OpenRouter lists today. The one model of PrismML's on offer there is Ternary Bonsai 2 27B, the release before this one, so the price is that: $0.075 and $0.50 per million tokens at Darkbloom, its only active endpoint, which serves it at four bits by OpenRouter's own label rather than at the ternary weights you would download."
+    },
+    "license": "Apache 2.0",
+    "max_context_tokens": 262144,
+    "max_context_note": "256k",
+    "frontier_equivalent": {
+      "tier": null,
+      "score": null,
+      "score_note": null,
+      "estimated": null,
+      "basis": "Not listed on the Artificial Analysis index.",
+      "url": null,
+      "checked": "2026-11-27",
+      "index_version": "v4.3"
+    },
+    "sources": [
+      "https://huggingface.co/prism-ml/Ternary-Bonsai-2.5-27B-GGUF",
+      "https://huggingface.co/Qwen/Qwen3.8-27B",
+      "https://openrouter.ai/prism-ml/ternary-bonsai-2-27b"
+    ],
+    "TODO": "Capability ratings needed. Parameters are the 27.36B the card states, 24.35B of language backbone over 64 blocks plus 2.54B of embedding and LM head plus a 0.47B vision tower over 27 blocks; the base checkpoint's safetensors index comes to 27.78B, and the 0.42B of difference is the multi-token-prediction head the three base files do not carry and the -mtp variants add. Weights are Ternary-Bonsai-2.5-27B-Q2_0.gguf, 7,673,194,848 bytes, 2.28 bits a parameter against the 26,895,998,464 parameters the file holds, read 2026-11-27; it is the only one of the repository's three low-bit files stock llama.cpp loads, from release b11556 onwards, and the README says the other two are rejected as unknown types without PrismML's fork. PQ2_0 is 7,253,354,848 bytes and PTQ1_0 5,993,834,848, each with an -mtp variant that carries a draft head. The cache geometry is the Q2_0 file's own GGUF metadata, read the same day: block_count 64, attention.head_count 24, attention.head_count_kv 4, key_length and value_length 256, full_attention_interval 4, rope.dimension_count 64 and context_length 262144, with the ssm fields of the other 48 blocks beside them."
   }
 ]
